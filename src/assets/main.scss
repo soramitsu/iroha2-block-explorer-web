@@ -1,9 +1,0 @@
-@use '@soramitsu-ui/theme/sass' as theme;
-@use '@soramitsu-ui/theme/fonts/Sora';
-@use '@soramitsu-ui/ui/styles';
-
-@include theme.typography-preset-default;
-
-:root {
-  @include theme.tokens-preset-light;
-}
