@@ -8,6 +8,7 @@ export function useTheme() {
   function set(value: Theme) {
     if (active.value === value) return;
 
+    localStorage.setItem('theme', value);
     active.value = value;
     document.body.classList.remove('theme--light', 'theme--dark');
     document.body.classList.add(`theme--${value}`);
