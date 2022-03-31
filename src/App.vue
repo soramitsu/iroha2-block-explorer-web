@@ -7,20 +7,22 @@
 
 <script setup lang="ts">
 import AppPageLayout from './components/AppPageLayout.vue';
-import { useTheme } from './composables/theme';
 
-useTheme().init();
+// Waiting for theme change button and dark theme
+// import { useDark } from '@vueuse/core';
+// const isDark = useDark();
+// isDark.value = true;
 </script>
 
 <style lang="scss">
 @use '@/styles/theme.scss';
 
-body {
-  &.theme--light {
+html {
+  &:not(.dark) {
     @include theme.light-theme;
   }
 
-  &.theme--dark {
+  &.dark {
     @include theme.dark-theme;
   }
 }
