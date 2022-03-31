@@ -1,6 +1,7 @@
 <template>
   <header class="app-header">
     <AppHeaderLogo />
+
     <div class="app-header__row">
       <STextField>
         <template #append>
@@ -11,7 +12,7 @@
 
       <nav class="app-header__menu">
         <RouterLink v-for="(item, i) in menu" :key="i" :to="item.to">
-          <SButton>{{ item.label }}</SButton>
+          <SButton class="sora-tpg-ch1 app-header__button">{{ item.label }}</SButton>
         </RouterLink>
       </nav>
     </div>
@@ -34,7 +35,7 @@ const menu = [
 </script>
 
 <style lang="scss">
-@use '@/styles/sora.scss';
+@use '@/styles/theme.scss';
 
 .app-header {
   display: flex;
@@ -43,7 +44,7 @@ const menu = [
   padding: 0 48px;
 
   &__search-icon {
-    fill: #E8E1E1; // sora.token-as-var('sys.color.border-secondary');
+    fill: theme.token-as-var('sys.color.border-secondary');
   }
 
   &__row {
@@ -58,6 +59,14 @@ const menu = [
     display: flex;
     align-items: center;
     margin-left: auto;
+  }
+
+  &__button {
+    color: theme.token-as-var('sys.color.content-quaternary');
+
+    &:hover {
+      color: theme.token-as-var('sys.color.content-primary');
+    }
   }
 }
 </style>

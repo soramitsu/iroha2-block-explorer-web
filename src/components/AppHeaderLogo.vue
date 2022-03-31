@@ -1,6 +1,7 @@
 <template>
   <div class="app-header-logo">
     <LogoIcon class="app-header-logo__img" />
+
     <div class="app-header-logo__text">
       <span class="sora-tpg-h5 app-header-logo__company">HYPERLEDGER</span>
       <span class="sora-tpg-h1 app-header-logo__name">IROHA</span>
@@ -13,7 +14,7 @@ import LogoIcon from '@/assets/svg/logo.svg';
 </script>
 
 <style lang="scss">
-@use '@/styles/sora.scss';
+@use '@/styles/theme.scss';
 
 // TODO: Rewrite styles when the DS is ready
 
@@ -29,12 +30,12 @@ import LogoIcon from '@/assets/svg/logo.svg';
   }
 
   &__name {
-    color: sora.token-as-var('sys.color.primary');
+    color: theme.token-as-var('sys.color.primary');
     margin-left: -2px;
   }
 
   &__company {
-    color: sora.token-as-var('sys.color.content-primary');
+    color: theme.token-as-var('sys.color.content-primary');
     margin-bottom: -6px;
     font-weight: bold !important;
   }

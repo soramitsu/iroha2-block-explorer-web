@@ -1,5 +1,4 @@
-import '@soramitsu-ui/theme/fonts/Sora';
-import '@soramitsu-ui/ui/styles';
+import '@/styles/global.scss';
 
 import { createApp } from 'vue';
 import App from './App.vue';

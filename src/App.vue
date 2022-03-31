@@ -7,20 +7,26 @@
 
 <script setup lang="ts">
 import AppPageLayout from './components/AppPageLayout.vue';
+import { useTheme } from './composables/theme';
+
+useTheme().init();
 </script>
 
 <style lang="scss">
-@use '@soramitsu-ui/theme/sass' as theme;
-@use '@/styles/sora.scss';
+@use '@/styles/theme.scss';
 
-@include theme.typography-preset-default;
+body {
+  &.theme--light {
+    @include theme.light-theme;
+  }
 
-:root {
-  @include theme.tokens-preset-light;
+  &.theme--dark {
+    @include theme.dark-theme;
+  }
 }
 
 #app {
-  background: #F5F2F2; // sora.token-as-var('sys.color.util.surface');
+  background: theme.token-as-var('sys.color.background');
   height: 100vh;
 }
 </style>

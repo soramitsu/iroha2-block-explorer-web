@@ -1,0 +1,61 @@
+@use '@soramitsu-ui/theme/sass' as theme;
+@forward '@soramitsu-ui/theme/sass/lib';
+
+@mixin light-theme() {
+  @include theme.eval-tokens-partial(
+    (
+      sys: (
+        'color': (
+          'primary': #BB0000,
+          'primary-hover': #810505,
+          'primary-pressed': #410707,
+          'primary-focused': #810505,
+          'primary-background': #FFEDED,
+          'primary-hover-background': #FFD4D4,
+          'primary-pressed-background': #FFB0B0,
+          'primary-focused-background': #FFD4D4,
+          'content-primary': #281818,
+          'content-secondary': #704E4E,
+          'content-tertiary': #9D8181,
+          'content-quaternary': #AA9999,
+          'content-on-background-inverted': #FFFFFF,
+          'background': #F5F2F2,
+          'background-hover': #E8E1E1,
+          'background-inverted': #281818,
+          'border-primary': #F5F2F2,
+          'border-secondary': #E8E1E1,
+          'disabled': #F5F2F2,
+          'on-disabled': #AA9999,
+          'util': (
+            'body': #FFFFFF,
+            'surface': #FCFCFC,
+            'surface-overlay': rgba(255, 255, 255, 0.7),
+            'overlay': rgba(0, 0, 0, 0.45),
+          ),
+          'status': (
+            'success': #007755,
+            'success-background': #D3F6EC,
+            'success-background-hover': #AAECD9,
+            'warning': #FF9900,
+            'warning-background': #FFF1D2,
+            'warning-background-hover': #FFE2A4,
+            'error': #923ECD,
+            'error-background': #FAF0FF,
+            'error-background-hover': #F6E0FF,
+            'info': #1166BB,
+            'info-background': #E6F3FF,
+            'info-background-hover': #CDE6FF,
+            'debug': #9E0035,
+            'debug-background': #FEE2EB,
+            'debug-background-hover': #FDC6D8,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+@mixin dark-theme() {
+  @include theme.tokens-preset-light;
+}
+
