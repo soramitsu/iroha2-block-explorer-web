@@ -14,6 +14,8 @@
         <RouterLink v-for="(item, i) in menu" :key="i" :to="item.to">
           <SButton class="sora-tpg-ch1 app-header__button">{{ item.label }}</SButton>
         </RouterLink>
+
+        <AppThemeSwitcher class="app-header__theme-switcher app-header__button" />
       </nav>
     </div>
   </header>
@@ -21,6 +23,7 @@
 
 <script setup lang="ts">
 import AppHeaderLogo from './AppHeaderLogo.vue';
+import AppThemeSwitcher from './AppThemeSwitcher.vue';
 import { STextField, SButton } from '@soramitsu-ui/ui';
 import SearchIcon from '@soramitsu-ui/icons/icomoon/basic-search-24.svg';
 
@@ -43,7 +46,7 @@ const menu = [
   height: 120px;
   padding: 0 48px;
 
-  &__search-icon {
+  &__search-icon path {
     fill: theme.token-as-var('sys.color.border-secondary');
   }
 
@@ -67,6 +70,10 @@ const menu = [
     &:hover {
       color: theme.token-as-var('sys.color.content-primary');
     }
+  }
+
+  &__theme-switcher {
+    margin-left: 64px;
   }
 }
 </style>

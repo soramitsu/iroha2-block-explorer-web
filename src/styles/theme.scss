@@ -1,53 +1,159 @@
 @use '@soramitsu-ui/theme/sass' as theme;
 @forward '@soramitsu-ui/theme/sass/lib';
 
+$neutral-0: #FFFFFF;
+$neutral-5: #FCFCFC;
+$neutral-10: #F9F9F9;
+$neutral-20: #E9E9E9;
+$neutral-30: #CFCFCF;
+$neutral-40: #ABABAB;
+$neutral-50: #808080;
+$neutral-60: #565656;
+$neutral-70: #313131;
+$neutral-80: #171717;
+$neutral-90: #070707;
+$neutral-100: #000000;
+
+$primary-0: #FFFFFF;
+$primary-5: #FFF6F6;
+$primary-10: #FFEDED;
+$primary-20: #FFD4D4;
+$primary-30: #FFB0B0;
+$primary-40: #FA8181;
+$primary-50: #EB4E4E;
+$primary-60: #D72121;
+$primary-70: #BB0000;
+$primary-80: #810505;
+$primary-90: #410707;
+$primary-100: #000000;
+
+$secondary-0: #FFFFFF;
+$secondary-5: #F5F2F2;
+$secondary-10: #E8E1E1;
+$secondary-20: #D7CDCD;
+$secondary-30: #C3B3B3;
+$secondary-40: #AA9999;
+$secondary-50: #9D8181;
+$secondary-60: #8A6969;
+$secondary-70: #704E4E;
+$secondary-80: #4E3333;
+$secondary-90: #281818;
+$secondary-100: #000000;
+
+$success-0: #FFFFFF;
+$success-5: #D3F6EC;
+$success-10: #AAECD9;
+$success-20: #7FDEC3;
+$success-30: #57CCAB;
+$success-40: #33B590;
+$success-50: #169974;
+$success-60: #0C7C59;
+$success-70: #17614C;
+$success-80: #20453A;
+$success-90: #192320;
+$success-100: #000000;
+
+$warning-0: #FFFFFF;
+$warning-5: #FFF1D2;
+$warning-10: #FFE2A4;
+$warning-20: #FFBB44;
+$warning-30: #FF9900;
+$warning-40: #EC8A00;
+$warning-50: #D57700;
+$warning-60: #B66000;
+$warning-70: #914600;
+$warning-80: #652C00;
+$warning-90: #331400;
+$warning-100: #000000;
+
+$error-0: #FFFFFF;
+$error-5: #FAF0FF;
+$error-10: #F6E0FF;
+$error-20: #EAC8FF;
+$error-30: #DAAAFD;
+$error-40: #C686F3;
+$error-50: #AD61E3;
+$error-60: #923ECD;
+$error-70: #7522B0;
+$error-80: #570D8C;
+$error-90: #341B47;
+$error-100: #000000;
+
+$info-0: #FFFFFF;
+$info-5: #E6F3FF;
+$info-10: #CDE6FF;
+$info-20: #98CAFB;
+$info-30: #69AEF3;
+$info-40: #4394E6;
+$info-50: #267DD4;
+$info-60: #1166BB;
+$info-70: #054D94;
+$info-80: #003367;
+$info-90: #001A34;
+$info-100: #000000;
+
+$debug-0: #FFFFFF;
+$debug-5: #FEE2EB;
+$debug-10: #FDC6D8;
+$debug-20: #FA8EB2;
+$debug-30: #F55D8F;
+$debug-40: #ED3572;
+$debug-50: #E4165B;
+$debug-60: #D70148;
+$debug-70: #C70042;
+$debug-80: #B3003C;
+$debug-90: #9E0035;
+$debug-100: #000000;
+
 @mixin light-theme() {
   @include theme.eval-tokens-partial(
     (
       sys: (
         'color': (
-          'primary': #BB0000,
-          'primary-hover': #810505,
-          'primary-pressed': #410707,
-          'primary-focused': #810505,
-          'primary-background': #FFEDED,
-          'primary-hover-background': #FFD4D4,
-          'primary-pressed-background': #FFB0B0,
-          'primary-focused-background': #FFD4D4,
-          'content-primary': #281818,
-          'content-secondary': #704E4E,
-          'content-tertiary': #9D8181,
-          'content-quaternary': #AA9999,
-          'content-on-background-inverted': #FFFFFF,
-          'background': #F5F2F2,
-          'background-hover': #E8E1E1,
-          'background-inverted': #281818,
-          'border-primary': #F5F2F2,
-          'border-secondary': #E8E1E1,
-          'disabled': #F5F2F2,
-          'on-disabled': #AA9999,
+          'primary': $primary-70,
+          'primary-hover': $primary-80,
+          'primary-pressed': $primary-90,
+          'primary-focused': $primary-80,
+          'primary-background': $primary-10,
+          'primary-hover-background': $primary-20,
+          'primary-pressed-background': $primary-30,
+          'primary-focused-background': $primary-20,
+          'content-primary': $secondary-90,
+          'content-secondary': $secondary-70,
+          'content-tertiary': $secondary-50,
+          'content-quaternary': $secondary-40,
+          'content-on-background-inverted': $neutral-0,
+          'background': $secondary-5,
+          'background-hover': $secondary-10,
+          'background-inverted': $secondary-90,
+          'border-primary': $secondary-5,
+          'border-secondary': $secondary-10,
+          'disabled': $secondary-5,
+          'on-disabled': $secondary-40,
           'util': (
-            'body': #FFFFFF,
-            'surface': #FCFCFC,
-            'surface-overlay': rgba(255, 255, 255, 0.7),
-            'overlay': rgba(0, 0, 0, 0.45),
+            'body': $neutral-0,
+            'surface': $neutral-5,
+            'surface-overlay': rgba($neutral-0, 0.7),
+            'overlay': rgba($neutral-100, 0.45),
+            // 'surface-variant': $secondary-90,
+            // 'content-on-surface-variant': $neutral-5,
           ),
           'status': (
-            'success': #007755,
-            'success-background': #D3F6EC,
-            'success-background-hover': #AAECD9,
-            'warning': #FF9900,
-            'warning-background': #FFF1D2,
-            'warning-background-hover': #FFE2A4,
-            'error': #923ECD,
-            'error-background': #FAF0FF,
-            'error-background-hover': #F6E0FF,
-            'info': #1166BB,
-            'info-background': #E6F3FF,
-            'info-background-hover': #CDE6FF,
-            'debug': #9E0035,
-            'debug-background': #FEE2EB,
-            'debug-background-hover': #FDC6D8,
+            'success': $success-60,
+            'success-background': $success-5,
+            'success-background-hover': $success-10,
+            'warning': $warning-30,
+            'warning-background': $warning-5,
+            'warning-background-hover': $warning-10,
+            'error': $error-60,
+            'error-background': $error-5,
+            'error-background-hover': $error-10,
+            'info': $info-60,
+            'info-background': $info-5,
+            'info-background-hover': $info-10,
+            'debug': $debug-90,
+            'debug-background': $debug-5,
+            'debug-background-hover': $debug-10,
           ),
         ),
       ),
@@ -56,6 +162,58 @@
 }
 
 @mixin dark-theme() {
-  @include theme.tokens-preset-light;
+  @include theme.eval-tokens-partial(
+    (
+      sys: (
+        'color': (
+          'primary': $primary-60,
+          'primary-hover': $primary-70,
+          'primary-pressed': $primary-80,
+          'primary-focused': $primary-70,
+          'primary-background': $primary-10,
+          'primary-hover-background': $primary-20,
+          'primary-pressed-background': $primary-30,
+          'primary-focused-background': $primary-20,
+          'content-primary': $neutral-0,
+          'content-secondary': $neutral-20,
+          'content-tertiary': $neutral-40,
+          'content-quaternary': $neutral-50,
+          'content-on-background-inverted': $neutral-80,
+          'background': $neutral-80,
+          'background-hover': $neutral-90,
+          'background-inverted': $neutral-5,
+          'border-primary': $neutral-100,
+          'border-secondary': $neutral-70,
+          'disabled': $neutral-80,
+          'on-disabled': $neutral-50,
+          'util': (
+            'body': $neutral-90,
+            'surface': $neutral-50,
+            'surface-overlay': rgba($neutral-80, 0.7),
+            'overlay': rgba($neutral-0, 0.45),
+            // 'surface-variant': $neutral-90,
+            // 'content-on-surface-variant': $neutral-0,
+          ),
+          'status': (
+            'success': $success-50,
+            'success-background': $success-5,
+            'success-background-hover': $success-10,
+            'warning': $warning-30,
+            'warning-background': $warning-5,
+            'warning-background-hover': $warning-10,
+            'error': $error-60,
+            'error-background': $error-5,
+            'error-background-hover': $error-10,
+            'info': $info-60,
+            'info-background': $info-5,
+            'info-background-hover': $info-10,
+            'debug': $debug-90,
+            'debug-background': $debug-5,
+            'debug-background-hover': $debug-10,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
