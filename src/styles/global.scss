@@ -1,0 +1,6 @@
+@use '@soramitsu-ui/theme/fonts/Sora';
+// @use '@soramitsu-ui/theme/src/fonts/JetBrainsMono';
+@use '@soramitsu-ui/ui/styles';
+@use '@/styles/typography.scss';
+
+@include typography.typography-classes;
