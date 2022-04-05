@@ -102,7 +102,7 @@ $debug-80: #B3003C;
 $debug-90: #9E0035;
 $debug-100: #000000;
 
-$light-map: (
+$light-color-map: (
   // Main colors
   'primary': $primary-70,
   'primary-hover': $primary-80,
@@ -147,26 +147,9 @@ $light-map: (
   'debug': $debug-90,
   'debug-background': $debug-5,
   'debug-background-hover': $debug-10,
-  // Shadows
-  'shadow-row': rgba(22, 29, 36, 0.12),
-  'shadow-block-1': rgba(255, 255, 255, 0.9),
-  'shadow-block-2': rgba(0, 0, 0, 0.1),
-  'shadow-block-3': #FFFFFF,
-  'shadow-lowered-1_1': #FFFFFF,
-  'shadow-lowered-1_2': rgba(255, 255, 255, 0.5),
-  'shadow-lowered-1_3': rgba(0, 0, 0, 0.1),
-  'shadow-lowered-2_1': #FFFFFF,
-  'shadow-lowered-2_2': rgba(0, 0, 0, 0.18),
-  'shadow-lowered-2_3': rgba(255, 255, 255, 0.8),
-  'shadow-elevated-1_1': #FFFFFF,
-  'shadow-elevated-1_2': rgba(0, 0, 0, 0.1),
-  'shadow-elevated-1_3': rgba(255, 255, 255, 0.8),
-  'shadow-elevated-2_1': #FFFFFF, // заменить
-  'shadow-elevated-2_2': rgba(0, 0, 0, 0.1), // заменить
-  'shadow-elevated-2_3': rgba(255, 255, 255, 0.8), // заменить
 );
 
-$dark-map: (
+$dark-color-map: (
   // Main colors
   'primary': $primary-60,
   'primary-hover': $primary-70,
@@ -211,50 +194,86 @@ $dark-map: (
   'debug': $debug-90,
   'debug-background': $debug-5,
   'debug-background-hover': $debug-10,
-  // Shadows
-  'shadow-row': rgba(0, 0, 0, 0.4),
-  'shadow-block-1': rgba(0, 0, 0, 0.16),
-  'shadow-block-2': rgba(0, 0, 0, 0.1),
-  'shadow-block-3': rgba(255, 255, 255, 0.04),
-  'shadow-lowered-1_1': rgba(255, 255, 255, 0.04),
-  'shadow-lowered-1_2': rgba(255, 255, 255, 0.03),
-  'shadow-lowered-1_3': rgba(0, 0, 0, 0.8),
-  'shadow-lowered-2_1': rgba(255, 255, 255, 0.04),
-  'shadow-lowered-2_2': rgba(255, 255, 255, 0.03),
-  'shadow-lowered-2_3': rgba(0, 0, 0, 0.9),
-  'shadow-elevated-1_1': rgba(255, 255, 255, 0.04),
-  'shadow-elevated-1_2': rgba(0, 0, 0, 0.32),
-  'shadow-elevated-1_3': rgba(255, 255, 255, 0.08),
-  'shadow-elevated-2_1': rgba(255, 255, 255, 0.04), // заменить
-  'shadow-elevated-2_2': rgba(0, 0, 0, 0.32), // заменить
-  'shadow-elevated-2_3': rgba(255, 255, 255, 0.04), // заменить
 );
 
-$color-var-prefix: '--color_';
+$light-shadow-map: (
+  'row': 0px 0px 24px rgba(22, 29, 36, 0.12),
+  'block-1': -10px -10px 30px rgba(255, 255, 255, 0.9),
+  'block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
+  'block-3': inset 1px 1px 10px #FFFFFF,
+  'lowered-1_1': 1px 1px 5px rgba(255, 255, 255, 0.04),
+  'lowered-1_2': inset -5px -5px 5px rgba(255, 255, 255, 0.03),
+  'lowered-1_3': inset 1px 1px 10px rgba(0, 0, 0, 0.2),
+  'lowered-2_1': 1px 1px 5px rgba(255, 255, 255, 0.04),
+  'lowered-2_2': inset -5px -5px 5px rgba(255, 255, 255, 0.03),
+  'lowered-2_3': inset 1px 1px 12px rgba(0, 0, 0, 0.3),
+  'elevated-1_1': -5px -5px 10px #FFFFFF,
+  'elevated-1_2': 1px 1px 10px rgba(0, 0, 0, 0.1),
+  'elevated-1_3': inset 1px 1px 2px rgba(255, 255, 255, 0.8),
+  'elevated-2_1': -5px -5px 10px #FFFFFF,
+  'elevated-2_2': 3px 4px 10px rgba(0, 0, 0, 0.18),
+  'elevated-2_3': inset 1px 1px 2px rgba(255, 255, 255, 0.8),
+);
 
-@mixin make-theme($map) {
+$dark-shadow-map: (
+  'row': 0px 0px 24px rgba(0, 0, 0, 0.4),
+  'block-1': -10px -10px 30px rgba(0, 0, 0, 0.16),
+  'block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
+  'block-3': inset 1px 1px 10px rgba(255, 255, 255, 0.04),
+  'lowered-1_1': 1px 1px 5px rgba(255, 255, 255, 0.04),
+  'lowered-1_2': inset -5px -5px 5px rgba(255, 255, 255, 0.03),
+  'lowered-1_3': inset 1px 1px 10px rgba(0, 0, 0, 0.8),
+  'lowered-2_1': 1px 1px 5px rgba(255, 255, 255, 0.04),
+  'lowered-2_2': inset -5px -5px 5px rgba(255, 255, 255, 0.03),
+  'lowered-2_3': inset -3px -3px 10px rgba(0, 0, 0, 0.9),
+  'elevated-1_1': 0px 0px 20px rgba(0, 0, 0, 0.3),
+  'elevated-1_2': 1px 1px 25px rgba(0, 0, 0, 0.5),
+  'elevated-1_3': 0 0 0 #000,
+  'elevated-2_1': 3px 3px 10px rgba(0, 0, 0, 0.8),
+  'elevated-2_2': 2px 4px 10px rgba(0, 0, 0, 0.22), 
+  'elevated-2_3': 0 0 0 #000,
+);
+
+@mixin make-theme($map, $prefix) {
   @each $key, $value in $map {
-    $name: $color-var-prefix + $key;
+    $name: $prefix + $key;
     #{$name}: $value;
   }
 }
 
+$color-var-prefix: '--color_';
+$shadow-var-prefix: '--shadow_';
+
 @mixin light-theme {
-  @include make-theme($light-map);
+  @include make-theme($light-color-map, $color-var-prefix);
+  @include make-theme($light-shadow-map, $shadow-var-prefix);
 }
 
 @mixin dark-theme {
-  @include make-theme($dark-map);
+  @include make-theme($dark-color-map, $color-var-prefix);
+  @include make-theme($dark-shadow-map, $shadow-var-prefix);
 }
 
 @function color($name) {
-  @if not map-has-key($map: $light-map, $key: $name) {
+  @if not map-has-key($map: $light-color-map, $key: $name) {
     @error "There is no such color in light theme: #{inspect($name)}";
   }
 
-  @if not map-has-key($map: $dark-map, $key: $name) {
+  @if not map-has-key($map: $dark-color-map, $key: $name) {
     @error "There is no such color in dark theme: #{inspect($name)}";
   }
 
   @return var(#{$color-var-prefix + $name});
+}
+
+@function shadow($name) {
+  @if not map-has-key($map: $light-shadow-map, $key: $name) {
+    @error "There is no such shadow in light theme: #{inspect($name)}";
+  }
+
+  @if not map-has-key($map: $dark-shadow-map, $key: $name) {
+    @error "There is no such shadow in dark theme: #{inspect($name)}";
+  }
+
+  @return var(#{$shadow-var-prefix + $name});
 }
