@@ -7,11 +7,6 @@
 
 <script setup lang="ts">
 import AppPageLayout from './components/AppPageLayout.vue';
-
-// Waiting for theme change button and dark theme
-// import { useDark } from '@vueuse/core';
-// const isDark = useDark();
-// isDark.value = true;
 </script>
 
 <style lang="scss">
@@ -28,7 +23,6 @@ html {
 }
 
 #app {
-  background: theme.token-as-var('sys.color.background');
-  height: 100vh;
+  background: theme.color('background');
 }
 </style>

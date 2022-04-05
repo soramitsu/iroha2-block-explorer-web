@@ -1,6 +1,3 @@
-@use '@soramitsu-ui/theme/sass' as theme;
-@forward '@soramitsu-ui/theme/sass/lib';
-
 $neutral-0: #FFFFFF;
 $neutral-5: #FCFCFC;
 $neutral-10: #F9F9F9;
@@ -105,115 +102,159 @@ $debug-80: #B3003C;
 $debug-90: #9E0035;
 $debug-100: #000000;
 
-@mixin light-theme() {
-  @include theme.eval-tokens-partial(
-    (
-      sys: (
-        'color': (
-          'primary': $primary-70,
-          'primary-hover': $primary-80,
-          'primary-pressed': $primary-90,
-          'primary-focused': $primary-80,
-          'primary-background': $primary-10,
-          'primary-hover-background': $primary-20,
-          'primary-pressed-background': $primary-30,
-          'primary-focused-background': $primary-20,
-          'content-primary': $secondary-90,
-          'content-secondary': $secondary-70,
-          'content-tertiary': $secondary-50,
-          'content-quaternary': $secondary-40,
-          'content-on-background-inverted': $neutral-0,
-          'background': $secondary-5,
-          'background-hover': $secondary-10,
-          'background-inverted': $secondary-90,
-          'border-primary': $secondary-5,
-          'border-secondary': $secondary-10,
-          'disabled': $secondary-5,
-          'on-disabled': $secondary-40,
-          'util': (
-            'body': $neutral-0,
-            'surface': $neutral-5,
-            'surface-overlay': rgba($neutral-0, 0.7),
-            'overlay': rgba($neutral-100, 0.45),
-            // 'surface-variant': $secondary-90,
-            // 'content-on-surface-variant': $neutral-5,
-          ),
-          'status': (
-            'success': $success-60,
-            'success-background': $success-5,
-            'success-background-hover': $success-10,
-            'warning': $warning-30,
-            'warning-background': $warning-5,
-            'warning-background-hover': $warning-10,
-            'error': $error-60,
-            'error-background': $error-5,
-            'error-background-hover': $error-10,
-            'info': $info-60,
-            'info-background': $info-5,
-            'info-background-hover': $info-10,
-            'debug': $debug-90,
-            'debug-background': $debug-5,
-            'debug-background-hover': $debug-10,
-          ),
-        ),
-      ),
-    ),
-  );
+$light-map: (
+  // Main colors
+  'primary': $primary-70,
+  'primary-hover': $primary-80,
+  'primary-pressed': $primary-90,
+  'primary-focused': $primary-80,
+  'primary-background': $primary-10,
+  'primary-hover-background': $primary-20,
+  'primary-pressed-background': $primary-30,
+  'primary-focused-background': $primary-20,
+  'content-primary': $secondary-90,
+  'content-secondary': $secondary-70,
+  'content-tertiary': $secondary-50,
+  'content-quaternary': $secondary-40,
+  'content-on-background-inverted': $neutral-0,
+  'background': $secondary-5,
+  'background-hover': $secondary-10,
+  'background-inverted': $secondary-90,
+  'border-primary': $secondary-5,
+  'border-secondary': $secondary-10,
+  'disabled': $secondary-5,
+  'on-disabled': $secondary-40,
+  // Utility colors
+  'body': $neutral-0,
+  'surface': $neutral-5,
+  'surface-overlay': rgba($neutral-0, 0.7),
+  'overlay': rgba($neutral-100, 0.45),
+  'surface-variant': $secondary-90,
+  'content-on-surface-variant': $neutral-5,
+  // Status colors
+  'success': $success-60,
+  'success-background': $success-5,
+  'success-background-hover': $success-10,
+  'warning': $warning-30,
+  'warning-background': $warning-5,
+  'warning-background-hover': $warning-10,
+  'error': $error-60,
+  'error-background': $error-5,
+  'error-background-hover': $error-10,
+  'info': $info-60,
+  'info-background': $info-5,
+  'info-background-hover': $info-10,
+  'debug': $debug-90,
+  'debug-background': $debug-5,
+  'debug-background-hover': $debug-10,
+  // Shadows
+  'shadow-row': rgba(22, 29, 36, 0.12),
+  'shadow-block-1': rgba(255, 255, 255, 0.9),
+  'shadow-block-2': rgba(0, 0, 0, 0.1),
+  'shadow-block-3': #FFFFFF,
+  'shadow-lowered-1_1': #FFFFFF,
+  'shadow-lowered-1_2': rgba(255, 255, 255, 0.5),
+  'shadow-lowered-1_3': rgba(0, 0, 0, 0.1),
+  'shadow-lowered-2_1': #FFFFFF,
+  'shadow-lowered-2_2': rgba(0, 0, 0, 0.18),
+  'shadow-lowered-2_3': rgba(255, 255, 255, 0.8),
+  'shadow-elevated-1_1': #FFFFFF,
+  'shadow-elevated-1_2': rgba(0, 0, 0, 0.1),
+  'shadow-elevated-1_3': rgba(255, 255, 255, 0.8),
+  'shadow-elevated-2_1': #FFFFFF, // заменить
+  'shadow-elevated-2_2': rgba(0, 0, 0, 0.1), // заменить
+  'shadow-elevated-2_3': rgba(255, 255, 255, 0.8), // заменить
+);
+
+$dark-map: (
+  // Main colors
+  'primary': $primary-60,
+  'primary-hover': $primary-70,
+  'primary-pressed': $primary-80,
+  'primary-focused': $primary-70,
+  'primary-background': $primary-10,
+  'primary-hover-background': $primary-20,
+  'primary-pressed-background': $primary-30,
+  'primary-focused-background': $primary-20,
+  'content-primary': $neutral-0,
+  'content-secondary': $neutral-20,
+  'content-tertiary': $neutral-40,
+  'content-quaternary': $neutral-50,
+  'content-on-background-inverted': $neutral-80,
+  'background': $neutral-80,
+  'background-hover': $neutral-90,
+  'background-inverted': $neutral-5,
+  'border-primary': $neutral-100,
+  'border-secondary': $neutral-70,
+  'disabled': $neutral-80,
+  'on-disabled': $neutral-50,
+  // Utility colors
+  'body': $neutral-90,
+  'surface': $neutral-80,
+  'surface-overlay': rgba($neutral-80, 0.7),
+  'overlay': rgba($neutral-0, 0.45),
+  'surface-variant': $neutral-90,
+  'content-on-surface-variant': $neutral-0,
+  // Status colors
+  'success': $success-50,
+  'success-background': $success-5,
+  'success-background-hover': $success-10,
+  'warning': $warning-30,
+  'warning-background': $warning-5,
+  'warning-background-hover': $warning-10,
+  'error': $error-60,
+  'error-background': $error-5,
+  'error-background-hover': $error-10,
+  'info': $info-60,
+  'info-background': $info-5,
+  'info-background-hover': $info-10,
+  'debug': $debug-90,
+  'debug-background': $debug-5,
+  'debug-background-hover': $debug-10,
+  // Shadows
+  'shadow-row': rgba(0, 0, 0, 0.4),
+  'shadow-block-1': rgba(0, 0, 0, 0.16),
+  'shadow-block-2': rgba(0, 0, 0, 0.1),
+  'shadow-block-3': rgba(255, 255, 255, 0.04),
+  'shadow-lowered-1_1': rgba(255, 255, 255, 0.04),
+  'shadow-lowered-1_2': rgba(255, 255, 255, 0.03),
+  'shadow-lowered-1_3': rgba(0, 0, 0, 0.8),
+  'shadow-lowered-2_1': rgba(255, 255, 255, 0.04),
+  'shadow-lowered-2_2': rgba(255, 255, 255, 0.03),
+  'shadow-lowered-2_3': rgba(0, 0, 0, 0.9),
+  'shadow-elevated-1_1': rgba(255, 255, 255, 0.04),
+  'shadow-elevated-1_2': rgba(0, 0, 0, 0.32),
+  'shadow-elevated-1_3': rgba(255, 255, 255, 0.08),
+  'shadow-elevated-2_1': rgba(255, 255, 255, 0.04), // заменить
+  'shadow-elevated-2_2': rgba(0, 0, 0, 0.32), // заменить
+  'shadow-elevated-2_3': rgba(255, 255, 255, 0.04), // заменить
+);
+
+$color-var-prefix: '--color_';
+
+@mixin make-theme($map) {
+  @each $key, $value in $map {
+    $name: $color-var-prefix + $key;
+    #{$name}: $value;
+  }
 }
 
-@mixin dark-theme() {
-  @include theme.eval-tokens-partial(
-    (
-      sys: (
-        'color': (
-          'primary': $primary-60,
-          'primary-hover': $primary-70,
-          'primary-pressed': $primary-80,
-          'primary-focused': $primary-70,
-          'primary-background': $primary-10,
-          'primary-hover-background': $primary-20,
-          'primary-pressed-background': $primary-30,
-          'primary-focused-background': $primary-20,
-          'content-primary': $neutral-0,
-          'content-secondary': $neutral-20,
-          'content-tertiary': $neutral-40,
-          'content-quaternary': $neutral-50,
-          'content-on-background-inverted': $neutral-80,
-          'background': $neutral-80,
-          'background-hover': $neutral-90,
-          'background-inverted': $neutral-5,
-          'border-primary': $neutral-100,
-          'border-secondary': $neutral-70,
-          'disabled': $neutral-80,
-          'on-disabled': $neutral-50,
-          'util': (
-            'body': $neutral-90,
-            'surface': $neutral-50,
-            'surface-overlay': rgba($neutral-80, 0.7),
-            'overlay': rgba($neutral-0, 0.45),
-            // 'surface-variant': $neutral-90,
-            // 'content-on-surface-variant': $neutral-0,
-          ),
-          'status': (
-            'success': $success-50,
-            'success-background': $success-5,
-            'success-background-hover': $success-10,
-            'warning': $warning-30,
-            'warning-background': $warning-5,
-            'warning-background-hover': $warning-10,
-            'error': $error-60,
-            'error-background': $error-5,
-            'error-background-hover': $error-10,
-            'info': $info-60,
-            'info-background': $info-5,
-            'info-background-hover': $info-10,
-            'debug': $debug-90,
-            'debug-background': $debug-5,
-            'debug-background-hover': $debug-10,
-          ),
-        ),
-      ),
-    ),
-  );
+@mixin light-theme {
+  @include make-theme($light-map);
 }
 
+@mixin dark-theme {
+  @include make-theme($dark-map);
+}
+
+@function color($name) {
+  @if not map-has-key($map: $light-map, $key: $name) {
+    @error "There is no such color in light theme: #{inspect($name)}";
+  }
+
+  @if not map-has-key($map: $dark-map, $key: $name) {
+    @error "There is no such color in dark theme: #{inspect($name)}";
+  }
+
+  @return var(#{$color-var-prefix + $name});
+}

@@ -12,9 +12,13 @@ import AppHeader from './AppHeader.vue';
 </script>
 
 <style lang="scss">
+@import '@/styles/common.scss';
+
 .app-page-layout {
   &__content {
-    padding: 0 48px 120px 48px;
+    padding: 0 $size-6 $header-height $size-6;
+    min-height: calc(100vh - $header-height);
+    display: grid;
   }
 }
 </style>

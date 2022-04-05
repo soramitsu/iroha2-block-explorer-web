@@ -1,11 +1,11 @@
 <template>
-  <div class="app">
-    <h1 class="sora-tpg-h1">Transactions</h1>
-  </div>
+  <BaseContentBlock title="Transactions" class="transactions-list-page">
+
+  </BaseContentBlock>
 </template>
 
 <script setup lang="ts">
-
+import BaseContentBlock from '@/components/BaseContentBlock.vue';
 </script>
 
 <style>

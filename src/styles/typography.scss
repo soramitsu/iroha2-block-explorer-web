@@ -1,95 +1,45 @@
-@use '@soramitsu-ui/theme/sass/util';
-@use '@soramitsu-ui/theme/sass/lib';
+@mixin t-factory($id, $size, $height, $weight: 400, $family: 'Sora') {
+  .tpg-#{$id} {
+    font: {
+      family: Sora;
+      size: $size;
+      weight: $weight;
+    }
+    line-height: $height;
+    letter-spacing: 0;
 
-@mixin typography($id) {
-  .#{lib.$typography-prefix}#{$id} {
     @content;
   }
 }
 
-@mixin typography-classes {
-  @include typography('d1') {
-    @include util.typography-factory($size: 40px, $height: 56px, $weight: 700);
-  }
+@mixin typography {
+  @include t-factory($id: 'd1', $size: 40px, $height: 56px, $weight: 700);
+  @include t-factory($id: 'd2', $size: 34px, $height: 48px, $weight: 500);
 
-  @include typography('d2') {
-    @include util.typography-factory($size: 34px, $height: 48px);
-  }
+  @include t-factory($id: 'h1', $size: 29px, $height: 32px);
+  @include t-factory($id: 'h2', $size: 21px, $height: 24px);
+  @include t-factory($id: 'h3', $size: 15px, $height: 16px);
+  @include t-factory($id: 'h4', $size: 13px, $height: 16px, $weight: 700);
 
-  @include typography('h1') {
-    @include util.typography-factory($size: 29px, $height: 32px);
-  }
-
-  @include typography('h2') {
-    @include util.typography-factory($size: 21px, $height: 24px);
-  }
-
-  @include typography('h3') {
-    @include util.typography-factory($size: 15, $height: 16px);
-  }
-
-  @include typography('h4') {
-    @include util.typography-factory($size: 13px, $height: 16px, $weight: 700);
-  }
-
-  @include typography('ch1') {
-    @include util.typography-factory($size: 13px, $height: 16px, $weight: 700);
+  @include t-factory($id: 'ch1', $size: 13px, $height: 16px, $weight: 700) {
     text-transform: uppercase;
-  }
+  };
 
-  @include typography('p1') {
-    @include util.typography-factory($size: 15px, $height: 24px, $weight: 200);
-  }
+  @include t-factory($id: 'p1', $size: 15px, $height: 24px, $weight: 200);
 
-  @include typography('s1') {
-    @include util.typography-factory($size: 24px, $height: 32px, $weight: 200);
-  }
+  @include t-factory($id: 's1', $size: 24px, $height: 32px, $weight: 200);
+  @include t-factory($id: 's2', $size: 18px, $height: 24px, $weight: 200);
+  @include t-factory($id: 's3', $size: 15px, $height: 16px, $weight: 200);
+  @include t-factory($id: 's3-mono', $size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono');
+  @include t-factory($id: 's4', $size: 13px, $height: 16px);
+  @include t-factory($id: 's5', $size: 11px, $height: 16px, $weight: 200);
+  @include t-factory($id: 's5-bold', $size: 11px, $height: 16px, $weight: 700);
 
-  @include typography('s2') {
-    @include util.typography-factory($size: 18px, $height: 24px, $weight: 200);
-  }
-
-  @include typography('s3') {
-    @include util.typography-factory($size: 15px, $height: 16px, $weight: 200);
-  }
-
-  @include typography('s3-mono') {
-    font: {
-      family: JetBrainsMono;
-      size: 15px;
-      weight: 300;
-    }
-
-    line-height: 16px;
-    letter-spacing: 0;
-  }
-
-  @include typography('s4') {
-    @include util.typography-factory($size: 13px, $height: 16px);
-  }
-
-  @include typography('s5') {
-    @include util.typography-factory($size: 11px, $height: 16px, $weight: 200);
-  }
-
-  @include typography('s5-bold') {
-    @include util.typography-factory($size: 11px, $height: 16px, $weight: 700);
-  }
-
-  @include typography('link1') {
-    @include util.typography-factory($size: 15px, $height: 16px, $weight: 200);
+  @include t-factory($id: 'link1', $size: 15px, $height: 16px, $weight: 200) {
     text-decoration: underline;
-  }
+  };
 
-  @include typography('link1-mono') {
-    font: {
-      family: JetBrainsMonoa;
-      size: 15px;
-      weight: 300;
-    }
-
-    line-height: 16px;
-    letter-spacing: 0;
+  @include t-factory($id: 'link1-mono', $size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono') {
     text-decoration: underline;
-  }
-}
+  };
+};
