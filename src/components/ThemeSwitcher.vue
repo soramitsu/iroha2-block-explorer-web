@@ -45,7 +45,7 @@ body.theme-transition * {
   user-select: none;
   text-decoration: none;
   padding: $size-1_5;
-  border-radius: $size-3;
+  border-radius: 50%;
   background: theme.color('background');
   color: theme.color('content-tertiary');
   transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;

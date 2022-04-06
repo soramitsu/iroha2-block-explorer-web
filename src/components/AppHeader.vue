@@ -3,12 +3,7 @@
     <AppHeaderLogo />
 
     <div class="app-header__row">
-      <STextField>
-        <template #append>
-          <SearchIcon class="app-header__search-icon" />
-        </template>
-        <template #label>Search</template>
-      </STextField>
+      <SearchField placeholder="Search" />
 
       <NavigationMenu />
 
@@ -21,12 +16,11 @@
 import AppHeaderLogo from './AppHeaderLogo.vue';
 import NavigationMenu from './NavigationMenu.vue';
 import ThemeSwitcher from './ThemeSwitcher.vue';
-import { STextField } from '@soramitsu-ui/ui';
-import SearchIcon from '@soramitsu-ui/icons/icomoon/basic-search-24.svg';
+import SearchField from './SearchField.vue';
 </script>
 
 <style lang="scss">
-@use '@/styles/theme.scss';
+@use '@/styles/theme';
 @import'@/styles/common';
 
 .app-header {
@@ -34,10 +28,6 @@ import SearchIcon from '@soramitsu-ui/icons/icomoon/basic-search-24.svg';
   align-items: center;
   height: $header-height;
   padding: 0 48px;
-
-  &__search-icon path {
-    fill: theme.color('border-secondary');
-  }
 
   &__row {
     display: flex;

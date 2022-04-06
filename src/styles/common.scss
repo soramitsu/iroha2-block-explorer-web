@@ -14,6 +14,10 @@ $header-height: 120px;
   box-shadow: theme.shadow('row');
 }
 
+@mixin shadow-search() {
+  box-shadow: theme.shadow('search');
+}
+
 @mixin shadow-block() {
   box-shadow: theme.shadow('block-1'), theme.shadow('block-2'), theme.shadow('block-3');
 }

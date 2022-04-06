@@ -27,7 +27,7 @@ const props = defineProps<Props>();
   user-select: none;
   text-decoration: none;
   padding: $size-1_5 $size-2;
-  border-radius: $size-4;
+  border-radius: $size-3;
   transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
 
   background: theme.color('background');

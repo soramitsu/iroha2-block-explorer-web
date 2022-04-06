@@ -198,6 +198,7 @@ $dark-color-map: (
 
 $light-shadow-map: (
   'row': 0px 0px 24px rgba(22, 29, 36, 0.12),
+  'search': 0px 0px 56px 16px rgba(0, 0, 0, 0.08),
   'block-1': -10px -10px 30px rgba(255, 255, 255, 0.9),
   'block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
   'block-3': inset 1px 1px 10px #FFFFFF,
@@ -217,6 +218,7 @@ $light-shadow-map: (
 
 $dark-shadow-map: (
   'row': 0px 0px 24px rgba(0, 0, 0, 0.4),
+  'search': 0px 0px 56px 16px rgba(0, 0, 0, 0.4),
   'block-1': -10px -10px 30px rgba(0, 0, 0, 0.16),
   'block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
   'block-3': inset 1px 1px 10px rgba(255, 255, 255, 0.04),
