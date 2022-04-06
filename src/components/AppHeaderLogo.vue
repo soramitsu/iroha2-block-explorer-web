@@ -1,12 +1,12 @@
 <template>
-  <div class="app-header-logo">
+  <RouterLink to="/" class="app-header-logo">
     <LogoIcon class="app-header-logo__img" />
 
     <div class="app-header-logo__text">
       <span class="app-header-logo__company">HYPERLEDGER</span>
       <span class="app-header-logo__name">IROHA</span>
     </div>
-  </div>
+  </RouterLink>
 </template>
 
 <script setup lang="ts">
@@ -21,6 +21,7 @@ import LogoIcon from '@/assets/svg/logo.svg';
   align-items: center;
   justify-content: space-between;
   height: 100%;
+  text-decoration: none;
 
   &__text {
     display: grid;

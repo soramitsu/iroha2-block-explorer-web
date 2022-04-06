@@ -53,7 +53,7 @@ const emit = defineEmits<Emits>();
     cursor: pointer;
     user-select: none;
     transition: all 300ms ease-in-out;
-    color: theme-color('content-quaternary');;
+    color: theme-color('content-quaternary');
 
     &--active {
       background: theme-color('content-quaternary');

@@ -68,7 +68,10 @@ function submit() {
     width: 408px;
 
     @include shadow-search;
-    @include tpg-s2;
+
+    input {
+      @include tpg-s2;
+    }
 
     svg {
       margin-right: $size-2;
@@ -82,7 +85,10 @@ function submit() {
     width: 408px;
 
     @include shadow-lowered-1;
-    @include tpg-s3;
+
+    input {
+      @include tpg-s3;
+    }
 
     svg {
       margin-right: $size-1;
