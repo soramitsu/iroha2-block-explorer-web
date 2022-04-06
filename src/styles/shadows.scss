@@ -1,0 +1,29 @@
+@import './theme';
+
+@mixin shadow-row() {
+  box-shadow: theme-shadow('row');
+}
+
+@mixin shadow-search() {
+  box-shadow: theme-shadow('search');
+}
+
+@mixin shadow-block() {
+  box-shadow: theme-shadow('block-1'), theme-shadow('block-2'), theme-shadow('block-3');
+}
+
+@mixin shadow-lowered-1() {
+  box-shadow: theme-shadow('lowered-1_1'), theme-shadow('lowered-1_2'), theme-shadow('lowered-1_3');
+}
+
+@mixin shadow-lowered-2() {
+  box-shadow: theme-shadow('lowered-2_1'), theme-shadow('lowered-2_2'), theme-shadow('lowered-2_3');
+}
+
+@mixin shadow-elevated-1() {
+  box-shadow: theme-shadow('elevated-1_1'), theme-shadow('elevated-1_2'), theme-shadow('elevated-1_3');
+}
+
+@mixin shadow-elevated-2() {
+  box-shadow: theme-shadow('elevated-2_1'), theme-shadow('elevated-2_2'), theme-shadow('elevated-2_3');
+}

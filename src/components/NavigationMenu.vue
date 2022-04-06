@@ -18,7 +18,7 @@ const menu = [
 </script>
 
 <style lang="scss">
-@import '@/styles/common.scss';
+@import 'styles';
 
 .navigation-menu {
   display: grid;

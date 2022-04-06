@@ -20,8 +20,7 @@ import SearchField from './SearchField.vue';
 </script>
 
 <style lang="scss">
-@use '@/styles/theme';
-@import'@/styles/common';
+@import 'styles';
 
 .app-header {
   display: flex;

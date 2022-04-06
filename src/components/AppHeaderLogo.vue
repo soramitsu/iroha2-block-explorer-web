@@ -3,8 +3,8 @@
     <LogoIcon class="app-header-logo__img" />
 
     <div class="app-header-logo__text">
-      <span class="tpg-h3 app-header-logo__company">HYPERLEDGER</span>
-      <span class="tpg-d2 app-header-logo__name">IROHA</span>
+      <span class="app-header-logo__company">HYPERLEDGER</span>
+      <span class="app-header-logo__name">IROHA</span>
     </div>
   </div>
 </template>
@@ -14,7 +14,7 @@ import LogoIcon from '@/assets/svg/logo.svg';
 </script>
 
 <style lang="scss">
-@use '@/styles/theme.scss';
+@import 'styles';
 
 .app-header-logo {
   display: flex;
@@ -29,13 +29,15 @@ import LogoIcon from '@/assets/svg/logo.svg';
   }
 
   &__name {
-    color: theme.color('primary');
+    color: theme-color('primary');
     margin-left: -2px;
+    @include tpg-d2;
   }
 
   &__company {
-    color: theme.color('content-primary');
+    color: theme-color('content-primary');
     margin-bottom: -6px;
+    @include tpg-h3;
   }
 
   &__img {

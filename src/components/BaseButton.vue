@@ -1,5 +1,5 @@
 <template>
-  <RouterLink v-if="props.to" :to="props.to" class="base-button tpg-ch1">
+  <RouterLink v-if="props.to" :to="props.to" class="base-button">
     <slot />
   </RouterLink>
   <button v-else class="base-button">
@@ -18,8 +18,7 @@ const props = defineProps<Props>();
 </script>
 
 <style lang="scss">
-@use '@/styles/theme';
-@import '@/styles/common';
+@import 'styles';
 
 .base-button {
   display: flex;
@@ -29,12 +28,13 @@ const props = defineProps<Props>();
   padding: $size-1_5 $size-2;
   border-radius: $size-3;
   transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
+  background: theme-color('background');
+  color: theme-color('content-quaternary');
 
-  background: theme.color('background');
-  color: theme.color('content-quaternary');
+  @include tpg-ch1;
 
   &:hover {
-    color: theme.color('content-primary');
+    color: theme-color('content-primary');
     @include shadow-elevated-1;
   }
 }

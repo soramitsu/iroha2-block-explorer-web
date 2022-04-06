@@ -4,7 +4,7 @@
       <slot v-if="slots.header" name="header" />
 
       <template v-else>
-        <h2 class="tpg-h2">{{ props.title }}</h2>
+        <h2 class="base-content-block__title">{{ props.title }}</h2>
         <slot name="header-action" />
       </template>
     </div>
@@ -27,12 +27,11 @@ const slots = useSlots();
 </script>
 
 <style lang="scss">
-@use '@/styles/theme';
-@import '@/styles/common';
+@import 'styles';
 
 .base-content-block {
   padding: $size-3 $size-4;
-  background: theme.color('surface');
+  background: theme-color('surface');
   border-radius: $size-4;
   min-height: 100%;
 
@@ -48,8 +47,9 @@ const slots = useSlots();
     margin-top: $size-3;
   }
 
-  .tpg-h2 {
-    color: theme.color('content-primary');
+  &__title {
+    color: theme-color('content-primary');
+    @include tpg-h2;
   }
 }
 </style>

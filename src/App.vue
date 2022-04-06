@@ -10,19 +10,24 @@ import AppPageLayout from './components/AppPageLayout.vue';
 </script>
 
 <style lang="scss">
-@use '@/styles/theme.scss';
+@import 'styles';
 
 html {
   &:not(.dark) {
-    @include theme.light-theme;
+    @include light-theme;
   }
 
   &.dark {
-    @include theme.dark-theme;
+    @include dark-theme;
   }
 }
 
 #app {
-  background: theme.color('background');
+  background: theme-color('background');
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
 }
 </style>

@@ -202,9 +202,9 @@ $light-shadow-map: (
   'block-1': -10px -10px 30px rgba(255, 255, 255, 0.9),
   'block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
   'block-3': inset 1px 1px 10px #FFFFFF,
-  'lowered-1_1': 1px 1px 5px rgba(255, 255, 255, 0.04),
-  'lowered-1_2': inset -5px -5px 5px rgba(255, 255, 255, 0.03),
-  'lowered-1_3': inset 1px 1px 10px rgba(0, 0, 0, 0.2),
+  'lowered-1_1': 1px 1px 5px #FFFFFF,
+  'lowered-1_2': inset -5px -5px 5px rgba(255, 255, 255, 0.5),
+  'lowered-1_3': inset 1px 1px 10px rgba(0, 0, 0, 0.1),
   'lowered-2_1': 1px 1px 5px rgba(255, 255, 255, 0.04),
   'lowered-2_2': inset -5px -5px 5px rgba(255, 255, 255, 0.03),
   'lowered-2_3': inset 1px 1px 12px rgba(0, 0, 0, 0.3),
@@ -256,7 +256,7 @@ $shadow-var-prefix: '--shadow_';
   @include make-theme($dark-shadow-map, $shadow-var-prefix);
 }
 
-@function color($name) {
+@function theme-color($name) {
   @if not map-has-key($map: $light-color-map, $key: $name) {
     @error "There is no such color in light theme: #{inspect($name)}";
   }
@@ -268,7 +268,7 @@ $shadow-var-prefix: '--shadow_';
   @return var(#{$color-var-prefix + $name});
 }
 
-@function shadow($name) {
+@function theme-shadow($name) {
   @if not map-has-key($map: $light-shadow-map, $key: $name) {
     @error "There is no such shadow in light theme: #{inspect($name)}";
   }

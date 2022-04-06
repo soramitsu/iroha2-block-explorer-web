@@ -12,7 +12,7 @@ import AppHeader from './AppHeader.vue';
 </script>
 
 <style lang="scss">
-@import '@/styles/common.scss';
+@import 'styles';
 
 .app-page-layout {
   &__content {

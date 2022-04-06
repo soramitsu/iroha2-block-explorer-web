@@ -28,8 +28,7 @@ function toggleTheme() {
 </script>
 
 <style lang="scss">
-@use '@/styles/theme';
-@import '@/styles/common';
+@import 'styles';
 
 body.theme-transition * {
   transition-property: background, color, fill;
@@ -46,12 +45,12 @@ body.theme-transition * {
   text-decoration: none;
   padding: $size-1_5;
   border-radius: 50%;
-  background: theme.color('background');
-  color: theme.color('content-tertiary');
+  background: theme-color('background');
+  color: theme-color('content-tertiary');
   transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
 
   &:hover {
-    color: theme.color('content-primary');
+    color: theme-color('content-primary');
   }
 
   svg {

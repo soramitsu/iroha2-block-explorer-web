@@ -3,11 +3,12 @@
     :class="`search-field search-field--${props.large ? 'large' : 'normal' }`"
   >
     <SearchIcon class="search-field__icon" />
+
     <input
       v-model="request"
       type="search"
       :placeholder="props.placeholder"
-      :class="`search-field__input tpg-s${props.large ? '2' : '3' }`"
+      class="search-field__input"
       @keyup.enter="submit"
     >
   </label>
@@ -32,19 +33,21 @@ function submit() {
 </script>
 
 <style lang="scss">
-@use '@/styles/theme';
-@import'@/styles/common';
+@import 'styles';
 
 .search-field {
   display: flex;
   align-items: center;
 
   input {
+    color: theme-color('content-primary');;
     background: transparent;
     border: none;
+
     &:focus {
       outline: none;
     }
+
     &::-webkit-search-cancel-button {
       -webkit-appearance: none;
       height: 0;
@@ -55,7 +58,7 @@ function submit() {
   }
 
   path {
-    fill: theme.color('border-secondary');
+    fill: theme-color('border-secondary');
   }
 
   &--large {
@@ -65,6 +68,7 @@ function submit() {
     width: 408px;
 
     @include shadow-search;
+    @include tpg-s2;
 
     svg {
       margin-right: $size-2;
@@ -78,6 +82,7 @@ function submit() {
     width: 408px;
 
     @include shadow-lowered-1;
+    @include tpg-s3;
 
     svg {
       margin-right: $size-1;
