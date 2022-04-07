@@ -7,22 +7,21 @@
 <script setup lang="ts">
 import DarkModeIcon from '@/assets/svg/dark-mode.svg';
 import { useDark } from '@vueuse/core';
-import { ref } from 'vue';
 
 const isDark = useDark();
-const isTransitionActive = ref(false);
+let isTransitionActive = false;
 
 function toggleTheme() {
-  if (isTransitionActive.value) return;
+  if (isTransitionActive) return;
 
   isDark.value = !isDark.value;
   const list = document.body.classList;
   list.add('theme-transition');
-  isTransitionActive.value = true;
+  isTransitionActive = true;
 
   setTimeout(() => {
     list.remove('theme-transition');
-    isTransitionActive.value = false;
+    isTransitionActive = false;
   }, 300);
 }
 </script>

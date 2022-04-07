@@ -1,9 +1,9 @@
 <template>
   <div class="base-content-block">
     <div class="base-content-block__header">
-      <slot v-if="slots.header" name="header" />
+      <slot name="header" />
 
-      <template v-else>
+      <template v-if="!slots.header">
         <h2 class="base-content-block__title">{{ props.title }}</h2>
         <slot name="header-action" />
       </template>

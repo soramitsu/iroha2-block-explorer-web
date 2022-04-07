@@ -6,15 +6,8 @@
 
 <script setup lang="ts">
 import BaseButton from '@/components/BaseButton.vue';
+import { menu } from '@/constants';
 
-const menu = [
-  { label: 'Blocks', to: '/blocks' },
-  { label: 'Tokens', to: '/tokens' },
-  { label: 'Domains', to: '/domains' },
-  { label: 'Accounts', to: '/accounts' },
-  { label: 'Transactions', to: '/transactions' },
-  { label: 'Network Stats', to: '/network' },
-];
 </script>
 
 <style lang="scss">
