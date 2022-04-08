@@ -55,10 +55,17 @@ const emit = defineEmits<Emits>();
     transition: all 300ms ease-in-out;
     color: theme-color('content-quaternary');
 
+    &:hover {
+      background: theme-color('background-hover');
+    }
+
     &--active {
       background: theme-color('content-quaternary');
       color: theme-color('content-on-surface-variant');
-      @include tpg-h4;
+
+      &:hover {
+        background: theme-color('content-quaternary');
+      }
     }
   }
 }
