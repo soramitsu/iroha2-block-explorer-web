@@ -9,6 +9,8 @@
       </template>
     </div>
 
+    <hr>
+
     <div class="base-content-block__body">
       <slot name="default" />
     </div>
@@ -30,7 +32,6 @@ const slots = useSlots();
 @import 'styles';
 
 .base-content-block {
-  padding: $size-3 $size-4;
   background: theme-color('surface');
   border-radius: $size-4;
   min-height: 100%;
@@ -41,10 +42,12 @@ const slots = useSlots();
     display: flex;
     align-items: center;
     justify-content: space-between;
+    height: 72px;
+    padding: $size-0 $size-4;
   }
 
   &__body {
-    margin-top: $size-3;
+    padding: $size-0 $size-0 $size-4 $size-0;
   }
 
   &__title {
