@@ -31,4 +31,13 @@ module.exports = {
       asyncArrow: 'always',
     }],
   },
+
+  overrides: [
+    {
+      files: ['*.ts', '*.vue'],
+      rules: {
+        'no-undef': 'off',
+      },
+    },
+  ],
 };
