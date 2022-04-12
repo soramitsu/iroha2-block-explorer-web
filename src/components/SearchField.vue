@@ -43,9 +43,14 @@ function submit() {
     color: theme-color('content-primary');;
     background: transparent;
     border: none;
+    width: 100%;
 
     &:focus {
       outline: none;
+    }
+
+    &::placeholder {
+      color: theme-color('content-primary');
     }
 
     &::-webkit-search-cancel-button {
@@ -65,7 +70,8 @@ function submit() {
     height: 88px;
     padding: 0 28px;
     border-radius: 44px;
-    width: 408px;
+    width: $home-content-width;
+    background: theme-color('surface');
 
     @include shadow-search;
 
@@ -75,6 +81,8 @@ function submit() {
 
     svg {
       margin-right: $size-2;
+      height: $size-4;
+      width: $size-4;
     }
   }
 

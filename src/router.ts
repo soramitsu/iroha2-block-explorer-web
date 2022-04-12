@@ -11,6 +11,10 @@ const routes = [
     name: 'transactions-list',
     component: () => import('./views/TransactionsListPage.vue'),
   },
+  {
+    path: '/:pathMatch(.*)*',
+    component: () => import('./views/NotFound.vue'),
+  },
 ];
 
 const router = createRouter({

@@ -43,6 +43,16 @@ hr {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 64px;
+}
+
+.content-row--with-hover:hover {
+  box-shadow: theme-shadow('row');
+
+  + hr {
+    background: transparent;
+    box-shadow: none;
+  }
 }
 
 .primary-link {

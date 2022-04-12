@@ -5,7 +5,7 @@
         <span class="base-dropdown__label">{{ fieldLabel }}&nbsp;</span>
         <span class="base-dropdown__value">{{ valueLabel }}</span>
 
-        <ArrowIcon class="base-dropdown__icon" :style="`transform: rotate(${isOpen ? 0 : 0.5}turn);`" />
+        <ArrowIcon class="base-dropdown__icon" :style="`transform: rotate(${isOpen ? 0.5 : 0}turn);`" />
       </div>
 
       <div v-if="isOpen" class="base-dropdown__list">

@@ -44,6 +44,7 @@ import LogoIcon from '@/assets/svg/logo.svg';
   &__img {
     width: 55px;
     height: 52px;
+    color: theme-color('primary');
   }
 }
 </style>
