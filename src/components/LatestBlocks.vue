@@ -56,14 +56,14 @@ const blocks = new Array<FakeBlock>(10).fill({ num: 2312388, len: 143 });
 .latest-blocks {
   &__time {
     display: grid;
-    grid-gap: $size-2;
+    grid-gap: size(2);
     grid-auto-flow: column;
     @include tpg-s3;
     color: theme-color('content-primary');
 
     &-item {
       display: grid;
-      grid-gap: $size-1;
+      grid-gap: size(1);
       grid-auto-flow: column;
     }
   }

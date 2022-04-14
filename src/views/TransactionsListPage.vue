@@ -10,6 +10,12 @@
         field-label="Timespan:"
       />
     </div>
+
+    <BaseInnerBlock title="Transfer" accordion>
+      <BaseCopyRow name="Token" value="TFwh6ZG4iEHVF7pYLGv7qKXBxj2YCMSJZVSNiV">
+        <a href="" class="primary-link">TFwh6ZG4iEHVF7pYLGv7qKXBxj2YCMSJZVSNiV</a>
+      </BaseCopyRow>
+    </BaseInnerBlock>
   </BaseContentBlock>
 </template>
 
@@ -17,6 +23,8 @@
 import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseTabs from '@/components/BaseTabs.vue';
 import BaseDropdown from '@/components/BaseDropdown.vue';
+import BaseInnerBlock from '@/components/BaseInnerBlock.vue';
+import BaseCopyRow from '@/components/BaseCopyRow.vue';
 import { ref } from 'vue';
 
 const tabs = [

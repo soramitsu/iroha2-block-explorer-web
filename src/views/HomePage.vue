@@ -35,13 +35,13 @@ import LatestTransactions from '@/components/LatestTransactions.vue';
 
   &__theme-switcher {
     position: absolute;
-    top: $size-4;
-    right: $size-4;
+    top: size(4);
+    right: size(4);
   }
 
   &__background-logo {
     position: absolute;
-    top: -$size-4;
+    top: size(-4);
     left: 50%;
     transform: translateX(-50.05%);
     color: theme-color('content-primary');
@@ -58,15 +58,15 @@ import LatestTransactions from '@/components/LatestTransactions.vue';
   &__title {
     @include tpg-d1;
     color: theme-color('content-primary');
-    margin-top: $size-4;
-    margin-bottom: $size-5;
+    margin-top: size(4);
+    margin-bottom: size(5);
   }
 
   &__blocks {
     display: grid;
     grid-template-columns: 600px 600px;
-    grid-gap: $size-3;
-    margin-top: $size-5;
+    grid-gap: size(3);
+    margin-top: size(5);
     margin-bottom: 80px;
   }
 }

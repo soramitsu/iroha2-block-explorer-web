@@ -61,13 +61,13 @@ function choise(value: string) {
 
 .base-dropdown {
   position: relative;
-  height: $size-4;
+  height: size(4);
 
   &__container {
     background: theme-color('background');
     color: theme-color('content-quaternary');
     fill: theme-color('content-quaternary');
-    border-radius: $size-2;
+    border-radius: size(2);
     overflow: hidden;
     user-select: none;
     cursor: pointer;
@@ -84,11 +84,11 @@ function choise(value: string) {
 
   &__field {
     display: flex;
-    padding: $size-1 $size-1 $size-1 $size-2;
+    padding: size(1) size(1) size(1) size(2);
   }
 
   &__list {
-    padding-bottom: $size-1;
+    padding-bottom: size(1);
   }
 
   &__value {
@@ -97,7 +97,7 @@ function choise(value: string) {
   }
 
   &__item {
-    padding: $size-0_5 $size-2;
+    padding: size(0.5) size(2);
 
     &:hover {
       background: theme-color('background-hover');

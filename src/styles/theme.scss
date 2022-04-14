@@ -203,6 +203,9 @@ $light-shadow-map: (
   'block-1': -10px -10px 30px rgba(255, 255, 255, 0.9),
   'block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
   'block-3': inset 1px 1px 10px #FFFFFF,
+  'inner-block-1': -10px -10px 30px rgba(0, 0, 0, 0.02),
+  'inner-block-2': 20px 20px 60px rgba(0, 0, 0, 0.08),
+  'inner-block-3': inset 1px 1px 10px rgba(255, 255, 255, 0.01),
   'lowered-1_1': 1px 1px 5px #FFFFFF,
   'lowered-1_2': inset -5px -5px 5px rgba(255, 255, 255, 0.5),
   'lowered-1_3': inset 1px 1px 10px rgba(0, 0, 0, 0.1),
@@ -215,6 +218,8 @@ $light-shadow-map: (
   'elevated-2_1': -5px -5px 10px #FFFFFF,
   'elevated-2_2': 3px 4px 10px rgba(0, 0, 0, 0.18),
   'elevated-2_3': inset 1px 1px 2px rgba(255, 255, 255, 0.8),
+  'notification-1': 8px 8px 20px rgba(0, 0, 0, 0.2),
+  'notification-2': -8px -8px 20px rgba(0, 0, 0, 0.2),
 );
 
 $dark-shadow-map: (
@@ -224,6 +229,9 @@ $dark-shadow-map: (
   'block-1': -10px -10px 30px rgba(0, 0, 0, 0.16),
   'block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
   'block-3': inset 1px 1px 10px rgba(255, 255, 255, 0.04),
+  'inner-block-1': -10px -10px 30px rgba(0, 0, 0, 0.16),
+  'inner-block-2': 20px 20px 60px rgba(0, 0, 0, 0.1),
+  'inner-block-3': inset 1px 1px 10px rgba(255, 255, 255, 0.04),
   'lowered-1_1': 1px 1px 5px rgba(255, 255, 255, 0.04),
   'lowered-1_2': inset -5px -5px 5px rgba(255, 255, 255, 0.03),
   'lowered-1_3': inset 1px 1px 10px rgba(0, 0, 0, 0.8),
@@ -236,6 +244,8 @@ $dark-shadow-map: (
   'elevated-2_1': 3px 3px 10px rgba(0, 0, 0, 0.8),
   'elevated-2_2': 2px 4px 10px rgba(0, 0, 0, 0.22), 
   'elevated-2_3': 0 0 0 #000,
+  'notification-1': 8px 8px 20px rgba(255, 255, 255, 0.15),
+  'notification-2': -8px -8px 20px rgba(255, 255, 255, 0.15),
 );
 
 @mixin make-theme($map, $prefix) {

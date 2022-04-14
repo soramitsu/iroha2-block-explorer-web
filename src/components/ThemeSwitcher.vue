@@ -1,7 +1,7 @@
 <template>
-  <div class="app-theme-switcher" @click="toggleTheme">
+  <button class="app-theme-switcher" @click="toggleTheme">
     <DarkModeIcon />
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -37,12 +37,13 @@ body.theme-transition * {
 }
 
 .app-theme-switcher {
-  height: $size-5;
-  width: $size-5;
+  height: size(5);
+  width: size(5);
   cursor: pointer;
   user-select: none;
   text-decoration: none;
-  padding: $size-1_5;
+  padding: size(1.5);
+  border: none;
   border-radius: 50%;
   background: theme-color('background');
   color: theme-color('content-tertiary');
@@ -53,8 +54,8 @@ body.theme-transition * {
   }
 
   svg {
-    width: $size-2;
-    height: $size-2;
+    width: size(2);
+    height: size(2);
   }
 }
 

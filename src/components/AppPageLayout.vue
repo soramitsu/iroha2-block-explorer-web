@@ -16,7 +16,7 @@ import AppHeader from './AppHeader.vue';
 
 .app-page-layout {
   &__content {
-    padding: 0 $size-6 $header-height $size-6;
+    padding: 0 size(6) $header-height size(6);
     min-height: calc(100vh - $header-height);
     display: grid;
   }

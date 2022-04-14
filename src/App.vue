@@ -1,12 +1,18 @@
 <template>
-  <RouterView v-if="$route?.name === 'home'" />
-  <AppPageLayout v-else>
-    <RouterView />
-  </AppPageLayout>
+  <div class="app">
+    <RouterView v-if="$route?.name === 'home'" />
+
+    <AppPageLayout v-else>
+      <RouterView />
+    </AppPageLayout>
+
+    <AppNotifications />
+  </div>
 </template>
 
 <script setup lang="ts">
 import AppPageLayout from './components/AppPageLayout.vue';
+import AppNotifications from './components/AppNotifications.vue';
 </script>
 
 <style lang="scss">
@@ -39,7 +45,7 @@ hr {
 }
 
 .content-row {
-  padding: $size-2 $size-4;
+  padding: size(2) size(4);
   display: flex;
   align-items: center;
   justify-content: space-between;
