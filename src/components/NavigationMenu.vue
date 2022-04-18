@@ -17,8 +17,8 @@ import { menu } from '@/constants';
   display: grid;
   grid-auto-flow: column;
   grid-template-columns: auto;
-  grid-gap: $size-2;
+  grid-gap: size(2);
   align-items: center;
-  margin: $size-0 auto;
+  margin: 0 auto;
 }
 </style>

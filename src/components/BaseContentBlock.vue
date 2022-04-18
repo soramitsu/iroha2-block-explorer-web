@@ -33,7 +33,7 @@ const slots = useSlots();
 
 .base-content-block {
   background: theme-color('surface');
-  border-radius: $size-4;
+  border-radius: size(4);
   min-height: 100%;
 
   @include shadow-block;
@@ -43,11 +43,11 @@ const slots = useSlots();
     align-items: center;
     justify-content: space-between;
     height: 72px;
-    padding: $size-0 $size-4;
+    padding: 0 size(4);
   }
 
   &__body {
-    padding: $size-0 $size-0 $size-4 $size-0;
+    padding: 0 0 size(4) 0;
   }
 
   &__title {

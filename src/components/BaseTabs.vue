@@ -36,19 +36,19 @@ const emit = defineEmits<Emits>();
 
 .base-tabs {
   display: grid;
-  grid-gap: $size-0_5;
+  grid-gap: size(0.5);
   grid-auto-flow: column;
   width: fit-content;
   align-items: center;
-  padding: $size-0_5;
-  border-radius: $size-2;
+  padding: size(0.5);
+  border-radius: size(2);
   background: theme-color('background');
 
   @include shadow-lowered-1;
 
   &__tab {
-    padding: $size-0_5 $size-1;
-    border-radius: $size-1_5;
+    padding: size(0.5) size(1);
+    border-radius: size(1.5);
     @include tpg-s4;
     cursor: pointer;
     user-select: none;

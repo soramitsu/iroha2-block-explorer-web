@@ -80,16 +80,16 @@ function submit() {
     }
 
     svg {
-      margin-right: $size-2;
-      height: $size-4;
-      width: $size-4;
+      margin-right: size(2);
+      height: size(4);
+      width: size(4);
     }
   }
 
   &--normal {
-    height: $size-6;
-    padding: $size-0 $size-2;
-    border-radius: $size-3;
+    height: size(6);
+    padding: 0 size(2);
+    border-radius: size(3);
     width: 408px;
 
     @include shadow-lowered-1;
@@ -99,7 +99,7 @@ function submit() {
     }
 
     svg {
-      margin-right: $size-1;
+      margin-right: size(1);
     }
   }
 }

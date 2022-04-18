@@ -31,9 +31,9 @@ const buttonClass = computed(() => {
   cursor: pointer;
   user-select: none;
   text-decoration: none;
-  padding: $size-1_5 $size-2;
+  padding: size(1.5) size(2);
   border: none;
-  border-radius: $size-3;
+  border-radius: size(3);
   transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
   color: theme-color('content-quaternary');
   background: transparent;
@@ -50,7 +50,7 @@ const buttonClass = computed(() => {
   }
 
   &--line {
-    padding: $size-1_5 $size-0;
+    padding: size(1.5) 0;
   }
 }
 </style>

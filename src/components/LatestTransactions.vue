@@ -1,5 +1,5 @@
 <template>
-  <BaseContentBlock title="Latest Blocks" class="latest-transactions">
+  <BaseContentBlock title="Latest Transactions" class="latest-transactions">
     <template #header-action>
       <BaseButton line>view all</BaseButton>
     </template>
@@ -85,7 +85,7 @@ const filterValue = ref(filterItems[4].value);
 .latest-transactions {
   &__column {
     display: grid;
-    grid-gap: $size-0_5;
+    grid-gap: size(0.5);
   }
 
   &__time {
@@ -95,9 +95,9 @@ const filterValue = ref(filterItems[4].value);
 
   &__direction {
     display: grid;
-    grid-gap: $size-1_5;
-    grid-template-columns: auto $size-1 auto;
-    margin: 0 auto 0 $size-5;
+    grid-gap: size(1.5);
+    grid-template-columns: auto size(1) auto;
+    margin: 0 auto 0 size(5);
 
     svg {
       color: theme-color('content-quaternary');

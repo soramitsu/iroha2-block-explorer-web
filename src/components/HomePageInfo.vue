@@ -48,16 +48,16 @@ const info = [
 
   &__search {
     position: relative;
-    margin-top: -$size-5;
+    margin-top: size(-5);
   }
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: fit-content(100%) fit-content(100%);
-    grid-gap: $size-5 100px;
+    grid-gap: size(5) 100px;
     width: $home-content-width;
-    padding: 0 $size-6;
+    padding: 0 size(6);
   }
 
   &__item {
