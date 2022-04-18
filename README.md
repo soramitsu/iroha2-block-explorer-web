@@ -15,4 +15,5 @@ Build artifacts will be located at `dist` dir.
 
 ### Docker
 
-`Dockerfile` with `nginx.conf` are also provided.
+`Dockerfile` with `nginx.conf` are also provided. Based on [Deployment > Docker (nginx)](https://cli.vuejs.org/guide/deployment.html#docker-nginx).
+

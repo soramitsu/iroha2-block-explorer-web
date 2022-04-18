@@ -1,5 +1,3 @@
-# got from https://cli.vuejs.org/guide/deployment.html#docker-nginx
-
 FROM node:latest as build-stage
 WORKDIR /app
 COPY package*.json ./
