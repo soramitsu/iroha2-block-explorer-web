@@ -1,8 +1,19 @@
 <template>
   <div class="base-inner-block">
-    <div v-if="props.title" :class="headerClasses" @click="toggle">
+    <div
+      v-if="props.title"
+      :data-clickable="props.accordion || null"
+      :data-open="isOpen || null"
+      class="base-inner-block__header"
+      @click="toggle"
+    >
       <h3 class="base-inner-block__title">{{ props.title }}</h3>
-      <ArrowIcon v-if="props.accordion" :class="iconClasses" />
+
+      <ArrowIcon
+        v-if="props.accordion"
+        :data-open="isOpen || null"
+        class="base-inner-block__icon"
+      />
     </div>
 
     <slot v-if="isOpen" />
@@ -11,7 +22,6 @@
 
 <script setup lang="ts">
 import ArrowIcon from '@/assets/svg/arrow.svg';
-import { computed } from '@vue/reactivity';
 import { ref } from 'vue';
 
 type Props = {
@@ -21,17 +31,6 @@ type Props = {
 
 const props = defineProps<Props>();
 const isOpen = ref(true);
-
-const headerClasses = computed(() => ({
-  'base-inner-block__header': true,
-  'base-inner-block__header--clickable': props.accordion,
-  'base-inner-block__header--open': isOpen.value,
-}));
-
-const iconClasses = computed(() => ({
-  'base-inner-block__icon': true,
-  'base-inner-block__icon--open': isOpen.value,
-}));
 
 function toggle() {
   if (props.accordion) {
@@ -49,18 +48,18 @@ function toggle() {
   padding: size(3) size(4);
   margin: size(3) size(4);
 
-  @include shadow-inner-block;
+  @include shadow-elevated;
 
   &__header {
     display: flex;
     align-items: center;
     user-select: none;
 
-    &--clickable {
+    &[data-clickable] {
       cursor: pointer;
     }
 
-    &--open {
+    &[data-open] {
       margin-bottom: size(3);
     }
   }
@@ -75,7 +74,7 @@ function toggle() {
     color: theme-color('content-primary');
     transform: rotate(-90deg);
 
-    &--open {
+    &[data-open] {
       transform: rotate(90deg);
     }
   }

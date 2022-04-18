@@ -64,6 +64,8 @@ hr {
 .primary-link {
   color: theme-color('primary');
   @include tpg-link1;
+  text-decoration: none;
+  border-bottom: 1px solid theme-color('primary');
 
   &:hover {
     color: theme-color('primary-hover');

@@ -32,15 +32,9 @@
 @mixin tpg-s5() {  @include t-factory($size: 11px, $height: 16px, $weight: 200) }
 @mixin tpg-s5-bold() {  @include t-factory($size: 11px, $height: 16px, $weight: 700) }
 
-@mixin tpg-link1() {  
-  @include t-factory($size: 15px, $height: 16px, $weight: 200);
-  text-decoration: underline;
-}
+@mixin tpg-link1() { @include t-factory($size: 15px, $height: 16px, $weight: 200) }
 
-@mixin tpg-link1-mono() {
-  @include t-factory($size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono');
-  text-decoration: underline;
-};
+@mixin tpg-link1-mono() { @include t-factory($size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono') }
 
 // Not used yet. But may be useful in the future
 

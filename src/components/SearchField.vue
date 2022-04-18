@@ -1,10 +1,13 @@
 <template>
   <label
-    :class="`search-field search-field--${props.large ? 'large' : 'normal' }`"
+    class="search-field"
+    :data-size="props.large ? 'large' : 'normal'"
+    :data-focused="isFocused || null"
   >
     <SearchIcon class="search-field__icon" />
 
     <input
+      :id="id"
       v-model="request"
       type="search"
       :placeholder="props.placeholder"
@@ -17,6 +20,8 @@
 <script setup lang="ts">
 import SearchIcon from '@soramitsu-ui/icons/icomoon/basic-search-24.svg';
 import { ref } from 'vue';
+import { useActiveElement } from '@vueuse/core';
+import { computed } from '@vue/reactivity';
 
 type Props = {
   large?: boolean,
@@ -26,6 +31,10 @@ type Props = {
 const props = defineProps<Props>();
 
 const request = ref('');
+
+const id = 'search-field';
+const activeElement = useActiveElement();
+const isFocused = computed(() => activeElement.value?.id === id);
 
 function submit() {
   console.log('submit', request.value);
@@ -66,14 +75,22 @@ function submit() {
     fill: theme-color('border-secondary');
   }
 
-  &--large {
+  &[data-size="large"] {
     height: 88px;
     padding: 0 28px;
     border-radius: 44px;
     width: $home-content-width;
     background: theme-color('surface');
 
-    @include shadow-search;
+    @include shadow-large-input;
+
+    &:hover {
+      @include shadow-large-input-active;
+    }
+
+    &[data-focused] {
+      @include shadow-large-input-active;
+    }
 
     input {
       @include tpg-s2;
@@ -86,13 +103,21 @@ function submit() {
     }
   }
 
-  &--normal {
+  &[data-size="normal"] {
     height: size(6);
     padding: 0 size(2);
     border-radius: size(3);
     width: 408px;
 
-    @include shadow-lowered-1;
+    @include shadow-input;
+
+    &:hover {
+      @include shadow-input-active;
+    }
+
+    &[data-focused] {
+      @include shadow-input-active;
+    }
 
     input {
       @include tpg-s3;

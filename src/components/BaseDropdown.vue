@@ -73,7 +73,7 @@ function choise(value: string) {
     cursor: pointer;
 
     @include tpg-s4;
-    @include shadow-lowered-1;
+    @include shadow-input;
   }
 
   &__icon {
