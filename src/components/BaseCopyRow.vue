@@ -19,9 +19,9 @@ const props = defineProps<Props>();
 const clipboard = useClipboard();
 const noti = useNotifications();
 
-function copy() {
+async function copy() {
   if (clipboard.isSupported) {
-    clipboard.copy(props.value);
+    await clipboard.copy(props.value);
 
     noti.success(`${props.name} copied to clipboard`);
   } else {
@@ -36,6 +36,7 @@ function copy() {
 .base-copy-row {
   display: flex;
   align-items: center;
+  user-select: none;
 
   &__icon {
     margin-left: size(1);

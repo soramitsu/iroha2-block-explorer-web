@@ -10,7 +10,7 @@ export interface NotificationData extends CreateNotificationData {
   id: number,
 }
 
-const AUTO_CLOSING_INTERVAL = 4000;
+const AUTO_CLOSING_TIMEOUT = 4000;
 
 const list = ref<NotificationData[]>([]);
 let id = 0;
@@ -20,7 +20,13 @@ function close(id: number) {
 }
 
 function show(data: CreateNotificationData) {
-  list.value.push({ ...data, id: id++ });
+  const itemId = id++;
+  list.value.push({ ...data, id: itemId });
+
+  // auto remove by default
+  if (data.autoClosing !== false) {
+    setTimeout(() => close(itemId), AUTO_CLOSING_TIMEOUT);
+  }
 };
 
 function error(message: string) {
@@ -40,10 +46,3 @@ export function useNotifications() {
     success,
   };
 }
-
-setInterval(() => {
-  // auto remove by default
-  const item = list.value.find(el => el.autoClosing !== false);
-
-  if (item) close(item.id);
-}, AUTO_CLOSING_INTERVAL);
