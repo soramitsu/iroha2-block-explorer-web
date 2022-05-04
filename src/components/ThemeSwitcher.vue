@@ -61,18 +61,18 @@ body.theme-transition * {
 
 html {
   &:not(.dark) .app-theme-switcher {
-    @include shadow-elevated-1;
+    @include shadow-elevated;
 
     &:hover {
-      @include shadow-elevated-2;
+      @include shadow-elevated-active;
     }
   }
 
   &.dark .app-theme-switcher {
-    @include shadow-lowered-1;
+    @include shadow-lowered;
 
     &:hover {
-      @include shadow-lowered-2;
+      @include shadow-lowered-active;
     }
   }
 }

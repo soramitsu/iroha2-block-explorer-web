@@ -45,7 +45,7 @@ const buttonClass = computed(() => {
 
     &:not(.base-button--line) {
       background: theme-color('background');
-      @include shadow-elevated-1;
+      @include shadow-elevated;
     }
   }
 

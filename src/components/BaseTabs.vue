@@ -44,7 +44,7 @@ const emit = defineEmits<Emits>();
   border-radius: size(2);
   background: theme-color('background');
 
-  @include shadow-lowered-1;
+  @include shadow-input;
 
   &__tab {
     padding: size(0.5) size(1);
