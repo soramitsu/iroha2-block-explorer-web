@@ -28,18 +28,18 @@ import ArrowIcon from '@/assets/svg/dropdown-icon.svg';
 
 type DropdownItem = {
   label: string;
-  value: string;
+  value: string | number;
 }
 
 type Props = {
-  modelValue: string,
+  modelValue: string | number,
   items: DropdownItem[],
   fieldLabel: string,
   width: string,
 }
 
 type Emits = {
-  (e: 'update:modelValue', value: string): void
+  (e: 'update:modelValue', value: string | number): void
 }
 
 const props = defineProps<Props>();
@@ -50,7 +50,7 @@ const valueLabel = computed(
   () => props.items.find(item => item.value === props.modelValue)?.label ?? '',
 );
 
-function choise(value: string) {
+function choise(value: string | number) {
   emit('update:modelValue', value);
   isOpen.value = false;
 }

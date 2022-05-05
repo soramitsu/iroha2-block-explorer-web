@@ -49,7 +49,7 @@ hr {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  min-height: 64px;
 }
 
 .content-row--with-hover:hover {
@@ -70,5 +70,14 @@ hr {
   &:hover {
     color: theme-color('primary-hover');
   }
+}
+
+.h-sm {
+  @include tpg-h4;
+  color: theme-color('content-quaternary');
+}
+
+.cell {
+  padding: 0 size(2);
 }
 </style>

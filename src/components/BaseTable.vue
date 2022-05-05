@@ -1,0 +1,189 @@
+<template>
+  <div class="base-table">
+    <div class="content-row">
+      <slot name="header" />
+    </div>
+
+    <template v-for="(item, i) in items" :key="i">
+      <hr>
+
+      <div class="content-row content-row--with-hover">
+        <slot v-if="item" name="row" :item="item" />
+        <BaseLoading v-else-if="i === Math.floor(items.length / 2)" />
+      </div>
+    </template>
+
+    <hr>
+
+    <div class="base-table__pagination">
+      <div class="base-table__segment-info">
+        {{ segmentInfo }}
+      </div>
+
+      <BaseDropdown
+        :items="sizeOptions"
+        :model-value="props.pagination.page_size"
+        field-label="Rows per page"
+        width="175px"
+        @update:model-value="emit('setSize', $event)"
+      />
+
+      <div class="base-table__numbers">
+        <span
+          v-for="(item, i) in numbers"
+          :key="i"
+          class="base-table__number"
+          :data-active="item === props.pagination.page_number || null"
+          @click="Number.isInteger(item) ? emit('setPage', item) : null"
+        >
+          {{ item }}
+        </span>
+      </div>
+
+      <div class="base-table__arrows">
+        <ArrowIcon class="base-table" @click="emit('prevPage')" />
+        <ArrowIcon class="base-table" @click="emit('nextPage')" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import BaseDropdown from '@/components/BaseDropdown.vue';
+import ArrowIcon from '@/assets/svg/arrow.svg';
+import BaseLoading from './BaseLoading.vue';
+import type { TablePagination } from '@/composables/table';
+
+type Props = {
+  loading: boolean;
+  pagination: TablePagination;
+  items: unknown[];
+};
+
+type Emits = {
+  (e: 'nextPage'): void,
+  (e: 'prevPage'): void,
+  (e: 'setPage', value: number): void,
+  (e: 'setSize', value: number): void,
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+
+const items = computed(() => {
+  if (props.loading) {
+    return Array.from({ length: props.pagination.page_size }, () => null);
+  }
+
+  return props.items;
+});
+
+const segmentInfo = computed(() => {
+  const p = props.pagination;
+  const start = (p.page_number - 1) * p.page_size + 1;
+  const end = p.page_number * p.page_size;
+  return `${start}—${end > p.total ? p.total : end} of ${p.total}`;
+});
+
+const numbers = computed(() => {
+  const p = props.pagination;
+  if (p.pages < 10) {
+    return new Array(p.pages).fill(0).map((_, i) => i + 1);
+  }
+
+  let start = (p.page_number - 3);
+  let end = (p.page_number + 3);
+
+  if (start < 3) {
+    return Array(8).fill(0).map<string|number>((_, i) => i + 1).concat(['. . .', p.pages]);
+  }
+
+  if ((p.pages - end) < 3) {
+    return [1, '. . .'].concat(Array(8).fill(0).map((_, i) => p.pages - i).reverse());
+  }
+
+  start = start < 1 ? 1 : start;
+  end = end > p.pages ? p.pages : end;
+
+  return [1, '. . .', ...new Array(end - start + 1).fill(0).map((_, i) => i + start), '. . .', p.pages];
+});
+
+const sizeOptions = [
+  {
+    label: '10',
+    value: 10,
+  },
+  {
+    label: '20',
+    value: 20,
+  },
+  {
+    label: '50',
+    value: 50,
+  },
+  {
+    label: '100',
+    value: 100,
+  },
+];
+</script>
+
+<style lang="scss">
+@import 'styles';
+
+.base-table {
+  &__pagination {
+    padding: size(3) size(4) 0 size(4);
+    display: flex;
+    align-items: center;
+    height: size(8);
+  }
+
+  &__segment-info {
+    @include tpg-s4;
+    color: theme-color('content-quaternary');
+    margin-right: size(3);
+  }
+
+  &__arrows {
+    display: grid;
+    grid-template-columns: size(3) size(3);
+    grid-gap: size(1);
+
+    & > svg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: size(3);
+      width: size(3);
+      padding: 7px;
+      fill: theme-color('content-primary');
+      cursor: pointer;
+
+      &:first-child {
+        transform: rotateY(180deg);
+      }
+    }
+  }
+
+  &__numbers {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    user-select: none;
+  }
+
+  &__number {
+    @include tpg-s5-bold;
+    color: theme-color('content-primary');
+    padding: 0 size(1);
+    margin-right: size(0.5);
+    cursor: pointer;
+
+    &[data-active] {
+      color: theme-color('primary');
+    }
+  }
+}
+</style>

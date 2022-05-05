@@ -36,7 +36,6 @@ async function copy() {
 .base-copy-row {
   display: flex;
   align-items: center;
-  user-select: none;
 
   &__icon {
     margin-left: size(1);
