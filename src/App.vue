@@ -45,7 +45,7 @@ hr {
 }
 
 .content-row {
-  padding: size(2) size(4);
+  padding: 0 size(4);
   display: flex;
   align-items: center;
   justify-content: space-between;

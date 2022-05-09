@@ -11,6 +11,17 @@ const http = axios.create({
   transformResponse: x => JSONbig.parse(x),
 });
 
+export async function fetchFakeData(): Promise<Paginated<unknown>> {
+  return {
+    items: new Array(10).fill({}),
+    pagination: {
+      page_number: 1,
+      page_size: 10,
+      pages: 1,
+    },
+  };
+}
+
 export async function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
   const { data } = await http.get('/accounts', { params });
   return data;
