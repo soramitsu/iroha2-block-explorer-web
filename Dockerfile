@@ -6,6 +6,8 @@ COPY ./ .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:mainline
-RUN mkdir /app
-COPY --from=build-stage /app/dist /app
-COPY nginx.conf /etc/nginx/nginx.conf
+ENV LOAD_DIR=/app
+RUN adduser --disabled-password --gecos "" iroha && \
+    mkdir -p ${LOAD_DIR} && \
+    chown -R iroha ${LOAD_DIR}
+COPY --from=build-stage /app/dist ${LOAD_DIR}
