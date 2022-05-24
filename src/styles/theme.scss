@@ -151,14 +151,14 @@ $light-color-map: (
 
 $dark-color-map: (
   // Main colors
-  'primary': $primary-60,
-  'primary-hover': $primary-70,
-  'primary-pressed': $primary-80,
-  'primary-active': $primary-70,
+  'primary': $primary-50,
+  'primary-hover': $primary-60,
+  'primary-pressed': $primary-70,
+  'primary-focused': $primary-80,
   'primary-background': $primary-10,
   'primary-hover-background': $primary-20,
   'primary-pressed-background': $primary-30,
-  'primary-active-background': $primary-20,
+  'primary-focused-background': $primary-40,
   'content-primary': $neutral-0,
   'content-secondary': $neutral-20,
   'content-tertiary': $neutral-40,

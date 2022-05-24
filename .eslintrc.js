@@ -30,6 +30,8 @@ module.exports = {
       named: 'never',
       asyncArrow: 'always',
     }],
+    'no-use-before-define': 'off',
+    camelcase: 'off',
   },
 
   overrides: [

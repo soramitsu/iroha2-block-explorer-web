@@ -47,6 +47,7 @@ function submit() {
 .search-field {
   display: flex;
   align-items: center;
+  transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
 
   input {
     color: theme-color('content-primary');;
