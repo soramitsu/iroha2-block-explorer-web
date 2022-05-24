@@ -25,7 +25,7 @@
         :model-value="props.pagination.page_size"
         field-label="Rows per page"
         width="175px"
-        @update:model-value="emit('setSize', $event)"
+        @update:model-value="emit('setSize', $event as number)"
       />
 
       <div class="base-table__numbers">
@@ -34,7 +34,7 @@
           :key="i"
           class="base-table__number"
           :data-active="item === props.pagination.page_number || null"
-          @click="Number.isInteger(item) ? emit('setPage', item) : null"
+          @click="Number.isInteger(item) ? emit('setPage', item as number) : null"
         >
           {{ item }}
         </span>
@@ -58,7 +58,7 @@ import type { TablePagination } from '@/composables/table';
 type Props = {
   loading: boolean;
   pagination: TablePagination;
-  items: unknown[];
+  items: any[];
 };
 
 type Emits = {
