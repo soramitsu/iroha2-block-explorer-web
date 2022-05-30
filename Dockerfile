@@ -1,10 +1,7 @@
-FROM node:latest as build-stage
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY ./ .
-RUN npm run build
-
-FROM nginxinc/nginx-unprivileged:mainline
-USER nginx
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+FROM      node:18.2.0-bullseye
+COPY      . /app
+WORKDIR   /app
+RUN       npm install && npm run build
+USER      node
+ENV       PORT=8080
+CMD       ["node", "app"]
