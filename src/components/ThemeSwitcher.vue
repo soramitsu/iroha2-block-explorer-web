@@ -1,12 +1,19 @@
 <template>
-  <button class="app-theme-switcher" @click="toggleTheme">
+  <BaseButton
+    :pressed="isDark"
+    class="app-theme-switcher"
+    bordered
+    rounded
+    @click="toggleTheme"
+  >
     <DarkModeIcon />
-  </button>
+  </BaseButton>
 </template>
 
 <script setup lang="ts">
 import DarkModeIcon from '@/assets/svg/dark-mode.svg';
 import { useDark } from '@vueuse/core';
+import BaseButton from './BaseButton.vue';
 
 const isDark = useDark();
 let isTransitionActive = false;
@@ -37,22 +44,6 @@ body.theme-transition * {
 }
 
 .app-theme-switcher {
-  height: size(5);
-  width: size(5);
-  cursor: pointer;
-  user-select: none;
-  text-decoration: none;
-  padding: size(1.5);
-  border: none;
-  border-radius: 50%;
-  background: theme-color('background');
-  color: theme-color('content-tertiary');
-  transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
-
-  &:hover {
-    color: theme-color('content-primary');
-  }
-
   svg {
     width: size(2);
     height: size(2);

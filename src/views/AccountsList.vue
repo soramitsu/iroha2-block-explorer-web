@@ -1,5 +1,5 @@
 <template>
-  <BaseContentBlock title="Accounts" class="accounts-list-page">
+  <BaseContentBlock :title="$t('accounts')" class="accounts-list-page">
     <BaseTable
       :loading="table.loading.value"
       :pagination="table.pagination"
@@ -11,16 +11,16 @@
     >
       <template #header>
         <div class="accounts-list-page__row">
-          <span class="h-sm cell">Address</span>
-          <span class="h-sm cell">Cryptos</span>
-          <span class="h-sm cell">Assets</span>
+          <span class="h-sm cell">{{ $t('address') }}</span>
+          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('assets') }}</span>
         </div>
       </template>
 
       <template #row="{ item }: { item: Account }">
         <div class="accounts-list-page__row">
           <span class="cell">
-            <BaseCopyRow name="Token" :value="item.id">
+            <BaseCopyRow :name="$t('token')" :value="item.id">
               <a :href="`/accounts/${item.id}}`" class="primary-link">
                 {{ item.id }}
               </a>

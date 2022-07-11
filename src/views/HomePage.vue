@@ -3,7 +3,7 @@
     <ThemeSwitcher class="home-page__theme-switcher" />
     <BackgroundLogo class="home-page__background-logo" />
     <LogoIcon class="home-page__logo-icon" />
-    <h1 class="home-page__title">Hyperleger Iroha Blockchain Explorer</h1>
+    <h1 class="home-page__title">{{ $t('homePage.title') }}</h1>
     <NavigationMenu class="home-page__menu" />
     <HomePageInfo />
 

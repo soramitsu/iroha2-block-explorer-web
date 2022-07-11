@@ -1,6 +1,13 @@
 <template>
   <nav class="navigation-menu">
-    <BaseButton v-for="(item, i) in menu" :key="i" :to="item.to">{{ item.label }}</BaseButton>
+    <BaseButton
+      v-for="(item, i) in menu"
+      :key="i"
+      :to="item.to"
+      line
+    >
+      {{ item.label }}
+    </BaseButton>
   </nav>
 </template>
 
@@ -14,11 +21,21 @@ import { menu } from '@/constants';
 @import 'styles';
 
 .navigation-menu {
-  display: grid;
+  display: none;
   grid-auto-flow: column;
   grid-template-columns: auto;
-  grid-gap: size(2);
   align-items: center;
-  margin: 0 auto;
+
+  @include lg {
+    display: grid;
+  }
+
+  .base-button {
+    padding: size(1.5) size(1);
+
+    @include xl {
+      padding: size(1.5) size(1.5);
+    }
+  }
 }
 </style>

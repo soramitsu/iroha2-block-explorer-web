@@ -1,8 +1,12 @@
 @import './theme';
 @import './shadows';
 @import './typography';
+@import './breakpoints';
 
 $header-height: 120px;
+$header-height-landscape-mobile: 100px;
+$header-height-mobile: 80px;
+
 $home-content-width: 1016px;
 
 @function size($n) { @return #{8 * $n}px }

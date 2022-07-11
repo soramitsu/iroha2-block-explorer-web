@@ -1,5 +1,5 @@
 <template>
-  <BaseContentBlock title="Transactions" class="transactions-list-page">
+  <BaseContentBlock :title="$t('transactions')" class="transactions-list-page">
     <div class="content-row">
       <BaseTabs v-model="activeTab" :items="tabs" />
 
@@ -7,12 +7,12 @@
         v-model="filterValue"
         :items="filterItems"
         width="180px"
-        field-label="Timespan:"
+        :field-label="$t('timespan') + ':'"
       />
     </div>
 
-    <BaseInnerBlock title="Transfer" accordion>
-      <BaseCopyRow name="Token" value="TFwh6ZG4iEHVF7pYLGv7qKXBxj2YCMSJZVSNiV">
+    <BaseInnerBlock :title="t('transfer')" accordion>
+      <BaseCopyRow :name="t('token')" value="TFwh6ZG4iEHVF7pYLGv7qKXBxj2YCMSJZVSNiV">
         <a href="" class="primary-link">TFwh6ZG4iEHVF7pYLGv7qKXBxj2YCMSJZVSNiV</a>
       </BaseCopyRow>
     </BaseInnerBlock>
@@ -26,22 +26,25 @@ import BaseDropdown from '@/components/BaseDropdown.vue';
 import BaseInnerBlock from '@/components/BaseInnerBlock.vue';
 import BaseCopyRow from '@/components/BaseCopyRow.vue';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n({ useScope: 'global' });
 
 const tabs = [
-  { label: 'Transactions', value: 'transactions' },
-  { label: 'Transfers', value: 'transfers' },
-  { label: 'Mints', value: 'mints' },
-  { label: 'Burns', value: 'burns' },
-  { label: 'Grants', value: 'grants' },
-  { label: 'Revokes', value: 'revokes' },
+  { label: t('transactions'), value: 'transactions' },
+  { label: t('transfers'), value: 'transfers' },
+  { label: t('mints'), value: 'mints' },
+  { label: t('burns'), value: 'burns' },
+  { label: t('grants'), value: 'grants' },
+  { label: t('revokes'), value: 'revokes' },
 ];
 
 const filterItems = [
-  { label: 'Today', value: 'today' },
-  { label: 'Week', value: 'week' },
-  { label: 'Month', value: 'month' },
-  { label: 'Year', value: 'year' },
-  { label: 'All time', value: 'all-time' },
+  { label: t('time.today'), value: 'today' },
+  { label: t('time.week'), value: 'week' },
+  { label: t('time.month'), value: 'month' },
+  { label: t('time.year'), value: 'year' },
+  { label: t('time.allTime'), value: 'allTime' },
 ];
 
 const activeTab = ref(tabs[0].value);

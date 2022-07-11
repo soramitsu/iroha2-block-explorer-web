@@ -23,7 +23,7 @@
       <BaseDropdown
         :items="sizeOptions"
         :model-value="props.pagination.page_size"
-        field-label="Rows per page"
+        :field-label="$t('rowsPerPage')"
         width="175px"
         @update:model-value="emit('setSize', $event as number)"
       />

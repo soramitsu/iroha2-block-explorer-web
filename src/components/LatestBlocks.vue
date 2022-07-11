@@ -1,7 +1,7 @@
 <template>
-  <BaseContentBlock title="Latest Blocks" class="latest-blocks">
+  <BaseContentBlock :title="$t('latestBlocks')" class="latest-blocks">
     <template #header-action>
-      <BaseButton line>view all</BaseButton>
+      <BaseButton line>{{ $t('viewAll') }}</BaseButton>
     </template>
 
     <template #default>
@@ -12,12 +12,12 @@
           <div class="latest-blocks__time">
             <div class="latest-blocks__time-item">
               <MinutesIcon />
-              <span>1 min ago</span>
+              <span>{{ $t('time.minAgo', [1]) }}</span>
             </div>
 
             <div class="latest-blocks__time-item">
               <SecondsIcon />
-              <span>30 sec</span>
+              <span>{{ $t('time.sec', [30]) }}</span>
             </div>
           </div>
 

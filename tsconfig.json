@@ -12,7 +12,10 @@
     "lib": ["esnext", "dom"],
     "paths": {
       "@/*": ["./src/*"],
-    }
+    },
+    "types": [
+      "@modyfi/vite-plugin-yaml/modules"
+    ],
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "references": [{ "path": "./tsconfig.node.json" }]

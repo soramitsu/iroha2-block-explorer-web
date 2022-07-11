@@ -1,8 +1,22 @@
 <template>
-  <RouterLink v-if="props.to" :to="props.to" :class="buttonClass">
+  <RouterLink
+    v-if="to"
+    :to="to"
+    class="base-button"
+    :data-type="type"
+    :data-pressed="pressed || null"
+    :data-rounded="rounded || null"
+  >
     <slot />
   </RouterLink>
-  <button v-else :class="buttonClass">
+
+  <button
+    v-else
+    class="base-button"
+    :data-type="type"
+    :data-pressed="pressed || null"
+    :data-rounded="rounded || null"
+  >
     <slot />
   </button>
 </template>
@@ -14,12 +28,22 @@ import type { RouteLocationRaw } from 'vue-router';
 type Props = {
   to?: RouteLocationRaw;
   line?: boolean;
+  bordered?: boolean;
+  rounded?: boolean;
+  pressed?: boolean;
 }
 
 const props = defineProps<Props>();
 
-const buttonClass = computed(() => {
-  return 'base-button' + (props.line ? ' base-button--line' : '');
+const type = computed(() => {
+  switch (true) {
+    case props.line:
+      return 'line';
+    case props.bordered:
+      return 'bordered';
+    default:
+      return 'default';
+  }
 });
 </script>
 
@@ -42,15 +66,39 @@ const buttonClass = computed(() => {
 
   &:hover {
     color: theme-color('content-primary');
+  }
 
-    &:not(.base-button--line) {
+  &[data-type="line"] {
+    padding: size(1.5) 0;
+  }
+
+  &[data-type="default"] {
+    &:hover {
       background: theme-color('background');
-      @include shadow-elevated;
+      @include shadow-elevated-active;
     }
   }
 
-  &--line {
-    padding: size(1.5) 0;
+  &[data-type="bordered"] {
+    background: theme-color('background');
+    @include shadow-elevated;
+
+    &[data-pressed] {
+      @include shadow-lowered;
+      color: theme-color('content-primary');
+    }
+
+    &:hover {
+      @include shadow-elevated-active;
+
+      &[data-pressed] {
+        @include shadow-lowered-active;
+      }
+    }
+  }
+
+  &[data-rounded] {
+    padding: size(1.5);
   }
 }
 </style>

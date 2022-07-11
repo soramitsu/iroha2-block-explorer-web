@@ -1,7 +1,7 @@
 <template>
   <label
     class="search-field"
-    :data-size="props.large ? 'large' : 'normal'"
+    :data-size="size"
     :data-focused="isFocused || null"
   >
     <SearchIcon class="search-field__icon" />
@@ -24,7 +24,7 @@ import { useActiveElement } from '@vueuse/core';
 import { computed } from '@vue/reactivity';
 
 type Props = {
-  large?: boolean,
+  size?: 'sm' | 'md' | 'lg',
   placeholder?: string,
 }
 
@@ -76,7 +76,7 @@ function submit() {
     fill: theme-color('border-secondary');
   }
 
-  &[data-size="large"] {
+  &[data-size=lg] {
     height: 88px;
     padding: 0 28px;
     border-radius: 44px;
@@ -104,13 +104,57 @@ function submit() {
     }
   }
 
-  &[data-size="normal"] {
+  &[data-size=md] {
+    display: flex;
     height: size(6);
     padding: 0 size(2);
     border-radius: size(3);
-    width: 408px;
-
     @include shadow-input;
+
+    @include sm {
+      width: 280px;
+    }
+
+    @include md {
+      width: 300px;
+    }
+
+    @include lg {
+      width: 230px;
+    }
+
+    @include xl {
+      width: 330px;
+    }
+
+    @include xxl {
+      width: 439px;
+    }
+
+    &:hover {
+      @include shadow-input-active;
+    }
+
+    &[data-focused] {
+      @include shadow-input-active;
+    }
+
+    input {
+      @include tpg-s3;
+    }
+
+    svg {
+      margin-right: size(1);
+    }
+  }
+
+  &[data-size=sm] {
+    display: flex;
+    height: size(6);
+    padding: 0 size(2);
+    border-radius: size(3);
+    @include shadow-input;
+    width: 210px;
 
     &:hover {
       @include shadow-input-active;
