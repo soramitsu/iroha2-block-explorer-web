@@ -3,7 +3,7 @@
     <SearchField
       class="home-page-info__search"
       size="lg"
-      placeholder="Search Address / Txn Hash / Block / Token"
+      :placeholder="$t('homePage.searchPlaceholder')"
       large
     />
 

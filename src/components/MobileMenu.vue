@@ -31,9 +31,10 @@ import SearchField from './SearchField.vue';
 import { useMenuDropdown } from '@/composables/header-dropdowns';
 import { menu } from '@/constants';
 import { useRoute, useRouter } from 'vue-router';
+import { computed } from 'vue';
 
 const dropdown = useMenuDropdown();
-const links = menu.map(item => ({ label: item.label, value: item.to }));
+const links = computed(() => menu.map(item => ({ label: item.label, value: item.to })));
 const router = useRouter();
 const route = useRoute();
 
