@@ -12,7 +12,7 @@
       <template #header>
         <div class="accounts-list-page__row">
           <span class="h-sm cell">{{ $t('address') }}</span>
-          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('balance') }}</span>
           <span class="h-sm cell">{{ $t('assets') }}</span>
         </div>
       </template>
@@ -21,7 +21,7 @@
         <div class="accounts-list-page__row">
           <span class="cell">
             <BaseCopyRow :name="$t('token')" :value="item.id">
-              <a :href="`/accounts/${item.id}}`" class="primary-link">
+              <a :href="`/accounts/${item.id}`" class="primary-link">
                 {{ item.id }}
               </a>
             </BaseCopyRow>
@@ -30,7 +30,7 @@
           <span class="cell">-</span>
 
           <div class="cell">
-            <a :href="`/accounts/${item.id}}`" class="primary-link">
+            <a :href="`/accounts/${item.id}`" class="primary-link">
               {{ item.assets.length }}
             </a>
           </div>

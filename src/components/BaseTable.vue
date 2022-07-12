@@ -33,7 +33,7 @@
           v-for="(item, i) in numbers"
           :key="i"
           class="base-table__number"
-          :data-active="item === props.pagination.page_number || null"
+          :data-active="item === props.pagination.page || null"
           @click="Number.isInteger(item) ? emit('setPage', item as number) : null"
         >
           {{ item }}
@@ -81,8 +81,8 @@ const items = computed(() => {
 
 const segmentInfo = computed(() => {
   const p = props.pagination;
-  const start = (p.page_number - 1) * p.page_size + 1;
-  const end = p.page_number * p.page_size;
+  const start = (p.page - 1) * p.page_size + 1;
+  const end = p.page * p.page_size;
   return `${start}—${end > p.total ? p.total : end} of ${p.total}`;
 });
 
@@ -92,8 +92,8 @@ const numbers = computed(() => {
     return new Array(p.pages).fill(0).map((_, i) => i + 1);
   }
 
-  let start = (p.page_number - 3);
-  let end = (p.page_number + 3);
+  let start = (p.page - 3);
+  let end = (p.page + 3);
 
   if (start < 3) {
     return Array(8).fill(0).map<string|number>((_, i) => i + 1).concat(['. . .', p.pages]);
@@ -157,7 +157,7 @@ const sizeOptions = [
       justify-content: center;
       height: size(3);
       width: size(3);
-      padding: 7px;
+      padding: 4px;
       fill: theme-color('content-primary');
       cursor: pointer;
 

@@ -7,7 +7,7 @@
     <template #default>
       <template v-for="(block, i) in blocks" :key="i">
         <div class="content-row content-row--with-hover">
-          <a href="" class="primary-link">{{ block.num }}</a>
+          <a href="" class="primary-link">{{ block.height }}</a>
 
           <div class="latest-blocks__time">
             <div class="latest-blocks__time-item">
@@ -21,7 +21,7 @@
             </div>
           </div>
 
-          <a href="" class="primary-link">{{ block.len }} txns</a>
+          <a href="" class="primary-link">{{ block.transactions }} txns</a>
         </div>
 
         <hr>
@@ -35,19 +35,12 @@ import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseButton from '@/components/BaseButton.vue';
 import MinutesIcon from '@/assets/svg/clock.svg';
 import SecondsIcon from '@/assets/svg/stopwatch.svg';
+import { fetchBlocks } from '@/http';
+import { ref } from 'vue';
 
-// type Props = {
-//   blocks: CommittedBlock[];
-// }
+const blocks = ref<BlockShallow[]>([]);
 
-// const props = defineProps<Props>();
-
-type FakeBlock = {
-  num: number;
-  len: number;
-}
-
-const blocks = new Array<FakeBlock>(10).fill({ num: 2312388, len: 143 });
+fetchBlocks().then(({ data }) => (blocks.value = data));
 </script>
 
 <style lang="scss">

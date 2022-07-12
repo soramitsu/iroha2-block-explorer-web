@@ -11,9 +11,33 @@
     >
       <template #header>
         <div class="domains-list-page__row">
-          <span class="h-sm cell">{{ $t('address') }}</span>
-          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('name') }}</span>
           <span class="h-sm cell">{{ $t('assets') }}</span>
+          <span class="h-sm cell">{{ $t('accounts') }}</span>
+        </div>
+      </template>
+
+      <template #row="{ item }: { item: Domain }">
+        <div class="domains-list-page__row">
+          <span class="cell">
+            <BaseCopyRow :name="$t('token')" :value="item.id">
+              <a :href="`/accounts/${item.id}`" class="primary-link">
+                {{ item.id }}
+              </a>
+            </BaseCopyRow>
+          </span>
+
+          <div class="cell">
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.asset_definitions.length }}
+            </a>
+          </div>
+
+          <span class="cell">
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.accounts.length }}
+            </a>
+          </span>
         </div>
       </template>
     </BaseTable>

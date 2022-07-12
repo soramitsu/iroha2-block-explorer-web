@@ -11,6 +11,8 @@
   "rowsPerPage": "Rows per page",
   "address": "Address",
   "cryptos": "Cryptos",
+  "balance": "Balance",
+  "name": "Name",
   "assets": "Assets",
   "height": "Height",
   "age": "Age",
