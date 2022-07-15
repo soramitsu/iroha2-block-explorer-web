@@ -22,8 +22,8 @@
 
 <script setup lang="ts">
 import BaseButton from './BaseButton.vue';
-import LangIcon from '@/assets/svg/lang.svg';
-import ArrowIcon from '@/assets/svg/arrow.svg';
+import LangIcon from '@/icons/lang.svg';
+import ArrowIcon from '@/icons/arrow.svg';
 import BaseDropdownWindow from './BaseDropdownWindow.vue';
 import { useLangDropdown } from '@/composables/header-dropdowns';
 import { ref } from 'vue';

@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import ArrowIcon from '@/assets/svg/arrow.svg';
+import ArrowIcon from '@/icons/arrow.svg';
 import { ref } from 'vue';
 
 type Props = {

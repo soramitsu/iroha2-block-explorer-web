@@ -44,12 +44,13 @@
 <script setup lang="ts">
 import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseButton from '@/components/BaseButton.vue';
-import ArrowIcon from '@/assets/svg/arrow.svg';
+import ArrowIcon from '@/icons/arrow.svg';
 import ShortHash from '@/components/ShortHash.vue';
 import BaseTabs from '@/components/BaseTabs.vue';
 import BaseDropdown from '@/components/BaseDropdown.vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { fetchTransactions } from '@/http';
 
 type FakeTransactions = {
   from: string;
@@ -80,6 +81,10 @@ const filterItems = [
 
 const activeTab = ref(tabs[0].value);
 const filterValue = ref(filterItems[4].value);
+
+const _transactions = ref<Transaction[]>([]);
+
+const res = fetchTransactions({ page: 1, page_size: 10 }).then(res => (_transactions.value = res.data));
 </script>
 
 <style lang="scss">

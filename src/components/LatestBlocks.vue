@@ -12,12 +12,12 @@
           <div class="latest-blocks__time">
             <div class="latest-blocks__time-item">
               <MinutesIcon />
-              <span>{{ $t('time.minAgo', [1]) }}</span>
+              <span>{{ $t('time.minAgo', [elapsed.allMinutes(block.timestamp)]) }}</span>
             </div>
 
             <div class="latest-blocks__time-item">
               <SecondsIcon />
-              <span>{{ $t('time.sec', [30]) }}</span>
+              <span>{{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}</span>
             </div>
           </div>
 
@@ -33,14 +33,16 @@
 <script setup lang="ts">
 import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseButton from '@/components/BaseButton.vue';
-import MinutesIcon from '@/assets/svg/clock.svg';
-import SecondsIcon from '@/assets/svg/stopwatch.svg';
+import MinutesIcon from '@/icons/clock.svg';
+import SecondsIcon from '@/icons/stopwatch.svg';
 import { fetchBlocks } from '@/http';
 import { ref } from 'vue';
+import { elapsed } from '@/lib/time';
 
 const blocks = ref<BlockShallow[]>([]);
 
-fetchBlocks().then(({ data }) => (blocks.value = data));
+fetchBlocks({ page_size: 11, page: 1 })
+  .then(res => (blocks.value = res.data));
 </script>
 
 <style lang="scss">

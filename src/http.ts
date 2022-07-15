@@ -72,7 +72,12 @@ export async function fetchRoles(): Promise<Role[]> {
   return data;
 }
 
-export async function fetchBlocks(): Promise<Paginated<BlockShallow>> {
-  const { data } = await http.get('/blocks');
+export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
+  const { data } = await http.get('/blocks', { params });
+  return data;
+}
+
+export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<Transaction>> {
+  const { data } = await http.get('/transactions', { params });
   return data;
 }

@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import ArrowIcon from '@/assets/svg/dropdown-icon.svg';
+import ArrowIcon from '@/icons/dropdown-icon.svg';
 
 type DropdownItem = {
   label: string;

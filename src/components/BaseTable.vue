@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import BaseDropdown from '@/components/BaseDropdown.vue';
-import ArrowIcon from '@/assets/svg/arrow.svg';
+import ArrowIcon from '@/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
 import type { TablePagination } from '@/composables/table';
 

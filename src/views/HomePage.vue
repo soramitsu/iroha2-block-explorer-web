@@ -16,8 +16,8 @@
 
 <script setup lang="ts">
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
-import BackgroundLogo from '@/assets/svg/background-logo.svg';
-import LogoIcon from '@/assets/svg/logo.svg';
+import BackgroundLogo from '@/icons/background-logo.svg';
+import LogoIcon from '@/icons/logo.svg';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import HomePageInfo from '@/components/HomePageInfo.vue';
 import LatestBlocks from '@/components/LatestBlocks.vue';
