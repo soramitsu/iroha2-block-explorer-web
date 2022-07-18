@@ -1,5 +1,5 @@
 <template>
-  <BaseContentBlock title="Domains" class="domains-list-page">
+  <BaseContentBlock :title="$t('domains')" class="domains-list-page">
     <BaseTable
       :loading="table.loading.value"
       :pagination="table.pagination"
@@ -11,9 +11,9 @@
     >
       <template #header>
         <div class="domains-list-page__row">
-          <span class="h-sm cell">Address</span>
-          <span class="h-sm cell">Cryptos</span>
-          <span class="h-sm cell">Assets</span>
+          <span class="h-sm cell">{{ $t('address') }}</span>
+          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('assets') }}</span>
         </div>
       </template>
     </BaseTable>

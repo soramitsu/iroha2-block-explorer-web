@@ -1,5 +1,5 @@
 <template>
-  <BaseContentBlock title="Page not found" />
+  <BaseContentBlock :title="$t('pageNotFound')" />
 </template>
 
 <script setup lang="ts">

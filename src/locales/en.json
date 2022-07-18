@@ -1,0 +1,59 @@
+{
+  "search": "Search",
+  "latestTransactions": "Latest Transactions",
+  "timespan": "Timespan",
+  "latestBlocks": "Latest Blocks",
+  "viewAll": "view all",
+  "token": "Token",
+  "accounts": "Accounts",
+  "blocks": "Blocks",
+  "domains": "Domains",
+  "rowsPerPage": "Rows per page",
+  "address": "Address",
+  "cryptos": "Cryptos",
+  "assets": "Assets",
+  "height": "Height",
+  "age": "Age",
+  "hash": "Hash",
+  "transaction": "Transaction",
+  "validators": "Validators",
+  "pageNotFound": "Page not found",
+  "transactions": "Transactions",
+  "transfers": "Transfers",
+  "mints": "Mints",
+  "burns": "Burns",
+  "grants": "Grants",
+  "revokes": "Revokes",
+  "transfer": "Transfer",
+  "tokens": "Tokens",
+  "networkStats": "Network Stats",
+  "clipboard": {
+    "success": "{0} copied to clipboard",
+    "error": "Impossible copy {0} to clipboard"
+  },
+  "homePage": {
+    "averageBlockTime": "Average Block Time",
+    "averageTps": "Average TPS",
+    "totalValueLocked": "Total Value Locked",
+    "activeAccounts": "Active Accounts",
+    "validators": "Validators",
+    "nodes": "Nodes",
+    "nodeLocations": "Node Locations",
+    "averageViewChanges": "Average View Changes per Block",
+    "title": "Hyperleger Iroha Blockchain Explorer",
+    "searchPlaceholder": "Search Address / Txn Hash / Block / Token"
+  },
+  "time": {
+    "minAgo": "{0} min ago",
+    "sec": "{0} sec",
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "allTime": "All time"
+  },
+  "sort": {
+    "mostRecent": "Most Recent",
+    "mostValue": "Most Value"
+  }
+}

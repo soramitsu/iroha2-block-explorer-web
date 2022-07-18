@@ -30,6 +30,9 @@ html {
 
 #app {
   background: theme-color('background');
+  overflow-x: hidden;
+  z-index: 0;
+  position: relative;
 }
 
 * {
@@ -63,9 +66,9 @@ hr {
 
 .primary-link {
   color: theme-color('primary');
-  @include tpg-link1;
   text-decoration: none;
   border-bottom: 1px solid theme-color('primary');
+  @include tpg-link1;
 
   &:hover {
     color: theme-color('primary-hover');

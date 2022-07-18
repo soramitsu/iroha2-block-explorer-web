@@ -1,5 +1,5 @@
 <template>
-  <BaseContentBlock title="Blocks" class="blocks-list-page">
+  <BaseContentBlock :title="$t('blocks')" class="blocks-list-page">
     <BaseTable
       :loading="table.loading.value"
       :pagination="table.pagination"
@@ -11,11 +11,11 @@
     >
       <template #header>
         <div class="blocks-list-page__row">
-          <span class="h-sm cell">Height</span>
-          <span class="h-sm cell">Age</span>
-          <span class="h-sm cell">Hash</span>
-          <span class="h-sm cell">Transaction</span>
-          <span class="h-sm cell">Validators</span>
+          <span class="h-sm cell">{{ $t('height') }}</span>
+          <span class="h-sm cell">{{ $t('age') }}</span>
+          <span class="h-sm cell">{{ $t('hash') }}</span>
+          <span class="h-sm cell">{{ $t('transaction') }}</span>
+          <span class="h-sm cell">{{ $t('validators') }}</span>
         </div>
       </template>
     </BaseTable>

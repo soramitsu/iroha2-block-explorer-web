@@ -9,6 +9,7 @@
 import CopyIcon from '@/assets/svg/copy.svg';
 import { useNotifications } from '@/composables/notifications';
 import { useClipboard } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 
 type Props = {
   value: string,
@@ -18,14 +19,15 @@ type Props = {
 const props = defineProps<Props>();
 const clipboard = useClipboard();
 const noti = useNotifications();
+const { t } = useI18n({ useScope: 'global' });
 
 async function copy() {
   if (clipboard.isSupported) {
     await clipboard.copy(props.value);
 
-    noti.success(`${props.name} copied to clipboard`);
+    noti.success(t('clipboard.success', [props.name]));
   } else {
-    noti.error(`Impossible copy ${props.name.toLowerCase()} to clipboard`);
+    noti.error(t('clipboard.error', [props.name.toLowerCase()]));
   }
 }
 </script>

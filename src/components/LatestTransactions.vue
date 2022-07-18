@@ -1,7 +1,7 @@
 <template>
-  <BaseContentBlock title="Latest Transactions" class="latest-transactions">
+  <BaseContentBlock :title="$t('latestTransactions')" class="latest-transactions">
     <template #header-action>
-      <BaseButton line>view all</BaseButton>
+      <BaseButton line>{{ $t('viewAll') }}</BaseButton>
     </template>
 
     <template #default>
@@ -12,7 +12,7 @@
           v-model="filterValue"
           :items="filterItems"
           width="180px"
-          field-label="Timespan:"
+          :field-label="$t('timespan') + ':'"
         />
       </div>
 
@@ -20,7 +20,7 @@
         <div class="content-row content-row--with-hover">
           <div class="latest-transactions__column">
             <ShortHash :hash="transaction.hash" />
-            <span class="latest-transactions__time">8 min ago</span>
+            <span class="latest-transactions__time">{{ $t('time.minAgo', [8]) }}</span>
           </div>
 
           <div class="latest-transactions__direction">
@@ -49,12 +49,15 @@ import ShortHash from '@/components/ShortHash.vue';
 import BaseTabs from '@/components/BaseTabs.vue';
 import BaseDropdown from '@/components/BaseDropdown.vue';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 type FakeTransactions = {
   from: string;
   to: string;
   hash: string;
 }
+
+const { t } = useI18n({ useScope: 'global' });
 
 const transactions = new Array<FakeTransactions>(10).fill({
   from: 'cnTQ1kbv7PBNNQrEb1tZpmK7h1CW5Hkb5ZBLpK3JbMfZjx9RN',
@@ -63,16 +66,16 @@ const transactions = new Array<FakeTransactions>(10).fill({
 });
 
 const tabs = [
-  { label: 'Most Recent', value: 'most-recent' },
-  { label: 'Most Value', value: 'most-value' },
+  { label: t('sort.mostRecent'), value: 'most-recent' },
+  { label: t('sort.mostValue'), value: 'most-value' },
 ];
 
 const filterItems = [
-  { label: 'Today', value: 'today' },
-  { label: 'Week', value: 'week' },
-  { label: 'Month', value: 'month' },
-  { label: 'Year', value: 'year' },
-  { label: 'All time', value: 'all-time' },
+  { label: t('time.today'), value: 'today' },
+  { label: t('time.week'), value: 'week' },
+  { label: t('time.month'), value: 'month' },
+  { label: t('time.year'), value: 'year' },
+  { label: t('time.allTime'), value: 'all-time' },
 ];
 
 const activeTab = ref(tabs[0].value);
