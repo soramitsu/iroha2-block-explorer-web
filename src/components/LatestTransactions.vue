@@ -5,7 +5,7 @@
     </template>
 
     <template #default>
-      <div class="content-row">
+      <div class="latest-transactions__filters">
         <BaseTabs v-model="activeTab" :items="tabs" />
 
         <BaseDropdown
@@ -16,11 +16,13 @@
         />
       </div>
 
+      <hr>
+
       <template v-for="(transaction, i) in transactions" :key="i">
-        <div class="content-row content-row--with-hover">
-          <div class="latest-transactions__column">
+        <div class="latest-transactions__row">
+          <div class="latest-transactions__left">
             <ShortHash :hash="transaction.hash" />
-            <span class="latest-transactions__time">{{ $t('time.minAgo', [8]) }}</span>
+            <span class="latest-transactions__time">{{ $t('time.min', [8]) }} {{ $t('time.ago') }}</span>
           </div>
 
           <div class="latest-transactions__direction">
@@ -29,13 +31,11 @@
             <ShortHash :hash="transaction.to" />
           </div>
 
-          <div class="latest-transactions__column">
+          <div class="latest-transactions__right">
             <span class="latest-transactions__value">1,245.34728384 XOR</span>
             <span class="latest-transactions__price">$49,800.00</span>
           </div>
         </div>
-
-        <hr>
       </template>
     </template>
   </BaseContentBlock>
@@ -51,6 +51,7 @@ import BaseDropdown from '@/components/BaseDropdown.vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { fetchTransactions } from '@/http';
+import { mapTransaction } from '@/models/transaction';
 
 type FakeTransactions = {
   from: string;
@@ -84,16 +85,80 @@ const filterValue = ref(filterItems[4].value);
 
 const _transactions = ref<Transaction[]>([]);
 
-const res = fetchTransactions({ page: 1, page_size: 10 }).then(res => (_transactions.value = res.data));
+async function fetch() {
+  const { data } = await fetchTransactions({ page: 1, page_size: 1 });
+  _transactions.value = data.map(mapTransaction);
+}
+
+fetch();
 </script>
 
 <style lang="scss">
 @import 'styles';
 
 .latest-transactions {
-  &__column {
+  &__row {
+    padding: size(1) size(2);
+    border-bottom: 1px solid theme-color('border-primary');
+    display: grid;
+    grid-gap: size(1);
+    grid-template-columns: 1fr;
+    justify-content: start;
+    align-items: center;
+    min-height: 64px;
+
+    &:hover {
+      box-shadow: theme-shadow('row');
+      border-color: transparent;
+    }
+
+    & > * {
+      width: fit-content;
+    }
+
+    @include xs {
+      grid-template-columns: 2fr 1fr;
+    }
+
+    @include sm {
+      justify-content: space-between;
+      grid-template-columns: 90px 1fr 180px;
+      padding: 0 size(4);
+    }
+  }
+
+  &__filters {
+    display: grid;
+    justify-items: center;
+    justify-content: center;
+    grid-gap: size(1);
+    padding: size(2);
+
+    @include xs {
+      grid-template-columns: auto auto;
+      justify-items: initial;
+      justify-content: space-between;
+    }
+  }
+
+  &__left {
     display: grid;
     grid-gap: size(0.5);
+    grid-column: 1 / -1;
+
+    @include sm {
+      grid-column: 1 / 2;
+    }
+  }
+
+  &__right {
+    display: grid;
+    grid-gap: size(0.5);
+    margin-top: size(0.5);
+
+    @include sm {
+      margin: 0;
+    }
   }
 
   &__time {
@@ -105,7 +170,11 @@ const res = fetchTransactions({ page: 1, page_size: 10 }).then(res => (_transact
     display: grid;
     grid-gap: size(1.5);
     grid-template-columns: auto size(1) auto;
-    margin: 0 auto 0 size(5);
+    margin: 0;
+
+    @include sm {
+       margin: 0 auto;
+    }
 
     svg {
       color: theme-color('content-quaternary');
@@ -120,7 +189,10 @@ const res = fetchTransactions({ page: 1, page_size: 10 }).then(res => (_transact
   &__price {
     @include tpg-s5-bold;
     color: theme-color('content-quaternary');
-    text-align: right;
+
+    @include xs {
+      text-align: right;
+    }
   }
 }
 </style>

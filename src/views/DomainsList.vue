@@ -20,11 +20,9 @@
       <template #row="{ item }: { item: Domain }">
         <div class="domains-list-page__row">
           <span class="cell">
-            <BaseCopyRow :name="$t('token')" :value="item.id">
-              <a :href="`/accounts/${item.id}`" class="primary-link">
-                {{ item.id }}
-              </a>
-            </BaseCopyRow>
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.id }}
+            </a>
           </span>
 
           <div class="cell">
@@ -38,6 +36,31 @@
               {{ item.accounts.length }}
             </a>
           </span>
+        </div>
+      </template>
+
+      <template #mobile-card="{ item }: { item: Domain }">
+        <div class="domains-list-page__mobile-card">
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.id }}
+            </a>
+          </div>
+
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('assets') }}</span>
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.asset_definitions.length }}
+            </a>
+          </div>
+
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('accounts') }}</span>
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.accounts.length }}
+            </a>
+          </div>
         </div>
       </template>
     </BaseTable>
@@ -55,11 +78,29 @@ table.fetch();
 </script>
 
 <style lang="scss">
+@import 'styles';
+
 .domains-list-page {
   &__row {
     width: 100%;
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
+  }
+
+  &__mobile-card {
+    padding: size(2);
+  }
+
+  &__mobile-row {
+    display: flex;
+    align-items: center;
+  }
+
+  &__mobile-label {
+    text-align: right;
+    width: 80px;
+    padding: size(1);
+    margin-right: size(3);
   }
 }
 </style>

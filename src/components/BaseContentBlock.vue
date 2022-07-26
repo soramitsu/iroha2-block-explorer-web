@@ -52,7 +52,11 @@ const slots = useSlots();
 
   &__title {
     color: theme-color('content-primary');
-    @include tpg-h2;
+    @include tpg-h3;
+
+    @include sm {
+      @include tpg-h2;
+    }
   }
 }
 </style>

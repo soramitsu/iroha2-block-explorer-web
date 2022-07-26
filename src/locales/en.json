@@ -42,12 +42,16 @@
     "nodes": "Nodes",
     "nodeLocations": "Node Locations",
     "averageViewChanges": "Average View Changes per Block",
-    "title": "Hyperleger Iroha Blockchain Explorer",
+    "title": {
+      "firstLine": "Hyperleger Iroha",
+      "secondLine": "Blockchain Explorer"
+    },
     "searchPlaceholder": "Search Address / Txn Hash / Block / Token"
   },
   "time": {
-    "minAgo": "{0} min ago",
+    "min": "{0} min",
     "sec": "{0} sec",
+    "ago": "ago",
     "today": "Today",
     "week": "Week",
     "month": "Month",

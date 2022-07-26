@@ -6,25 +6,18 @@
 
     <template #default>
       <template v-for="(block, i) in blocks" :key="i">
-        <div class="content-row content-row--with-hover">
+        <div class="latest-blocks__row">
           <a href="" class="primary-link">{{ block.height }}</a>
 
           <div class="latest-blocks__time">
-            <div class="latest-blocks__time-item">
-              <MinutesIcon />
-              <span>{{ $t('time.minAgo', [elapsed.allMinutes(block.timestamp)]) }}</span>
-            </div>
-
-            <div class="latest-blocks__time-item">
-              <SecondsIcon />
-              <span>{{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}</span>
-            </div>
+            <MinutesIcon />
+            {{ $t('time.min', [elapsed.allMinutes(block.timestamp)]) }}
+            {{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}
+            {{ $t('time.ago') }}
           </div>
 
           <a href="" class="primary-link">{{ block.transactions }} txns</a>
         </div>
-
-        <hr>
       </template>
     </template>
   </BaseContentBlock>
@@ -34,7 +27,6 @@
 import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseButton from '@/components/BaseButton.vue';
 import MinutesIcon from '@/icons/clock.svg';
-import SecondsIcon from '@/icons/stopwatch.svg';
 import { fetchBlocks } from '@/http';
 import { ref } from 'vue';
 import { elapsed } from '@/lib/time';
@@ -49,18 +41,42 @@ fetchBlocks({ page_size: 11, page: 1 })
 @import 'styles';
 
 .latest-blocks {
+  &__row {
+    padding: size(1) size(2);
+    border-bottom: 1px solid theme-color('border-primary');
+    display: grid;
+    grid-gap: size(1);
+    grid-template-columns: 70px auto;
+    justify-content: start;
+    align-items: center;
+    min-height: 64px;
+
+    &:hover {
+      box-shadow: theme-shadow('row');
+      border-color: transparent;
+    }
+
+    & > * {
+      width: fit-content;
+    }
+
+    @include xs {
+      grid-template-columns: 70px auto 70px;
+      justify-content: space-between;
+    }
+
+    @include sm {
+      padding: 0 size(4);
+    }
+  }
+
   &__time {
     display: grid;
-    grid-gap: size(2);
+    grid-gap: size(1);
     grid-auto-flow: column;
-    @include tpg-s3;
     color: theme-color('content-primary');
 
-    &-item {
-      display: grid;
-      grid-gap: size(1);
-      grid-auto-flow: column;
-    }
+    @include tpg-s3;
   }
 
   path {

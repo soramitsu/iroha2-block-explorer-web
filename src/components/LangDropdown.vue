@@ -6,7 +6,7 @@
     @click="dropdown.toggle"
   >
     <LangIcon class="lang-dropdown__lang-icon" />
-    <span class="lang-dropdown__code">EN</span>
+    <span class="lang-dropdown__code">{{ value }}</span>
     <ArrowIcon class="lang-dropdown__arrow-icon" />
   </BaseButton>
 
@@ -78,6 +78,7 @@ const value = ref('en');
   &__code {
     display: none;
     margin-left: size(1);
+    text-transform: uppercase;
 
     @include md {
       display: block;

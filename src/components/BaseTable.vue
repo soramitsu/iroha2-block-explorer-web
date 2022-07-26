@@ -1,48 +1,57 @@
 <template>
   <div class="base-table">
-    <div class="content-row">
+    <div v-if="width >= 1200" class="content-row">
       <slot name="header" />
     </div>
 
-    <template v-for="(item, i) in items" :key="i">
-      <hr>
+    <div class="base-table__content">
+      <template v-for="(item, i) in items" :key="i">
+        <div v-if="item && width >= 1200" class="content-row content-row--with-hover">
+          <slot name="row" :item="item" />
+        </div>
 
-      <div class="content-row content-row--with-hover">
-        <slot v-if="item" name="row" :item="item" />
+        <div v-else-if="item && width < 1200" class="base-table__mobile-card">
+          <slot name="mobile-card" :item="item" />
+        </div>
+
         <BaseLoading v-else-if="i === Math.floor(items.length / 2)" />
-      </div>
-    </template>
+      </template>
+    </div>
 
     <hr>
 
     <div class="base-table__pagination">
-      <div class="base-table__segment-info">
-        {{ segmentInfo }}
+      <div class="base-table__pagination-item">
+        <div class="base-table__segment-info">
+          {{ segmentInfo }}
+        </div>
+
+        <BaseDropdown
+          :items="sizeOptions"
+          :model-value="props.pagination.page_size"
+          :field-label="$t('rowsPerPage')"
+          width="175px"
+          @update:model-value="emit('setSize', $event as number)"
+        />
       </div>
 
-      <BaseDropdown
-        :items="sizeOptions"
-        :model-value="props.pagination.page_size"
-        :field-label="$t('rowsPerPage')"
-        width="175px"
-        @update:model-value="emit('setSize', $event as number)"
-      />
+      <div class="base-table__pagination-item">
+        <div class="base-table__numbers">
+          <span
+            v-for="(item, i) in numbers"
+            :key="i"
+            class="base-table__number"
+            :data-active="item === props.pagination.page || null"
+            @click="Number.isInteger(item) ? emit('setPage', item as number) : null"
+          >
+            {{ item }}
+          </span>
+        </div>
 
-      <div class="base-table__numbers">
-        <span
-          v-for="(item, i) in numbers"
-          :key="i"
-          class="base-table__number"
-          :data-active="item === props.pagination.page || null"
-          @click="Number.isInteger(item) ? emit('setPage', item as number) : null"
-        >
-          {{ item }}
-        </span>
-      </div>
-
-      <div class="base-table__arrows">
-        <ArrowIcon class="base-table" @click="emit('prevPage')" />
-        <ArrowIcon class="base-table" @click="emit('nextPage')" />
+        <div class="base-table__arrows">
+          <ArrowIcon class="base-table" @click="emit('prevPage')" />
+          <ArrowIcon class="base-table" @click="emit('nextPage')" />
+        </div>
       </div>
     </div>
   </div>
@@ -53,6 +62,7 @@ import { computed } from 'vue';
 import BaseDropdown from '@/components/BaseDropdown.vue';
 import ArrowIcon from '@/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
+import { useWindowSize } from '@vueuse/core';
 import type { TablePagination } from '@/composables/table';
 
 type Props = {
@@ -70,6 +80,7 @@ type Emits = {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { width } = useWindowSize();
 
 const items = computed(() => {
   if (props.loading) {
@@ -133,11 +144,50 @@ const sizeOptions = [
 @import 'styles';
 
 .base-table {
+  &__content {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    @include sm {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @include lg {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__mobile-card {
+    border-top: 1px solid theme-color('border-primary');
+
+    @include sm {
+      &:nth-child(2n - 1) {
+        border-right: 1px solid theme-color('border-primary');
+      }
+    }
+
+    @include lg {
+      border-right: none;
+    }
+  }
+
   &__pagination {
     padding: size(3) size(4) 0 size(4);
+    display: grid;
+    grid-template-columns: auto;
+    align-items: center;
+    justify-items: center;
+    grid-gap: size(2);
+
+    @include sm {
+      grid-template-columns: auto auto;
+      justify-content: space-between;
+    }
+  }
+
+  &__pagination-item {
     display: flex;
     align-items: center;
-    height: size(8);
   }
 
   &__segment-info {

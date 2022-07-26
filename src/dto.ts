@@ -136,7 +136,7 @@ declare global {
     view_change_proofs: string[];
   }
 
-  export type Transaction =
+  export type TransactionDto =
     | Tagged<'Committed', CommittedTransaction>
     | Tagged<'Rejected', RejectedTransaction>;
 

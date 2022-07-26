@@ -19,9 +19,8 @@
 
 <script setup lang="ts">
 import SearchIcon from '@soramitsu-ui/icons/icomoon/basic-search-24.svg';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useActiveElement } from '@vueuse/core';
-import { computed } from '@vue/reactivity';
 
 type Props = {
   size?: 'sm' | 'md' | 'lg',
@@ -77,13 +76,25 @@ function submit() {
   }
 
   &[data-size=lg] {
-    height: 88px;
-    padding: 0 28px;
-    border-radius: 44px;
-    width: $home-content-width;
+    width: 100%;
     background: theme-color('surface');
-
     @include shadow-large-input;
+
+    height: size(6);
+    padding: 0 size(2);
+    border-radius: size(3);
+
+    @include xs {
+      height: size(8);
+      padding: 0 size(3.5);
+      border-radius: size(4);
+    }
+
+    @include md {
+      height: size(11);
+      padding: 0 size(3.5);
+      border-radius: size(5.5);
+    }
 
     &:hover {
       @include shadow-large-input-active;
@@ -94,13 +105,26 @@ function submit() {
     }
 
     input {
-      @include tpg-s2;
+      @include tpg-s5;
+
+      @include xs {
+        @include tpg-s3;
+      }
+
+      @include md {
+        @include tpg-s2;
+      }
     }
 
     svg {
       margin-right: size(2);
-      height: size(4);
-      width: size(4);
+      height: size(2);
+      width: size(2);
+
+      @include xs {
+        height: size(4);
+        width: size(4);
+      }
     }
   }
 

@@ -77,7 +77,7 @@ export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<
   return data;
 }
 
-export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<Transaction>> {
+export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
   const { data } = await http.get('/transactions', { params });
   return data;
 }
