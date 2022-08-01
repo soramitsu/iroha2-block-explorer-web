@@ -72,8 +72,6 @@ hr {
 
 .primary-link {
   color: theme-color('primary');
-  text-decoration: none;
-  border-bottom: 1px solid theme-color('primary');
   @include tpg-link1;
 
   &:hover {
@@ -92,5 +90,10 @@ hr {
 
 .nowrap {
   white-space: nowrap;
+}
+
+.row-text {
+  @include tpg-s3;
+  color: theme-color('content-primary');
 }
 </style>

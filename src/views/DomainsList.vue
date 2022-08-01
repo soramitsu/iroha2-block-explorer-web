@@ -12,7 +12,8 @@
       <template #header>
         <div class="domains-list-page__row">
           <span class="h-sm cell">{{ $t('name') }}</span>
-          <span class="h-sm cell">{{ $t('assets') }}</span>
+          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('nfts') }}</span>
           <span class="h-sm cell">{{ $t('accounts') }}</span>
         </div>
       </template>
@@ -25,17 +26,11 @@
             </a>
           </span>
 
-          <div class="cell">
-            <a :href="`/domains/${item.id}`" class="primary-link">
-              {{ item.asset_definitions.length }}
-            </a>
-          </div>
+          <div class="cell row-text">{{ domainModel.countCryptos(item) }}</div>
 
-          <span class="cell">
-            <a :href="`/domains/${item.id}`" class="primary-link">
-              {{ item.accounts.length }}
-            </a>
-          </span>
+          <div class="cell row-text">{{ domainModel.countNFTs(item) }}</div>
+
+          <span class="cell row-text">{{ item.accounts.length }}</span>
         </div>
       </template>
 
@@ -49,17 +44,18 @@
           </div>
 
           <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ $t('assets') }}</span>
-            <a :href="`/domains/${item.id}`" class="primary-link">
-              {{ item.asset_definitions.length }}
-            </a>
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('cryptos') }}</span>
+            <span class="row-text">{{ domainModel.countCryptos(item) }}</span>
+          </div>
+
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('nfts') }}</span>
+            <span class="row-text">{{ domainModel.countNFTs(item) }}</span>
           </div>
 
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('accounts') }}</span>
-            <a :href="`/domains/${item.id}`" class="primary-link">
-              {{ item.accounts.length }}
-            </a>
+            <span class="row-text">{{ item.accounts.length }}</span>
           </div>
         </div>
       </template>
@@ -72,6 +68,7 @@ import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseTable from '@/components/BaseTable.vue';
 import { useTable } from '@/composables/table';
 import { fetchDomains } from '@/http';
+import * as domainModel from '@/models/domain';
 
 const table = useTable(fetchDomains);
 table.fetch();
@@ -84,7 +81,7 @@ table.fetch();
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr 1fr;
   }
 
   &__mobile-card {

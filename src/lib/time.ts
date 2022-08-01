@@ -16,3 +16,18 @@ export const elapsed = {
   allMinutes: getAllElapsedMinutes,
   seconds: getElapsedSeconds,
 };
+
+function formatXX(item: number) {
+  return item < 10 ? '0' + item : item;
+}
+
+export function format(timestamp: string) {
+  const date = new Date(timestamp);
+  const day = formatXX(date.getDate());
+  const month = formatXX(date.getMonth() + 1);
+  const year = date.getFullYear();
+  const hours = formatXX(date.getHours());
+  const minutes = formatXX(date.getMinutes());
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
+}

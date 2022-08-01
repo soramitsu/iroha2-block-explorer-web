@@ -18,8 +18,6 @@
       </template>
     </div>
 
-    <hr>
-
     <div class="base-table__pagination">
       <div class="base-table__pagination-item">
         <div class="base-table__segment-info">
@@ -98,20 +96,25 @@ const segmentInfo = computed(() => {
 });
 
 const numbers = computed(() => {
+  const isMobile = width.value < 960;
+  const max = isMobile ? 6 : 10;
+  const side = isMobile ? 4 : 8;
+  const offset = isMobile ? 1 : 3;
+
   const p = props.pagination;
-  if (p.pages < 10) {
+  if (p.pages < max) {
     return new Array(p.pages).fill(0).map((_, i) => i + 1);
   }
 
-  let start = (p.page - 3);
-  let end = (p.page + 3);
+  let start = (p.page - offset);
+  let end = (p.page + offset);
 
-  if (start < 3) {
-    return Array(8).fill(0).map<string|number>((_, i) => i + 1).concat(['. . .', p.pages]);
+  if (start < offset) {
+    return Array(side).fill(0).map<string|number>((_, i) => i + 1).concat(['. . .', p.pages]);
   }
 
-  if ((p.pages - end) < 3) {
-    return [1, '. . .'].concat(Array(8).fill(0).map((_, i) => p.pages - i).reverse());
+  if ((p.pages - end) < offset) {
+    return [1, '. . .'].concat(Array(side).fill(0).map((_, i) => p.pages - i).reverse());
   }
 
   start = start < 1 ? 1 : start;
@@ -144,6 +147,14 @@ const sizeOptions = [
 @import 'styles';
 
 .base-table {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100%;
+
+  @include lg {
+    grid-template-rows: auto auto 1fr;
+  }
+
   &__content {
     display: grid;
     grid-template-columns: 1fr;
@@ -172,16 +183,19 @@ const sizeOptions = [
   }
 
   &__pagination {
-    padding: size(3) size(4) 0 size(4);
+    padding: size(2) size(2) 0 size(2);
     display: grid;
     grid-template-columns: auto;
     align-items: center;
     justify-items: center;
     grid-gap: size(2);
+    align-self: end;
+    border-top: 1px solid theme-color('border-primary');
 
     @include sm {
       grid-template-columns: auto auto;
       justify-content: space-between;
+      padding: size(3) size(4) 0 size(4);
     }
   }
 
@@ -193,7 +207,11 @@ const sizeOptions = [
   &__segment-info {
     @include tpg-s4;
     color: theme-color('content-quaternary');
-    margin-right: size(3);
+    margin-right: size(1);
+
+    @include sm {
+      margin-right: size(3);
+    }
   }
 
   &__arrows {
@@ -227,9 +245,13 @@ const sizeOptions = [
   &__number {
     @include tpg-s5-bold;
     color: theme-color('content-primary');
-    padding: 0 size(1);
+    padding: 0 size(0.75);
     margin-right: size(0.5);
     cursor: pointer;
+
+    @include xs {
+      padding: 0 size(1);
+    }
 
     &[data-active] {
       color: theme-color('primary');

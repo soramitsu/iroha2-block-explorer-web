@@ -12,28 +12,24 @@
       <template #header>
         <div class="accounts-list-page__row">
           <span class="h-sm cell">{{ $t('address') }}</span>
-          <span class="h-sm cell">{{ $t('balance') }}</span>
-          <span class="h-sm cell">{{ $t('assets') }}</span>
+          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('nfts') }}</span>
         </div>
       </template>
 
       <template #row="{ item }: { item: Account }">
         <div class="accounts-list-page__row">
-          <span class="cell">
+          <div class="cell">
             <BaseCopyRow :name="$t('address')" :value="item.id">
               <a :href="`/accounts/${item.id}`" class="primary-link">
                 {{ item.id }}
               </a>
             </BaseCopyRow>
-          </span>
-
-          <span class="cell">-</span>
-
-          <div class="cell">
-            <a :href="`/accounts/${item.id}`" class="primary-link">
-              {{ item.assets.length }}
-            </a>
           </div>
+
+          <div class="cell row-text">{{ accoutModel.countCryptos(item) }}</div>
+
+          <div class="cell row-text">{{ accoutModel.countNFTs(item) }}</div>
         </div>
       </template>
 
@@ -49,15 +45,13 @@
           </div>
 
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('balance') }}</span>
-            -
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('cryptos') }}</span>
+            <div class="row-text">{{ accoutModel.countCryptos(item) }}</div>
           </div>
 
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('assets') }}</span>
-            <a :href="`/accounts/${item.id}`" class="primary-link">
-              {{ item.assets.length }}
-            </a>
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('nfts') }}</span>
+            <div class="row-text">{{ accoutModel.countNFTs(item) }}</div>
           </div>
         </div>
       </template>
@@ -72,6 +66,7 @@ import BaseTable from '@/components/BaseTable.vue';
 import ShortHash from '@/components/ShortHash.vue';
 import { useTable } from '@/composables/table';
 import { fetchAccounts } from '@/http';
+import * as accoutModel from '@/models/account';
 
 const table = useTable(fetchAccounts);
 table.fetch();
@@ -84,7 +79,7 @@ table.fetch();
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr;
   }
 
   &__mobile-card {

@@ -30,13 +30,11 @@ const { t } = useI18n({ useScope: 'global' });
 
 const info = [
   { value: '5.599s', label: t('homePage.averageBlockTime') },
-  { value: '32.2', label: t('homePage.averageTps') },
-  { value: '$154M+', label: t('homePage.totalValueLocked') },
-  { value: '12,658', label: t('homePage.activeAccounts') },
   { value: '654', label: t('homePage.validators') },
   { value: '68', label: t('homePage.nodes') },
-  { value: '36', label: t('homePage.nodeLocations') },
-  { value: '16', label: t('homePage.averageViewChanges') },
+  { value: '12,658', label: t('homePage.accounts') },
+  { value: '12345', label: t('homePage.domains') },
+  { value: '12,658', label: t('homePage.assets') },
 ];
 </script>
 
@@ -54,13 +52,17 @@ const info = [
 
   @include xs {
     margin-top: size(3);
+    margin-top: size(0); // #SEARCH: remove when functionality is ready
   }
 
   @include md {
     margin-top: size(10);
+    margin-top: size(4); // #SEARCH: remove when functionality is ready
   }
 
   &__search {
+    display: none; // #SEARCH: remove when functionality is ready
+
     position: relative;
     margin-top: size(-3);
     width: 100%;
@@ -100,7 +102,7 @@ const info = [
     }
 
     @include md {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       width: $home-content-width-tablet;
       padding: size(5) 0;
     }

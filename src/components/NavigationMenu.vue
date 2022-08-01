@@ -4,7 +4,6 @@
       v-for="(item, i) in menu"
       :key="i"
       :to="item.to"
-      line
     >
       {{ item.label }}
     </BaseButton>
@@ -25,17 +24,18 @@ import { menu } from '@/constants';
   grid-auto-flow: column;
   grid-template-columns: auto;
   align-items: center;
+  grid-gap: size(1);
 
   @include lg {
     display: grid;
   }
 
-  .base-button {
-    padding: size(1.5) size(1);
+  // .base-button {
+  //   padding: size(1.5) size(1);
 
-    @include xl {
-      padding: size(1.5) size(1.5);
-    }
-  }
+  //   @include xl {
+  //     padding: size(1.5) size(1.5);
+  //   }
+  // }
 }
 </style>
