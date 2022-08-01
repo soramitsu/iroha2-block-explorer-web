@@ -18,8 +18,15 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      { find: '@', replacement: resolve(__dirname, './src') },
-      { find: 'styles', replacement: resolve(__dirname, './src/styles/main.scss') },
+      { find: 'styles', replacement: resolve(__dirname, './src/shared/ui/styles/main.scss') },
+      { find: '~app', replacement: resolve(__dirname, './src/app') },
+      { find: '~pages', replacement: resolve(__dirname, './src/pages') },
+      { find: '~widgets', replacement: resolve(__dirname, './src/widgets') },
+      { find: '~features', replacement: resolve(__dirname, './src/features') },
+      { find: '~entities', replacement: resolve(__dirname, './src/entities') },
+      { find: '~shared', replacement: resolve(__dirname, './src/shared') },
+      { find: '~base', replacement: resolve(__dirname, './src/shared/ui/components') },
+      { find: '~icons', replacement: resolve(__dirname, './src/shared/ui/icons') },
     ],
   },
 });
