@@ -29,13 +29,5 @@ import { menu } from '@/constants';
   @include lg {
     display: grid;
   }
-
-  // .base-button {
-  //   padding: size(1.5) size(1);
-
-  //   @include xl {
-  //     padding: size(1.5) size(1.5);
-  //   }
-  // }
 }
 </style>

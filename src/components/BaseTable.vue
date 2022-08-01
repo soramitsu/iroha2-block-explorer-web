@@ -1,16 +1,16 @@
 <template>
   <div class="base-table">
-    <div v-if="width >= 1200" class="content-row">
+    <div v-if="width >= CARD_BREAKPOINT" class="content-row">
       <slot name="header" />
     </div>
 
     <div class="base-table__content">
       <template v-for="(item, i) in items" :key="i">
-        <div v-if="item && width >= 1200" class="content-row content-row--with-hover">
+        <div v-if="item && width >= CARD_BREAKPOINT" class="content-row content-row--with-hover">
           <slot name="row" :item="item" />
         </div>
 
-        <div v-else-if="item && width < 1200" class="base-table__mobile-card">
+        <div v-else-if="item && width < CARD_BREAKPOINT" class="base-table__mobile-card">
           <slot name="mobile-card" :item="item" />
         </div>
 
@@ -80,6 +80,9 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 const { width } = useWindowSize();
 
+const CARD_BREAKPOINT = 1200;
+const PAGINATION_BREAKPOINT = 960;
+
 const items = computed(() => {
   if (props.loading) {
     return Array.from({ length: props.pagination.page_size }, () => null);
@@ -96,7 +99,7 @@ const segmentInfo = computed(() => {
 });
 
 const numbers = computed(() => {
-  const isMobile = width.value < 960;
+  const isMobile = width.value < PAGINATION_BREAKPOINT;
   const max = isMobile ? 6 : 10;
   const side = isMobile ? 4 : 8;
   const offset = isMobile ? 1 : 3;
