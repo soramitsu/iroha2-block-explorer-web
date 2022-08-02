@@ -37,7 +37,7 @@ function toggleTheme() {
 @import 'styles';
 
 body.theme-transition * {
-  transition-property: background, color, fill;
+  transition-property: background, color, fill, border;
   transition-duration: 300ms;
   transition-timing-function: ease-in-out;
   box-shadow: none !important;

@@ -12,7 +12,7 @@
       <MobileMenu />
     </div>
 
-    <div id="header-dropdown-portal" class="app-header__dropdown" />
+    <div :id="PORTAL_ID" class="app-header__dropdown" />
   </header>
 </template>
 
@@ -21,8 +21,9 @@ import { NavigationMenu } from '~features/navigation';
 import { ThemeSwitcher } from '~features/switch-theme';
 import { SearchField } from '~features/search';
 import HeaderLogo from './HeaderLogo.vue';
-import LangDropdown from './LangDropdown.vue';
-import MobileMenu from './MobileMenu.vue';
+import { LangDropdown } from '~features/switch-lang';
+import { MobileMenu } from '~features/mobile-menu';
+import { PORTAL_ID } from '~shared/config';
 </script>
 
 <style lang="scss">

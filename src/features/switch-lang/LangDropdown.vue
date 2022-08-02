@@ -10,10 +10,10 @@
     <ArrowIcon class="lang-dropdown__arrow-icon" />
   </BaseButton>
 
-  <Teleport v-if="dropdown.isOpen.value" to="#header-dropdown-portal">
+  <Teleport v-if="dropdown.isOpen.value" :to="`#${PORTAL_ID}`">
     <BaseDropdownWindow
       v-model:value="value"
-      :items="langs"
+      :items="langOptions"
       size="lg"
       @update:value="dropdown.toggle"
     />
@@ -25,19 +25,11 @@ import BaseButton from '~base/BaseButton.vue';
 import BaseDropdownWindow from '~base/BaseDropdownWindow.vue';
 import LangIcon from '~icons/lang.svg';
 import ArrowIcon from '~icons/arrow.svg';
-import { useLangDropdown } from './header-dropdowns';
+import { useLangDropdown } from '~shared/model/header-portal';
+import { langOptions, PORTAL_ID } from '~shared/config';
 import { ref } from 'vue';
 
 const dropdown = useLangDropdown();
-
-const langs = [
-  { label: 'EN - English', value: 'en' },
-  { label: 'FR - Français', value: 'fr' },
-  { label: 'ES - Español', value: 'es' },
-  { label: 'DE - Deutsch', value: 'de' },
-  { label: 'RU - Русский', value: 'ru' },
-  { label: 'JP - 日本', value: 'jp' },
-];
 
 const value = ref('en');
 </script>

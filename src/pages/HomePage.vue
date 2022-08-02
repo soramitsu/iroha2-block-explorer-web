@@ -5,7 +5,7 @@
       <LangDropdown />
       <MobileMenu />
 
-      <div id="header-dropdown-portal" class="home-page__dropdown" />
+      <div :id="PORTAL_ID" class="home-page__dropdown" />
     </div>
 
     <BackgroundLogo class="home-page__background-logo" />
@@ -29,14 +29,15 @@
 
 <script setup lang="ts">
 import { ThemeSwitcher } from '~features/switch-theme';
-import LangDropdown from './LangDropdown.vue';
-import MobileMenu from './MobileMenu.vue';
-import BackgroundLogo from '~icons/background-logo.svg';
-import LogoIcon from '~icons/logo.svg';
+import { LangDropdown } from '~features/switch-lang';
+import { MobileMenu } from '~features/mobile-menu';
 import { NavigationMenu } from '~features/navigation';
 import { HomePageInfo } from '~widgets/home-page-info';
 import { LatestBlocks } from '~widgets/latest-blocks';
 import { LatestTransactions } from '~widgets/latest-transactions';
+import { PORTAL_ID } from '~shared/config';
+import BackgroundLogo from '~icons/background-logo.svg';
+import LogoIcon from '~icons/logo.svg';
 </script>
 
 <style lang="scss">

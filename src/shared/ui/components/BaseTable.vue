@@ -229,7 +229,7 @@ const sizeOptions = [
       height: size(3);
       width: size(3);
       padding: 4px;
-      fill: theme-color('content-primary');
+      color: theme-color('content-primary');
       cursor: pointer;
 
       &:first-child {

@@ -7,3 +7,14 @@ export const menu = [
   { label: i18n.global.t('accounts'), to: '/accounts' },
   { label: i18n.global.t('transactions'), to: '/transactions' },
 ];
+
+export const langOptions = [
+  { label: 'EN - English', value: 'en' },
+  { label: 'FR - Français', value: 'fr' },
+  { label: 'ES - Español', value: 'es' },
+  { label: 'DE - Deutsch', value: 'de' },
+  { label: 'RU - Русский', value: 'ru' },
+  { label: 'JP - 日本', value: 'jp' },
+];
+
+export const PORTAL_ID = 'header-dropdown-portal';

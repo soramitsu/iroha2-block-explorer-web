@@ -9,17 +9,13 @@
     <DotsIcon />
   </BaseButton>
 
-  <Teleport v-if="dropdown.isOpen.value" to="#header-dropdown-portal">
+  <Teleport v-if="dropdown.isOpen.value" :to="`#${PORTAL_ID}`">
     <BaseDropdownWindow
       size="lg"
       :items="links"
       :value="route.path"
       @update:value="choice"
-    >
-      <template #top>
-        <SearchField class="mobile-menu__search" size="sm" :placeholder="$t('search')" />
-      </template>
-    </BaseDropdownWindow>
+    />
   </Teleport>
 </template>
 
@@ -29,9 +25,8 @@ import { computed } from 'vue';
 import DotsIcon from '@soramitsu-ui/icons/icomoon/basic-more-vertical-24.svg';
 import BaseButton from '~base/BaseButton.vue';
 import BaseDropdownWindow from '~base/BaseDropdownWindow.vue';
-import { SearchField } from '~features/search';
-import { menu } from '~shared/config';
-import { useMenuDropdown } from './header-dropdowns';
+import { menu, PORTAL_ID } from '~shared/config';
+import { useMenuDropdown } from '~shared/model/header-portal';
 
 const dropdown = useMenuDropdown();
 const links = computed(() => menu.map(item => ({ label: item.label, value: item.to })));
@@ -63,12 +58,13 @@ function choice(to: string) {
     }
   }
 
-  &__search {
-    margin: 8px;
+  // #SEARCH: return it when functionality is ready
+  // &__search {
+  //   margin: 8px;
 
-    @include sm {
-      display: none !important;
-    }
-  }
+  //   @include sm {
+  //     display: none !important;
+  //   }
+  // }
 }
 </style>
