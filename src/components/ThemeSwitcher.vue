@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import DarkModeIcon from '@/assets/svg/dark-mode.svg';
+import DarkModeIcon from '@/icons/dark-mode.svg';
 import { useDark } from '@vueuse/core';
 import BaseButton from './BaseButton.vue';
 

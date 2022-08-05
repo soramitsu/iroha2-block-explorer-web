@@ -6,7 +6,7 @@
     @click="dropdown.toggle"
   >
     <LangIcon class="lang-dropdown__lang-icon" />
-    <span class="lang-dropdown__code">EN</span>
+    <span class="lang-dropdown__code">{{ value }}</span>
     <ArrowIcon class="lang-dropdown__arrow-icon" />
   </BaseButton>
 
@@ -22,8 +22,8 @@
 
 <script setup lang="ts">
 import BaseButton from './BaseButton.vue';
-import LangIcon from '@/assets/svg/lang.svg';
-import ArrowIcon from '@/assets/svg/arrow.svg';
+import LangIcon from '@/icons/lang.svg';
+import ArrowIcon from '@/icons/arrow.svg';
 import BaseDropdownWindow from './BaseDropdownWindow.vue';
 import { useLangDropdown } from '@/composables/header-dropdowns';
 import { ref } from 'vue';
@@ -78,6 +78,7 @@ const value = ref('en');
   &__code {
     display: none;
     margin-left: size(1);
+    text-transform: uppercase;
 
     @include md {
       display: block;

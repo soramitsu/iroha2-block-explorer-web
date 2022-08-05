@@ -10,11 +10,11 @@ declare global {
 
   interface Paginated<T> {
     pagination: {
-      page_number: number;
+      page: number;
       page_size: number;
-      pages: number;
+      total: number;
     };
-    items: T[];
+    data: T[];
   }
 
   interface Asset {
@@ -94,4 +94,96 @@ declare global {
       nanos: number;
     };
   }
-}
+
+  export interface BlockShallow {
+    height: number;
+    /**
+     * ISO DateTime
+     */
+    timestamp: string;
+    block_hash: string;
+    /**
+     * Transactions count
+     */
+    transactions: number;
+    /**
+     * Rejected transactions count
+     */
+    rejected_transactions: number;
+  }
+
+  export interface Block {
+    height: number;
+    /**
+     * See {@link BlockShallow.timestamp}
+     */
+    timestamp: string;
+    block_hash: string;
+    parent_block_hash: string;
+    rejected_transactions_merkle_root_hash: string;
+    invalidated_blocks_hashes: string[];
+    /**
+     * List of serialized {@link @iroha2/data-model#VersionedValidTransaction}
+     */
+    transactions: string[];
+    /**
+     * List of serialized {@link @iroha2/data-model#VersionedRejectedTransaction}
+     */
+    rejected_transactions: string[];
+    /**
+     * List of hashes. WIP always empty
+     */
+    view_change_proofs: string[];
+  }
+
+  export type TransactionDto =
+    | Tagged<'Committed', CommittedTransaction>
+    | Tagged<'Rejected', RejectedTransaction>;
+
+  export interface CommittedTransaction {
+    /**
+     * WIP zeroed
+     */
+    block_hash: string;
+    payload: TransactionPayload;
+    signatures: Signature[];
+  }
+
+  export interface RejectedTransaction extends CommittedTransaction {
+    /**
+     * List of serialized {@link @iroha2/data-model#TransactionRejectionReason}
+     */
+    rejection_reason: string;
+  }
+
+  export interface TransactionPayload {
+    account_id: string;
+    instructions: TransactionInstructions;
+    /**
+     * ISO timestamp
+     */
+    creation_time: string;
+    time_to_live_ms: number;
+    nonce: null | number;
+    metadata: any;
+  }
+
+  /**
+   * `Instructions` `string[]` - list of serialized
+   * {@link @iroha2/data-model#Instruction}
+   */
+  export type TransactionInstructions =
+    | Tagged<'Instructions', string[]>
+    | Tagged<'Wasm', undefined>;
+
+  export interface Signature {
+    /**
+     * Public key's multihash
+     */
+    public_key: string;
+    /**
+     * Hex binary
+     */
+    payload: string;
+  }
+};

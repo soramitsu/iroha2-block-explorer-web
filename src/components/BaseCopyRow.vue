@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-import CopyIcon from '@/assets/svg/copy.svg';
+import CopyIcon from '@/icons/copy.svg';
 import { useNotifications } from '@/composables/notifications';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';

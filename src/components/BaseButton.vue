@@ -59,7 +59,7 @@ const type = computed(() => {
   border: none;
   border-radius: size(3);
   transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
-  color: theme-color('content-quaternary');
+  color: theme-color('content-tertiary');
   background: transparent;
 
   @include tpg-ch1;

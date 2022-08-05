@@ -7,6 +7,7 @@ $header-height: 120px;
 $header-height-landscape-mobile: 100px;
 $header-height-mobile: 80px;
 
-$home-content-width: 1016px;
+$home-content-width: 1200px;
+$home-content-width-tablet: 860px;
 
 @function size($n) { @return #{8 * $n}px }

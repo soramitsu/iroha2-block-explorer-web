@@ -34,7 +34,8 @@ const slots = useSlots();
 .base-content-block {
   background: theme-color('surface');
   border-radius: size(4);
-  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
 
   @include shadow-block;
 
@@ -52,7 +53,11 @@ const slots = useSlots();
 
   &__title {
     color: theme-color('content-primary');
-    @include tpg-h2;
+    @include tpg-h3;
+
+    @include sm {
+      @include tpg-h2;
+    }
   }
 }
 </style>

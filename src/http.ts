@@ -13,11 +13,11 @@ const http = axios.create({
 
 export async function fetchFakeData(): Promise<Paginated<unknown>> {
   return {
-    items: new Array(10).fill({}),
+    data: new Array(10).fill({}),
     pagination: {
-      page_number: 1,
+      page: 1,
       page_size: 10,
-      pages: 1,
+      total: 1,
     },
   };
 }
@@ -69,5 +69,15 @@ export async function fetchPeerStatus(): Promise<Status> {
 
 export async function fetchRoles(): Promise<Role[]> {
   const { data } = await http.get('/roles');
+  return data;
+}
+
+export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
+  const { data } = await http.get('/blocks', { params });
+  return data;
+}
+
+export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
+  const { data } = await http.get('/transactions', { params });
   return data;
 }

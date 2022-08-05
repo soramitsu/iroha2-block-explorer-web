@@ -6,25 +6,18 @@
 
     <template #default>
       <template v-for="(block, i) in blocks" :key="i">
-        <div class="content-row content-row--with-hover">
-          <a href="" class="primary-link">{{ block.num }}</a>
+        <div class="latest-blocks__row">
+          <a href="" class="primary-link">{{ block.height }}</a>
 
           <div class="latest-blocks__time">
-            <div class="latest-blocks__time-item">
-              <MinutesIcon />
-              <span>{{ $t('time.minAgo', [1]) }}</span>
-            </div>
-
-            <div class="latest-blocks__time-item">
-              <SecondsIcon />
-              <span>{{ $t('time.sec', [30]) }}</span>
-            </div>
+            <MinutesIcon />
+            {{ $t('time.min', [elapsed.allMinutes(block.timestamp)]) }}
+            {{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}
+            {{ $t('time.ago') }}
           </div>
 
-          <a href="" class="primary-link">{{ block.len }} txns</a>
+          <a href="" class="primary-link">{{ block.transactions }} txns</a>
         </div>
-
-        <hr>
       </template>
     </template>
   </BaseContentBlock>
@@ -33,39 +26,57 @@
 <script setup lang="ts">
 import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseButton from '@/components/BaseButton.vue';
-import MinutesIcon from '@/assets/svg/clock.svg';
-import SecondsIcon from '@/assets/svg/stopwatch.svg';
+import MinutesIcon from '@/icons/clock.svg';
+import { fetchBlocks } from '@/http';
+import { ref } from 'vue';
+import { elapsed } from '@/lib/time';
 
-// type Props = {
-//   blocks: CommittedBlock[];
-// }
+const blocks = ref<BlockShallow[]>([]);
 
-// const props = defineProps<Props>();
-
-type FakeBlock = {
-  num: number;
-  len: number;
-}
-
-const blocks = new Array<FakeBlock>(10).fill({ num: 2312388, len: 143 });
+fetchBlocks({ page_size: 11, page: 1 })
+  .then(res => (blocks.value = res.data));
 </script>
 
 <style lang="scss">
 @import 'styles';
 
 .latest-blocks {
+  &__row {
+    padding: size(1) size(2);
+    border-bottom: 1px solid theme-color('border-primary');
+    display: grid;
+    grid-gap: size(1);
+    grid-template-columns: 70px auto;
+    justify-content: start;
+    align-items: center;
+    min-height: 64px;
+
+    &:hover {
+      box-shadow: theme-shadow('row');
+      border-color: transparent;
+    }
+
+    & > * {
+      width: fit-content;
+    }
+
+    @include xs {
+      grid-template-columns: 70px auto 70px;
+      justify-content: space-between;
+    }
+
+    @include sm {
+      padding: 0 size(4);
+    }
+  }
+
   &__time {
     display: grid;
-    grid-gap: size(2);
+    grid-gap: size(1);
     grid-auto-flow: column;
-    @include tpg-s3;
     color: theme-color('content-primary');
 
-    &-item {
-      display: grid;
-      grid-gap: size(1);
-      grid-auto-flow: column;
-    }
+    @include tpg-s3;
   }
 
   path {

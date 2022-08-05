@@ -1,5 +1,5 @@
 <template>
-  <a href="" class="primary-link">{{ hash }}</a>
+  <span>{{ hash }}</span>
 </template>
 
 <script setup lang="ts">

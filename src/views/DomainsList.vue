@@ -11,9 +11,52 @@
     >
       <template #header>
         <div class="domains-list-page__row">
-          <span class="h-sm cell">{{ $t('address') }}</span>
+          <span class="h-sm cell">{{ $t('name') }}</span>
           <span class="h-sm cell">{{ $t('cryptos') }}</span>
-          <span class="h-sm cell">{{ $t('assets') }}</span>
+          <span class="h-sm cell">{{ $t('nfts') }}</span>
+          <span class="h-sm cell">{{ $t('accounts') }}</span>
+        </div>
+      </template>
+
+      <template #row="{ item }: { item: Domain }">
+        <div class="domains-list-page__row">
+          <span class="cell">
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.id }}
+            </a>
+          </span>
+
+          <div class="cell row-text">{{ domainModel.countCryptos(item) }}</div>
+
+          <div class="cell row-text">{{ domainModel.countNFTs(item) }}</div>
+
+          <span class="cell row-text">{{ item.accounts.length }}</span>
+        </div>
+      </template>
+
+      <template #mobile-card="{ item }: { item: Domain }">
+        <div class="domains-list-page__mobile-card">
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>
+            <a :href="`/domains/${item.id}`" class="primary-link">
+              {{ item.id }}
+            </a>
+          </div>
+
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('cryptos') }}</span>
+            <span class="row-text">{{ domainModel.countCryptos(item) }}</span>
+          </div>
+
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('nfts') }}</span>
+            <span class="row-text">{{ domainModel.countNFTs(item) }}</span>
+          </div>
+
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('accounts') }}</span>
+            <span class="row-text">{{ item.accounts.length }}</span>
+          </div>
         </div>
       </template>
     </BaseTable>
@@ -25,17 +68,36 @@ import BaseContentBlock from '@/components/BaseContentBlock.vue';
 import BaseTable from '@/components/BaseTable.vue';
 import { useTable } from '@/composables/table';
 import { fetchDomains } from '@/http';
+import * as domainModel from '@/models/domain';
 
 const table = useTable(fetchDomains);
 table.fetch();
 </script>
 
 <style lang="scss">
+@import 'styles';
+
 .domains-list-page {
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr 1fr;
+  }
+
+  &__mobile-card {
+    padding: size(2);
+  }
+
+  &__mobile-row {
+    display: flex;
+    align-items: center;
+  }
+
+  &__mobile-label {
+    text-align: right;
+    width: 80px;
+    padding: size(1);
+    margin-right: size(3);
   }
 }
 </style>

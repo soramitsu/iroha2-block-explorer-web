@@ -1,6 +1,6 @@
 <template>
   <div class="app-page-layout">
-    <AppHeader />
+    <TheHeader />
     <div class="app-page-layout__content">
       <slot />
     </div>
@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import AppHeader from './AppHeader.vue';
+import TheHeader from './TheHeader.vue';
 </script>
 
 <style lang="scss">

@@ -2,17 +2,17 @@
   <div class="app">
     <RouterView v-if="$route?.name === 'home'" />
 
-    <AppPageLayout v-else>
+    <ThePageLayout v-else>
       <RouterView />
-    </AppPageLayout>
+    </ThePageLayout>
 
-    <AppNotifications />
+    <TheNotifications />
   </div>
 </template>
 
 <script setup lang="ts">
-import AppPageLayout from './components/AppPageLayout.vue';
-import AppNotifications from './components/AppNotifications.vue';
+import ThePageLayout from './components/ThePageLayout.vue';
+import TheNotifications from './components/TheNotifications.vue';
 </script>
 
 <style lang="scss">
@@ -45,6 +45,11 @@ hr {
   height: 1px;
   background: theme-color('border-primary');
   box-shadow: theme-shadow('separator');
+
+  &[data-vertical] {
+    width: 1px;
+    height: 100%;
+  }
 }
 
 .content-row {
@@ -53,6 +58,7 @@ hr {
   align-items: center;
   justify-content: space-between;
   min-height: 64px;
+  border-top: 1px solid theme-color('border-primary');
 }
 
 .content-row--with-hover:hover {
@@ -66,8 +72,6 @@ hr {
 
 .primary-link {
   color: theme-color('primary');
-  text-decoration: none;
-  border-bottom: 1px solid theme-color('primary');
   @include tpg-link1;
 
   &:hover {
@@ -82,5 +86,14 @@ hr {
 
 .cell {
   padding: 0 size(2);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.row-text {
+  @include tpg-s3;
+  color: theme-color('content-primary');
 }
 </style>

@@ -61,7 +61,7 @@ import MobileMenu from './MobileMenu.vue';
     display: none !important;
 
     @include sm {
-      display: flex !important;
+      // display: flex !important; // #SEARCH: turn it on when functionality is ready
       margin-left: size(2);
       margin-right: 8px;
     }
