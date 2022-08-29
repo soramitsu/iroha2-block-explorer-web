@@ -23,7 +23,7 @@
 import SuccessIcon from '@soramitsu-ui/icons/icomoon/basic-circle-checked-24.svg';
 import ErrorIcon from '@soramitsu-ui/icons/icomoon/notifications-x-octagon-24.svg';
 import CloseIcon from '@soramitsu-ui/icons/icomoon/x-16.svg';
-import { useNotifications } from '~shared/model/notifications';
+import { useNotifications } from '~shared/ui/composables/notifications';
 
 const noti = useNotifications();
 

@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
-import { useTable } from '~shared/model/table';
+import { useTable } from '~shared/lib/table';
 import { fetchAssets } from '~shared/api/http';
 
 const table = useTable(fetchAssets);

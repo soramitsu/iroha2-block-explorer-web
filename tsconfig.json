@@ -18,7 +18,7 @@
       "~entities/*": ["./src/entities/*"],
       "~shared/*": ["./src/shared/*"],
       "~base/*": ["./src/shared/ui/components/*"],
-      "~icons/*": ["./src/shared/ui/icons/*"]
+      "~icons/*": ["./src/shared/ui/icons/*"],
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],

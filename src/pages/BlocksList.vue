@@ -80,7 +80,7 @@ import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
 import BaseCopyRow from '~base/BaseCopyRow.vue';
 import ShortHash from '~base/BaseShortHash.vue';
-import { useTable } from '~shared/model/table';
+import { useTable } from '~shared/lib/table';
 import { fetchBlocks } from '~shared/api/http';
 import { format } from '~shared/lib/time';
 

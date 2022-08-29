@@ -61,7 +61,7 @@ import { useWindowSize } from '@vueuse/core';
 import BaseDropdown from '~base/BaseDropdown.vue';
 import ArrowIcon from '~icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
-import type { TablePagination } from '~shared/model/table';
+import type { TablePagination } from '~shared/lib/table';
 
 type Props = {
   loading: boolean;

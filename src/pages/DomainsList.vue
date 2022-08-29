@@ -66,7 +66,7 @@
 <script setup lang="ts">
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
-import { useTable } from '~shared/model/table';
+import { useTable } from '~shared/lib/table';
 import { fetchDomains } from '~shared/api/http';
 import { domainModel } from '~entities/domain';
 

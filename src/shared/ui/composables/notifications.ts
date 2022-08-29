@@ -1,12 +1,12 @@
 import { ref } from 'vue';
 
-export interface CreateNotificationData {
+export interface NotificationDataBlank {
   type: 'success' | 'error',
   message: string,
   autoClosing?: boolean,
 };
 
-export interface NotificationData extends CreateNotificationData {
+export interface NotificationData extends NotificationDataBlank {
   id: number,
 }
 
@@ -19,7 +19,7 @@ function close(id: number) {
   list.value = list.value.filter(item => item.id !== id);
 }
 
-function show(data: CreateNotificationData) {
+function show(data: NotificationDataBlank) {
   const itemId = id++;
   list.value.push({ ...data, id: itemId });
 

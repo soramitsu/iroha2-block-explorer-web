@@ -26,7 +26,7 @@ import DotsIcon from '@soramitsu-ui/icons/icomoon/basic-more-vertical-24.svg';
 import BaseButton from '~base/BaseButton.vue';
 import BaseDropdownWindow from '~base/BaseDropdownWindow.vue';
 import { menu, PORTAL_ID } from '~shared/config';
-import { useMenuDropdown } from '~shared/model/header-portal';
+import { useMenuDropdown } from '~shared/ui/composables/header-portal';
 
 const dropdown = useMenuDropdown();
 const links = computed(() => menu.map(item => ({ label: item.label, value: item.to })));

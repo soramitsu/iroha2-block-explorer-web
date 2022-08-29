@@ -64,7 +64,7 @@ import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseCopyRow from '~base/BaseCopyRow.vue';
 import BaseTable from '~base/BaseTable.vue';
 import ShortHash from '~base/BaseShortHash.vue';
-import { useTable } from '~shared/model/table';
+import { useTable } from '~shared/lib/table';
 import { fetchAccounts } from '~shared/api/http';
 import { accountModel } from '~entities/account';
 

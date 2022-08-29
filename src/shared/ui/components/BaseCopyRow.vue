@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
-import { useNotifications } from '~shared/model/notifications';
+import { useNotifications } from '~shared/ui/composables/notifications';
 import CopyIcon from '~icons/copy.svg';
 
 type Props = {

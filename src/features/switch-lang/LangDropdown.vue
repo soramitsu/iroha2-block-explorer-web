@@ -25,7 +25,7 @@ import BaseButton from '~base/BaseButton.vue';
 import BaseDropdownWindow from '~base/BaseDropdownWindow.vue';
 import LangIcon from '~icons/lang.svg';
 import ArrowIcon from '~icons/arrow.svg';
-import { useLangDropdown } from '~shared/model/header-portal';
+import { useLangDropdown } from '~shared/ui/composables/header-portal';
 import { langOptions, PORTAL_ID } from '~shared/config';
 import { ref } from 'vue';
 
