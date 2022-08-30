@@ -2,7 +2,7 @@
 
 def pipeline = new org.js.AppPipeline(
     packageManager:     'npm',
-    buildCmds: ["npm install && npm run build"],
+    buildCmds: ["npm ci && npm run build"],
     steps:              this,
     test:               false,
     dockerImageName:    'iroha2/iroha2-block-explorer-web',
