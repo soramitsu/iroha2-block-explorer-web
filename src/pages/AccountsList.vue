@@ -37,11 +37,12 @@
         <div class="accounts-list-page__mobile-card">
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('address') }}</span>
-            <BaseCopyRow :name="$t('address')" :value="item.id">
-              <a :href="`/accounts/${item.id}`" class="primary-link">
-                <ShortHash :hash="item.id" />
-              </a>
-            </BaseCopyRow>
+            <BaseHash
+              :hash="item.id"
+              :link="`/accounts/${item.id}`"
+              type="short"
+              copy
+            />
           </div>
 
           <div class="accounts-list-page__mobile-row">
@@ -63,7 +64,7 @@
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseCopyRow from '~base/BaseCopyRow.vue';
 import BaseTable from '~base/BaseTable.vue';
-import ShortHash from '~base/BaseShortHash.vue';
+import BaseHash from '~base/BaseHash.vue';
 import { useTable } from '~shared/lib/table';
 import { fetchAccounts } from '~shared/api/http';
 import { accountModel } from '~entities/account';

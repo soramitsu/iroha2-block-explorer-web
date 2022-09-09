@@ -10,7 +10,7 @@
           <a href="" class="primary-link">{{ block.height }}</a>
 
           <div class="latest-blocks__time">
-            <MinutesIcon />
+            <TimeIcon />
             {{ $t('time.min', [elapsed.allMinutes(block.timestamp)]) }}
             {{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}
             {{ $t('time.ago') }}
@@ -27,7 +27,7 @@
 import { ref } from 'vue';
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseButton from '~base/BaseButton.vue';
-import MinutesIcon from '~icons/clock.svg';
+import TimeIcon from '~icons/clock.svg';
 import { fetchBlocks } from '~shared/api/http';
 import { elapsed } from '~shared/lib/time';
 

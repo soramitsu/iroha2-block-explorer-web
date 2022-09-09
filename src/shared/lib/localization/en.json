@@ -32,8 +32,8 @@
   "tokens": "Tokens",
   "total": "Total",
   "clipboard": {
-    "success": "{0} copied to clipboard",
-    "error": "Impossible copy {0} to clipboard"
+    "success": "Copied to clipboard",
+    "error": "Impossible copy to clipboard"
   },
   "homePage": {
     "domains": "Number of domains",
@@ -60,6 +60,8 @@
   },
   "sort": {
     "mostRecent": "Most Recent",
-    "mostValue": "Most Value"
+    "mostValue": "Most Value",
+    "wasm": "WebAssembly",
+    "instruction": "Instruction"
   }
 }

@@ -7,13 +7,6 @@
     <template #default>
       <div class="latest-transactions__filters">
         <BaseTabs v-model="activeTab" :items="tabs" />
-
-        <BaseDropdown
-          v-model="filterValue"
-          :items="filterItems"
-          width="180px"
-          :field-label="$t('timespan') + ':'"
-        />
       </div>
 
       <hr>
@@ -21,14 +14,12 @@
       <template v-for="(transaction, i) in transactions" :key="i">
         <div class="latest-transactions__row">
           <div class="latest-transactions__left">
-            <BaseShortHash :hash="transaction.hash" />
-            <span class="latest-transactions__time">{{ $t('time.min', [8]) }} {{ $t('time.ago') }}</span>
+            <BaseHash :hash="transaction.hash" type="two-line" :link="'/transactions/' + fakeHash" />
           </div>
 
-          <div class="latest-transactions__direction">
-            <BaseShortHash :hash="transaction.from" />
-            <ArrowIcon />
-            <BaseShortHash :hash="transaction.to" />
+          <div class="latest-transactions__time">
+            <TimeIcon />
+            <span>{{ $t('time.min', [8]) }} {{ $t('time.ago') }}</span>
           </div>
 
           <div class="latest-transactions__right">
@@ -46,10 +37,9 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseButton from '~base/BaseButton.vue';
-import BaseShortHash from '~base/BaseShortHash.vue';
+import BaseHash from '~base/BaseHash.vue';
 import BaseTabs from '~base/BaseTabs.vue';
-import BaseDropdown from '~base/BaseDropdown.vue';
-import ArrowIcon from '~icons/arrow.svg';
+import TimeIcon from '~icons/clock.svg';
 import { fetchTransactions } from '~shared/api/http';
 import { transactionModel } from '~entities/transaction';
 
@@ -61,6 +51,8 @@ type FakeTransactions = {
 
 const { t } = useI18n({ useScope: 'global' });
 
+const fakeHash = 'cnTQ1kbv7PBNNQrEb1tZpmK7h1CW5Hkb5ZBLpK3JbMfZjx9RN';
+
 const transactions = new Array<FakeTransactions>(10).fill({
   from: 'cnTQ1kbv7PBNNQrEb1tZpmK7h1CW5Hkb5ZBLpK3JbMfZjx9RN',
   to: 'cnTQ1kbv7PBNNQrEb1tZpmK7h1CW5Hkb5ZBLpK3JbMfZjx9RN',
@@ -68,25 +60,16 @@ const transactions = new Array<FakeTransactions>(10).fill({
 });
 
 const tabs = [
-  { label: t('sort.mostRecent'), value: 'most-recent' },
-  { label: t('sort.mostValue'), value: 'most-value' },
-];
-
-const filterItems = [
-  { label: t('time.today'), value: 'today' },
-  { label: t('time.week'), value: 'week' },
-  { label: t('time.month'), value: 'month' },
-  { label: t('time.year'), value: 'year' },
-  { label: t('time.allTime'), value: 'all-time' },
+  { label: t('sort.instruction'), value: 'instruction' },
+  { label: t('sort.wasm'), value: 'wasm' },
 ];
 
 const activeTab = ref(tabs[0].value);
-const filterValue = ref(filterItems[4].value);
 
 const _transactions = ref<Transaction[]>([]);
 
 async function fetch() {
-  const { data } = await fetchTransactions({ page: 1, page_size: 1 });
+  const { data } = await fetchTransactions({ page: 1, page_size: 10 });
   _transactions.value = data.map(transactionModel.mapFromDto);
 }
 
@@ -162,8 +145,16 @@ fetch();
   }
 
   &__time {
-    @include tpg-s5;
+    display: grid;
+    grid-gap: size(1);
+    grid-auto-flow: column;
     color: theme-color('content-primary');
+
+    @include tpg-s3;
+  }
+
+  path {
+    fill: theme-color('content-quaternary');
   }
 
   &__direction {

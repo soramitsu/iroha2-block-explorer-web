@@ -58,11 +58,12 @@
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('hash') }}</span>
-            <BaseCopyRow :name="$t('hash')" :value="item.block_hash">
-              <a :href="`/blocks/${item.height}`" class="primary-link">
-                <ShortHash :hash="item.block_hash" />
-              </a>
-            </BaseCopyRow>
+            <BaseHash
+              :hash="item.block_hash"
+              :link="`/blocks/${item.height}`"
+              type="short"
+              copy
+            />
           </div>
 
           <div class="blocks-list-page__mobile-row">
@@ -79,7 +80,7 @@
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
 import BaseCopyRow from '~base/BaseCopyRow.vue';
-import ShortHash from '~base/BaseShortHash.vue';
+import BaseHash from '~base/BaseHash.vue';
 import { useTable } from '~shared/lib/table';
 import { fetchBlocks } from '~shared/api/http';
 import { format } from '~shared/lib/time';

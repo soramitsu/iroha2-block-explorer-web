@@ -77,6 +77,7 @@ hr {
 
 .primary-link {
   color: theme-color('primary');
+  cursor: pointer;
   @include tpg-link1;
 
   &:hover {
