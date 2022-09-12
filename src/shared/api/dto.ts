@@ -24,9 +24,9 @@ declare global {
   }
 
   type AssetValue =
-    | Tagged<'Quantity', number>
-    | Tagged<'BigQuantity', bigint> // be careful! should be deserialized with `json-bigint`
-    | Tagged<'Fixed', string> // it's a number too, "float" number, but it cannot fit into js `number`
+    | Tagged<'Quantity', string>
+    | Tagged<'BigQuantity', string>
+    | Tagged<'Fixed', string>
     | Tagged<'Store', any>;
 
   type AssetValueType = 'Quantity' | 'BigQuantity' | 'Fixed' | 'Store';
@@ -81,17 +81,13 @@ declare global {
     payload: string;
   }
 
-  /**
-   * This JSON should be parsed with bigint support
-   * e.g. https://www.npmjs.com/package/json-bigint
-   */
   interface Status {
-    peers: bigint;
-    blocks: bigint;
-    txs: bigint;
+    peers: string;
+    blocks: string;
+    txs: string;
     uptime: {
-      secs: bigint;
-      nanos: number;
+      secs: string;
+      nanos: string;
     };
   }
 

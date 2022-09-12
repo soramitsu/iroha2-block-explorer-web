@@ -1,83 +1,65 @@
-import axios from 'axios';
-import JSONbig from 'json-bigint';
-
 export type PaginationParams = {
   page: number,
   page_size: number,
 }
 
-const http = axios.create({
-  baseURL: import.meta.env.VITE_API_URL as string ?? '/api/v1',
-  transformResponse: x => JSONbig.parse(x),
-});
+const BASE_URL = import.meta.env.VITE_API_URL as string ?? '/api/v1';
 
-export async function fetchFakeData(): Promise<Paginated<unknown>> {
-  return {
-    data: new Array(10).fill({}),
-    pagination: {
-      page: 1,
-      page_size: 10,
-      total: 1,
-    },
-  };
+async function get<T>(path: string, params?: PaginationParams): Promise<T> {
+  const url = new URL(`${BASE_URL}${path}`);
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value)));
+  }
+
+  const res = await fetch(url);
+  return res.json();
 }
 
-export async function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
-  const { data } = await http.get('/accounts', { params });
-  return data;
+export function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
+  return get('/accounts', params);
 }
 
-export async function fetchAccount(id: string): Promise<Account> {
-  const { data } = await http.get(`/accounts/${id}`);
-  return data;
+export function fetchAccount(id: string): Promise<Account> {
+  return get(`/accounts/${id}`);
 }
 
-export async function fetchAssets(params?: PaginationParams): Promise<Paginated<Asset>> {
-  const { data } = await http.get('/assets', { params });
-  return data;
+export function fetchAssets(params?: PaginationParams): Promise<Paginated<Asset>> {
+  return get('/assets', params);
 }
 
-export async function fetchAsset(definition_id: string, account_id: string): Promise<Asset> {
-  const { data } = await http.get(`/assets/${definition_id}/${account_id}`);
-  return data;
+export function fetchAsset(definition_id: string, account_id: string): Promise<Asset> {
+  return get(`/assets/${definition_id}/${account_id}`);
 }
 
-export async function fetchAssetDefinitions(params:PaginationParams): Promise<Paginated<AssetDefinition>> {
-  const { data } = await http.get('/asset-definitions', { params });
-  return data;
+export function fetchAssetDefinitions(params:PaginationParams): Promise<Paginated<AssetDefinition>> {
+  return get('/asset-definitions', params);
 }
 
-export async function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
-  const { data } = await http.get('/domains', { params });
-  return data;
+export function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
+  return get('/domains', params);
 }
 
-export async function fetchDomain(id: string): Promise<Domain> {
-  const { data } = await http.get(`/domains/${id}`);
-  return data;
+export function fetchDomain(id: string): Promise<Domain> {
+  return get(`/domains/${id}`);
 };
 
-export async function fetchPeers(): Promise<Peer[]> {
-  const { data } = await http.get('/peer/peers');
-  return data;
+export function fetchPeers(): Promise<Peer[]> {
+  return get('/peer/peers');
 }
 
-export async function fetchPeerStatus(): Promise<Status> {
-  const { data } = await http.get('/peer/status');
-  return data;
+export function fetchPeerStatus(): Promise<Status> {
+  return get('/peer/status');
 }
 
-export async function fetchRoles(): Promise<Role[]> {
-  const { data } = await http.get('/roles');
-  return data;
+export function fetchRoles(): Promise<Role[]> {
+  return get('/roles');
 }
 
-export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
-  const { data } = await http.get('/blocks', { params });
-  return data;
+export function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
+  return get('/blocks', params);
 }
 
-export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
-  const { data } = await http.get('/transactions', { params });
-  return data;
+export function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
+  return get('/transactions', params);
 }
