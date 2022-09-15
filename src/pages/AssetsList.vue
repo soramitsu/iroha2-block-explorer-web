@@ -65,9 +65,9 @@
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
 import { useTable } from '~shared/lib/table';
-import { fetchAssets } from '~shared/api/http';
+import { http } from '~shared/api';
 
-const table = useTable(fetchAssets);
+const table = useTable(http.fetchAssets);
 table.fetch();
 </script>
 

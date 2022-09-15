@@ -10,6 +10,7 @@
   "dependencies": {
     "@iroha2/crypto-target-web": "^0.4.0",
     "@iroha2/data-model": "^2.0.2",
+    "@ngneat/falso": "^6.1.0",
     "@soramitsu-ui/icons": "^0.1.0",
     "@soramitsu-ui/theme": "^0.3.0",
     "@soramitsu-ui/ui": "^0.6.1",

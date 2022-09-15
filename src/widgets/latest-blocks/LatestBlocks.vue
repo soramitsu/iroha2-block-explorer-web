@@ -28,12 +28,12 @@ import { ref } from 'vue';
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseButton from '~base/BaseButton.vue';
 import TimeIcon from '~icons/clock.svg';
-import { fetchBlocks } from '~shared/api/http';
+import { http } from '~shared/api';
 import { elapsed } from '~shared/lib/time';
 
 const blocks = ref<BlockShallow[]>([]);
 
-fetchBlocks({ page_size: 11, page: 1 })
+http.fetchBlocks({ page_size: 11, page: 1 })
   .then(res => (blocks.value = res.data));
 </script>
 

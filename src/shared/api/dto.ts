@@ -3,10 +3,15 @@
 export { };
 
 declare global {
-  type Tagged<Tag extends string, Content> = {
-    t: Tag;
+  type Tagged<T, Content> = {
+    t: T;
     c: Content;
   };
+
+  type PaginationParams = {
+    page: number,
+    page_size: number,
+  }
 
   interface Paginated<T> {
     pagination: {
@@ -57,10 +62,10 @@ declare global {
   interface Account {
     id: string;
     assets: Asset[];
-    signatories: PublicKey[];
-    permission_tokens: PermissionToken[];
+    signatories?: PublicKey[];
+    permission_tokens?: PermissionToken[];
     roles: Role[];
-    signature_check_condition: any;
+    signature_check_condition?: any;
     metadata: any;
   }
 

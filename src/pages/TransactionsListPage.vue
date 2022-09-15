@@ -1,14 +1,9 @@
 <template>
   <BaseContentBlock :title="$t('transactions')" class="transactions-list-page">
     <div class="content-row">
-      <BaseTabs v-model="activeTab" :items="tabs" />
+      <BaseTabs v-model:value="activeTab" :items="tabs" />
 
-      <BaseDropdown
-        v-model="filterValue"
-        :items="filterItems"
-        width="180px"
-        :field-label="$t('timespan') + ':'"
-      />
+      <BaseRadioGroup v-model:value="radioValue" :items="radioItems" />
     </div>
 
     <BaseInnerBlock :title="t('transfer')" accordion>
@@ -22,7 +17,7 @@
 <script setup lang="ts">
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTabs from '~base/BaseTabs.vue';
-import BaseDropdown from '~base/BaseDropdown.vue';
+import BaseRadioGroup from '~base/BaseRadioGroup.vue';
 import BaseInnerBlock from '~base/BaseInnerBlock.vue';
 import BaseCopyRow from '~base/BaseCopyRow.vue';
 import { ref } from 'vue';
@@ -39,16 +34,13 @@ const tabs = [
   { label: t('revokes'), value: 'revokes' },
 ];
 
-const filterItems = [
-  { label: t('time.today'), value: 'today' },
-  { label: t('time.week'), value: 'week' },
-  { label: t('time.month'), value: 'month' },
-  { label: t('time.year'), value: 'year' },
-  { label: t('time.allTime'), value: 'allTime' },
+const radioItems = [
+  { label: t('time.today'), value: 'committed' },
+  { label: t('time.week'), value: 'rejected' },
 ];
 
 const activeTab = ref(tabs[0].value);
-const filterValue = ref(filterItems[4].value);
+const radioValue = ref<string|null>(null);
 </script>
 
 <style>

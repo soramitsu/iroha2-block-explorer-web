@@ -26,10 +26,10 @@
 
         <BaseDropdown
           :items="sizeOptions"
-          :model-value="props.pagination.page_size"
+          :value="props.pagination.page_size"
           :field-label="$t('rowsPerPage')"
           width="175px"
-          @update:model-value="emit('setSize', $event as number)"
+          @update:value="emit('setSize', $event as number)"
         />
       </div>
 
@@ -211,6 +211,7 @@ const sizeOptions = [
     @include tpg-s4;
     color: theme-color('content-quaternary');
     margin-right: size(1);
+    user-select: none;
 
     @include sm {
       margin-right: size(3);

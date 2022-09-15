@@ -6,7 +6,7 @@
 
     <template #default>
       <div class="latest-transactions__filters">
-        <BaseTabs v-model="activeTab" :items="tabs" />
+        <BaseTabs v-model:value="activeTab" :items="tabs" />
       </div>
 
       <hr>
@@ -40,7 +40,7 @@ import BaseButton from '~base/BaseButton.vue';
 import BaseHash from '~base/BaseHash.vue';
 import BaseTabs from '~base/BaseTabs.vue';
 import TimeIcon from '~icons/clock.svg';
-import { fetchTransactions } from '~shared/api/http';
+import { http } from '~shared/api';
 import { transactionModel } from '~entities/transaction';
 
 type FakeTransactions = {
@@ -69,7 +69,7 @@ const activeTab = ref(tabs[0].value);
 const _transactions = ref<Transaction[]>([]);
 
 async function fetch() {
-  const { data } = await fetchTransactions({ page: 1, page_size: 10 });
+  const { data } = await http.fetchTransactions({ page: 1, page_size: 10 });
   _transactions.value = data.map(transactionModel.mapFromDto);
 }
 

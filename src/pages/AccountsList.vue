@@ -66,10 +66,10 @@ import BaseCopyRow from '~base/BaseCopyRow.vue';
 import BaseTable from '~base/BaseTable.vue';
 import BaseHash from '~base/BaseHash.vue';
 import { useTable } from '~shared/lib/table';
-import { fetchAccounts } from '~shared/api/http';
+import { http } from '~shared/api';
 import { accountModel } from '~entities/account';
 
-const table = useTable(fetchAccounts);
+const table = useTable(http.fetchAccounts);
 table.fetch();
 </script>
 

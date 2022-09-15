@@ -82,10 +82,10 @@ import BaseTable from '~base/BaseTable.vue';
 import BaseCopyRow from '~base/BaseCopyRow.vue';
 import BaseHash from '~base/BaseHash.vue';
 import { useTable } from '~shared/lib/table';
-import { fetchBlocks } from '~shared/api/http';
+import { http } from '~shared/api';
 import { format } from '~shared/lib/time';
 
-const table = useTable(fetchBlocks);
+const table = useTable(http.fetchBlocks);
 table.fetch();
 </script>
 

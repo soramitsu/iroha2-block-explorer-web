@@ -67,10 +67,10 @@
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
 import { useTable } from '~shared/lib/table';
-import { fetchDomains } from '~shared/api/http';
+import { http } from '~shared/api';
 import { domainModel } from '~entities/domain';
 
-const table = useTable(fetchDomains);
+const table = useTable(http.fetchDomains);
 table.fetch();
 </script>
 

@@ -32,14 +32,14 @@ type DropdownItem = {
 }
 
 type Props = {
-  modelValue: string | number,
+  value: string | number,
   items: DropdownItem[],
   fieldLabel: string,
   width: string,
 }
 
 type Emits = {
-  (e: 'update:modelValue', value: string | number): void
+  (e: 'update:value', value: string | number): void
 }
 
 const props = defineProps<Props>();
@@ -47,11 +47,11 @@ const emit = defineEmits<Emits>();
 
 const isOpen = ref(false);
 const valueLabel = computed(
-  () => props.items.find(item => item.value === props.modelValue)?.label ?? '',
+  () => props.items.find(item => item.value === props.value)?.label ?? '',
 );
 
 function choise(value: string | number) {
-  emit('update:modelValue', value);
+  emit('update:value', value);
   isOpen.value = false;
 }
 </script>
