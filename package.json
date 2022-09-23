@@ -12,8 +12,6 @@
     "@iroha2/data-model": "^2.0.2",
     "@ngneat/falso": "^6.1.0",
     "@soramitsu-ui/icons": "^0.1.0",
-    "@soramitsu-ui/theme": "^0.3.0",
-    "@soramitsu-ui/ui": "^0.6.1",
     "@vueuse/core": "^9.1.1",
     "vue": "^3.2.38",
     "vue-i18n": "^9.2.2",
