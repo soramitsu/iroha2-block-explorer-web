@@ -146,6 +146,8 @@ declare global {
      * WIP zeroed
      */
     block_hash: string;
+    block_height: number;
+    hash: string;
     payload: TransactionPayload;
     signatures: Signature[];
   }

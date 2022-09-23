@@ -1,8 +1,12 @@
 import { Instruction } from '@iroha2/data-model';
+import { http } from '~shared/api';
 
 declare global {
   export interface Transaction {
+    committed: boolean,
     block_hash: string;
+    block_height: number;
+    hash: string;
     payload: {
       account_id: string;
       instructions: Instruction[];
@@ -25,12 +29,15 @@ function hexToBytes(hex: string) {
   return Uint8Array.from(bytes);
 }
 
-function mapFromDto(transaction: TransactionDto): Transaction {
+export function mapFromDto(transaction: TransactionDto): Transaction {
   const instructions = transaction.c.payload.instructions.c
     ?.map((i: string) => Instruction.fromBuffer(hexToBytes(i))) ?? [];
 
   return {
+    committed: transaction.t === 'Committed',
     block_hash: transaction.c.block_hash,
+    block_height: transaction.c.block_height ?? 0,
+    hash: transaction.c.hash,
     signatures: transaction.c.signatures,
     payload: {
       ...transaction.c.payload,
@@ -39,6 +46,12 @@ function mapFromDto(transaction: TransactionDto): Transaction {
   };
 };
 
-export const transactionModel = {
-  mapFromDto,
-};
+export async function fetchList(params?: PaginationParams): Promise<Paginated<Transaction>> {
+  const res = await http.fetchTransactions(params);
+  const data = res.data.map(mapFromDto);
+
+  return {
+    pagination: res.pagination,
+    data,
+  };
+}

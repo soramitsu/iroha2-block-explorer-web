@@ -1,21 +1,22 @@
 <template>
   <div class="base-hash">
-    <RouterLink v-if="props.link" :to="props.link" class="primary-link">
-      <HashRow />
-    </RouterLink>
+    <BaseLink v-if="props.link" :to="props.link" monospace>
+      {{ content }}
+    </BaseLink>
 
-    <HashRow v-else />
+    <span v-else>{{ content }}</span>
 
     <CopyIcon v-if="props.copy" class="base-hash__copy" @click="copy" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { h } from 'vue';
+import { computed, h } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useNotifications } from '~shared/ui/composables/notifications';
 import CopyIcon from '~icons/copy.svg';
+import BaseLink from '~base/BaseLink.vue';
 
 type Props = {
   hash: string,
@@ -38,7 +39,7 @@ async function copy() {
   }
 }
 
-function getHashContent() {
+const content = computed(() => {
   switch (props.type) {
     case 'short':
       return props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
@@ -51,15 +52,13 @@ function getHashContent() {
       return [
         props.hash.slice(0, center),
         h('br'),
-        props.hash.slice(1 - center),
+        props.hash.slice(-center + props.hash.length % 2),
       ];
 
     default:
       return props.hash;
   }
-}
-
-const HashRow = h('span', getHashContent());
+});
 </script>
 
 <style lang="scss">

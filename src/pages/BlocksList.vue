@@ -4,6 +4,7 @@
       :loading="table.loading.value"
       :pagination="table.pagination"
       :items="table.items.value"
+      container-class="blocks-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -20,23 +21,21 @@
 
       <template #row="{ item }: { item: Block }">
         <div class="blocks-list-page__row">
-          <span class="cell">
-            <a :href="`/blocks/${item.height}`" class="primary-link">
-              {{ item.height }}
-            </a>
-          </span>
+          <BaseLink :to="`/blocks/${item.height}`" class="cell">
+            {{ item.height }}
+          </BaseLink>
 
           <div class="cell">
             <time class="row-text">{{ format(item.timestamp) }}</time>
           </div>
 
-          <span class="cell">
-            <BaseCopyRow :name="$t('hash')" :value="item.block_hash">
-              <a :href="`/blocks/${item.height}`" class="primary-link">
-                {{ item.block_hash }}
-              </a>
-            </BaseCopyRow>
-          </span>
+          <BaseHash
+            :hash="item.block_hash"
+            :link="`/blocks/${item.height}`"
+            type="full"
+            copy
+            class="cell"
+          />
 
           <div class="cell row-text">{{ item.transactions }}</div>
         </div>
@@ -46,9 +45,8 @@
         <div class="blocks-list-page__mobile-card">
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('height') }}</span>
-            <a :href="`/blocks/${item.height}`" class="primary-link">
-              {{ item.height }}
-            </a>
+
+            <BaseLink :to="`/blocks/${item.height}`">{{ item.height }}</BaseLink>
           </div>
 
           <div class="blocks-list-page__mobile-row">
@@ -58,6 +56,7 @@
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('hash') }}</span>
+
             <BaseHash
               :hash="item.block_hash"
               :link="`/blocks/${item.height}`"
@@ -79,8 +78,8 @@
 <script setup lang="ts">
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
-import BaseCopyRow from '~base/BaseCopyRow.vue';
 import BaseHash from '~base/BaseHash.vue';
+import BaseLink from '~shared/ui/components/BaseLink.vue';
 import { useTable } from '~shared/lib/table';
 import { http } from '~shared/api';
 import { format } from '~shared/lib/time';
@@ -114,6 +113,19 @@ table.fetch();
     width: 80px;
     padding: size(1);
     margin-right: size(3);
+  }
+
+  &__container {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    @include sm {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @include lg {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>

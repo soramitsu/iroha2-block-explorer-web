@@ -4,6 +4,8 @@ import { hash } from './utils';
 function makeTransactionContent(): CommittedTransaction {
   return {
     block_hash: hash(64),
+    block_height: randNumber(),
+    hash: hash(64),
     payload: {
       account_id: randEmail(),
       instructions: {
@@ -42,7 +44,7 @@ export function makeRejectedTransaction(): TransactionDto {
 }
 
 export function transactionList(length: number): TransactionDto[] {
-  const n = length ?? randNumber({ min: 0, max: 30 });
+  const n = length ?? randNumber({ min: 0, max: 400 });
 
   return new Array(n)
     .fill(null)

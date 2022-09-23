@@ -22,5 +22,5 @@ export function list<T>(factory: () => T, length?: number): T[] {
 }
 
 export function hash(length: number) {
-  return randHexaDecimal({ length }).join();
+  return randHexaDecimal({ length }).join('');
 }

@@ -1,5 +1,5 @@
-import '@soramitsu-ui/theme/fonts/Sora';
-// import '@soramitsu-ui/theme/src/fonts/JetBrainsMono';
+import '~shared/ui/fonts/sora/index.css';
+import '~shared/ui/fonts/jet-brains-mono/index.css';
 
 import { createApp } from 'vue';
 

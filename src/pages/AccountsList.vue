@@ -4,6 +4,7 @@
       :loading="table.loading.value"
       :pagination="table.pagination"
       :items="table.items.value"
+      container-class="accounts-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -19,13 +20,13 @@
 
       <template #row="{ item }: { item: Account }">
         <div class="accounts-list-page__row">
-          <div class="cell">
-            <BaseCopyRow :name="$t('address')" :value="item.id">
-              <a :href="`/accounts/${item.id}`" class="primary-link">
-                {{ item.id }}
-              </a>
-            </BaseCopyRow>
-          </div>
+          <BaseHash
+            :hash="item.id"
+            :link="`/accounts/${item.id}`"
+            type="full"
+            copy
+            class="cell"
+          />
 
           <div class="cell row-text">{{ accountModel.countCryptos(item) }}</div>
 
@@ -62,7 +63,6 @@
 
 <script setup lang="ts">
 import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseCopyRow from '~base/BaseCopyRow.vue';
 import BaseTable from '~base/BaseTable.vue';
 import BaseHash from '~base/BaseHash.vue';
 import { useTable } from '~shared/lib/table';
@@ -97,6 +97,19 @@ table.fetch();
     width: 80px;
     padding: size(1);
     margin-right: size(3);
+  }
+
+  &__container {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    @include sm {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @include lg {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>

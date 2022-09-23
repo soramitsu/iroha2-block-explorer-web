@@ -7,7 +7,7 @@
     <template #default>
       <template v-for="(block, i) in blocks" :key="i">
         <div class="latest-blocks__row">
-          <a href="" class="primary-link">{{ block.height }}</a>
+          <BaseLink :to="`/blocks/${block.height}`">{{ block.height }}</BaseLink>
 
           <div class="latest-blocks__time">
             <TimeIcon />
@@ -16,7 +16,7 @@
             {{ $t('time.ago') }}
           </div>
 
-          <a href="" class="primary-link">{{ block.transactions }} txns</a>
+          <span class="latest-blocks__number">{{ block.transactions }} txns</span>
         </div>
       </template>
     </template>
@@ -27,13 +27,14 @@
 import { ref } from 'vue';
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseButton from '~base/BaseButton.vue';
+import BaseLink from '~base/BaseLink.vue';
 import TimeIcon from '~icons/clock.svg';
 import { http } from '~shared/api';
 import { elapsed } from '~shared/lib/time';
 
 const blocks = ref<BlockShallow[]>([]);
 
-http.fetchBlocks({ page_size: 11, page: 1 })
+http.fetchBlocks({ page_size: 10, page: 1 })
   .then(res => (blocks.value = res.data));
 </script>
 
@@ -75,12 +76,16 @@ http.fetchBlocks({ page_size: 11, page: 1 })
     grid-gap: size(1);
     grid-auto-flow: column;
     color: theme-color('content-primary');
-
     @include tpg-s3;
   }
 
   path {
     fill: theme-color('content-quaternary');
+  }
+
+  &__number {
+    color: theme-color('content-primary');
+    @include tpg-s3;
   }
 }
 </style>

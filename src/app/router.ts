@@ -29,7 +29,7 @@ const routes = [
   {
     path: '/transactions',
     name: 'transactions-list',
-    component: () => import('~pages/TransactionsListPage.vue'),
+    component: () => import('~pages/TransactionsList.vue'),
   },
   {
     path: '/:pathMatch(.*)*',

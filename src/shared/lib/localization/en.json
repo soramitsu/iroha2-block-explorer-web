@@ -23,6 +23,7 @@
   "validators": "Validators",
   "pageNotFound": "Page not found",
   "transactions": "Transactions",
+  "all": "All",
   "transfers": "Transfers",
   "mints": "Mints",
   "burns": "Burns",

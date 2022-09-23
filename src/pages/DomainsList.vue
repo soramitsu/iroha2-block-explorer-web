@@ -4,6 +4,7 @@
       :loading="table.loading.value"
       :pagination="table.pagination"
       :items="table.items.value"
+      container-class="domains-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -20,11 +21,7 @@
 
       <template #row="{ item }: { item: Domain }">
         <div class="domains-list-page__row">
-          <span class="cell">
-            <a :href="`/domains/${item.id}`" class="primary-link">
-              {{ item.id }}
-            </a>
-          </span>
+          <BaseLink :to="`/domains/${item.id}`" class="cell">{{ item.id }}</BaseLink>
 
           <div class="cell row-text">{{ domainModel.countCryptos(item) }}</div>
 
@@ -38,9 +35,8 @@
         <div class="domains-list-page__mobile-card">
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>
-            <a :href="`/domains/${item.id}`" class="primary-link">
-              {{ item.id }}
-            </a>
+
+            <BaseLink :to="`/domains/${item.id}`">{{ item.id }}</BaseLink>
           </div>
 
           <div class="domains-list-page__mobile-row">
@@ -66,6 +62,7 @@
 <script setup lang="ts">
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
+import BaseLink from '~shared/ui/components/BaseLink.vue';
 import { useTable } from '~shared/lib/table';
 import { http } from '~shared/api';
 import { domainModel } from '~entities/domain';
@@ -98,6 +95,19 @@ table.fetch();
     width: 80px;
     padding: size(1);
     margin-right: size(3);
+  }
+
+  &__container {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    @include sm {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @include lg {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>

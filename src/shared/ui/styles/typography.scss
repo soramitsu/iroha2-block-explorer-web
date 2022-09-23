@@ -1,6 +1,6 @@
 @mixin t-factory($size, $height, $weight: 400, $family: 'Sora') {
   font: {
-    family: Sora;
+    family: $family;
     size: $size;
     weight: $weight;
   }
@@ -35,44 +35,3 @@
 @mixin tpg-link1() { @include t-factory($size: 15px, $height: 16px, $weight: 200) }
 
 @mixin tpg-link1-mono() { @include t-factory($size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono') }
-
-// Not used yet. But may be useful in the future
-
-// @mixin t-class-factory($id, $size, $height, $weight: 400, $family: 'Sora') {
-//   .tpg-#{$id} {
-//     @include t-factory($size, $height, $weight, $family);
-//     @content;
-//   }
-// }
-
-// @mixin typography {
-//   @include t-class-factory($id: 'd1', $size: 40px, $height: 56px, $weight: 700);
-//   @include t-class-factory($id: 'd2', $size: 34px, $height: 48px, $weight: 500);
-
-//   @include t-class-factory($id: 'h1', $size: 29px, $height: 32px);
-//   @include t-class-factory($id: 'h2', $size: 21px, $height: 24px);
-//   @include t-class-factory($id: 'h3', $size: 15px, $height: 16px);
-//   @include t-class-factory($id: 'h4', $size: 13px, $height: 16px, $weight: 700);
-
-//   @include t-class-factory($id: 'ch1', $size: 13px, $height: 16px, $weight: 700) {
-//     text-transform: uppercase;
-//   };
-
-//   @include t-class-factory($id: 'p1', $size: 15px, $height: 24px, $weight: 200);
-
-//   @include t-class-factory($id: 's1', $size: 24px, $height: 32px, $weight: 200);
-//   @include t-class-factory($id: 's2', $size: 18px, $height: 24px, $weight: 200);
-//   @include t-class-factory($id: 's3', $size: 15px, $height: 16px, $weight: 200);
-//   @include t-class-factory($id: 's3-mono', $size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono');
-//   @include t-class-factory($id: 's4', $size: 13px, $height: 16px);
-//   @include t-class-factory($id: 's5', $size: 11px, $height: 16px, $weight: 200);
-//   @include t-class-factory($id: 's5-bold', $size: 11px, $height: 16px, $weight: 700);
-
-//   @include t-class-factory($id: 'link1', $size: 15px, $height: 16px, $weight: 200) {
-//     text-decoration: underline;
-//   };
-
-//   @include t-class-factory($id: 'link1-mono', $size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono') {
-//     text-decoration: underline;
-//   };
-// };
