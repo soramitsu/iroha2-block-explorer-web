@@ -32,6 +32,7 @@ module.exports = {
     }],
     'no-use-before-define': 'off',
     camelcase: 'off',
+    'no-unused-vars': 'off',
   },
 
   overrides: [

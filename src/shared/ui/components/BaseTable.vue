@@ -31,11 +31,10 @@
         </div>
 
         <BaseDropdown
+          v-model="pageSizeModel"
           :items="sizeOptions"
-          :value="props.pagination.page_size"
           :field-label="$t('rowsPerPage')"
           width="175px"
-          @update:value="emit('setSize', $event as number)"
         />
       </div>
 
@@ -151,6 +150,11 @@ const sizeOptions = [
     value: 100,
   },
 ];
+
+const pageSizeModel = computed({
+  get: () => props.pagination.page_size,
+  set: (v) => emit('setSize', v),
+});
 </script>
 
 <style lang="scss">

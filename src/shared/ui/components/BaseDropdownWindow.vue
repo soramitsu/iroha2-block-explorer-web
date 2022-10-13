@@ -6,10 +6,10 @@
       <div
         v-for="(item, i) in items"
         :key="i"
-        :data-active="value === item.value || null"
+        :data-active="model === item.value || null"
         :data-size="size"
         class="base-dropdown-window__item"
-        @click="emit('update:value', item.value)"
+        @click="model = item.value"
       >
         {{ item.label }}
       </div>
@@ -18,8 +18,10 @@
 </template>
 
 <script setup lang="ts">
+import { useVModel } from '@vueuse/core';
+
 type Props = {
-  value?: string,
+  modelValue?: string,
   size: 'md' | 'lg',
   items?: {
     label: string,
@@ -28,11 +30,13 @@ type Props = {
 }
 
 type Emits = {
-  (event: 'update:value', value: string): void,
+  (event: 'update:modelValue', value: string): void,
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const model = useVModel(props, 'modelValue', emit);
 </script>
 
 <style lang="scss">

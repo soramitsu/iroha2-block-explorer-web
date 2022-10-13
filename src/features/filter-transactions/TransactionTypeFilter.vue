@@ -1,8 +1,7 @@
 <template>
   <BaseTabs
-    :value="value"
+    v-model="model"
     :items="tabs"
-    @update:value="v => emit('update:value', v as ftm.Tab)"
   />
 </template>
 
@@ -10,16 +9,17 @@
 import { useI18n } from 'vue-i18n';
 import * as ftm from './model';
 import BaseTabs from '~base/BaseTabs.vue';
+import { useVModel } from '@vueuse/core';
 
 type Props = {
-  value: ftm.Tab,
+  modelValue: ftm.Tab,
 }
 
 type Emits = {
-  (e: 'update:value', value: ftm.Tab): void,
+  (e: 'update:modelValue', value: ftm.Tab): void,
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 const { t } = useI18n({ useScope: 'global' });
 
@@ -31,4 +31,6 @@ const tabs = [
   { label: t('grants'), value: 'grants' },
   { label: t('revokes'), value: 'revokes' },
 ];
+
+const model = useVModel(props, 'modelValue', emit);
 </script>

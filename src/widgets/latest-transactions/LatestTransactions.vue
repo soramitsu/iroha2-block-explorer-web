@@ -6,7 +6,7 @@
 
     <template #default>
       <div class="latest-transactions__filters">
-        <TransactionStatusFilter v-model:value="status" />
+        <TransactionStatusFilter v-model="status" />
       </div>
 
       <hr>
