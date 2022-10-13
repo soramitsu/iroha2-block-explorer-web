@@ -5,7 +5,7 @@
     </template>
 
     <template #default>
-      <template v-for="(block, i) in blocks" :key="i">
+      <template v-for="block in blocks" :key="block.height">
         <div class="latest-blocks__row">
           <BaseLink :to="`/blocks/${block.height}`">{{ block.height }}</BaseLink>
 
