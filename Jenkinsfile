@@ -1,8 +1,8 @@
 @Library('jenkins-library')
 
 def pipeline = new org.js.AppPipeline(
-    packageManager:     'npm',
-    buildCmds: ["npm ci && npm run build"],
+    packageManager:     'pnpm',
+    buildCmds: ["npm ci && pnpm build"],
     steps:              this,
     test:               false,
     dockerImageName:    'iroha2/iroha2-block-explorer-web',
