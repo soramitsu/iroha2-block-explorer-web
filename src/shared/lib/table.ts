@@ -1,4 +1,3 @@
-import { PaginationParams } from '~shared/api/http';
 import { reactive, Ref, ref } from 'vue';
 
 export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;

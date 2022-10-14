@@ -58,12 +58,20 @@ hr {
 }
 
 .content-row {
-  padding: 0 size(4);
+  padding: 0 size(2);
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 64px;
   border-top: 1px solid theme-color('border-primary');
+
+  @include sm {
+    padding: 0 size(3);
+  }
+
+  @include md {
+    padding: 0 size(4);
+  }
 }
 
 .content-row--with-hover:hover {
@@ -72,15 +80,6 @@ hr {
   + hr {
     background: transparent;
     box-shadow: none;
-  }
-}
-
-.primary-link {
-  color: theme-color('primary');
-  @include tpg-link1;
-
-  &:hover {
-    color: theme-color('primary-hover');
   }
 }
 

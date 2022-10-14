@@ -3,10 +3,15 @@
 export { };
 
 declare global {
-  type Tagged<Tag extends string, Content> = {
-    t: Tag;
+  type Tagged<T, Content> = {
+    t: T;
     c: Content;
   };
+
+  type PaginationParams = {
+    page: number,
+    page_size: number,
+  }
 
   interface Paginated<T> {
     pagination: {
@@ -24,9 +29,9 @@ declare global {
   }
 
   type AssetValue =
-    | Tagged<'Quantity', number>
-    | Tagged<'BigQuantity', bigint> // be careful! should be deserialized with `json-bigint`
-    | Tagged<'Fixed', string> // it's a number too, "float" number, but it cannot fit into js `number`
+    | Tagged<'Quantity', string>
+    | Tagged<'BigQuantity', string>
+    | Tagged<'Fixed', string>
     | Tagged<'Store', any>;
 
   type AssetValueType = 'Quantity' | 'BigQuantity' | 'Fixed' | 'Store';
@@ -57,10 +62,10 @@ declare global {
   interface Account {
     id: string;
     assets: Asset[];
-    signatories: PublicKey[];
-    permission_tokens: PermissionToken[];
+    signatories?: PublicKey[];
+    permission_tokens?: PermissionToken[];
     roles: Role[];
-    signature_check_condition: any;
+    signature_check_condition?: any;
     metadata: any;
   }
 
@@ -81,17 +86,13 @@ declare global {
     payload: string;
   }
 
-  /**
-   * This JSON should be parsed with bigint support
-   * e.g. https://www.npmjs.com/package/json-bigint
-   */
   interface Status {
-    peers: bigint;
-    blocks: bigint;
-    txs: bigint;
+    peers: string;
+    blocks: string;
+    txs: string;
     uptime: {
-      secs: bigint;
-      nanos: number;
+      secs: string;
+      nanos: string;
     };
   }
 
@@ -145,6 +146,8 @@ declare global {
      * WIP zeroed
      */
     block_hash: string;
+    block_height: number;
+    hash: string;
     payload: TransactionPayload;
     signatures: Signature[];
   }

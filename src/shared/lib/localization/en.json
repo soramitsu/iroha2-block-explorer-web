@@ -23,6 +23,7 @@
   "validators": "Validators",
   "pageNotFound": "Page not found",
   "transactions": "Transactions",
+  "all": "All",
   "transfers": "Transfers",
   "mints": "Mints",
   "burns": "Burns",
@@ -31,9 +32,11 @@
   "transfer": "Transfer",
   "tokens": "Tokens",
   "total": "Total",
+  "committed": "Committed",
+  "rejected": "Rejected",
   "clipboard": {
-    "success": "{0} copied to clipboard",
-    "error": "Impossible copy {0} to clipboard"
+    "success": "Copied to clipboard",
+    "error": "Impossible copy to clipboard"
   },
   "homePage": {
     "domains": "Number of domains",
@@ -60,6 +63,8 @@
   },
   "sort": {
     "mostRecent": "Most Recent",
-    "mostValue": "Most Value"
+    "mostValue": "Most Value",
+    "wasm": "WebAssembly",
+    "instruction": "Instruction"
   }
 }

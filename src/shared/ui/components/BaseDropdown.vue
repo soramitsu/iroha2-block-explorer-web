@@ -13,7 +13,7 @@
           v-for="(item, i) in items"
           :key="i"
           class="base-dropdown__item"
-          @click="choise(item.value)"
+          @click="choose(item.value)"
         >
           {{ item.label }}
         </div>
@@ -50,7 +50,7 @@ const valueLabel = computed(
   () => props.items.find(item => item.value === props.modelValue)?.label ?? '',
 );
 
-function choise(value: string | number) {
+function choose(value: string | number) {
   emit('update:modelValue', value);
   isOpen.value = false;
 }

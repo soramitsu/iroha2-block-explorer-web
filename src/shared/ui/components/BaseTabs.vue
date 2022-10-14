@@ -4,8 +4,8 @@
       v-for="(item, i) in props.items"
       :key="i"
       class="base-tabs__tab"
-      :class="{ 'base-tabs__tab--active': item.value === modelValue }"
-      @click="emit('update:modelValue', item.value)"
+      :class="{ 'base-tabs__tab--active': item.value === model }"
+      @click="model = item.value"
     >
       {{ item.label }}
     </div>
@@ -13,6 +13,8 @@
 </template>
 
 <script setup lang="ts">
+import { useVModel } from '@vueuse/core';
+
 type TabItem = {
   label: string;
   value: string;
@@ -29,6 +31,8 @@ type Emits = {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const model = useVModel(props, 'modelValue', emit);
 </script>
 
 <style lang="scss">

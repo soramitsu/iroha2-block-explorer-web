@@ -4,6 +4,7 @@
       :loading="table.loading.value"
       :pagination="table.pagination"
       :items="table.items.value"
+      container-class="assets-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -19,17 +20,13 @@
 
       <template #row="{ item }: { item: Asset }">
         <div class="assets-list-page__row">
-          <div class="cell">
-            <a :href="`/assets/${item.definition_id}`" class="primary-link">
-              {{ item.definition_id.split('#')[0] }}
-            </a>
-          </div>
+          <BaseLink :to="`/assets/${item.definition_id}`" class="cell">
+            {{ item.definition_id.split('#')[0] }}
+          </BaseLink>
 
-          <div class="cell">
-            <a :href="`/domains/${item.definition_id.split('#')[1]}`" class="primary-link">
-              {{ item.definition_id.split('#')[1] }}
-            </a>
-          </div>
+          <BaseLink :to="`/domains/${item.definition_id.split('#')[1]}`" class="cell">
+            {{ item.definition_id.split('#')[1] }}
+          </BaseLink>
 
           <div class="cell row-text">{{ item.value.c }}</div>
         </div>
@@ -39,16 +36,18 @@
         <div class="assets-list-page__mobile-card">
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
-            <a :href="`/assets/${item.definition_id}`" class="primary-link">
+
+            <BaseLink :to="`/assets/${item.definition_id}`">
               {{ item.definition_id.split('#')[0] }}
-            </a>
+            </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('domain') }}</span>
-            <a :href="`/domains/${item.definition_id.split('#')[1]}`" class="primary-link">
+
+            <BaseLink :to="`/domains/${item.definition_id.split('#')[1]}`">
               {{ item.definition_id.split('#')[1] }}
-            </a>
+            </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
@@ -64,10 +63,11 @@
 <script setup lang="ts">
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
+import BaseLink from '~base/BaseLink.vue';
 import { useTable } from '~shared/lib/table';
-import { fetchAssets } from '~shared/api/http';
+import { http } from '~shared/api';
 
-const table = useTable(fetchAssets);
+const table = useTable(http.fetchAssets);
 table.fetch();
 </script>
 
@@ -96,6 +96,19 @@ table.fetch();
     width: 80px;
     padding: size(1);
     margin-right: size(3);
+  }
+
+  &__container {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    @include sm {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @include lg {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>

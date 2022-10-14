@@ -12,10 +12,10 @@
 
   <Teleport v-if="dropdown.isOpen.value" :to="`#${PORTAL_ID}`">
     <BaseDropdownWindow
-      v-model:value="value"
+      v-model:model-value="value"
       :items="langOptions"
       size="lg"
-      @update:value="dropdown.toggle"
+      @update:model-value="dropdown.toggle"
     />
   </Teleport>
 </template>

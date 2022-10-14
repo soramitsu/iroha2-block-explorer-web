@@ -1,16 +1,22 @@
 <template>
   <div class="base-table">
-    <div v-if="width >= CARD_BREAKPOINT" class="content-row">
+    <div v-if="$slots.header && width >= CARD_BREAKPOINT" class="content-row">
       <slot name="header" />
     </div>
 
-    <div class="base-table__content">
+    <div :class="containerClass">
       <template v-for="(item, i) in items" :key="i">
-        <div v-if="item && width >= CARD_BREAKPOINT" class="content-row content-row--with-hover">
+        <div
+          v-if="item && (width >= CARD_BREAKPOINT || !$slots['mobile-card'])"
+          class="content-row content-row--with-hover"
+        >
           <slot name="row" :item="item" />
         </div>
 
-        <div v-else-if="item && width < CARD_BREAKPOINT" class="base-table__mobile-card">
+        <div
+          v-else-if="$slots['mobile-card'] && item && width < CARD_BREAKPOINT"
+          class="base-table__mobile-card"
+        >
           <slot name="mobile-card" :item="item" />
         </div>
 
@@ -25,11 +31,10 @@
         </div>
 
         <BaseDropdown
+          v-model="pageSizeModel"
           :items="sizeOptions"
-          :model-value="props.pagination.page_size"
           :field-label="$t('rowsPerPage')"
           width="175px"
-          @update:model-value="emit('setSize', $event as number)"
         />
       </div>
 
@@ -67,6 +72,7 @@ type Props = {
   loading: boolean;
   pagination: TablePagination;
   items: any[];
+  containerClass: string;
 };
 
 type Emits = {
@@ -101,7 +107,7 @@ const segmentInfo = computed(() => {
 const numbers = computed(() => {
   const isMobile = width.value < PAGINATION_BREAKPOINT;
   const max = isMobile ? 6 : 10;
-  const side = isMobile ? 4 : 8;
+  const side = isMobile ? 4 : 7;
   const offset = isMobile ? 1 : 3;
 
   const p = props.pagination;
@@ -109,14 +115,14 @@ const numbers = computed(() => {
     return new Array(p.pages).fill(0).map((_, i) => i + 1);
   }
 
-  let start = (p.page - offset);
-  let end = (p.page + offset);
+  let start = p.page - offset;
+  let end = p.page + offset;
 
-  if (start < offset) {
+  if (p.page < side) {
     return Array(side).fill(0).map<string|number>((_, i) => i + 1).concat(['. . .', p.pages]);
   }
 
-  if ((p.pages - end) < offset) {
+  if (p.page > (p.pages - side + 1)) {
     return [1, '. . .'].concat(Array(side).fill(0).map((_, i) => p.pages - i).reverse());
   }
 
@@ -144,6 +150,11 @@ const sizeOptions = [
     value: 100,
   },
 ];
+
+const pageSizeModel = computed({
+  get: () => props.pagination.page_size,
+  set: (v) => emit('setSize', v),
+});
 </script>
 
 <style lang="scss">
@@ -151,25 +162,7 @@ const sizeOptions = [
 
 .base-table {
   display: grid;
-  grid-template-rows: auto 1fr;
-  min-height: 100%;
-
-  @include lg {
-    grid-template-rows: auto auto 1fr;
-  }
-
-  &__content {
-    display: grid;
-    grid-template-columns: 1fr;
-
-    @include sm {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    @include lg {
-      grid-template-columns: 1fr;
-    }
-  }
+  grid-auto-rows: auto;
 
   &__mobile-card {
     border-top: 1px solid theme-color('border-primary');
@@ -211,6 +204,7 @@ const sizeOptions = [
     @include tpg-s4;
     color: theme-color('content-quaternary');
     margin-right: size(1);
+    user-select: none;
 
     @include sm {
       margin-right: size(3);
@@ -249,7 +243,7 @@ const sizeOptions = [
     @include tpg-s5-bold;
     color: theme-color('content-primary');
     padding: 0 size(0.75);
-    margin-right: size(0.5);
+    margin-right: size(0.25);
     cursor: pointer;
 
     @include xs {
