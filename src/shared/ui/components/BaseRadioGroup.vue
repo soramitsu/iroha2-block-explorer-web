@@ -4,8 +4,8 @@
       v-for="(item, i) in props.items"
       :key="i"
       class="base-radio-group__item"
-      :data-active="item.value === props.value || null"
-      @click="choise(item.value)"
+      :data-active="item.value === props.modelValue || null"
+      @click="choose(item.value)"
     >
       {{ item.label }}
     </div>
@@ -20,19 +20,19 @@ type RadioItem = {
 
 type Props = {
   items: RadioItem[],
-  value: string | null,
+  modelValue: string | null,
 }
 
 type Emits = {
-  (e: 'update:value', value: string | null): void
+  (e: 'update:modelValue', value: string | null): void
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-function choise(value: string) {
-  const val = value === props.value ? null : value;
-  emit('update:value', val);
+function choose(value: string) {
+  const val = value === props.modelValue ? null : value;
+  emit('update:modelValue', val);
 }
 </script>
 

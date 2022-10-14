@@ -13,7 +13,7 @@
           v-for="(item, i) in items"
           :key="i"
           class="base-dropdown__item"
-          @click="choise(item.value)"
+          @click="choose(item.value)"
         >
           {{ item.label }}
         </div>
@@ -32,14 +32,14 @@ type DropdownItem = {
 }
 
 type Props = {
-  value: string | number,
+  modelValue: string | number,
   items: DropdownItem[],
   fieldLabel: string,
   width: string,
 }
 
 type Emits = {
-  (e: 'update:value', value: string | number): void
+  (e: 'update:modelValue', value: string | number): void
 }
 
 const props = defineProps<Props>();
@@ -47,11 +47,11 @@ const emit = defineEmits<Emits>();
 
 const isOpen = ref(false);
 const valueLabel = computed(
-  () => props.items.find(item => item.value === props.value)?.label ?? '',
+  () => props.items.find(item => item.value === props.modelValue)?.label ?? '',
 );
 
-function choise(value: string | number) {
-  emit('update:value', value);
+function choose(value: string | number) {
+  emit('update:modelValue', value);
   isOpen.value = false;
 }
 </script>

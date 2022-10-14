@@ -11,10 +11,9 @@
 
   <Teleport v-if="dropdown.isOpen.value" :to="`#${PORTAL_ID}`">
     <BaseDropdownWindow
+      v-model="routeModel"
       size="lg"
       :items="links"
-      :value="route.path"
-      @update:value="choice"
     />
   </Teleport>
 </template>
@@ -33,10 +32,13 @@ const links = computed(() => menu.map(item => ({ label: item.label, value: item.
 const router = useRouter();
 const route = useRoute();
 
-function choice(to: string) {
-  router.push(to);
-  dropdown.toggle();
-}
+const routeModel = computed({
+  get: () => route.path,
+  set: (to) => {
+    router.push(to);
+    dropdown.toggle();
+  },
+});
 </script>
 
 <style lang="scss">

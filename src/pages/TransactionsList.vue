@@ -1,8 +1,8 @@
 <template>
   <BaseContentBlock :title="$t('transactions')" class="transactions-list-page">
     <div class="content-row">
-      <TransactionTypeFilter v-model:value="tab" class="transactions-list-page__tabs" />
-      <TransactionStatusFilter v-model:value="status" class="transactions-list-page__status" />
+      <TransactionTypeFilter v-model="tab" class="transactions-list-page__tabs" />
+      <TransactionStatusFilter v-model="status" class="transactions-list-page__status" />
     </div>
 
     <BaseTable
@@ -55,10 +55,10 @@ import BaseTable from '~base/BaseTable.vue';
 import BaseHash from '~shared/ui/components/BaseHash.vue';
 import BaseLink from '~shared/ui/components/BaseLink.vue';
 import { transactionModel, TransactionStatus } from '~entities/transaction';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { useTable } from '~shared/lib/table';
 import { format } from '~shared/lib/time';
-import { useWindowSize } from '@vueuse/core';
+import { useWindowSize, computedEager } from '@vueuse/core';
 import {
   filterTransactionsModel as ftm,
   TransactionStatusFilter,
@@ -72,7 +72,7 @@ const tab = ref<ftm.Tab>('all');
 
 const { width } = useWindowSize();
 
-const hashType = computed(() => width.value < HASH_BREAKPOINT ? 'short' : 'full');
+const hashType = computedEager(() => width.value < HASH_BREAKPOINT ? 'short' : 'full');
 
 const table = useTable(transactionModel.fetchList);
 table.fetch();
