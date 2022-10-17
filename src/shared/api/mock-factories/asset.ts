@@ -17,7 +17,7 @@ export function makeAssetValue(): AssetValue {
   let c;
 
   switch (t) {
-    case 'Store': c = {}; break;
+    case 'Store': c = '🔑: 0'; break;
     case 'Fixed': c = String(randNumber({ fraction: 6 })); break;
     default: c = String(randNumber()); break;
   }
