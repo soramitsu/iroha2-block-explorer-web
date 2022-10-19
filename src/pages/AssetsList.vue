@@ -28,7 +28,14 @@
             {{ item.definition_id.split('#')[1] }}
           </BaseLink>
 
-          <div class="cell row-text">{{ item.value.c }}</div>
+          <div class="cell row-text">
+            <template v-if="item.value.t === 'Store'">
+              🔑: {{ Object.keys(item.value.c).length }}
+            </template>
+            <template v-else>
+              {{ item.value.c }}
+            </template>
+          </div>
         </div>
       </template>
 
