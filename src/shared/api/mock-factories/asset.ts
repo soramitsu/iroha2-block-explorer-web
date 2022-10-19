@@ -1,4 +1,5 @@
 import { rand, randDomainName, randEmail, randGitBranch, randNumber } from '@ngneat/falso';
+import { match } from 'ts-pattern';
 
 function randomType(): AssetValueType {
   return rand(['Quantity', 'BigQuantity', 'Fixed', 'Store']);
@@ -13,16 +14,11 @@ function makeDefinitionId() {
 }
 
 export function makeAssetValue(): AssetValue {
-  const t = randomType();
-  let c;
-
-  switch (t) {
-    case 'Store': c = {}; break;
-    case 'Fixed': c = String(randNumber({ fraction: 6 })); break;
-    default: c = String(randNumber()); break;
-  }
-
-  return { t, c } as AssetValue;
+  return match(randomType())
+    .with('Store', (t) => ({ t, c: {} }))
+    .with('Fixed', (t) => ({ t, c: String(randNumber({ fraction: 6 })) }))
+    .with('Quantity', 'BigQuantity', (t) => ({ t, c: String(randNumber()) }))
+    .exhaustive();
 }
 
 export function makeAsset(account_id?: string, definition_id?: string): Asset {

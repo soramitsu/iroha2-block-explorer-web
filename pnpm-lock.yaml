@@ -19,6 +19,8 @@ specifiers:
   eslint-plugin-vue: ^9.4.0
   npm-run-all: ^4.1.5
   sass: ^1.54.6
+  ts-pattern: ^4.0.5
+  type-fest: ^3.1.0
   typescript: ^4.8.2
   vite: ^3.0.9
   vite-svg-loader: ^3.4.0
@@ -33,6 +35,8 @@ dependencies:
   '@ngneat/falso': 6.1.0
   '@soramitsu-ui/icons': 0.1.0
   '@vueuse/core': 9.3.0_vue@3.2.40
+  ts-pattern: 4.0.5
+  type-fest: 3.1.0
   vue: 3.2.40
   vue-i18n: 9.2.2_vue@3.2.40
   vue-router: 4.1.5_vue@3.2.40
@@ -2455,6 +2459,10 @@ packages:
       is-number: 7.0.0
     dev: true
 
+  /ts-pattern/4.0.5:
+    resolution: {integrity: sha512-Bq44KCEt7JVaNLa148mBCJkcQf4l7jtLEBDuDdeuLynWDA+1a60P4D0rMkqSM9mOKLQbIWUddE9h3XKyKwBeqA==}
+    dev: false
+
   /tsconfig-paths/3.14.1:
     resolution: {integrity: sha512-fxDhWnFSLt3VuTwtvJt5fpwxBHg5AdKWMsgcPOOIilyjymcYVZoCQF8fvFRezCNfblEXmi+PcM1eYHeOAgXCOQ==}
     dependencies:
@@ -2493,6 +2501,11 @@ packages:
   /type-fest/2.16.0:
     resolution: {integrity: sha512-qpaThT2HQkFb83gMOrdKVsfCN7LKxP26Yq+smPzY1FqoHRjqmjqHXA7n5Gkxi8efirtbeEUxzfEdePthQWCuHw==}
     engines: {node: '>=12.20'}
+    dev: false
+
+  /type-fest/3.1.0:
+    resolution: {integrity: sha512-StmrZmK3eD9mDF9Vt7UhqthrDSk66O9iYl5t5a0TSoVkHjl0XZx/xuc/BRz4urAXXGHOY5OLsE0RdJFIApSFmw==}
+    engines: {node: '>=14.16'}
     dev: false
 
   /typescript/4.8.4:

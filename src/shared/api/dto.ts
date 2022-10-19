@@ -1,5 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable camelcase */
+import { JsonObject } from 'type-fest';
+
 export { };
 
 declare global {
@@ -32,7 +34,7 @@ declare global {
     | Tagged<'Quantity', string>
     | Tagged<'BigQuantity', string>
     | Tagged<'Fixed', string>
-    | Tagged<'Store', any>;
+    | Tagged<'Store', JsonObject>;
 
   type AssetValueType = 'Quantity' | 'BigQuantity' | 'Fixed' | 'Store';
 
