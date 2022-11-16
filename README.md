@@ -19,6 +19,23 @@ Build artifacts will be located at `dist` dir.
 
 ## Development
 
+### Setting up the `.env` file
+
+You need a file with environment variables to configure Vite for the frontend to properly request either mock data or interact with the backend.
+
+To enable the mocks, write:
+
+```
+VITE_FAKE_API_ENABLED=TRUE
+```
+
+To interact with the backend, assuming you'll add an API proxy as described below, write:
+
+```
+VITE_API_URL=http://localhost:5173/api-proxy
+VITE_FAKE_API_ENABLED=FALSE
+```
+
 ### Connecting to a BCE backend
 
 One may want to see to see how the backend responds in the real time,
