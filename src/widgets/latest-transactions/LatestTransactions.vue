@@ -16,7 +16,7 @@
 
         <BaseHash
           :hash="transaction.hash"
-          type="medium"
+          type="full"
           :link="'/transactions/' + transaction.hash"
         />
 
