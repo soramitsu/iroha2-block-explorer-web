@@ -18,6 +18,7 @@
           :hash="transaction.hash"
           type="medium"
           :link="'/transactions/' + transaction.hash"
+          copy
         />
 
         <div class="latest-transactions__info">
