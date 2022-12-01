@@ -33,7 +33,6 @@ To interact with the backend, assuming you'll add an API proxy as described belo
 
 ```
 VITE_API_URL=http://localhost:5173/api-proxy
-VITE_FAKE_API_ENABLED=FALSE
 ```
 
 ### Connecting to a BCE backend
