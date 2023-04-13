@@ -66,5 +66,6 @@
     "mostValue": "Most Value",
     "wasm": "WebAssembly",
     "instruction": "Instruction"
-  }
+  },
+  "icon": "Icon"
 }

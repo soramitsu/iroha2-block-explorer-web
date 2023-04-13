@@ -12,6 +12,7 @@
     >
       <template #header>
         <div class="assets-list-page__row">
+          <span class="h-sm cell">{{ $t('icon') }}</span>
           <span class="h-sm cell">{{ $t('name') }}</span>
           <span class="h-sm cell">{{ $t('domain') }}</span>
           <span class="h-sm cell">{{ $t('total') }}</span>
@@ -20,6 +21,10 @@
 
       <template #row="{ item }: { item: Asset }">
         <div class="assets-list-page__row">
+          <div class="cell row-text">
+            <AssetIcon :name="item.definition_id.split('#')[0]" />
+          </div>
+
           <BaseLink :to="`/assets/${item.definition_id}`" class="cell">
             {{ item.definition_id.split('#')[0] }}
           </BaseLink>
@@ -74,6 +79,8 @@ import BaseLink from '~base/BaseLink.vue';
 import { useTable } from '~shared/lib/table';
 import { http } from '~shared/api';
 
+import AssetIcon from '~entities/asset/AssetIcon.vue';
+
 const table = useTable(http.fetchAssets);
 table.fetch();
 </script>
@@ -85,7 +92,7 @@ table.fetch();
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr;
+    grid-template-columns: 0.25fr 2fr 2fr 1fr;
     justify-content: start;
   }
 

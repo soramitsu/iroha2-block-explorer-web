@@ -90,6 +90,7 @@ hr {
 
 .cell {
   padding: 0 size(2);
+  align-self: center;
 }
 
 .nowrap {
