@@ -128,7 +128,7 @@ declare global {
     /**
      * List of serialized {@link @iroha2/data-model#VersionedValidTransaction}
      */
-    transactions: string[];
+    transactions: TransactionDto[];
     /**
      * List of serialized {@link @iroha2/data-model#VersionedRejectedTransaction}
      */

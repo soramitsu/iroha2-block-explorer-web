@@ -1,4 +1,5 @@
 interface HTTPService {
+[x: string]: any;
   fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>>;
   fetchAccount(id: string): Promise<Account>;
   fetchAssets(params?: PaginationParams): Promise<Paginated<Asset>>;
@@ -10,6 +11,8 @@ interface HTTPService {
   fetchPeerStatus(): Promise<Status>;
   fetchRoles(): Promise<Role[]>;
   fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>>;
+  fetchBlocksDetails(id: number): Promise<Block>;
+  fetchBlockTransactions(transactions:TransactionDto[], params?: PaginationParams):Promise<Paginated<TransactionDto>>;
   fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>>;
 }
 
