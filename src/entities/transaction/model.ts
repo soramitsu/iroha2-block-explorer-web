@@ -14,7 +14,7 @@ declare global {
       time_to_live_ms: number;
       nonce: null | number;
       metadata: any;
-    }
+    };
     signatures: Signature[];
     rejection_reason?: string;
   }
@@ -48,6 +48,15 @@ export function mapFromDto(transaction: TransactionDto): Transaction {
 
 export async function fetchList(params?: PaginationParams): Promise<Paginated<Transaction>> {
   const res = await http.fetchTransactions(params);
+  const data = res.data.map(mapFromDto);
+
+  return {
+    pagination: res.pagination,
+    data,
+  };
+}
+export async function fetchBlocksList(selectedTransaction: TransactionDto[], params?: PaginationParams): Promise<Paginated<Transaction>> {
+  const res = await http.fetchBlockTransactions(selectedTransaction);
   const data = res.data.map(mapFromDto);
 
   return {
