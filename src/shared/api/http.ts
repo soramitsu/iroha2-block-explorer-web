@@ -55,8 +55,8 @@ export function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockS
   return get('/blocks', params);
 }
 
-export function fetchBlocksDetails(block_hash: string): Promise<Block> {
-  return get(`/blocks/${block_hash}`);
+export function fetchBlocksDetails(height_or_hash: string | number): Promise<Block> {
+  return get(`/blocks/${height_or_hash}`);
 }
 
 export function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
