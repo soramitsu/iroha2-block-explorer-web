@@ -7,7 +7,7 @@
 
     <BaseTable
       :loading="table.loading.value"
-      :pagination="table.pagination"
+      :pagination="table.pagination.value"
       :items="table.items.value"
       container-class="transactions-list-page__container"
       @next-page="table.nextPage()"

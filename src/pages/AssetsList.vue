@@ -2,7 +2,7 @@
   <BaseContentBlock :title="$t('assets')" class="assets-list-page">
     <BaseTable
       :loading="table.loading.value"
-      :pagination="table.pagination"
+      :pagination="table.pagination.value"
       :items="table.items.value"
       container-class="assets-list-page__container"
       @next-page="table.nextPage()"

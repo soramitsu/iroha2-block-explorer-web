@@ -41,6 +41,13 @@
           <!-- This field not present -->
           <div class="blocks-list-page__row">
             <span class="h-sm cell">{{ $t('Transaction’s Merkle Root Hash') }}</span>
+            <BaseHash
+              :hash="block.transactions_merkle_root_hash"
+              :link="`/blocks/${block.height}`"
+              type="full"
+              copy
+              class="block-details-card__row__hash"
+            />
           </div>
           <div class="blocks-list-page__row">
             <span class="h-sm cell">{{ $t('Rejected Transaction’s Merkle Root Hash') }}</span>
@@ -54,12 +61,14 @@
           </div>
           <div class="blocks-list-page__row">
             <BaseLink :to="`/blocks/${block.height}`" class="block-details-card__row__hashFrame">
-              {{ $t('6 View Change Proofs') }}
+              <!-- TODO wait for design to specify what should happen on click"-->
+              {{ block.view_change_proofs.length + $t(' View Change Proofs') }}
             </BaseLink>
           </div>
           <div class="blocks-list-page__row">
             <BaseLink :to="`/blocks/${block.height}`" class="block-details-card__row__hashFrame">
-              {{ $t('13 Invalidated Block Hashes') }}
+              <!-- TODO wait for design to specify what should happen on click"-->
+              {{ block.invalidated_blocks_hashes.length + $t(' Invalidated Block Hashes') }}
             </BaseLink>
           </div>
         </div>
@@ -67,7 +76,6 @@
     </BaseContentBlock>
   </div>
 
-  <!-- dividing compoenent here  -->
   <BaseContentBlock
     :title="$t('Block transactions')"
     class="transactions-list-page"
@@ -85,7 +93,7 @@
 
     <BaseTable
       :loading="table.loading.value"
-      :pagination="table.pagination"
+      :pagination="table.pagination.value"
       :items="table.items.value"
       container-class="transactions-list-page__container"
       @next-page="table.nextPage()"
@@ -115,14 +123,6 @@
               {{ format(item.payload.creation_time) }}
             </div>
           </div>
-
-          <div class="transactions-list-page__column">
-            <div class="transactions-list-page__label">Block</div>
-
-            <BaseLink :to="'/blocks/' + item.block_height">
-              {{ item.block_height }}
-            </BaseLink>
-          </div>
         </div>
       </template>
     </BaseTable>
@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeMount } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useBlockTable } from '~shared/lib/table';
 import { useWindowSize, computedEager } from '@vueuse/core';
@@ -142,6 +142,7 @@ import {
   TransactionStatusFilter,
   TransactionTypeFilter,
 } from '~features/filter-transactions';
+import invariant from 'tiny-invariant';
 
 import BaseContentBlock from '~base/BaseContentBlock.vue';
 import BaseTable from '~base/BaseTable.vue';
@@ -149,42 +150,37 @@ import BaseHash from '~shared/ui/components/BaseHash.vue';
 import BaseLink from '~shared/ui/components/BaseLink.vue';
 import ArrowIcon from '~icons/arrow.svg';
 
-const HASH_BREAKPOINT = 1200;
+const WINDOW_WIDTH_BREAKPOINT_TO_SHRINK_HASH = 1200;
 
 const status = ref<ftm.Status>(null);
 const tab = ref<ftm.Tab>('all');
 
 const { width } = useWindowSize();
 
-const hashType = computedEager(() =>
-  width.value < HASH_BREAKPOINT ? 'short' : 'full',
+type HashType = 'full' | 'short'
+
+const hashType = computedEager<HashType>(() =>
+  width.value < WINDOW_WIDTH_BREAKPOINT_TO_SHRINK_HASH ? 'short' : 'full',
 );
 
-let table = useBlockTable([]);
+const route = useRoute();
+const heightString = route.params.id;
+invariant(typeof heightString === 'string');
+const height = parseInt(heightString, 10);
+
 const block = ref();
+const table = useBlockTable();
 
-onBeforeMount(() => {
-  // Access the route object and get the 'id' parameter
-  const route = useRoute(); // Use useRoute to access the $route object
-  const heightString = Array.isArray(route.params.id)
-    ? route.params.id.join('')
-    : route.params.id;
-  const height = parseInt(heightString, 10); // Convert the string to an integer
-  console.log(height);
-  const fetchData = async () => {
-    try {
-      const blockDetails = await http.fetchBlocksDetails(height);
-      block.value = blockDetails;
-      console.log(blockDetails);
-      table = useBlockTable(blockDetails.transactions);
-      table.fetch();
-    } catch (error) {
-      console.error('An error occurred:', error);
-    }
-  };
-
-  fetchData();
-  table.fetch();
+onMounted(async () => {
+  try {
+    const blockDetails = await http.fetchBlocksDetails(height);
+    block.value = blockDetails;
+    console.log(blockDetails);
+    table.setTransaction(blockDetails.transactions);
+    table.fetch();
+  } catch (err) {
+    console.error('Error fetching block details:', err);
+  }
 });
 </script>
 

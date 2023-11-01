@@ -2,7 +2,7 @@
   <BaseContentBlock :title="$t('domains')" class="domains-list-page">
     <BaseTable
       :loading="table.loading.value"
-      :pagination="table.pagination"
+      :pagination="table.pagination.value"
       :items="table.items.value"
       container-class="domains-list-page__container"
       @next-page="table.nextPage()"
