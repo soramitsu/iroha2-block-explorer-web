@@ -1,5 +1,6 @@
 import { Instruction } from '@iroha2/data-model';
 import { http } from '~shared/api';
+import { pagination } from '~shared/api/mock-factories/utils';
 
 declare global {
   export interface Transaction {
@@ -55,10 +56,10 @@ export async function fetchList(params?: PaginationParams): Promise<Paginated<Tr
     data,
   };
 }
+// TODO  paginated List => make generic change a list to paginated list
 export async function fetchBlocksList(selectedTransaction: TransactionDto[], params?: PaginationParams): Promise<Paginated<Transaction>> {
-  const res = await http.fetchBlockTransactions(selectedTransaction);
+  const res = pagination(selectedTransaction, params);
   const data = res.data.map(mapFromDto);
-
   return {
     pagination: res.pagination,
     data,
