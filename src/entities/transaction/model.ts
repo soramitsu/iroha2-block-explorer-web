@@ -57,7 +57,7 @@ export async function fetchList(params?: PaginationParams): Promise<Paginated<Tr
   };
 }
 // TODO  paginated List => make generic change a list to paginated list
-export async function fetchBlocksList(selectedTransaction: TransactionDto[], params?: PaginationParams): Promise<Paginated<Transaction>> {
+export function fetchBlocksList(selectedTransaction: TransactionDto[], params?: PaginationParams): Paginated<Transaction> {
   const res = pagination(selectedTransaction, params);
   const data = res.data.map(mapFromDto);
   return {
