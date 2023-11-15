@@ -11,7 +11,7 @@
           <ArrowIcon />
         </div>
         <time class="transactions-list-page__time">
-          {{ format(block.timestamp) }}
+          {{ formatTime(block.timestamp) }}
         </time>
       </template>
 
@@ -120,7 +120,7 @@
             />
 
             <div class="transactions-list-page__time">
-              {{ format(item.payload.creation_time) }}
+              {{ formatTime(item.payload.creation_time) }}
             </div>
           </div>
         </div>
@@ -130,15 +130,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { useBlockTable } from '~shared/lib/table';
+import { useBlockTable } from '~features/blocks/utils/useBlockTable';
 import { useWindowSize, computedEager } from '@vueuse/core';
 import { http } from '~shared/api';
 import { TransactionStatus } from '~entities/transaction';
-import { format } from '~shared/lib/time';
+import { format as formatTime } from '~shared/lib/time';
 import {
-  filterTransactionsModel as ftm,
+  filterTransactionsModel,
   TransactionStatusFilter,
   TransactionTypeFilter,
 } from '~features/filter-transactions';
@@ -152,8 +152,8 @@ import ArrowIcon from '~icons/arrow.svg';
 
 const WINDOW_WIDTH_BREAKPOINT_TO_SHRINK_HASH = 1200;
 
-const status = ref<ftm.Status>(null);
-const tab = ref<ftm.Tab>('all');
+const status = ref<filterTransactionsModel.Status>(null);
+const tab = ref<filterTransactionsModel.Tab>('all');
 
 const { width } = useWindowSize();
 
@@ -164,20 +164,21 @@ const hashType = computedEager<HashType>(() =>
 );
 
 const route = useRoute();
-const heightString = route.params.id;
-invariant(typeof heightString === 'string');
-const height = parseInt(heightString, 10);
+const height = computed(() => {
+  const heightString = route.params.id;
+  invariant(typeof heightString === 'string');
+  return parseInt(heightString, 10);
+});
 
 const block = ref();
 const table = useBlockTable();
 
 onMounted(async () => {
   try {
-    const blockDetails = await http.fetchBlocksDetails(height);
+    const blockDetails = await http.fetchBlocksDetails(height.value);
     block.value = blockDetails;
     console.log(blockDetails);
     table.setTransaction(blockDetails.transactions);
-    table.fetch();
   } catch (err) {
     console.error('Error fetching block details:', err);
   }
