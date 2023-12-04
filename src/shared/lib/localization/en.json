@@ -6,7 +6,7 @@
   "viewAll": "view all",
   "token": "Token",
   "accounts": "Accounts",
-  "blocks": "Blocks",
+  "blocks": "Blocks | Block",
   "domains": "Domains",
   "domain": "Domain",
   "rowsPerPage": "Rows per page",
@@ -18,8 +18,9 @@
   "nfts": "NFTs",
   "height": "Height",
   "age": "Age",
-  "hash": "Hash",
-  "transaction": "Transaction",
+  "hash": "Hash | Hashes",
+  "root": "Root",
+  "transaction": "Transaction | Transaction's",
   "validators": "Validators",
   "pageNotFound": "Page not found",
   "transactions": "Transactions",
@@ -50,6 +51,13 @@
       "secondLine": "Blockchain Explorer"
     },
     "searchPlaceholder": "Search Address / Txn Hash / Block / Token"
+  },
+  "blockDetails":{
+    "parent" : "Parent",
+    "merkle": "Merkle",
+    "invalidated": "Invalidated",
+    "viewChangeProofs": "View Change Proofs"
+
   },
   "time": {
     "min": "{0} min",

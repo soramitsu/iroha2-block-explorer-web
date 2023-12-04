@@ -1,12 +1,12 @@
 <template>
   <div v-if="block && block.height">
-    <BaseContentBlock :title="$t('Block ') + '#' + block.height" class="block-details-card">
+    <BaseContentBlock :title="$t('blocks',2) + '#' + block.height" class="block-details-card">
       <!-- Card Header -->
       <template #header>
         <div class="block-details-card__title">
           <ArrowIcon />
           <h2 class="base-content-block__title">
-            {{ $t("Block #") }}{{ block.height }}
+            {{ $t('blocks',2) + '#' }}{{ block.height }}
           </h2>
           <ArrowIcon />
         </div>
@@ -19,7 +19,7 @@
       <template #default>
         <div class="block-details-card__body">
           <div class="blocks-details-card__row">
-            <span class="h-sm cell">{{ $t('Block Hash') }}</span>
+            <span class="h-sm cell">{{ $t('blocks',2)+ ' ' + $t('hash') }}</span>
             <BaseHash
               :hash="block.block_hash"
               :link="`/blocks/${block.height}`"
@@ -29,7 +29,7 @@
             />
           </div>
           <div class="blocks-list-page__row">
-            <span class="h-sm cell">{{ $t('Parent Block Hash') }}</span>
+            <span class="h-sm cell">{{ $t('blockDetails.parent')+ ' ' + $t('blocks',2)+ ' ' + $t('hash') }}</span>
             <BaseHash
               :hash="block.parent_block_hash"
               :link="`/blocks/${block.height}`"
@@ -40,7 +40,7 @@
           </div>
           <!-- This field not present -->
           <div class="blocks-list-page__row">
-            <span class="h-sm cell">{{ $t('Transaction’s Merkle Root Hash') }}</span>
+            <span class="h-sm cell">{{ $t('transaction',2)+ ' ' +$t('blockDetails.merkle')+ ' '+$t('root') + ' ' +$t('hash') }}</span>
             <BaseHash
               :hash="block.transactions_merkle_root_hash"
               :link="`/blocks/${block.height}`"
@@ -50,7 +50,7 @@
             />
           </div>
           <div class="blocks-list-page__row">
-            <span class="h-sm cell">{{ $t('Rejected Transaction’s Merkle Root Hash') }}</span>
+            <span class="h-sm cell">{{ $t('rejected')+ ' ' +$t('transactions',2) + ' '+$t('blockDetails.merkle')+ ' ' +$t('hash') }}</span>
             <BaseHash
               :hash="block.rejected_transactions_merkle_root_hash"
               :link="`/blocks/${block.height}`"
@@ -62,13 +62,13 @@
           <div class="blocks-list-page__row">
             <BaseLink :to="`/blocks/${block.height}`" class="block-details-card__row__hashFrame">
               <!-- TODO wait for design to specify what should happen on click"-->
-              {{ block.view_change_proofs.length + $t(' View Change Proofs') }}
+              {{ block.view_change_proofs.length + ' ' + $t('blockDetails.viewChangeProofs') }}
             </BaseLink>
           </div>
           <div class="blocks-list-page__row">
             <BaseLink :to="`/blocks/${block.height}`" class="block-details-card__row__hashFrame">
               <!-- TODO wait for design to specify what should happen on click"-->
-              {{ block.invalidated_blocks_hashes.length + $t(' Invalidated Block Hashes') }}
+              {{ block.invalidated_blocks_hashes.length + $t('blockDetails.invalidated')+' ' + $t('blocks',2)+' ' +$t('hash',2) }}
             </BaseLink>
           </div>
         </div>
@@ -77,7 +77,7 @@
   </div>
 
   <BaseContentBlock
-    :title="$t('Block transactions')"
+    :title="$t('blocks') + ' ' + $t('transaction')"
     class="transactions-list-page"
   >
     <div class="content-row">
