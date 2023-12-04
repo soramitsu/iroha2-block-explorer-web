@@ -4,11 +4,12 @@ This repository is managed by Terraform!
 
 ## Build
 
-Node v14+ required.
+Node v20+ with Corepack is required.
 
 ```bash
-npm i
-npm build
+corepack enable
+pnpm i
+pnpm build
 ```
 
 Build artifacts will be located at `dist` dir.
@@ -51,15 +52,17 @@ Then we go to the Vite configuration in `vite.config.js` and add a new part in o
 where our `target` points to the host and the port of our BCE backend instance.
 
 ```js
-  server: {
-    proxy: {
-      '/api-proxy': {
-        target: 'http://127.0.0.1:4000',
-        changeOrigin: true,
-        secure: false,
-        ws: false,
-        rewrite: (path) => '/api/v1' + path.replace(/api-proxy\//, ''),
-      },
-    },
-  },
+export default defineConfig({
+    server: {
+        proxy: {
+            '/api-proxy': {
+                target: 'http://127.0.0.1:4000',
+                changeOrigin: true,
+                secure: false,
+                ws: false,
+                rewrite: (path) => '/api/v1' + path.replace(/api-proxy\//, ''),
+            },
+        },
+    }
+})
 ```

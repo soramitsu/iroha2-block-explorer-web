@@ -1,7 +1,7 @@
 {
   "name": "iroha2-block-explorer-web",
+  "packageManager": "pnpm@8.11.0",
   "private": true,
-  "version": "0.0.0",
   "scripts": {
     "dev": "vite",
     "build": "run-s typecheck build:vite",
