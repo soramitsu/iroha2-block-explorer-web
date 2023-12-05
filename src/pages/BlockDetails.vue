@@ -1,12 +1,15 @@
 <template>
   <div v-if="block && block.height">
-    <BaseContentBlock :title="$t('blocks',2) + '#' + block.height" class="block-details-card">
+    <BaseContentBlock
+      :title="$t('blocks', 2) + '#' + block.height"
+      class="block-details-card"
+    >
       <!-- Card Header -->
       <template #header>
         <div class="block-details-card__title">
           <ArrowIcon />
           <h2 class="base-content-block__title">
-            {{ $t('blocks',2) + '#' }}{{ block.height }}
+            {{ $t("blocks", 2) + "#" }}{{ block.height }}
           </h2>
           <ArrowIcon />
         </div>
@@ -18,64 +21,109 @@
       <!-- Card Body  -->
       <template #default>
         <div class="block-details-card__body">
-          <div class="blocks-details-card__row">
-            <span class="h-sm cell">{{ $t('blocks',2)+ ' ' + $t('hash') }}</span>
-            <BaseHash
-              :hash="block.block_hash"
-              :link="`/blocks/${block.height}`"
-              type="full"
-              copy
-              class="block-details-card__row__hash"
-            />
+          <div class="block-details-card__column">
+            <div class="block-details-card__column__row">
+              <span class="h-sm cell">{{
+                $t("blocks", 2) + " " + $t("hash")
+              }}</span>
+              <BaseHash
+                :hash="block.block_hash"
+                :link="`/blocks/${block.height}`"
+                :type="hashType"
+                copy
+                class="block-details-card__column__row__hash"
+              />
+            </div>
+            <div class="block-details-card__column__row">
+              <span class="h-sm cell">{{
+                $t("transaction", 2) +
+                  " " +
+                  $t("blockDetails.merkle") +
+                  " " +
+                  $t("root") +
+                  " " +
+                  $t("hash")
+              }}</span>
+              <BaseHash
+                :hash="block.transactions_merkle_root_hash"
+                :link="`/blocks/${block.height}`"
+                :type="hashType"
+                copy
+                class="block-details-card__column__row__hash"
+              />
+            </div>
+            <div class="blocks-details-card__column__row">
+              <BaseLink
+                :to="`/blocks/${block.height}`"
+                class="block-details-card__column__row__hashFrame"
+              >
+                <!-- TODO wait for design to specify what should happen on click"-->
+                {{
+                  block.view_change_proofs.length +
+                    " " +
+                    $t("blockDetails.viewChangeProofs")
+                }}
+              </BaseLink>
+            </div>
           </div>
-          <div class="blocks-list-page__row">
-            <span class="h-sm cell">{{ $t('blockDetails.parent')+ ' ' + $t('blocks',2)+ ' ' + $t('hash') }}</span>
-            <BaseHash
-              :hash="block.parent_block_hash"
-              :link="`/blocks/${block.height}`"
-              type="full"
-              copy
-              class="block-details-card__row__hashFrame"
-            />
-          </div>
-          <!-- This field not present -->
-          <div class="blocks-list-page__row">
-            <span class="h-sm cell">{{ $t('transaction',2)+ ' ' +$t('blockDetails.merkle')+ ' '+$t('root') + ' ' +$t('hash') }}</span>
-            <BaseHash
-              :hash="block.transactions_merkle_root_hash"
-              :link="`/blocks/${block.height}`"
-              type="full"
-              copy
-              class="block-details-card__row__hash"
-            />
-          </div>
-          <div class="blocks-list-page__row">
-            <span class="h-sm cell">{{ $t('rejected')+ ' ' +$t('transactions',2) + ' '+$t('blockDetails.merkle')+ ' ' +$t('hash') }}</span>
-            <BaseHash
-              :hash="block.rejected_transactions_merkle_root_hash"
-              :link="`/blocks/${block.height}`"
-              type="full"
-              copy
-              class="block-details-card__row__hash"
-            />
-          </div>
-          <div class="blocks-list-page__row">
-            <BaseLink :to="`/blocks/${block.height}`" class="block-details-card__row__hashFrame">
-              <!-- TODO wait for design to specify what should happen on click"-->
-              {{ block.view_change_proofs.length + ' ' + $t('blockDetails.viewChangeProofs') }}
-            </BaseLink>
-          </div>
-          <div class="blocks-list-page__row">
-            <BaseLink :to="`/blocks/${block.height}`" class="block-details-card__row__hashFrame">
-              <!-- TODO wait for design to specify what should happen on click"-->
-              {{ block.invalidated_blocks_hashes.length + $t('blockDetails.invalidated')+' ' + $t('blocks',2)+' ' +$t('hash',2) }}
-            </BaseLink>
+          <div class="block-details-card__column">
+            <div class="block-details-card__column__row">
+              <span class="h-sm cell">{{
+                $t("blockDetails.parent") +
+                  " " +
+                  $t("blocks", 2) +
+                  " " +
+                  $t("hash")
+              }}</span>
+              <BaseHash
+                :hash="block.parent_block_hash"
+                :link="`/blocks/${block.height}`"
+                :type="hashType"
+                copy
+                class="block-details-card__column__row__hashFrame"
+              />
+            </div>
+            <div class="block-details-card__column__row">
+              <span class="h-sm cell">{{
+                $t("rejected") +
+                  " " +
+                  $t("transactions", 2) +
+                  " " +
+                  $t("blockDetails.merkle") +
+                  " " +
+                  $t("hash")
+              }}</span>
+              <BaseHash
+                :hash="block.rejected_transactions_merkle_root_hash"
+                :link="`/blocks/${block.height}`"
+                :type="hashType"
+                copy
+                class="block-details-card__column__row__hash"
+              />
+            </div>
+            <div class="blocks-details-card__row">
+              <BaseLink
+                :to="`/blocks/${block.height}`"
+                class="block-details-card__column__row__hashFrame"
+              >
+                <!-- TODO wait for design to specify what should happen on click"-->
+                {{
+                  block.invalidated_blocks_hashes.length +
+                    " " +
+                    $t("blockDetails.invalidated") +
+                    " " +
+                    $t("blocks", 2) +
+                    " " +
+                    $t("hash", 2)
+                }}
+              </BaseLink>
+            </div>
           </div>
         </div>
       </template>
     </BaseContentBlock>
   </div>
-
+  <!-- Block Transaction Details Component -->
   <BaseContentBlock
     :title="$t('blocks') + ' ' + $t('transaction')"
     class="transactions-list-page"
@@ -133,7 +181,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useBlockTable } from '~features/blocks/utils/useBlockTable';
-import { useWindowSize, computedEager } from '@vueuse/core';
+import { useWindowSize } from '@vueuse/core';
 import { http } from '~shared/api';
 import { TransactionStatus } from '~entities/transaction';
 import { format as formatTime } from '~shared/lib/time';
@@ -157,9 +205,7 @@ const tab = ref<filterTransactionsModel.Tab>('all');
 
 const { width } = useWindowSize();
 
-type HashType = 'full' | 'short'
-
-const hashType = computedEager<HashType>(() =>
+const hashType = computed<'full' | 'medium' | 'short' | 'two-line'>(() =>
   width.value < WINDOW_WIDTH_BREAKPOINT_TO_SHRINK_HASH ? 'short' : 'full',
 );
 
@@ -189,7 +235,7 @@ onMounted(async () => {
 @import "styles";
 
 .block-details-card {
-  margin-bottom: 1rem ;
+  margin-bottom: 1rem;
   &__title {
     display: inline-flex;
     align-items: flex-start;
@@ -217,41 +263,43 @@ onMounted(async () => {
     width: 100%;
     height: 100%;
     margin: 1rem;
+    padding: 0 0 1rem 1rem;
 
     @include xs {
-      grid-template-columns:1fr;
+      grid-template-columns: 1fr;
       grid-gap: size(2);
     }
 
     @include sm {
       grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      magin: size(2) 0;
+      margin: size(2) 0;
     }
-
   }
-  &__row {
-    width: 100%;
-    justify-content: start;
-    &__hash {
-      margin: 0.5rem 1rem 0;
-      a{
-        color: theme-color("content-primary");
-        text-decoration: none;
-
+  &__column {
+    display: flex;
+    flex-direction: column;
+    row-gap: 32px;
+    &__row {
+      width: 100%;
+      justify-content: start;
+      &__hash {
+        margin: 0.5rem 1rem 0;
+        a {
+          color: theme-color("content-primary");
+          text-decoration: none;
+        }
+      }
+      &__hashFrame {
+        margin: 0.5rem 1rem 0;
       }
     }
-    &__hashFrame{
-      margin: 0.5rem 1rem 0;
-    }
   }
-
 }
 
 // styles for the blockTable
 .transactions-list-page {
   &__row {
-    width: 100%;
+    width: 10%;
     display: grid;
     grid-template-columns: 1fr 80px;
     margin: size(1) 0;
