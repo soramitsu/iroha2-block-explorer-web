@@ -1,7 +1,7 @@
 <template>
   <div v-if="block && block.height">
     <BaseContentBlock
-      :title="$t('blocks', 2) + '#' + block.height"
+      :title="$t('blockDetails.title', { height: block.height })"
       class="block-details-card"
     >
       <!-- Card Header -->
@@ -9,7 +9,7 @@
         <div class="block-details-card__title">
           <ArrowIcon />
           <h2 class="base-content-block__title">
-            {{ $t("blocks", 2) + "#" }}{{ block.height }}
+            {{ $t("blockDetails.title", { height: block.height }) }}
           </h2>
           <ArrowIcon />
         </div>
@@ -24,7 +24,7 @@
           <div class="block-details-card__column">
             <div class="block-details-card__column__row">
               <span class="h-sm cell">{{
-                $t("blocks", 2) + " " + $t("hash")
+                `${$t("block", 1)} ${$t("hash")}`
               }}</span>
               <BaseHash
                 :hash="block.block_hash"
@@ -36,13 +36,7 @@
             </div>
             <div class="block-details-card__column__row">
               <span class="h-sm cell">{{
-                $t("transaction", 2) +
-                  " " +
-                  $t("blockDetails.merkle") +
-                  " " +
-                  $t("root") +
-                  " " +
-                  $t("hash")
+                $t('blockDetails.transactionMerkleRootHash')
               }}</span>
               <BaseHash
                 :hash="block.transactions_merkle_root_hash"
@@ -59,9 +53,9 @@
               >
                 <!-- TODO wait for design to specify what should happen on click"-->
                 {{
-                  block.view_change_proofs.length +
-                    " " +
-                    $t("blockDetails.viewChangeProofs")
+                  $t("blockDetails.viewChangeProofs", {
+                    length: block.view_change_proofs.length,
+                  })
                 }}
               </BaseLink>
             </div>
@@ -71,7 +65,7 @@
               <span class="h-sm cell">{{
                 $t("blockDetails.parent") +
                   " " +
-                  $t("blocks", 2) +
+                  $t("block", 1) +
                   " " +
                   $t("hash")
               }}</span>
@@ -85,13 +79,7 @@
             </div>
             <div class="block-details-card__column__row">
               <span class="h-sm cell">{{
-                $t("rejected") +
-                  " " +
-                  $t("transactions", 2) +
-                  " " +
-                  $t("blockDetails.merkle") +
-                  " " +
-                  $t("hash")
+                $t('blockDetails.rejectedTransactionMerkleRootHash')
               }}</span>
               <BaseHash
                 :hash="block.rejected_transactions_merkle_root_hash"
@@ -107,15 +95,7 @@
                 class="block-details-card__column__row__hashFrame"
               >
                 <!-- TODO wait for design to specify what should happen on click"-->
-                {{
-                  block.invalidated_blocks_hashes.length +
-                    " " +
-                    $t("blockDetails.invalidated") +
-                    " " +
-                    $t("blocks", 2) +
-                    " " +
-                    $t("hash", 2)
-                }}
+                {{ $t("blockDetails.invalidatedTransactionHash",{length: block.invalidated_blocks_hashes.length}) }}
               </BaseLink>
             </div>
           </div>
@@ -125,7 +105,7 @@
   </div>
   <!-- Block Transaction Details Component -->
   <BaseContentBlock
-    :title="$t('blocks') + ' ' + $t('transaction')"
+    :title="$t('block',1) + ' ' + $t('transaction',2)"
     class="transactions-list-page"
   >
     <div class="content-row">
@@ -178,10 +158,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useBlockTable } from '~features/blocks/utils/useBlockTable';
-import { useWindowSize } from '@vueuse/core';
+import { computedEager, useWindowSize } from '@vueuse/core';
 import { http } from '~shared/api';
 import { TransactionStatus } from '~entities/transaction';
 import { format as formatTime } from '~shared/lib/time';
@@ -205,12 +185,12 @@ const tab = ref<filterTransactionsModel.Tab>('all');
 
 const { width } = useWindowSize();
 
-const hashType = computed<'full' | 'medium' | 'short' | 'two-line'>(() =>
+const hashType = computedEager<'full' | 'medium' | 'short' | 'two-line'>(() =>
   width.value < WINDOW_WIDTH_BREAKPOINT_TO_SHRINK_HASH ? 'short' : 'full',
 );
 
 const route = useRoute();
-const height = computed(() => {
+const height = computedEager(() => {
   const heightString = route.params.id;
   invariant(typeof heightString === 'string');
   return parseInt(heightString, 10);
