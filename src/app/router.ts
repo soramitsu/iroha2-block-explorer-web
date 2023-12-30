@@ -12,6 +12,11 @@ const routes = [
     component: () => import('~pages/BlocksList.vue'),
   },
   {
+    path: '/blocks/:id',
+    name: 'block-details',
+    component: () => import('~pages/BlockDetails.vue'),
+  },
+  {
     path: '/assets',
     name: 'assets-list',
     component: () => import('~pages/AssetsList.vue'),

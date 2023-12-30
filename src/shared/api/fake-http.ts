@@ -1,6 +1,6 @@
 import { makeAccount } from './mock-factories/account';
 import { makeAsset, makeAssetDefinition } from './mock-factories/asset';
-import { makeBlock } from './mock-factories/block';
+import { makeBlock, makeBlockDetails } from './mock-factories/block';
 import { makeDomain } from './mock-factories/domain';
 import { transactionList } from './mock-factories/transaction';
 import { list, pagination } from './mock-factories/utils';
@@ -62,6 +62,15 @@ export async function fetchRoles(): Promise<Role[]> {
 
 export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
   return pagination(blocks, params);
+}
+
+export async function fetchBlocksDetails(height: number): Promise<Block> {
+  return makeBlockDetails(height);
+};
+
+// gets a transactipon related to block and make it paginaed
+export async function fetchBlockTransactions(transactions:TransactionDto[], params?: PaginationParams): Promise<Paginated<TransactionDto>> {
+  return pagination(transactions, params);
 }
 
 export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {

@@ -124,11 +124,12 @@ declare global {
     block_hash: string;
     parent_block_hash: string;
     rejected_transactions_merkle_root_hash: string;
+    transactions_merkle_root_hash:string;
     invalidated_blocks_hashes: string[];
     /**
      * List of serialized {@link @iroha2/data-model#VersionedValidTransaction}
      */
-    transactions: string[];
+    transactions: TransactionDto[];
     /**
      * List of serialized {@link @iroha2/data-model#VersionedRejectedTransaction}
      */

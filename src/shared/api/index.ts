@@ -10,6 +10,7 @@ interface HTTPService {
   fetchPeerStatus(): Promise<Status>;
   fetchRoles(): Promise<Role[]>;
   fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>>;
+  fetchBlocksDetails(height_or_hash: number): Promise<Block>;
   fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>>;
 }
 

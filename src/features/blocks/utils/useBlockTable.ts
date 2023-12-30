@@ -1,4 +1,5 @@
 import { Ref, ref } from 'vue';
+import { transactionModel } from '~entities/transaction';
 
 export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;
 
@@ -9,60 +10,59 @@ export type TablePagination = {
   total: number;
 };
 
-export function useTable<T>(fetchFn: TableFetchFn<T>) {
+export function useBlockTable() {
   const loading = ref(false);
-
-  const items: Ref<T[]> = ref([]);
-
-  const pagination = ref<TablePagination>({
+  const selectedTransaction: Ref<TransactionDto[]> = ref([]);
+  const items: Ref<Transaction[]> = ref([]);
+  const pagination: Ref<TablePagination> = ref({
     page: 1,
     page_size: 10,
     pages: 1,
     total: 10,
   });
-
-  async function fetch() {
-    loading.value = true;
-
-    const res = await fetchFn({
+  function fetch() {
+    const res = transactionModel.fetchBlocksList(selectedTransaction.value, {
       page: pagination.value.page,
       page_size: pagination.value.page_size,
     });
-
     items.value = res.data;
     pagination.value = {
       ...res.pagination,
       pages: Math.ceil(res.pagination.total / res.pagination.page_size),
     };
-    loading.value = false;
   }
 
-  async function nextPage() {
+  function setTransaction(transaction: TransactionDto[]) {
+    selectedTransaction.value = transaction;
+    fetch();
+  }
+
+  function nextPage() {
     if (pagination.value.page < pagination.value.pages) {
       pagination.value.page += 1;
-      await fetch();
+      fetch();
     }
   }
 
-  async function prevPage() {
+  function prevPage() {
     if (pagination.value.page > 1) {
       pagination.value.page -= 1;
-      await fetch();
+      fetch();
     }
   }
 
-  async function setPage(index: number) {
+  function setPage(index: number) {
     if (index !== pagination.value.page) {
       pagination.value.page = index;
-      await fetch();
+      fetch();
     }
   }
 
-  async function setSize(n: number) {
+  function setSize(n: number) {
     if (n !== pagination.value.page_size) {
       pagination.value.page_size = n;
       pagination.value.page = 1;
-      await fetch();
+      fetch();
     }
   }
 
@@ -70,10 +70,10 @@ export function useTable<T>(fetchFn: TableFetchFn<T>) {
     loading,
     items,
     pagination,
-    fetch,
     nextPage,
     prevPage,
     setPage,
     setSize,
+    setTransaction,
   };
 }
