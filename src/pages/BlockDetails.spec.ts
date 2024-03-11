@@ -37,7 +37,14 @@ describe('BlockDetails.vue', async () => {
     expect(blockCardComponent.exists()).toBe(true);
     expect(blockTransactionsListComponent.exists()).toBe(true);
   });
+
 });
+
+describe('BlockDetailsCard.vue', () => {
+  it('renders things fine', () => {
+
+  })
+})
 
 // test2
 // write a test that matches the backend data to mocked data types and if there types matches it passses

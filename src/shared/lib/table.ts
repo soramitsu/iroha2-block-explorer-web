@@ -9,7 +9,18 @@ export type TablePagination = {
   total: number;
 };
 
-export function useTable<T>(fetchFn: TableFetchFn<T>) {
+export interface UseTableReturn<T> {
+  loading: Ref<boolean>
+  items: Ref<T[]>
+  pagination: Ref<TablePagination>
+  fetch: () => void
+  prevPage: () => void
+  nextPage: () => void
+  setPage: (n: number) => void
+  setSize: (n: number) => void
+}
+
+export function useTable<T>(fetchFn: TableFetchFn<T>): UseTableReturn<T> {
   const loading = ref(false);
 
   const items: Ref<T[]> = ref([]);
