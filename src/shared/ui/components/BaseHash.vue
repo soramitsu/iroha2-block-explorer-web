@@ -1,41 +1,49 @@
 <template>
   <div class="base-hash">
-    <BaseLink v-if="props.link" :to="props.link" monospace>
+    <BaseLink
+      v-if="props.link"
+      :to="props.link"
+      monospace
+    >
       {{ content }}
     </BaseLink>
 
     <span v-else>{{ content }}</span>
 
-    <CopyIcon v-if="props.copy" class="base-hash__copy" @click="copy" />
+    <CopyIcon
+      v-if="props.copy"
+      class="base-hash__copy"
+      @click="copy"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h } from 'vue';
+import CopyIcon from '@/shared/ui/icons/copy.svg';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
-import { useNotifications } from '~shared/ui/composables/notifications';
-import CopyIcon from '~icons/copy.svg';
-import BaseLink from '~base/BaseLink.vue';
+import { useNotifications } from '@/shared/ui/composables/notifications';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
-type Props = {
-  hash: string,
-  link?: string,
-  copy?: boolean,
-  type?: 'full' | 'medium' | 'short' | 'two-line',
+interface Props {
+  hash: string
+  link?: string
+  copy?: boolean
+  type?: 'full' | 'medium' | 'short' | 'two-line'
 }
 
 const props = defineProps<Props>();
 const clipboard = useClipboard();
-const noti = useNotifications();
+const notifications = useNotifications();
 const { t } = useI18n({ useScope: 'global' });
 
 async function copy() {
   if (clipboard.isSupported) {
     await clipboard.copy(props.hash);
-    noti.success(t('clipboard.success'));
+    notifications.success(t('clipboard.success'));
   } else {
-    noti.error(t('clipboard.error'));
+    notifications.error(t('clipboard.error'));
   }
 }
 
@@ -49,11 +57,7 @@ const content = computed(() => {
       // eslint-disable-next-line no-case-declarations
       const center = Math.ceil(props.hash.length / 2);
 
-      return [
-        props.hash.slice(0, center),
-        h('br'),
-        props.hash.slice(-center + props.hash.length % 2),
-      ];
+      return [props.hash.slice(0, center), h('br'), props.hash.slice(-center + (props.hash.length % 2))];
 
     default:
       return props.hash;
@@ -62,7 +66,7 @@ const content = computed(() => {
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .base-hash {
   display: flex;

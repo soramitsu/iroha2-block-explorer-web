@@ -11,13 +11,12 @@
 </template>
 
 <script setup lang="ts">
-import BaseButton from '~base/BaseButton.vue';
-import { menu } from '~shared/config';
-
+import { menu } from '@/shared/config';
+import BaseButton from '@/shared/ui/components/BaseButton.vue';
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .navigation-menu {
   display: none;

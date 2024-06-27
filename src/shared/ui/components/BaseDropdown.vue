@@ -1,14 +1,27 @@
 <template>
-  <div class="base-dropdown" role="select" :style="`width: ${props.width}`">
+  <div
+    class="base-dropdown"
+    role="select"
+    :style="`width: ${props.width}`"
+  >
     <div class="base-dropdown__container">
-      <div class="base-dropdown__field" @click="isOpen = !isOpen">
+      <div
+        class="base-dropdown__field"
+        @click="isOpen = !isOpen"
+      >
         <span class="base-dropdown__label">{{ fieldLabel }}&nbsp;</span>
         <span class="base-dropdown__value">{{ valueLabel }}</span>
 
-        <ArrowIcon class="base-dropdown__icon" :style="`transform: rotate(${isOpen ? 0.5 : 0}turn);`" />
+        <ArrowIcon
+          class="base-dropdown__icon"
+          :style="`transform: rotate(${isOpen ? 0.5 : 0}turn);`"
+        />
       </div>
 
-      <div v-if="isOpen" class="base-dropdown__list">
+      <div
+        v-if="isOpen"
+        class="base-dropdown__list"
+      >
         <div
           v-for="(item, i) in items"
           :key="i"
@@ -24,31 +37,27 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import ArrowIcon from '~icons/dropdown-icon.svg';
+import ArrowIcon from '@/shared/ui/icons/dropdown-icon.svg';
 
-type DropdownItem = {
-  label: string;
-  value: string | number;
+interface DropdownItem {
+  label: string
+  value: string | number
 }
 
-type Props = {
-  modelValue: string | number,
-  items: DropdownItem[],
-  fieldLabel: string,
-  width: string,
+interface Props {
+  modelValue: string | number
+  items: DropdownItem[]
+  fieldLabel: string
+  width: string
 }
 
-type Emits = {
-  (e: 'update:modelValue', value: string | number): void
-}
+type Emits = (e: 'update:modelValue', value: string | number) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const isOpen = ref(false);
-const valueLabel = computed(
-  () => props.items.find(item => item.value === props.modelValue)?.label ?? '',
-);
+const valueLabel = computed(() => props.items.find((item) => item.value === props.modelValue)?.label ?? '');
 
 function choose(value: string | number) {
   emit('update:modelValue', value);
@@ -57,7 +66,7 @@ function choose(value: string | number) {
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .base-dropdown {
   position: relative;

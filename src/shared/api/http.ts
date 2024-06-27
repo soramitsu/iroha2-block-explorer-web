@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL as string ?? '/api/v1';
+const BASE_URL = (import.meta.env.VITE_API_URL as string) ?? '/api/v1';
 
 async function get<T>(path: string, params?: PaginationParams): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
@@ -27,7 +27,7 @@ export function fetchAsset(definition_id: string, account_id: string): Promise<A
   return get(`/assets/${definition_id}/${account_id}`);
 }
 
-export function fetchAssetDefinitions(params:PaginationParams): Promise<Paginated<AssetDefinition>> {
+export function fetchAssetDefinitions(params: PaginationParams): Promise<Paginated<AssetDefinition>> {
   return get('/asset-definitions', params);
 }
 
@@ -37,7 +37,7 @@ export function fetchDomains(params?: PaginationParams): Promise<Paginated<Domai
 
 export function fetchDomain(id: string): Promise<Domain> {
   return get(`/domains/${id}`);
-};
+}
 
 export function fetchPeers(): Promise<Peer[]> {
   return get('/peer/peers');

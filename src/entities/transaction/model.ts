@@ -1,22 +1,22 @@
 import { Instruction } from '@iroha2/data-model';
-import { http } from '~shared/api';
+import { http } from '@/shared/api';
 
 declare global {
   export interface Transaction {
-    committed: boolean,
-    block_hash: string;
-    block_height: number;
-    hash: string;
+    committed: boolean
+    block_hash: string
+    block_height: number
+    hash: string
     payload: {
-      account_id: string;
-      instructions: Instruction[];
-      creation_time: string;
-      time_to_live_ms: number;
-      nonce: null | number;
-      metadata: any;
+      account_id: string
+      instructions: Instruction[]
+      creation_time: string
+      time_to_live_ms: number
+      nonce: null | number
+      metadata: any
     }
-    signatures: Signature[];
-    rejection_reason?: string;
+    signatures: Signature[]
+    rejection_reason?: string
   }
 }
 
@@ -30,8 +30,8 @@ function hexToBytes(hex: string) {
 }
 
 export function mapFromDto(transaction: TransactionDto): Transaction {
-  const instructions = transaction.c.payload.instructions.c
-    ?.map((i: string) => Instruction.fromBuffer(hexToBytes(i))) ?? [];
+  const instructions =
+    transaction.c.payload.instructions.c?.map((i: string) => Instruction.fromBuffer(hexToBytes(i))) ?? [];
 
   return {
     committed: transaction.t === 'Committed',
@@ -44,7 +44,7 @@ export function mapFromDto(transaction: TransactionDto): Transaction {
       instructions,
     },
   };
-};
+}
 
 export async function fetchList(params?: PaginationParams): Promise<Paginated<Transaction>> {
   const res = await http.fetchTransactions(params);

@@ -18,7 +18,7 @@ export function pagination<T>(list: T[], params?: PaginationParams): Paginated<T
 export function list<T>(factory: () => T, length?: number): T[] {
   const n = length ?? randNumber({ min: 0, max: 30 });
 
-  return new Array(n).fill(null).map(_ => factory());
+  return new Array(n).fill(null).map((_) => factory());
 }
 
 export function hash(length: number) {
