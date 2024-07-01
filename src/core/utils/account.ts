@@ -1,8 +1,10 @@
-function countCryptos(account: Account): number {
+import type { AccountDto } from '@/api/accounts';
+
+function countCryptos(account: AccountDto): number {
   return account.assets.reduce((sum, a) => (a.value.t !== 'Store' ? sum + 1 : sum), 0);
 }
 
-function countNFTs(account: Account): number {
+function countNFTs(account: AccountDto): number {
   return account.assets.reduce((sum, a) => (a.value.t === 'Store' ? sum + 1 : sum), 0);
 }
 

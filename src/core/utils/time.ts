@@ -31,3 +31,7 @@ export function format(timestamp: string) {
 
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
+
+export function getTimeDifference(time: string) {
+  return Math.floor((Date.now() - new Date(time).getTime()) / (1000 * 60));
+}
