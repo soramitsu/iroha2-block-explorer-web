@@ -1,4 +1,4 @@
-@import './theme';
+@import 'theme';
 
 @mixin shadow-row() {
   box-shadow: theme-shadow('row');
