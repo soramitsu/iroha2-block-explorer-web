@@ -1,7 +1,7 @@
-import type { Ref } from 'vue';
-import { reactive, ref } from 'vue';
+import { reactive } from 'vue';
+import type { PaginationInfo, PaginationParamsDto } from '@/core/types/common';
 
-export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;
+export type TableFetchFn = (params: PaginationParamsDto) => Promise<PaginationInfo | undefined>;
 
 export interface TablePagination {
   page: number
@@ -10,11 +10,7 @@ export interface TablePagination {
   total: number
 }
 
-export function useTable<T>(fetchFn: TableFetchFn<T>) {
-  const loading = ref(false);
-
-  const items: Ref<T[]> = ref([]);
-
+export function useTable(fetchFn: TableFetchFn) {
   const pagination = reactive<TablePagination>({
     page: 1,
     page_size: 10,
@@ -23,20 +19,17 @@ export function useTable<T>(fetchFn: TableFetchFn<T>) {
   });
 
   async function fetch() {
-    loading.value = true;
-
-    const res = await fetchFn({
+    const newPagination = await fetchFn({
       page: pagination.page,
       page_size: pagination.page_size,
     });
 
-    items.value = res.data;
-    pagination.page = res.pagination.page;
-    pagination.page_size = res.pagination.page_size;
-    pagination.total = res.pagination.total;
-    pagination.pages = Math.ceil(res.pagination.total / res.pagination.page_size);
+    if (!newPagination) return;
 
-    loading.value = false;
+    pagination.page = newPagination.page;
+    pagination.page_size = newPagination.page_size;
+    pagination.total = newPagination.total;
+    pagination.pages = Math.ceil(newPagination.total / newPagination.page_size);
   }
 
   async function nextPage() {
@@ -69,8 +62,6 @@ export function useTable<T>(fetchFn: TableFetchFn<T>) {
   }
 
   return {
-    loading,
-    items,
     pagination,
     fetch,
     nextPage,
