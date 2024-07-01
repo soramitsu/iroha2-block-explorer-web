@@ -4,9 +4,9 @@
     class="domains-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
+      :loading="domainsStore.isLoading"
       :pagination="table.pagination"
-      :items="table.items.value"
+      :items="domainsStore.domains"
       container-class="domains-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
@@ -22,7 +22,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Domain }">
+      <template #row="{ item }">
         <div class="domains-list-page__row">
           <BaseLink
             :to="`/domains/${item.id}`"
@@ -43,7 +43,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Domain }">
+      <template #mobile-card="{ item }">
         <div class="domains-list-page__mobile-card">
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>
@@ -74,19 +74,29 @@
 </template>
 
 <script setup lang="ts">
-import { http } from '@/shared/api';
-import { useTable } from '@/shared/lib/table';
-import { domainModel } from '@/entities/domain';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import { useTable } from '@/core/composables/useTable';
+import { domainModel } from '@/core/utils/domain';
+import BaseLink from '@/core/components/BaseLink.vue';
+import BaseTable from '@/core/components/BaseTable.vue';
+import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
+import { useDomainsStore } from '@/stores/domains';
+import { onMounted } from 'vue';
 
-const table = useTable(http.fetchDomains);
-table.fetch();
+const domainsStore = useDomainsStore();
+
+const table = useTable(domainsStore.fetchDomains);
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+  } catch (e) {
+    console.log(e);
+  }
+});
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .domains-list-page {
   &__row {

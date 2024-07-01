@@ -4,9 +4,9 @@
     class="blocks-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
+      :loading="blocksStore.isLoading"
       :pagination="table.pagination"
-      :items="table.items.value"
+      :items="blocksStore.blocks"
       container-class="blocks-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
@@ -22,7 +22,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Block }">
+      <template #row="{ item }">
         <div class="blocks-list-page__row">
           <BaseLink
             :to="`/blocks/${item.height}`"
@@ -49,7 +49,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Block }">
+      <template #mobile-card="{ item }">
         <div class="blocks-list-page__mobile-card">
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('height') }}</span>
@@ -86,20 +86,29 @@
 </template>
 
 <script setup lang="ts">
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { useTable } from '@/shared/lib/table';
-import { http } from '@/shared/api';
-import { format } from '@/shared/lib/time';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import BaseLink from '@/core/components/BaseLink.vue';
+import { useTable } from '@/core/composables/useTable';
+import { format } from '@/core/utils/time';
+import BaseHash from '@/core/components/BaseHash.vue';
+import BaseTable from '@/core/components/BaseTable.vue';
+import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
+import { useBlocksStore } from '@/stores/blocks';
+import { onMounted } from 'vue';
+const blocksStore = useBlocksStore();
 
-const table = useTable(http.fetchBlocks);
-table.fetch();
+const table = useTable(blocksStore.fetchBlocks);
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+  } catch (e) {
+    console.log(e);
+  }
+});
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .blocks-list-page {
   &__row {

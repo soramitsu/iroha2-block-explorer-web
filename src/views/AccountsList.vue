@@ -4,9 +4,9 @@
     class="accounts-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
+      :loading="accountsStore.isLoading"
       :pagination="table.pagination"
-      :items="table.items.value"
+      :items="accountsStore.accounts"
       container-class="accounts-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
@@ -21,7 +21,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Account }">
+      <template #row="{ item }">
         <div class="accounts-list-page__row">
           <BaseHash
             :hash="item.id"
@@ -41,7 +41,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Account }">
+      <template #mobile-card="{ item }">
         <div class="accounts-list-page__mobile-card">
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('address') }}</span>
@@ -73,19 +73,29 @@
 </template>
 
 <script setup lang="ts">
-import { http } from '@/shared/api';
-import { useTable } from '@/shared/lib/table';
-import { accountModel } from '@/entities/account';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import { useTable } from '@/core/composables/useTable';
+import { accountModel } from '@/core/utils/account';
+import BaseHash from '@/core/components/BaseHash.vue';
+import BaseTable from '@/core/components/BaseTable.vue';
+import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
+import { useAccountsStore } from '@/stores/accounts';
+import { onMounted } from 'vue';
 
-const table = useTable(http.fetchAccounts);
-table.fetch();
+const accountsStore = useAccountsStore();
+
+const table = useTable(accountsStore.fetchAccounts);
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+  } catch (e) {
+    console.log(e);
+  }
+});
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .accounts-list-page {
   &__row {

@@ -31,20 +31,20 @@
 </template>
 
 <script setup lang="ts">
-import BackgroundLogo from '@/shared/ui/icons/background-logo.svg';
-import LogoIcon from '@/shared/ui/icons/logo.svg';
-import { LatestBlocks } from '@/widgets/latest-blocks';
-import { LatestTransactions } from '@/widgets/latest-transactions';
-import { ThemeSwitcher } from '@/features/switch-theme';
-import { LangDropdown } from '@/features/switch-lang';
-import { MobileMenu } from '@/features/mobile-menu';
-import { PORTAL_ID } from '@/shared/config';
-import { NavigationMenu } from '@/features/navigation';
-import { HomePageInfo } from '@/widgets/home-page-info';
+import BackgroundLogo from '@/core/assets/background-logo.svg';
+import LogoIcon from '@/core/assets/logo.svg';
+import NavigationMenu from '@/core/components/NavigationMenu.vue';
+import ThemeSwitcher from '@/core/components/ThemeSwitcher.vue';
+import LangDropdown from '@/core/components/LangDropdown.vue';
+import MobileMenu from '@/core/components/MobileMenu.vue';
+import { PORTAL_ID } from '@/core/consts';
+import LatestTransactions from '@/core/widgets/LatestTransactions.vue';
+import LatestBlocks from '@/core/widgets/LatestBlocks.vue';
+import HomePageInfo from '@/views/HomePage/HomePageInfo.vue';
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .home-page {
   position: relative;

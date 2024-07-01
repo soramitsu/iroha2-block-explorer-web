@@ -4,6 +4,7 @@
     class="transactions-list-page"
   >
     <div class="content-row">
+      <!--      TODO: Add styles for type filter on mobile-->
       <TransactionTypeFilter
         v-model="tab"
         class="transactions-list-page__tabs"
@@ -15,21 +16,21 @@
     </div>
 
     <BaseTable
-      :loading="table.loading.value"
+      :loading="transactionsStore.isLoading"
       :pagination="table.pagination"
-      :items="table.items.value"
+      :items="data"
       container-class="transactions-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
       @set-size="table.setSize($event)"
     >
-      <template #row="{ item }: { item: Transaction }">
+      <template #row="{ item }">
         <div class="transactions-list-page__row">
           <TransactionStatus
             type="tooltip"
             class="transactions-list-page__icon"
-            :committed="item.committed"
+            :committed="!item?.rejection_reason"
           />
 
           <div class="transactions-list-page__column">
@@ -55,7 +56,8 @@
             </div>
 
             <BaseLink :to="'/blocks/' + item.block_height">
-              {{ item.block_height }}
+              <!--    TODO: Fix when block_height will be implemented on backend-->
+              {{ item.block_height ?? 0 }}
             </BaseLink>
           </div>
         </div>
@@ -65,34 +67,52 @@
 </template>
 
 <script setup lang="ts">
-import { transactionModel } from '@/entities/transaction';
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useWindowSize, computedEager } from '@vueuse/core';
-import TransactionTypeFilter from '@/features/filter-transactions/TransactionTypeFilter.vue';
-import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
-import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import { format } from '@/shared/lib/time';
-import { useTable } from '@/shared/lib/table';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
+import TransactionStatus from '@/core/components/Transactions/TransactionStatus.vue';
+import { format } from '@/core/utils/time';
+import { useTable } from '@/core/composables/useTable';
+import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
+import BaseTable from '@/core/components/BaseTable.vue';
+import BaseHash from '@/core/components/BaseHash.vue';
+import BaseLink from '@/core/components/BaseLink.vue';
+import { useTransactionsStore } from '@/stores/transactions';
+import { REJECTED_TRANSACTION } from '@/views/Transactions/consts';
+import type { TRANSACTION_STATUS, TRANSACTIONS_TABS } from '@/core/types/transactions';
+import TransactionTypeFilter from '@/core/components/Transactions/TransactionTypeFilter.vue';
+import TransactionStatusFilter from '@/core/components/Transactions/TransactionStatusFilter.vue';
 
 const HASH_BREAKPOINT = 1200;
 
-const status = ref<ftm.Status>(null);
-const tab = ref<ftm.Tab>('all');
+const status = ref<TRANSACTION_STATUS>(null);
+const tab = ref<TRANSACTIONS_TABS>('all');
 
 const { width } = useWindowSize();
 
 const hashType = computedEager(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
-const table = useTable(transactionModel.fetchList);
-table.fetch();
+const transactionsStore = useTransactionsStore();
+
+const table = useTable(transactionsStore.fetchTransactions);
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+const data = computed(() => {
+  if (!status.value) return transactionsStore.transactions;
+
+  if (status.value === REJECTED_TRANSACTION) return transactionsStore.transactions.filter((t) => t.rejection_reason);
+  else return transactionsStore.transactions.filter((t) => !t.rejection_reason);
+});
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .transactions-list-page {
   &__row {
@@ -121,8 +141,6 @@ table.fetch();
   }
 
   &__tabs {
-    display: none; // need a mobile version of the component
-
     @include md {
       display: grid;
     }

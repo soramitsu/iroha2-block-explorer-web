@@ -10,8 +10,8 @@
 
     <div class="home-page-info__grid">
       <div
-        v-for="(item, i) in info"
-        :key="i"
+        v-for="(item, index) in APPLICATION_STATS"
+        :key="index"
         class="home-page-info__item"
       >
         <span class="home-page-info__value">
@@ -19,7 +19,7 @@
         </span>
 
         <span class="home-page-info__label">
-          {{ item.label }}
+          {{ $t(item.label) }}
         </span>
       </div>
     </div>
@@ -27,23 +27,12 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-import { SearchField } from '@/features/search';
-
-const { t } = useI18n({ useScope: 'global' });
-
-const info = [
-  { value: '5.599s', label: t('homePage.averageBlockTime') },
-  { value: '654', label: t('homePage.validators') },
-  { value: '68', label: t('homePage.nodes') },
-  { value: '12,658', label: t('homePage.accounts') },
-  { value: '12345', label: t('homePage.domains') },
-  { value: '12,658', label: t('homePage.assets') },
-];
+import SearchField from '@/core/components/SearchField.vue';
+import { APPLICATION_STATS } from '@/core/consts';
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .home-page-info {
   background: theme-color('surface-variant');
@@ -56,17 +45,13 @@ const info = [
 
   @include xs {
     margin-top: size(3);
-    margin-top: size(0); // #SEARCH: remove when functionality is ready
   }
 
   @include md {
     margin-top: size(10);
-    margin-top: size(4); // #SEARCH: remove when functionality is ready
   }
 
   &__search {
-    display: none; // #SEARCH: remove when functionality is ready
-
     position: relative;
     margin-top: size(-3);
     width: 100%;

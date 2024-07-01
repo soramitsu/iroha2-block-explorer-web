@@ -4,9 +4,9 @@
     class="assets-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
+      :loading="assetsStore.isLoading"
       :pagination="table.pagination"
-      :items="table.items.value"
+      :items="assetsStore.assets"
       container-class="assets-list-page__container"
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
@@ -21,7 +21,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Asset }">
+      <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
             :to="`/assets/${item.definition_id}`"
@@ -48,7 +48,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Asset }">
+      <template #mobile-card="{ item }">
         <div class="assets-list-page__mobile-card">
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
@@ -77,18 +77,28 @@
 </template>
 
 <script setup lang="ts">
-import { http } from '@/shared/api';
-import { useTable } from '@/shared/lib/table';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import BaseLink from '@/core/components/BaseLink.vue';
+import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
+import BaseTable from '@/core/components/BaseTable.vue';
+import { useAssetsStore } from '@/stores/assets';
+import { useTable } from '@/core/composables/useTable';
+import { onMounted } from 'vue';
 
-const table = useTable(http.fetchAssets);
-table.fetch();
+const assetsStore = useAssetsStore();
+
+const table = useTable(assetsStore.fetchAssets);
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+  } catch (e) {
+    console.log(e);
+  }
+});
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .assets-list-page {
   &__row {
