@@ -4,36 +4,36 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/pages/HomePage.vue'),
+    component: () => import('@/views/HomePage/HomePage.vue'),
   },
   {
     path: '/blocks',
     name: 'blocks-list',
-    component: () => import('@/pages/BlocksList.vue'),
+    component: () => import('@/views/BlocksList.vue'),
   },
   {
     path: '/assets',
     name: 'assets-list',
-    component: () => import('@/pages/AssetsList.vue'),
+    component: () => import('@/views/AssetsList.vue'),
   },
   {
     path: '/accounts',
     name: 'accounts-list',
-    component: () => import('@/pages/AccountsList.vue'),
+    component: () => import('@/views/AccountsList.vue'),
   },
   {
     path: '/domains',
     name: 'domains-list',
-    component: () => import('@/pages/DomainsList.vue'),
+    component: () => import('@/views/DomainsList.vue'),
   },
   {
     path: '/transactions',
     name: 'transactions-list',
-    component: () => import('@/pages/TransactionsList.vue'),
+    component: () => import('@/views/Transactions/TransactionsList.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
-    component: () => import('@/pages/NotFound.vue'),
+    component: () => import('@/views/NotFound.vue'),
   },
 ];
 
