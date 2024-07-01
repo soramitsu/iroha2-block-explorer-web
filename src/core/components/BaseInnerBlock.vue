@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import ArrowIcon from '@/shared/ui/icons/arrow.svg';
+import ArrowIcon from '@/core/assets/arrow.svg';
 import { ref } from 'vue';
 
 interface Props {
@@ -42,7 +42,7 @@ function toggle() {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-inner-block {
   border-radius: size(4);

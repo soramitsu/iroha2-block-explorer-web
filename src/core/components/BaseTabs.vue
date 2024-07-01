@@ -7,7 +7,7 @@
       :class="{ 'base-tabs__tab--active': item.value === model }"
       @click="model = item.value"
     >
-      {{ item.label }}
+      {{ $t(item.label) }}
     </div>
   </div>
 </template>
@@ -15,26 +15,23 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core';
 
-interface TabItem {
-  label: string
-  value: string
-}
-
-interface Props {
-  items: TabItem[]
+const props = defineProps<{
   modelValue: string
-}
+  items: {
+    label: string
+    value: string
+  }[]
+}>();
 
-type Emits = (e: 'update:modelValue', value: string) => void;
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>();
 
 const model = useVModel(props, 'modelValue', emit);
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-tabs {
   display: grid;

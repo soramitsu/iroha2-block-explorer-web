@@ -2,18 +2,18 @@
   <div class="transaction-status">
     <div
       class="transaction-status__icon"
-      :data-committed="committed"
+      :data-committed="props.committed"
     >
-      <SuccessIcon v-if="committed" />
+      <SuccessIcon v-if="props.committed" />
       <ErrorIcon v-else />
     </div>
 
     <div
       v-if="type === 'label'"
       class="transaction-status__label"
-      :data-committed="committed"
+      :data-committed="props.committed"
     >
-      <span v-if="committed">Committed</span>
+      <span v-if="props.committed">Committed</span>
       <span v-else>Rejected</span>
     </div>
 
@@ -28,19 +28,17 @@
 </template>
 
 <script setup lang="ts">
-import SuccessIcon from '@/shared/ui/icons/success.svg';
-import ErrorIcon from '@/shared/ui/icons/error.svg';
+import SuccessIcon from '@/core/assets/success.svg';
+import ErrorIcon from '@/core/assets/error.svg';
 
-interface Props {
+const props = defineProps<{
   committed: boolean
   type: 'label' | 'tooltip'
-}
-
-defineProps<Props>();
+}>();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .transaction-status {
   position: relative;

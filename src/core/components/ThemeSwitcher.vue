@@ -11,9 +11,9 @@
 </template>
 
 <script setup lang="ts">
-import DarkModeIcon from '@/shared/ui/icons/dark-mode.svg';
+import DarkModeIcon from '@/core/assets/dark-mode.svg';
 import { useDark } from '@vueuse/core';
-import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import BaseButton from '@/core/components/BaseButton.vue';
 
 const isDark = useDark();
 let isTransitionActive = false;
@@ -34,7 +34,7 @@ function toggleTheme() {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 body.theme-transition * {
   transition-property: background, color, fill, border;

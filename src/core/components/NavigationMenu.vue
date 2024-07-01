@@ -1,22 +1,22 @@
 <template>
   <nav class="navigation-menu">
     <BaseButton
-      v-for="(item, i) in menu"
+      v-for="(item, i) in MENU"
       :key="i"
       :to="item.to"
     >
-      {{ item.label }}
+      {{ $t(item.label) }}
     </BaseButton>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { menu } from '@/shared/config';
-import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import BaseButton from '@/core/components/BaseButton.vue';
+import { MENU } from '@/core/consts';
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .navigation-menu {
   display: none;

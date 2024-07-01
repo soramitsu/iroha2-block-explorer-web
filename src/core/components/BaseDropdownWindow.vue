@@ -5,10 +5,7 @@
   >
     <slot name="top" />
 
-    <div
-      v-if="items?.length"
-      class="base-dropdown-window__list"
-    >
+    <div class="base-dropdown-window__list">
       <div
         v-for="(item, i) in items"
         :key="i"
@@ -17,7 +14,7 @@
         class="base-dropdown-window__item"
         @click="model = item.value"
       >
-        {{ item.label }}
+        {{ props.disableTranslation ? item.label : $t(item.label) }}
       </div>
     </div>
   </div>
@@ -26,25 +23,30 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core';
 
-interface Props {
-  modelValue?: string
-  size: 'md' | 'lg'
-  items?: {
-    label: string
-    value: string
-  }[]
-}
+const props = withDefaults(
+  defineProps<{
+    disableTranslation?: boolean
+    modelValue: string
+    size: 'md' | 'lg'
+    items: {
+      label: string
+      value: string
+    }[]
+  }>(),
+  {
+    disableTranslation: false,
+  }
+);
 
-type Emits = (event: 'update:modelValue', value: string) => void;
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>();
 
 const model = useVModel(props, 'modelValue', emit);
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-dropdown-window {
   background: theme-color('background');

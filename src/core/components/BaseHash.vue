@@ -20,11 +20,11 @@
 
 <script setup lang="ts">
 import { computed, h } from 'vue';
-import CopyIcon from '@/shared/ui/icons/copy.svg';
+import CopyIcon from '@/core/assets/copy.svg';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
-import { useNotifications } from '@/shared/ui/composables/notifications';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { useNotifications } from '@/core/composables/notifications';
+import BaseLink from '@/core/components/BaseLink.vue';
 
 interface Props {
   hash: string
@@ -66,7 +66,7 @@ const content = computed(() => {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-hash {
   display: flex;

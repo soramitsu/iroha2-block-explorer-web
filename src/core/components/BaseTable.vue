@@ -78,18 +78,18 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-import ArrowIcon from '@/shared/ui/icons/arrow.svg';
+import ArrowIcon from '@/core/assets/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
-import type { TablePagination } from '@/shared/lib/table';
-import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
+import type { TablePagination } from '@/core/composables/useTable';
+import BaseDropdown from '@/core/components/BaseDropdown.vue';
 
 interface Props {
   loading: boolean
   pagination: TablePagination
-  items: any[]
+  items: T[]
   containerClass: string
 }
 
@@ -184,7 +184,7 @@ const pageSizeModel = computed({
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-table {
   display: grid;

@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import ArrowIcon from '@/shared/ui/icons/dropdown-icon.svg';
+import ArrowIcon from '@/core/assets/dropdown-icon.svg';
 
 interface DropdownItem {
   label: string
@@ -66,7 +66,7 @@ function choose(value: string | number) {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-dropdown {
   position: relative;

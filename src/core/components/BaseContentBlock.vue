@@ -31,7 +31,7 @@ const slots = useSlots();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-content-block {
   background: theme-color('surface');

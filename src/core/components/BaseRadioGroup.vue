@@ -7,26 +7,23 @@
       :data-active="item.value === props.modelValue || null"
       @click="choose(item.value)"
     >
-      {{ item.label }}
+      {{ $t(item.label) }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-interface RadioItem {
-  label: string
-  value: string
-}
-
-interface Props {
-  items: RadioItem[]
+const props = defineProps<{
   modelValue: string | null
-}
+  items: {
+    value: string
+    label: string
+  }[]
+}>();
 
-type Emits = (e: 'update:modelValue', value: string | null) => void;
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  'update:modelValue': [value: string | null]
+}>();
 
 function choose(value: string) {
   const val = value === props.modelValue ? null : value;
@@ -35,7 +32,7 @@ function choose(value: string) {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-radio-group {
   display: grid;

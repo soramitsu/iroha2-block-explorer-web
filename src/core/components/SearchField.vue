@@ -22,12 +22,10 @@ import SearchIcon from '@soramitsu-ui/icons/icomoon/basic-search-24.svg';
 import { ref, computed } from 'vue';
 import { useActiveElement } from '@vueuse/core';
 
-interface Props {
+const props = defineProps<{
   size?: 'sm' | 'md' | 'lg'
   placeholder?: string
-}
-
-const props = defineProps<Props>();
+}>();
 
 const request = ref('');
 
@@ -41,7 +39,7 @@ function submit() {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .search-field {
   display: flex;

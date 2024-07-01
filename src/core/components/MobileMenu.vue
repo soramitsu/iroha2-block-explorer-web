@@ -25,13 +25,13 @@
 import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import DotsIcon from '@soramitsu-ui/icons/icomoon/basic-more-vertical-24.svg';
-import { useMenuDropdown } from '@/shared/ui/composables/header-portal';
-import { menu, PORTAL_ID } from '@/shared/config';
-import BaseDropdownWindow from '@/shared/ui/components/BaseDropdownWindow.vue';
-import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import { useMenuDropdown } from '@/core/composables/header-portal';
+import BaseDropdownWindow from '@/core/components/BaseDropdownWindow.vue';
+import BaseButton from '@/core/components/BaseButton.vue';
+import { MENU, PORTAL_ID } from '@/core/consts';
 
 const dropdown = useMenuDropdown();
-const links = computed(() => menu.map((item) => ({ label: item.label, value: item.to })));
+const links = computed(() => MENU.map((item) => ({ label: item.label, value: item.to })));
 const router = useRouter();
 const route = useRoute();
 
@@ -45,7 +45,7 @@ const routeModel = computed({
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .mobile-menu {
   @include lg {

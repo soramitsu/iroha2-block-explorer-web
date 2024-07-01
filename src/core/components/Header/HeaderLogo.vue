@@ -30,7 +30,7 @@
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .header-logo {
   &__svg {

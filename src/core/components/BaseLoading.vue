@@ -15,7 +15,7 @@
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 @keyframes spin {
   from {

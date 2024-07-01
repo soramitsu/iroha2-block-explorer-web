@@ -20,7 +20,7 @@ defineProps<Props>();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-link {
   color: theme-color('primary');

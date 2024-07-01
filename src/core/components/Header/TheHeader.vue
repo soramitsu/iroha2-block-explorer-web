@@ -25,16 +25,16 @@
 
 <script setup lang="ts">
 import HeaderLogo from './HeaderLogo.vue';
-import { NavigationMenu } from '@/features/navigation';
-import { PORTAL_ID } from '@/shared/config';
-import { MobileMenu } from '@/features/mobile-menu';
-import { LangDropdown } from '@/features/switch-lang';
-import { ThemeSwitcher } from '@/features/switch-theme';
-import { SearchField } from '@/features/search';
+import SearchField from '@/core/components/SearchField.vue';
+import { PORTAL_ID } from '@/core/consts';
+import ThemeSwitcher from '@/core/components/ThemeSwitcher.vue';
+import LangDropdown from '@/core/components/LangDropdown.vue';
+import MobileMenu from '@/core/components/MobileMenu.vue';
+import NavigationMenu from '@/core/components/NavigationMenu.vue';
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .app-header {
   display: flex;
@@ -69,7 +69,7 @@ import { SearchField } from '@/features/search';
     display: none !important;
 
     @include sm {
-      // display: flex !important; // #SEARCH: turn it on when functionality is ready
+      display: flex !important;
       margin-left: size(2);
       margin-right: 8px;
     }

@@ -5,7 +5,7 @@
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import '@/styles/main';
 
 .base-page-layout {
   padding: 0 size(1) size(3) size(1);
