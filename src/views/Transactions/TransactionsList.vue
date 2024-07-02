@@ -81,6 +81,9 @@ import { REJECTED_TRANSACTION } from '@/views/Transactions/consts';
 import type { TRANSACTION_STATUS, TRANSACTIONS_TABS } from '@/core/types/transactions';
 import TransactionTypeFilter from '@/core/components/Transactions/TransactionTypeFilter.vue';
 import TransactionStatusFilter from '@/core/components/Transactions/TransactionStatusFilter.vue';
+import { useErrorHandlers } from '@/core/composables/useErrorHandlers';
+
+const { handleUnknownError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 1200;
 
@@ -99,7 +102,7 @@ onMounted(async () => {
   try {
     await table.fetch();
   } catch (e) {
-    console.log(e);
+    handleUnknownError(e);
   }
 });
 

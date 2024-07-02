@@ -83,6 +83,9 @@ import BaseTable from '@/core/components/BaseTable.vue';
 import { useAssetsStore } from '@/stores/assets';
 import { useTable } from '@/core/composables/useTable';
 import { onMounted } from 'vue';
+import { useErrorHandlers } from '@/core/composables/useErrorHandlers';
+
+const { handleUnknownError } = useErrorHandlers();
 
 const assetsStore = useAssetsStore();
 
@@ -92,7 +95,7 @@ onMounted(async () => {
   try {
     await table.fetch();
   } catch (e) {
-    console.log(e);
+    handleUnknownError(e);
   }
 });
 </script>

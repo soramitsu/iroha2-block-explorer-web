@@ -51,6 +51,9 @@ import BaseButton from '@/core/components/BaseButton.vue';
 import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
 import { useBlocksStore } from '@/stores/blocks';
 import BaseLoading from '@/core/components/BaseLoading.vue';
+import { useErrorHandlers } from '@/core/composables/useErrorHandlers';
+
+const { handleUnknownError } = useErrorHandlers();
 
 const blocksStore = useBlocksStore();
 
@@ -63,7 +66,7 @@ onMounted(async () => {
   try {
     await blocksStore.fetchBlocks(params);
   } catch (e) {
-    console.log(e);
+    handleUnknownError(e);
   }
 });
 </script>

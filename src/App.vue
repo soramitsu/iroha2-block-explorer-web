@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import NotificationsInstance from '@/core/components/NotificationsInstance.vue';
+import NotificationsInstance from '@/core/widgets/NotificationsInstance.vue';
 import BasePageLayout from '@/core/components/BasePageLayout.vue';
 import TheHeader from '@/core/components/Header/TheHeader.vue';
 </script>

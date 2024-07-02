@@ -81,6 +81,9 @@ import BaseTable from '@/core/components/BaseTable.vue';
 import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
 import { useDomainsStore } from '@/stores/domains';
 import { onMounted } from 'vue';
+import { useErrorHandlers } from '@/core/composables/useErrorHandlers';
+
+const { handleUnknownError } = useErrorHandlers();
 
 const domainsStore = useDomainsStore();
 
@@ -90,7 +93,7 @@ onMounted(async () => {
   try {
     await table.fetch();
   } catch (e) {
-    console.log(e);
+    handleUnknownError(e);
   }
 });
 </script>

@@ -76,6 +76,9 @@ import { REJECTED_TRANSACTION } from '@/views/Transactions/consts';
 import type { TRANSACTION_STATUS } from '@/core/types/transactions';
 import TransactionStatusFilter from '@/core/components/Transactions/TransactionStatusFilter.vue';
 import { getTimeDifference } from '@/core/utils/time';
+import { useErrorHandlers } from '@/core/composables/useErrorHandlers';
+
+const { handleUnknownError } = useErrorHandlers();
 
 const transactionsStore = useTransactionsStore();
 
@@ -88,7 +91,7 @@ onMounted(async () => {
   try {
     await transactionsStore.fetchTransactions(params);
   } catch (e) {
-    console.log(e);
+    handleUnknownError(e);
   }
 });
 

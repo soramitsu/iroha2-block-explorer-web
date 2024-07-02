@@ -94,15 +94,18 @@ import BaseTable from '@/core/components/BaseTable.vue';
 import BaseContentBlock from '@/core/components/BaseContentBlock.vue';
 import { useBlocksStore } from '@/stores/blocks';
 import { onMounted } from 'vue';
-const blocksStore = useBlocksStore();
+import { useErrorHandlers } from '@/core/composables/useErrorHandlers';
 
+const { handleUnknownError } = useErrorHandlers();
+
+const blocksStore = useBlocksStore();
 const table = useTable(blocksStore.fetchBlocks);
 
 onMounted(async () => {
   try {
     await table.fetch();
   } catch (e) {
-    console.log(e);
+    handleUnknownError(e);
   }
 });
 </script>
