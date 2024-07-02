@@ -14,21 +14,22 @@
 import DarkModeIcon from '@/core/assets/dark-mode.svg';
 import { useDark } from '@vueuse/core';
 import BaseButton from '@/core/components/BaseButton.vue';
+import { ref } from 'vue';
 
 const isDark = useDark();
-let isTransitionActive = false;
+let isTransitionActive = ref(false);
 
 function toggleTheme() {
-  if (isTransitionActive) return;
+  if (isTransitionActive.value) return;
 
   isDark.value = !isDark.value;
   const list = document.body.classList;
   list.add('theme-transition');
-  isTransitionActive = true;
+  isTransitionActive.value = true;
 
   setTimeout(() => {
     list.remove('theme-transition');
-    isTransitionActive = false;
+    isTransitionActive.value = false;
   }, 300);
 }
 </script>
