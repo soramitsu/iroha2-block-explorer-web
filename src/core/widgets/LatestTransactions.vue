@@ -112,6 +112,7 @@ const status = ref<TRANSACTION_STATUS>(null);
   &_loading {
     display: flex;
     align-items: center;
+    margin-top: 20px;
   }
 
   &__row {
