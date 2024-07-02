@@ -18,6 +18,15 @@
 import NotificationsInstance from '@/core/widgets/NotificationsInstance.vue';
 import BasePageLayout from '@/core/components/BasePageLayout.vue';
 import TheHeader from '@/core/components/Header/TheHeader.vue';
+import { onMounted } from 'vue';
+import { setupFakeData } from '@/api/fake-data';
+import { enableApi } from '@/core/composables/useErrorHandlers';
+
+onMounted(() => {
+  if (import.meta.env.VITE_FAKE_API_ENABLED) {
+    setupFakeData();
+  } else enableApi();
+});
 </script>
 
 <style lang="scss">
