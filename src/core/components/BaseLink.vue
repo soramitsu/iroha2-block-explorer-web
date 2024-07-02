@@ -11,12 +11,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 
-interface Props {
-  to: RouteLocationRaw
-  monospace?: boolean
-}
-
-defineProps<Props>();
+defineProps<{ to: RouteLocationRaw, monospace?: boolean }>();
 </script>
 
 <style lang="scss">

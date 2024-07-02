@@ -22,11 +22,9 @@
 <script setup lang="ts">
 import { useSlots } from 'vue';
 
-interface Props {
+const props = defineProps<{
   title: string
-}
-
-const props = defineProps<Props>();
+}>();
 const slots = useSlots();
 </script>
 

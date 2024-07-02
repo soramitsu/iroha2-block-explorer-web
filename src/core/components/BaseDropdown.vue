@@ -44,17 +44,16 @@ interface DropdownItem {
   value: string | number
 }
 
-interface Props {
+const props = defineProps<{
   modelValue: string | number
   items: DropdownItem[]
   fieldLabel: string
   width: string
-}
+}>();
 
-type Emits = (e: 'update:modelValue', value: string | number) => void;
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  'update:modelValue': [value: string | number]
+}>();
 
 const isOpen = ref(false);
 const valueLabel = computed(() => props.items.find((item) => item.value === props.modelValue)?.label ?? '');

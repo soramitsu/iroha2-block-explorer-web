@@ -86,22 +86,19 @@ import BaseLoading from './BaseLoading.vue';
 import type { TablePagination } from '@/core/composables/useTable';
 import BaseDropdown from '@/core/components/BaseDropdown.vue';
 
-interface Props {
+const props = defineProps<{
   loading: boolean
   pagination: TablePagination
   items: T[]
   containerClass: string
-}
+}>();
 
-interface Emits {
-  (e: 'nextPage'): void
-  (e: 'prevPage'): void
-  (e: 'setPage', value: number): void
-  (e: 'setSize', value: number): void
-}
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  nextPage: []
+  prevPage: []
+  setPage: [value: number]
+  setSize: [value: number]
+}>();
 const { width } = useWindowSize();
 
 const CARD_BREAKPOINT = 1200;

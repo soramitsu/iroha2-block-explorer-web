@@ -25,15 +25,13 @@
 import { computed } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 
-interface Props {
+const props = defineProps<{
   to?: RouteLocationRaw
   line?: boolean
   bordered?: boolean
   rounded?: boolean
   pressed?: boolean
-}
-
-const props = defineProps<Props>();
+}>();
 
 const type = computed(() => {
   switch (true) {

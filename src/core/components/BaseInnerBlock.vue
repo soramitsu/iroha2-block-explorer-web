@@ -26,12 +26,10 @@
 import ArrowIcon from '@/core/assets/arrow.svg';
 import { ref } from 'vue';
 
-interface Props {
+const props = defineProps<{
   accordion?: boolean
   title?: string
-}
-
-const props = defineProps<Props>();
+}>();
 const isOpen = ref(true);
 
 function toggle() {

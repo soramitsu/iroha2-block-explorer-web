@@ -26,14 +26,12 @@ import { useI18n } from 'vue-i18n';
 import { useNotifications } from '@/core/composables/notifications';
 import BaseLink from '@/core/components/BaseLink.vue';
 
-interface Props {
+const props = defineProps<{
   hash: string
   link?: string
   copy?: boolean
   type?: 'full' | 'medium' | 'short' | 'two-line'
-}
-
-const props = defineProps<Props>();
+}>();
 const clipboard = useClipboard();
 const notifications = useNotifications();
 const { t } = useI18n({ useScope: 'global' });
