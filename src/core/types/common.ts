@@ -18,3 +18,8 @@ export interface Paginated<T> {
   pagination: PaginationInfo
   data: T[]
 }
+
+export interface DropdownItem {
+  label: string
+  value: string | number
+}

@@ -38,11 +38,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import ArrowIcon from '@/core/assets/dropdown-icon.svg';
-
-interface DropdownItem {
-  label: string
-  value: string | number
-}
+import type { DropdownItem } from '@/core/types/common';
 
 const props = defineProps<{
   modelValue: string | number
