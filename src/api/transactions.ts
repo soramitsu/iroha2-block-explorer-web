@@ -44,7 +44,7 @@ export interface TransactionDefaultPayload {
    * ISO timestamp
    */
   creation_time: string
-  time_to_live_ms: number
+  time_to_live_ms: number | null
   nonce: number | null
   metadata: any
 }
