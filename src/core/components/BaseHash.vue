@@ -1,14 +1,12 @@
 <template>
   <div class="base-hash">
     <BaseLink
-      v-if="props.link"
       :to="props.link"
       monospace
     >
-      {{ content }}
+      <span v-if="props.type === 'two-line'"> {{ content[0] }}<br>{{ content[1] }}</span>
+      <span v-else>{{ content }}</span>
     </BaseLink>
-
-    <span v-else>{{ content }}</span>
 
     <CopyIcon
       v-if="props.copy"
@@ -19,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue';
+import { computed } from 'vue';
 import CopyIcon from '@/core/assets/copy.svg';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
@@ -28,7 +26,7 @@ import BaseLink from '@/core/components/BaseLink.vue';
 
 const props = defineProps<{
   hash: string
-  link?: string
+  link: string
   copy?: boolean
   type?: 'full' | 'medium' | 'short' | 'two-line'
 }>();
@@ -46,20 +44,15 @@ async function copy() {
 }
 
 const content = computed(() => {
-  switch (props.type) {
-    case 'short':
-      return props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
-    case 'medium':
-      return props.hash.slice(0, 10) + '...' + props.hash.slice(-10);
-    case 'two-line':
-      // eslint-disable-next-line no-case-declarations
-      const center = Math.ceil(props.hash.length / 2);
+  if (props.type === 'short') return props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
+  else if (props.type === 'medium') return props.hash.slice(0, 10) + '...' + props.hash.slice(-10);
+  else if (props.type === 'two-line') {
+    const center = Math.ceil(props.hash.length / 2);
 
-      return [props.hash.slice(0, center), h('br'), props.hash.slice(-center + (props.hash.length % 2))];
-
-    default:
-      return props.hash;
+    return [props.hash.slice(0, center), props.hash.slice(-center + (props.hash.length % 2))];
   }
+
+  return props.hash;
 });
 </script>
 
