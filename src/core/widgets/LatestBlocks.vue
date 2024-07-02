@@ -24,7 +24,7 @@
             </BaseLink>
 
             <div class="latest-blocks__time">
-              <TimeIcon />
+              <TimeIcon class="latest-blocks__time-icon" />
               {{ $t('time.min', [elapsed.allMinutes(block.timestamp)]) }}
               {{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}
               {{ $t('time.ago') }}
@@ -117,10 +117,12 @@ onMounted(async () => {
     grid-auto-flow: column;
     color: theme-color('content-primary');
     @include tpg-s3;
-  }
 
-  path {
-    fill: theme-color('content-quaternary');
+    &-icon {
+      path {
+        fill: theme-color('content-quaternary');
+      }
+    }
   }
 
   &__number {
