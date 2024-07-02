@@ -27,15 +27,18 @@
 <script setup lang="ts">
 import LangIcon from '@/core/assets/lang.svg';
 import ArrowIcon from '@/core/assets/arrow.svg';
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { useLangDropdown } from '@/core/composables/header-portal';
 import BaseDropdownWindow from '@/core/components/BaseDropdownWindow.vue';
 import BaseButton from '@/core/components/BaseButton.vue';
 import { LANG_OPTIONS, PORTAL_ID } from '@/core/consts';
+import type { SUPPORT_LOCALES } from '@/i18n';
+import { setI18nLanguage } from '@/i18n';
 
 const dropdown = useLangDropdown();
 
-const language = ref('en');
+const language = ref<(typeof SUPPORT_LOCALES)[number]>('en');
+watchEffect(() => setI18nLanguage(language.value));
 </script>
 
 <style lang="scss">

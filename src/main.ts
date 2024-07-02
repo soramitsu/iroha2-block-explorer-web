@@ -7,7 +7,7 @@ import App from './App.vue';
 import router from './router/router';
 import { createPinia } from 'pinia';
 import { setupI18n } from '@/i18n';
-import { messages } from '@/i18n/en';
+import { messages } from '@/i18n/messages';
 
 const i18n = setupI18n({
   legacy: false,
