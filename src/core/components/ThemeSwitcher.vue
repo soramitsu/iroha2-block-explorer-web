@@ -2,7 +2,7 @@
   <BaseButton
     :pressed="isDark"
     class="app-theme-switcher"
-    bordered
+    type="bordered"
     rounded
     @click="toggleTheme"
   >

@@ -1,7 +1,7 @@
 <template>
   <BaseButton
     class="lang-dropdown__button"
-    bordered
+    type="bordered"
     :pressed="dropdown.isOpen.value"
     @click="dropdown.toggle"
   >

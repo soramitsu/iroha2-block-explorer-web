@@ -2,7 +2,7 @@
   <BaseButton
     :pressed="dropdown.isOpen.value"
     class="mobile-menu"
-    bordered
+    type="bordered"
     rounded
     @click="dropdown.toggle"
   >

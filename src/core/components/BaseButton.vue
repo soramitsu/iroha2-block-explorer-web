@@ -3,7 +3,7 @@
     v-if="to"
     :to="to"
     class="base-button"
-    :data-type="type"
+    :data-type="props.type"
     :data-pressed="pressed || null"
     :data-rounded="rounded || null"
   >
@@ -13,7 +13,7 @@
   <button
     v-else
     class="base-button"
-    :data-type="type"
+    :data-type="props.type"
     :data-pressed="pressed || null"
     :data-rounded="rounded || null"
   >
@@ -22,27 +22,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 
-const props = defineProps<{
-  to?: RouteLocationRaw
-  line?: boolean
-  bordered?: boolean
-  rounded?: boolean
-  pressed?: boolean
-}>();
-
-const type = computed(() => {
-  switch (true) {
-    case props.line:
-      return 'line';
-    case props.bordered:
-      return 'bordered';
-    default:
-      return 'default';
+const props = withDefaults(
+  defineProps<{
+    to?: RouteLocationRaw
+    type?: 'line' | 'bordered' | 'default'
+    rounded?: boolean
+    pressed?: boolean
+  }>(),
+  {
+    type: 'default',
   }
-});
+);
 </script>
 
 <style lang="scss">
