@@ -56,8 +56,8 @@
             v-for="(item, i) in numbers"
             :key="i"
             class="base-table__number"
-            :data-active="item === props.pagination.page || null"
-            @click="Number.isInteger(item) ? emit('setPage', item as number) : null"
+            :data-active="item === table.pagination.page || null"
+            @click="Number.isInteger(item) ? table.setPage(Number(item)) : null"
           >
             {{ item }}
           </span>
@@ -66,11 +66,11 @@
         <div class="base-table__arrows">
           <ArrowIcon
             class="base-table"
-            @click="emit('prevPage')"
+            @click="table.prevPage()"
           />
           <ArrowIcon
             class="base-table"
-            @click="emit('nextPage')"
+            @click="table.nextPage()"
           />
         </div>
       </div>
@@ -87,18 +87,20 @@ import type { TablePagination } from '@/core/composables/useTable';
 import BaseDropdown from '@/core/components/BaseDropdown.vue';
 
 const props = defineProps<{
+  table: {
+    nextPage: () => Promise<void>
+    prevPage: () => Promise<void>
+    setSize: (value: number) => Promise<void>
+    setPage: (value: number) => Promise<void>
+    pagination: TablePagination
+  }
   loading: boolean
-  pagination: TablePagination
   items: T[]
   containerClass: string
 }>();
 
-const emit = defineEmits<{
-  nextPage: []
-  prevPage: []
-  setPage: [value: number]
-  setSize: [value: number]
-}>();
+const table = computed(() => props.table);
+
 const { width } = useWindowSize();
 
 const CARD_BREAKPOINT = 1200;
@@ -106,14 +108,14 @@ const PAGINATION_BREAKPOINT = 960;
 
 const items = computed(() => {
   if (props.loading) {
-    return Array.from({ length: props.pagination.page_size }, () => null);
+    return Array.from({ length: table.value.pagination.page_size }, () => null);
   }
 
   return props.items;
 });
 
 const segmentInfo = computed(() => {
-  const p = props.pagination;
+  const p = table.value.pagination;
   const start = (p.page - 1) * p.page_size + 1;
   const end = p.page * p.page_size;
   return `${start}—${end > p.total ? p.total : end} of ${p.total}`;
@@ -125,7 +127,7 @@ const numbers = computed(() => {
   const side = isMobile ? 4 : 7;
   const offset = isMobile ? 1 : 3;
 
-  const p = props.pagination;
+  const p = table.value.pagination;
   if (p.pages < max) {
     return new Array(p.pages).fill(0).map((_, i) => i + 1);
   }
@@ -175,8 +177,8 @@ const sizeOptions = [
 ];
 
 const pageSizeModel = computed({
-  get: () => props.pagination.page_size,
-  set: (v) => emit('setSize', v),
+  get: () => table.value.pagination.page_size,
+  set: (v) => table.value.setSize(v),
 });
 </script>
 

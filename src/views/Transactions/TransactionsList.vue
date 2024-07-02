@@ -17,13 +17,9 @@
 
     <BaseTable
       :loading="transactionsStore.isLoading"
-      :pagination="table.pagination"
       :items="data"
       container-class="transactions-list-page__container"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
+      :table="table"
     >
       <template #row="{ item }">
         <div class="transactions-list-page__row">

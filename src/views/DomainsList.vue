@@ -5,13 +5,9 @@
   >
     <BaseTable
       :loading="domainsStore.isLoading"
-      :pagination="table.pagination"
       :items="domainsStore.domains"
       container-class="domains-list-page__container"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
+      :table="table"
     >
       <template #header>
         <div class="domains-list-page__row">

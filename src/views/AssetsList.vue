@@ -5,13 +5,9 @@
   >
     <BaseTable
       :loading="assetsStore.isLoading"
-      :pagination="table.pagination"
       :items="assetsStore.assets"
       container-class="assets-list-page__container"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
+      :table="table"
     >
       <template #header>
         <div class="assets-list-page__row">
