@@ -13,19 +13,18 @@ export interface NotificationData extends NotificationDataBlank {
 const AUTO_CLOSING_TIMEOUT = 4000;
 
 const list = ref<NotificationData[]>([]);
-let id = 0;
 
 function close(id: number) {
   list.value = list.value.filter((item) => item.id !== id);
 }
 
 function show(data: NotificationDataBlank) {
-  const itemId = id++;
-  list.value.push({ ...data, id: itemId });
+  const id = list.value.length;
+  list.value.push({ ...data, id });
 
   // auto remove by default
   if (data.autoClosing !== false) {
-    setTimeout(() => close(itemId), AUTO_CLOSING_TIMEOUT);
+    setTimeout(() => close(id), AUTO_CLOSING_TIMEOUT);
   }
 }
 
@@ -40,7 +39,6 @@ function success(message: string) {
 export function useNotifications() {
   return {
     list,
-    show,
     close,
     error,
     success,

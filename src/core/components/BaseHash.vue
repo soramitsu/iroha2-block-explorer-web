@@ -23,7 +23,7 @@ import { computed, h } from 'vue';
 import CopyIcon from '@/core/assets/copy.svg';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
-import { useNotifications } from '@/core/composables/notifications';
+import { useNotifications } from '@/core/composables/useNotifications';
 import BaseLink from '@/core/components/BaseLink.vue';
 
 const props = defineProps<{

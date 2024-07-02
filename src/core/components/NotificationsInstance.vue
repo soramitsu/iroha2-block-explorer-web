@@ -1,10 +1,10 @@
 <template>
   <div
-    v-if="noti.list.value.length"
+    v-if="notifications.list.value.length"
     class="app-notifications"
   >
     <div
-      v-for="item in noti.list.value"
+      v-for="item in notifications.list.value"
       :key="item.id"
       class="app-notifications__item"
     >
@@ -17,7 +17,7 @@
 
       <div
         class="app-notifications__close"
-        @click="noti.close(item.id)"
+        @click="notifications.close(item.id)"
       >
         <CloseIcon />
       </div>
@@ -29,9 +29,9 @@
 import SuccessIcon from '@soramitsu-ui/icons/icomoon/basic-circle-checked-24.svg';
 import ErrorIcon from '@soramitsu-ui/icons/icomoon/notifications-x-octagon-24.svg';
 import CloseIcon from '@soramitsu-ui/icons/icomoon/x-16.svg';
-import { useNotifications } from '@/core/composables/notifications';
+import { useNotifications } from '@/core/composables/useNotifications';
 
-const noti = useNotifications();
+const notifications = useNotifications();
 
 const icons = {
   success: SuccessIcon,
