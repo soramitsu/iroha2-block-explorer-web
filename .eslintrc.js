@@ -16,6 +16,7 @@ module.exports = {
   rules: {
     'vue/html-indent': ['warn', 2],
 
+    'no-unused-vars': ['warn'],
     // make possible `/// <reference...`
     'spaced-comment': ['error', 'always', { markers: ['/'] }],
     'no-undef': ['off'],
