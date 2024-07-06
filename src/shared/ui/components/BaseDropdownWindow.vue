@@ -1,8 +1,14 @@
 <template>
-  <div class="base-dropdown-window" :data-size="size">
+  <div
+    class="base-dropdown-window"
+    :data-size="size"
+  >
     <slot name="top" />
 
-    <div v-if="items?.length" class="base-dropdown-window__list">
+    <div
+      v-if="items?.length"
+      class="base-dropdown-window__list"
+    >
       <div
         v-for="(item, i) in items"
         :key="i"
@@ -20,18 +26,16 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core';
 
-type Props = {
-  modelValue?: string,
-  size: 'md' | 'lg',
+interface Props {
+  modelValue?: string
+  size: 'md' | 'lg'
   items?: {
-    label: string,
-    value: string,
-  }[],
+    label: string
+    value: string
+  }[]
 }
 
-type Emits = {
-  (event: 'update:modelValue', value: string): void,
-}
+type Emits = (event: 'update:modelValue', value: string) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
@@ -40,7 +44,7 @@ const model = useVModel(props, 'modelValue', emit);
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .base-dropdown-window {
   background: theme-color('background');
@@ -51,11 +55,11 @@ const model = useVModel(props, 'modelValue', emit);
   @include tpg-s4;
   @include shadow-input;
 
-  &[data-size=md] {
+  &[data-size='md'] {
     border-radius: size(2);
   }
 
-  &[data-size=lg] {
+  &[data-size='lg'] {
     border-radius: size(3);
   }
 
@@ -67,15 +71,16 @@ const model = useVModel(props, 'modelValue', emit);
     user-select: none;
     cursor: pointer;
 
-    &:hover, &[data-active] {
+    &:hover,
+    &[data-active] {
       background: theme-color('background-hover');
     }
 
-    &[data-size=md] {
+    &[data-size='md'] {
       padding: size(0.5) size(2);
     }
 
-    &[data-size=lg] {
+    &[data-size='lg'] {
       padding: size(1) size(3);
     }
   }

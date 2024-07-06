@@ -1,5 +1,8 @@
 <template>
-  <BaseContentBlock :title="$t('accounts')" class="accounts-list-page">
+  <BaseContentBlock
+    :title="$t('accounts')"
+    class="accounts-list-page"
+  >
     <BaseTable
       :loading="table.loading.value"
       :pagination="table.pagination"
@@ -28,9 +31,13 @@
             class="cell"
           />
 
-          <div class="cell row-text">{{ accountModel.countCryptos(item) }}</div>
+          <div class="cell row-text">
+            {{ accountModel.countCryptos(item) }}
+          </div>
 
-          <div class="cell row-text">{{ accountModel.countNFTs(item) }}</div>
+          <div class="cell row-text">
+            {{ accountModel.countNFTs(item) }}
+          </div>
         </div>
       </template>
 
@@ -48,12 +55,16 @@
 
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('cryptos') }}</span>
-            <div class="row-text">{{ accountModel.countCryptos(item) }}</div>
+            <div class="row-text">
+              {{ accountModel.countCryptos(item) }}
+            </div>
           </div>
 
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('nfts') }}</span>
-            <div class="row-text">{{ accountModel.countNFTs(item) }}</div>
+            <div class="row-text">
+              {{ accountModel.countNFTs(item) }}
+            </div>
           </div>
         </div>
       </template>
@@ -62,19 +73,19 @@
 </template>
 
 <script setup lang="ts">
-import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseTable from '~base/BaseTable.vue';
-import BaseHash from '~base/BaseHash.vue';
-import { useTable } from '~shared/lib/table';
-import { http } from '~shared/api';
-import { accountModel } from '~entities/account';
+import { http } from '@/shared/api';
+import { useTable } from '@/shared/lib/table';
+import { accountModel } from '@/entities/account';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 
 const table = useTable(http.fetchAccounts);
 table.fetch();
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .accounts-list-page {
   &__row {

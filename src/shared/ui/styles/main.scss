@@ -10,4 +10,6 @@ $header-height-mobile: 80px;
 $home-content-width: 1200px;
 $home-content-width-tablet: 860px;
 
-@function size($n) { @return #{8 * $n}px }
+@function size($n) {
+  @return #{8 * $n}px;
+}

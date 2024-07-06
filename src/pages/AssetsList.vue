@@ -1,5 +1,8 @@
 <template>
-  <BaseContentBlock :title="$t('assets')" class="assets-list-page">
+  <BaseContentBlock
+    :title="$t('assets')"
+    class="assets-list-page"
+  >
     <BaseTable
       :loading="table.loading.value"
       :pagination="table.pagination"
@@ -20,11 +23,17 @@
 
       <template #row="{ item }: { item: Asset }">
         <div class="assets-list-page__row">
-          <BaseLink :to="`/assets/${item.definition_id}`" class="cell">
+          <BaseLink
+            :to="`/assets/${item.definition_id}`"
+            class="cell"
+          >
             {{ item.definition_id.split('#')[0] }}
           </BaseLink>
 
-          <BaseLink :to="`/domains/${item.definition_id.split('#')[1]}`" class="cell">
+          <BaseLink
+            :to="`/domains/${item.definition_id.split('#')[1]}`"
+            class="cell"
+          >
             {{ item.definition_id.split('#')[1] }}
           </BaseLink>
 
@@ -68,18 +77,18 @@
 </template>
 
 <script setup lang="ts">
-import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseTable from '~base/BaseTable.vue';
-import BaseLink from '~base/BaseLink.vue';
-import { useTable } from '~shared/lib/table';
-import { http } from '~shared/api';
+import { http } from '@/shared/api';
+import { useTable } from '@/shared/lib/table';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 
 const table = useTable(http.fetchAssets);
 table.fetch();
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .assets-list-page {
   &__row {

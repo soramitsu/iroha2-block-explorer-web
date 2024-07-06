@@ -1,8 +1,17 @@
 <template>
-  <BaseContentBlock :title="$t('transactions')" class="transactions-list-page">
+  <BaseContentBlock
+    :title="$t('transactions')"
+    class="transactions-list-page"
+  >
     <div class="content-row">
-      <TransactionTypeFilter v-model="tab" class="transactions-list-page__tabs" />
-      <TransactionStatusFilter v-model="status" class="transactions-list-page__status" />
+      <TransactionTypeFilter
+        v-model="tab"
+        class="transactions-list-page__tabs"
+      />
+      <TransactionStatusFilter
+        v-model="status"
+        class="transactions-list-page__status"
+      />
     </div>
 
     <BaseTable
@@ -24,7 +33,9 @@
           />
 
           <div class="transactions-list-page__column">
-            <div class="transactions-list-page__label">TxID</div>
+            <div class="transactions-list-page__label">
+              TxID
+            </div>
 
             <BaseHash
               :hash="item.hash"
@@ -33,11 +44,15 @@
               copy
             />
 
-            <div class="transactions-list-page__time">{{ format(item.payload.creation_time) }}</div>
+            <div class="transactions-list-page__time">
+              {{ format(item.payload.creation_time) }}
+            </div>
           </div>
 
           <div class="transactions-list-page__column">
-            <div class="transactions-list-page__label">Block</div>
+            <div class="transactions-list-page__label">
+              Block
+            </div>
 
             <BaseLink :to="'/blocks/' + item.block_height">
               {{ item.block_height }}
@@ -50,20 +65,18 @@
 </template>
 
 <script setup lang="ts">
-import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseTable from '~base/BaseTable.vue';
-import BaseHash from '~shared/ui/components/BaseHash.vue';
-import BaseLink from '~shared/ui/components/BaseLink.vue';
-import { transactionModel, TransactionStatus } from '~entities/transaction';
+import { transactionModel } from '@/entities/transaction';
 import { ref } from 'vue';
-import { useTable } from '~shared/lib/table';
-import { format } from '~shared/lib/time';
 import { useWindowSize, computedEager } from '@vueuse/core';
-import {
-  filterTransactionsModel as ftm,
-  TransactionStatusFilter,
-  TransactionTypeFilter,
-} from '~features/filter-transactions';
+import TransactionTypeFilter from '@/features/filter-transactions/TransactionTypeFilter.vue';
+import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
+import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
+import { format } from '@/shared/lib/time';
+import { useTable } from '@/shared/lib/table';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 
 const HASH_BREAKPOINT = 1200;
 
@@ -72,14 +85,14 @@ const tab = ref<ftm.Tab>('all');
 
 const { width } = useWindowSize();
 
-const hashType = computedEager(() => width.value < HASH_BREAKPOINT ? 'short' : 'full');
+const hashType = computedEager(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
 const table = useTable(transactionModel.fetchList);
 table.fetch();
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .transactions-list-page {
   &__row {

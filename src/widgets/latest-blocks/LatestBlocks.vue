@@ -1,13 +1,23 @@
 <template>
-  <BaseContentBlock :title="$t('latestBlocks')" class="latest-blocks">
+  <BaseContentBlock
+    :title="$t('latestBlocks')"
+    class="latest-blocks"
+  >
     <template #header-action>
-      <BaseButton line>{{ $t('viewAll') }}</BaseButton>
+      <BaseButton line>
+        {{ $t('viewAll') }}
+      </BaseButton>
     </template>
 
     <template #default>
-      <template v-for="block in blocks" :key="block.height">
+      <template
+        v-for="block in blocks"
+        :key="block.height"
+      >
         <div class="latest-blocks__row">
-          <BaseLink :to="`/blocks/${block.height}`">{{ block.height }}</BaseLink>
+          <BaseLink :to="`/blocks/${block.height}`">
+            {{ block.height }}
+          </BaseLink>
 
           <div class="latest-blocks__time">
             <TimeIcon />
@@ -25,21 +35,22 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseButton from '~base/BaseButton.vue';
-import BaseLink from '~base/BaseLink.vue';
-import TimeIcon from '~icons/clock.svg';
-import { http } from '~shared/api';
-import { elapsed } from '~shared/lib/time';
+import TimeIcon from '@/shared/ui/icons/clock.svg';
+import { http } from '@/shared/api';
+import { elapsed } from '@/shared/lib/time';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 
 const blocks = ref<BlockShallow[]>([]);
 
-http.fetchBlocks({ page_size: 10, page: 1 })
-  .then(res => (blocks.value = res.data));
+http.fetchBlocks({ page_size: 10, page: 1 }).then((res) => {
+  blocks.value = res.data;
+});
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .latest-blocks {
   &__row {

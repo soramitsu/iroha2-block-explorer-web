@@ -14,11 +14,11 @@ const transactions = transactionList(400);
 
 export async function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
   return pagination(accounts, params);
-};
+}
 
 export async function fetchAccount(id: string): Promise<Account> {
   return makeAccount(id);
-};
+}
 
 export async function fetchAssets(params?: PaginationParams): Promise<Paginated<Asset>> {
   return pagination(assets, params);
@@ -38,7 +38,7 @@ export async function fetchDomains(params?: PaginationParams): Promise<Paginated
 
 export async function fetchDomain(id: string): Promise<Domain> {
   return makeDomain(id);
-};
+}
 
 export async function fetchPeers(): Promise<Peer[]> {
   return [];

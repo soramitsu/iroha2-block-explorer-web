@@ -1,7 +1,12 @@
 <template>
-  <BaseContentBlock :title="$t('latestTransactions')" class="latest-transactions">
+  <BaseContentBlock
+    :title="$t('latestTransactions')"
+    class="latest-transactions"
+  >
     <template #header-action>
-      <BaseButton line>{{ $t('viewAll') }}</BaseButton>
+      <BaseButton line>
+        {{ $t('viewAll') }}
+      </BaseButton>
     </template>
 
     <template #default>
@@ -11,8 +16,16 @@
 
       <hr>
 
-      <div v-for="(transaction, i) in transactions" :key="i" class="latest-transactions__row">
-        <TransactionStatus :committed="transaction.committed" type="tooltip" class="latest-transactions__status" />
+      <div
+        v-for="(transaction, i) in transactions"
+        :key="i"
+        class="latest-transactions__row"
+      >
+        <TransactionStatus
+          :committed="transaction.committed"
+          type="tooltip"
+          class="latest-transactions__status"
+        />
 
         <BaseHash
           :hash="transaction.hash"
@@ -42,28 +55,27 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseButton from '~base/BaseButton.vue';
-import BaseHash from '~base/BaseHash.vue';
-import BaseLink from '~shared/ui/components/BaseLink.vue';
-import { transactionModel, TransactionStatus } from '~entities/transaction';
-import TimeIcon from '~icons/clock.svg';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { transactionModel } from '@/entities/transaction';
+import TimeIcon from '@/shared/ui/icons/clock.svg';
 
-import {
-  filterTransactionsModel as ftm,
-  TransactionStatusFilter,
-} from '~features/filter-transactions';
+import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
+import { TransactionStatusFilter } from '@/features/filter-transactions';
+import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 
 const status = ref<ftm.Status>(null);
 const transactions = ref<Transaction[]>([]);
 
-transactionModel
-  .fetchList({ page: 1, page_size: 6 })
-  .then(res => (transactions.value = res.data));
+transactionModel.fetchList({ page: 1, page_size: 6 }).then((res) => {
+  transactions.value = res.data;
+});
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .latest-transactions {
   &__row {

@@ -46,7 +46,5 @@ export function makeRejectedTransaction(): TransactionDto {
 export function transactionList(length: number): TransactionDto[] {
   const n = length ?? randNumber({ min: 0, max: 400 });
 
-  return new Array(n)
-    .fill(null)
-    .map((_, i) => i % 5 === 0 ? makeRejectedTransaction() : makeCommittedTransaction());
+  return new Array(n).fill(null).map((_, i) => (i % 5 === 0 ? makeRejectedTransaction() : makeCommittedTransaction()));
 }

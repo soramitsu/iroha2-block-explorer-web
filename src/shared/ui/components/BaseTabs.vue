@@ -15,19 +15,17 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core';
 
-type TabItem = {
-  label: string;
-  value: string;
+interface TabItem {
+  label: string
+  value: string
 }
 
-type Props = {
-  items: TabItem[],
-  modelValue: string,
+interface Props {
+  items: TabItem[]
+  modelValue: string
 }
 
-type Emits = {
-  (e: 'update:modelValue', value: string): void
-}
+type Emits = (e: 'update:modelValue', value: string) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
@@ -36,7 +34,7 @@ const model = useVModel(props, 'modelValue', emit);
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .base-tabs {
   display: grid;
@@ -73,5 +71,4 @@ const model = useVModel(props, 'modelValue', emit);
     }
   }
 }
-
 </style>

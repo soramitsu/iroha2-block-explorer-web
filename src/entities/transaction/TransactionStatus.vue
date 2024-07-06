@@ -1,16 +1,26 @@
 <template>
   <div class="transaction-status">
-    <div class="transaction-status__icon" :data-committed="committed">
+    <div
+      class="transaction-status__icon"
+      :data-committed="committed"
+    >
       <SuccessIcon v-if="committed" />
       <ErrorIcon v-else />
     </div>
 
-    <div v-if="type === 'label'" class="transaction-status__label" :data-committed="committed">
+    <div
+      v-if="type === 'label'"
+      class="transaction-status__label"
+      :data-committed="committed"
+    >
       <span v-if="committed">Committed</span>
       <span v-else>Rejected</span>
     </div>
 
-    <div v-if="type === 'tooltip'" class="transaction-status__tooltip">
+    <div
+      v-if="type === 'tooltip'"
+      class="transaction-status__tooltip"
+    >
       <span v-if="committed">Committed transaction</span>
       <span v-else>Rejected transaction</span>
     </div>
@@ -18,11 +28,11 @@
 </template>
 
 <script setup lang="ts">
-import SuccessIcon from '~icons/success.svg';
-import ErrorIcon from '~icons/error.svg';
+import SuccessIcon from '@/shared/ui/icons/success.svg';
+import ErrorIcon from '@/shared/ui/icons/error.svg';
 
-type Props = {
-  committed: boolean,
+interface Props {
+  committed: boolean
   type: 'label' | 'tooltip'
 }
 
@@ -30,7 +40,7 @@ defineProps<Props>();
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .transaction-status {
   position: relative;
@@ -57,12 +67,12 @@ defineProps<Props>();
       height: 14px;
     }
 
-    &[data-committed=true] {
+    &[data-committed='true'] {
       background: theme-color('success-background');
       color: theme-color('success');
     }
 
-    &[data-committed=false] {
+    &[data-committed='false'] {
       background: theme-color('error-background');
       color: theme-color('error');
     }
@@ -86,11 +96,11 @@ defineProps<Props>();
   &__label {
     @include tpg-h3;
 
-    &[data-committed=true] {
+    &[data-committed='true'] {
       color: theme-color('success');
     }
 
-    &[data-committed=false] {
+    &[data-committed='false'] {
       color: theme-color('error');
     }
   }

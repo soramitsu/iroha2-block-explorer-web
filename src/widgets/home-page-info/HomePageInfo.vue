@@ -9,7 +9,11 @@
     </div>
 
     <div class="home-page-info__grid">
-      <div v-for="(item, i) in info" :key="i" class="home-page-info__item">
+      <div
+        v-for="(item, i) in info"
+        :key="i"
+        class="home-page-info__item"
+      >
         <span class="home-page-info__value">
           {{ item.value }}
         </span>
@@ -24,7 +28,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { SearchField } from '~features/search';
+import { SearchField } from '@/features/search';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -39,7 +43,7 @@ const info = [
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .home-page-info {
   background: theme-color('surface-variant');

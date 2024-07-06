@@ -1,13 +1,13 @@
 import { ref } from 'vue';
 
 export interface NotificationDataBlank {
-  type: 'success' | 'error',
-  message: string,
-  autoClosing?: boolean,
-};
+  type: 'success' | 'error'
+  message: string
+  autoClosing?: boolean
+}
 
 export interface NotificationData extends NotificationDataBlank {
-  id: number,
+  id: number
 }
 
 const AUTO_CLOSING_TIMEOUT = 4000;
@@ -16,7 +16,7 @@ const list = ref<NotificationData[]>([]);
 let id = 0;
 
 function close(id: number) {
-  list.value = list.value.filter(item => item.id !== id);
+  list.value = list.value.filter((item) => item.id !== id);
 }
 
 function show(data: NotificationDataBlank) {
@@ -27,7 +27,7 @@ function show(data: NotificationDataBlank) {
   if (data.autoClosing !== false) {
     setTimeout(() => close(itemId), AUTO_CLOSING_TIMEOUT);
   }
-};
+}
 
 function error(message: string) {
   show({ type: 'error', message });

@@ -5,7 +5,10 @@
       <LangDropdown />
       <MobileMenu />
 
-      <div :id="PORTAL_ID" class="home-page__dropdown" />
+      <div
+        :id="PORTAL_ID"
+        class="home-page__dropdown"
+      />
     </div>
 
     <BackgroundLogo class="home-page__background-logo" />
@@ -28,20 +31,20 @@
 </template>
 
 <script setup lang="ts">
-import { ThemeSwitcher } from '~features/switch-theme';
-import { LangDropdown } from '~features/switch-lang';
-import { MobileMenu } from '~features/mobile-menu';
-import { NavigationMenu } from '~features/navigation';
-import { HomePageInfo } from '~widgets/home-page-info';
-import { LatestBlocks } from '~widgets/latest-blocks';
-import { LatestTransactions } from '~widgets/latest-transactions';
-import { PORTAL_ID } from '~shared/config';
-import BackgroundLogo from '~icons/background-logo.svg';
-import LogoIcon from '~icons/logo.svg';
+import BackgroundLogo from '@/shared/ui/icons/background-logo.svg';
+import LogoIcon from '@/shared/ui/icons/logo.svg';
+import { LatestBlocks } from '@/widgets/latest-blocks';
+import { LatestTransactions } from '@/widgets/latest-transactions';
+import { ThemeSwitcher } from '@/features/switch-theme';
+import { LangDropdown } from '@/features/switch-lang';
+import { MobileMenu } from '@/features/mobile-menu';
+import { PORTAL_ID } from '@/shared/config';
+import { NavigationMenu } from '@/features/navigation';
+import { HomePageInfo } from '@/widgets/home-page-info';
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .home-page {
   position: relative;
