@@ -13,19 +13,17 @@
 </template>
 
 <script setup lang="ts">
-type RadioItem = {
-  label: string;
-  value: string;
+interface RadioItem {
+  label: string
+  value: string
 }
 
-type Props = {
-  items: RadioItem[],
-  modelValue: string | null,
+interface Props {
+  items: RadioItem[]
+  modelValue: string | null
 }
 
-type Emits = {
-  (e: 'update:modelValue', value: string | null): void
-}
+type Emits = (e: 'update:modelValue', value: string | null) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
@@ -37,7 +35,7 @@ function choose(value: string) {
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .base-radio-group {
   display: grid;

@@ -23,7 +23,7 @@ $xxs: 320px;
     @content;
   }
 }
-    
+
 @mixin md() {
   @media (min-width: $md) {
     @content;
@@ -35,7 +35,7 @@ $xxs: 320px;
     @content;
   }
 }
-    
+
 @mixin xs() {
   @media (min-width: $xs) {
     @content;

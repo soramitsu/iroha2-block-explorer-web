@@ -1,23 +1,35 @@
 <template>
   <div class="base-table">
-    <div v-if="$slots.header && width >= CARD_BREAKPOINT" class="content-row">
+    <div
+      v-if="$slots.header && width >= CARD_BREAKPOINT"
+      class="content-row"
+    >
       <slot name="header" />
     </div>
 
     <div :class="containerClass">
-      <template v-for="(item, i) in items" :key="i">
+      <template
+        v-for="(item, i) in items"
+        :key="i"
+      >
         <div
           v-if="item && (width >= CARD_BREAKPOINT || !$slots['mobile-card'])"
           class="content-row content-row--with-hover"
         >
-          <slot name="row" :item="item" />
+          <slot
+            name="row"
+            :item="item"
+          />
         </div>
 
         <div
           v-else-if="$slots['mobile-card'] && item && width < CARD_BREAKPOINT"
           class="base-table__mobile-card"
         >
-          <slot name="mobile-card" :item="item" />
+          <slot
+            name="mobile-card"
+            :item="item"
+          />
         </div>
 
         <BaseLoading v-else-if="i === Math.floor(items.length / 2)" />
@@ -52,8 +64,14 @@
         </div>
 
         <div class="base-table__arrows">
-          <ArrowIcon class="base-table" @click="emit('prevPage')" />
-          <ArrowIcon class="base-table" @click="emit('nextPage')" />
+          <ArrowIcon
+            class="base-table"
+            @click="emit('prevPage')"
+          />
+          <ArrowIcon
+            class="base-table"
+            @click="emit('nextPage')"
+          />
         </div>
       </div>
     </div>
@@ -63,23 +81,23 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-import BaseDropdown from '~base/BaseDropdown.vue';
-import ArrowIcon from '~icons/arrow.svg';
+import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
-import type { TablePagination } from '~shared/lib/table';
+import type { TablePagination } from '@/shared/lib/table';
+import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 
-type Props = {
-  loading: boolean;
-  pagination: TablePagination;
-  items: any[];
-  containerClass: string;
-};
+interface Props {
+  loading: boolean
+  pagination: TablePagination
+  items: any[]
+  containerClass: string
+}
 
-type Emits = {
-  (e: 'nextPage'): void,
-  (e: 'prevPage'): void,
-  (e: 'setPage', value: number): void,
-  (e: 'setSize', value: number): void,
+interface Emits {
+  (e: 'nextPage'): void
+  (e: 'prevPage'): void
+  (e: 'setPage', value: number): void
+  (e: 'setSize', value: number): void
 }
 
 const props = defineProps<Props>();
@@ -119,11 +137,19 @@ const numbers = computed(() => {
   let end = p.page + offset;
 
   if (p.page < side) {
-    return Array(side).fill(0).map<string|number>((_, i) => i + 1).concat(['. . .', p.pages]);
+    return Array(side)
+      .fill(0)
+      .map<string | number>((_, i) => i + 1)
+      .concat(['. . .', p.pages]);
   }
 
-  if (p.page > (p.pages - side + 1)) {
-    return [1, '. . .'].concat(Array(side).fill(0).map((_, i) => p.pages - i).reverse());
+  if (p.page > p.pages - side + 1) {
+    return [1, '. . .'].concat(
+      Array(side)
+        .fill(0)
+        .map((_, i) => p.pages - i)
+        .reverse()
+    );
   }
 
   start = start < 1 ? 1 : start;
@@ -158,7 +184,7 @@ const pageSizeModel = computed({
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .base-table {
   display: grid;
