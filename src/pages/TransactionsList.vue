@@ -4,6 +4,7 @@
     class="transactions-list-page"
   >
     <div class="content-row">
+      <!--      TODO: Add styles for type filter on mobile-->
       <TransactionTypeFilter
         v-model="tab"
         class="transactions-list-page__tabs"

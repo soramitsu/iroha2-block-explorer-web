@@ -138,6 +138,8 @@ $light-color-map: (
   'warning': $warning-30,
   'warning-background': $warning-5,
   'warning-background-hover': $warning-10,
+  // TODO: Research why error color differs from layouts
+  //'error': #BB0000,
   'error': $error-60,
   'error-background': $error-5,
   'error-background-hover': $error-10,
@@ -185,6 +187,8 @@ $dark-color-map: (
   'warning': $warning-30,
   'warning-background': $warning-5,
   'warning-background-hover': $warning-10,
+  // TODO: Research why error color differs from layouts
+  //'error': #D72121,
   'error': $error-60,
   'error-background': $error-5,
   'error-background-hover': $error-10,
