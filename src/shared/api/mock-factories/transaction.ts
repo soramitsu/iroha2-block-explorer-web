@@ -1,7 +1,7 @@
 import { randEmail, randNumber, randTextRange } from '@ngneat/falso';
 import { hash } from './utils';
 
-function makeTransactionContent(): CommittedTransaction {
+function makeTransactionContent(): TransactionDto {
   return {
     block_hash: hash(64),
     block_height: randNumber(),
@@ -27,19 +27,13 @@ function makeTransactionContent(): CommittedTransaction {
 }
 
 export function makeCommittedTransaction(): TransactionDto {
-  return {
-    t: 'Committed',
-    c: makeTransactionContent(),
-  };
+  return makeTransactionContent();
 }
 
 export function makeRejectedTransaction(): TransactionDto {
   return {
-    t: 'Rejected',
-    c: {
-      ...makeTransactionContent(),
-      rejection_reason: randTextRange({ min: 10, max: 100 }),
-    },
+    ...makeTransactionContent(),
+    rejection_reason: randTextRange({ min: 10, max: 100 }),
   };
 }
 
