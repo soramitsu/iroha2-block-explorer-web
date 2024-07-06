@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable camelcase */
 import type { JsonObject } from 'type-fest';
+import type { Instruction } from '@iroha2/data-model';
 
 export {};
 
@@ -139,35 +140,48 @@ declare global {
     view_change_proofs: string[]
   }
 
-  export type TransactionDto = Tagged<'Committed', CommittedTransaction> | Tagged<'Rejected', RejectedTransaction>;
-
-  export interface CommittedTransaction {
+  export interface TransactionDto {
     /**
      * WIP zeroed
      */
-    block_hash: string
-    block_height: number
     hash: string
-    payload: TransactionPayload
+    block_hash: string
+    // TODO: bloch_height is missing from backend response
+    block_height: number
+    payload: TransactionDtoPayload
     signatures: Signature[]
-  }
-
-  export interface RejectedTransaction extends CommittedTransaction {
     /**
      * List of serialized {@link @iroha2/data-model#TransactionRejectionReason}
      */
-    rejection_reason: string
+    rejection_reason?: string
   }
 
-  export interface TransactionPayload {
-    account_id: string
+  export interface TransactionDtoPayload extends TransactionDefaultPayload {
     instructions: TransactionInstructions
+  }
+
+  // TODO: Research difference with TransactionDto and design, instructions, block_height
+  export interface Transaction {
+    hash: string
+    block_hash: string
+    block_height: number
+    payload: TransactionPayload
+    signatures: Signature[]
+    rejection_reason?: string
+  }
+
+  export interface TransactionPayload extends TransactionDefaultPayload {
+    instructions: Instruction[]
+  }
+
+  export interface TransactionDefaultPayload {
+    account_id: string
     /**
      * ISO timestamp
      */
     creation_time: string
-    time_to_live_ms: number
-    nonce: null | number
+    time_to_live_ms: number | null
+    nonce: number | null
     metadata: any
   }
 

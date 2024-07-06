@@ -1,24 +1,5 @@
-import { Instruction } from '@iroha2/data-model';
+import type { Instruction } from '@iroha2/data-model';
 import { http } from '@/shared/api';
-
-declare global {
-  export interface Transaction {
-    committed: boolean
-    block_hash: string
-    block_height: number
-    hash: string
-    payload: {
-      account_id: string
-      instructions: Instruction[]
-      creation_time: string
-      time_to_live_ms: number
-      nonce: null | number
-      metadata: any
-    }
-    signatures: Signature[]
-    rejection_reason?: string
-  }
-}
 
 function hexToBytes(hex: string) {
   const bytes = [];
@@ -29,18 +10,19 @@ function hexToBytes(hex: string) {
   return Uint8Array.from(bytes);
 }
 
-export function mapFromDto(transaction: TransactionDto): Transaction {
-  const instructions =
-    transaction.c.payload.instructions.c?.map((i: string) => Instruction.fromBuffer(hexToBytes(i))) ?? [];
+export function mapFromDto(transaction: TransactionDto) {
+  const instructions: Instruction[] = [];
+  // TypeError: Invalid argument type in ToBigInt operation (@iroha2_data-model.js:240)
+  //   transaction.c.payload.instructions.c?.map((i: string) => Instruction.fromBuffer(hexToBytes(i))) ?? [];
 
   return {
-    committed: transaction.t === 'Committed',
-    block_hash: transaction.c.block_hash,
-    block_height: transaction.c.block_height ?? 0,
-    hash: transaction.c.hash,
-    signatures: transaction.c.signatures,
+    committed: !!transaction.rejection_reason,
+    block_hash: transaction.block_hash,
+    block_height: transaction.block_height ?? 0,
+    hash: transaction.hash,
+    signatures: transaction.signatures,
     payload: {
-      ...transaction.c.payload,
+      ...transaction.payload,
       instructions,
     },
   };
