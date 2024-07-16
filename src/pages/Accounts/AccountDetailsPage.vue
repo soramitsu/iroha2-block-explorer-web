@@ -421,7 +421,7 @@ const accountLockedValue = ref(543);
         }
 
         @include lg {
-          grid-template-columns: 12vw 10vw 10vw 8vw;
+          grid-template-columns: 12vw 12vw 10vw 8vw;
         }
 
         & > span {
