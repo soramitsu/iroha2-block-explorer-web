@@ -1,7 +1,7 @@
 <template>
   <div class="base-table">
     <div
-      v-if="$slots.header && width >= CARD_BREAKPOINT"
+      v-if="$slots.header && width >= props.breakpoint"
       class="content-row"
     >
       <slot name="header" />
@@ -13,7 +13,7 @@
         :key="i"
       >
         <div
-          v-if="item && (width >= CARD_BREAKPOINT || !$slots['mobile-card'])"
+          v-if="item && (width >= props.breakpoint || !$slots['mobile-card'])"
           class="content-row content-row--with-hover"
         >
           <slot
@@ -23,7 +23,7 @@
         </div>
 
         <div
-          v-else-if="$slots['mobile-card'] && item && width < CARD_BREAKPOINT"
+          v-else-if="$slots['mobile-card'] && item && width < props.breakpoint"
           class="base-table__mobile-card"
         >
           <slot
@@ -36,7 +36,10 @@
       </template>
     </div>
 
-    <div class="base-table__pagination">
+    <div
+      v-if="!disabledPagination"
+      class="base-table__pagination"
+    >
       <div class="base-table__pagination-item">
         <div class="base-table__segment-info">
           {{ segmentInfo }}
@@ -56,8 +59,8 @@
             v-for="(item, i) in numbers"
             :key="i"
             class="base-table__number"
-            :data-active="item === props.pagination.page || null"
-            @click="Number.isInteger(item) ? emit('setPage', item as number) : null"
+            :data-active="item === table.pagination.page || null"
+            @click="Number.isInteger(item) ? table.setPage(Number(item)) : null"
           >
             {{ item }}
           </span>
@@ -66,11 +69,11 @@
         <div class="base-table__arrows">
           <ArrowIcon
             class="base-table"
-            @click="emit('prevPage')"
+            @click="table.prevPage()"
           />
           <ArrowIcon
             class="base-table"
-            @click="emit('nextPage')"
+            @click="table.nextPage()"
           />
         </div>
       </div>
@@ -79,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import type { Ref } from 'vue';
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import ArrowIcon from '@/shared/ui/icons/arrow.svg';
@@ -87,36 +91,40 @@ import type { TablePagination } from '@/shared/lib/table';
 import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 
 interface Props {
-  loading: boolean
-  pagination: TablePagination
-  items: any[]
+  table: {
+    loading: Ref<boolean>
+    items: Ref<any[]>
+    nextPage: () => Promise<void>
+    prevPage: () => Promise<void>
+    setSize: (value: number) => Promise<void>
+    setPage: (value: number) => Promise<void>
+    pagination: TablePagination
+  }
   containerClass: string
+  breakpoint?: string | number
+  disabledPagination?: boolean
 }
 
-interface Emits {
-  (e: 'nextPage'): void
-  (e: 'prevPage'): void
-  (e: 'setPage', value: number): void
-  (e: 'setSize', value: number): void
-}
+const props = withDefaults(defineProps<Props>(), {
+  breakpoint: 1200,
+});
 
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const table = computed(() => props.table);
+
 const { width } = useWindowSize();
 
-const CARD_BREAKPOINT = 1200;
 const PAGINATION_BREAKPOINT = 960;
 
 const items = computed(() => {
-  if (props.loading) {
-    return Array.from({ length: props.pagination.page_size }, () => null);
+  if (table.value.loading.value) {
+    return Array.from({ length: table.value.pagination.page_size }, () => null);
   }
 
-  return props.items;
+  return table.value.items.value;
 });
 
 const segmentInfo = computed(() => {
-  const p = props.pagination;
+  const p = table.value.pagination;
   const start = (p.page - 1) * p.page_size + 1;
   const end = p.page * p.page_size;
   return `${start}—${end > p.total ? p.total : end} of ${p.total}`;
@@ -128,7 +136,7 @@ const numbers = computed(() => {
   const side = isMobile ? 4 : 7;
   const offset = isMobile ? 1 : 3;
 
-  const p = props.pagination;
+  const p = table.value.pagination;
   if (p.pages < max) {
     return new Array(p.pages).fill(0).map((_, i) => i + 1);
   }
@@ -178,12 +186,12 @@ const sizeOptions = [
 ];
 
 const pageSizeModel = computed({
-  get: () => props.pagination.page_size,
-  set: (v) => emit('setSize', v),
+  get: () => table.value.pagination.page_size,
+  set: (v) => table.value.setSize(v),
 });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @import '@/shared/ui/styles/main';
 
 .base-table {
