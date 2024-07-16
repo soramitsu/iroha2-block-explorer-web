@@ -5,9 +5,11 @@
       :to="props.link"
       monospace
     >
-      {{ content }}
+      <span v-if="type === 'two-line'">{{ content[0] }}<br>{{ content[1] }}</span>
+      <span v-else>{{ content }}</span>
     </BaseLink>
 
+    <span v-else-if="type === 'two-line'">{{ content[0] }}<br>{{ content[1] }}</span>
     <span v-else>{{ content }}</span>
 
     <CopyIcon
@@ -19,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue';
+import { computed } from 'vue';
 import CopyIcon from '@/shared/ui/icons/copy.svg';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
@@ -57,7 +59,7 @@ const content = computed(() => {
       // eslint-disable-next-line no-case-declarations
       const center = Math.ceil(props.hash.length / 2);
 
-      return [props.hash.slice(0, center), h('br'), props.hash.slice(-center + (props.hash.length % 2))];
+      return [props.hash.slice(0, center), props.hash.slice(-center + (props.hash.length % 2))];
 
     default:
       return props.hash;
