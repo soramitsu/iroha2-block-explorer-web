@@ -1,4 +1,5 @@
 import { i18n } from '@/shared/lib/localization';
+import { ref } from 'vue';
 
 export const menu = [
   { label: i18n.global.t('blocks'), to: '/blocks' },
@@ -18,3 +19,5 @@ export const langOptions = [
 ];
 
 export const PORTAL_ID = 'header-dropdown-portal';
+
+export const applicationCurrency = ref('$');

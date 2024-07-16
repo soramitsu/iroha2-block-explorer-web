@@ -1,4 +1,4 @@
-import { currencySymbol } from '@/shared/config';
+import { applicationCurrency } from '@/shared/config';
 
 export function numberFormatter(value: number | string) {
   const dividedValue = value.toString().split('.');
@@ -10,5 +10,5 @@ export function numberFormatter(value: number | string) {
 }
 
 export function formatMoney(value: number | string) {
-  return currencySymbol.value + numberFormatter(value);
+  return applicationCurrency.value + numberFormatter(value);
 }
