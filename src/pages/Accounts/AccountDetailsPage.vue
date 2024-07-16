@@ -8,8 +8,8 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
 import { formatMoney, numberFormatter } from '@/shared/utils/money-formatters';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import type { TableAsset } from '@/pages/Accounts/types';
-import { getFakeAssets } from '@/pages/Accounts/utils';
+import type { TableAsset } from './types';
+import { getFakeAssets } from './utils';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import {
   type filterTransactionsModel as ftm,
@@ -21,7 +21,7 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { transactionModel } from '@/entities/transaction';
 import { computedEager, useWindowSize } from '@vueuse/core';
 import { format } from '@/shared/lib/time';
-import { adaptiveTransactionTypeOptions, assetsItems } from '@/pages/Accounts/consts';
+import { adaptiveTransactionTypeOptions, assetsItems } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 

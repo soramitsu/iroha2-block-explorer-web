@@ -1,5 +1,5 @@
 import { pagination } from '@/shared/api/mock-factories/utils';
-import type { TableAsset } from '@/pages/Accounts/types';
+import type { TableAsset } from './types';
 import { defineAsyncComponent } from 'vue';
 
 export async function getFakeAssets(params?: PaginationParams): Promise<Paginated<TableAsset>> {
