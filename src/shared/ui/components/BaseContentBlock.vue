@@ -50,7 +50,7 @@ const slots = useSlots();
   }
 
   &__body {
-    padding: 0 0 size(4) 0;
+    padding: 0 0 size(2) 0;
   }
 
   &__title {
