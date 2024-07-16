@@ -4,14 +4,8 @@
     class="assets-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      :table="table"
       container-class="assets-list-page__container"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="assets-list-page__row">

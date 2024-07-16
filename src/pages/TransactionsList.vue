@@ -16,14 +16,8 @@
     </div>
 
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      :table="table"
       container-class="transactions-list-page__container"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
     >
       <template #row="{ item }: { item: Transaction }">
         <div class="transactions-list-page__row">
@@ -78,11 +72,12 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const HASH_BREAKPOINT = 1200;
 
-const status = ref<ftm.Status>(null);
-const tab = ref<ftm.Tab>('all');
+const status = ref<ftm.TransactionStatus>(null);
+const tab = ref<ftm.TransactionTypeTabs>('all');
 
 const { width } = useWindowSize();
 
