@@ -1,19 +1,39 @@
 <template>
   <div class="base-tabs">
     <div
-      v-for="(item, i) in props.items"
+      v-if="adaptiveOptions && adaptiveIndexStart !== 0"
+      class="base-tabs__arrow"
+      @click="handleArrowPrevClick"
+    >
+      <ArrowIcon />
+    </div>
+
+    <div
+      v-for="(item, i) in adaptiveOptions"
       :key="i"
       class="base-tabs__tab"
       :class="{ 'base-tabs__tab--active': item.value === model }"
       @click="model = item.value"
     >
-      {{ item.label }}
+      {{ $t(item.label) }}
+    </div>
+
+    <div
+      v-if="adaptiveOptions && adaptiveIndexEnd !== props.items.length"
+      class="base-tabs__arrow"
+      @click="handleArrowNextClick"
+    >
+      <ArrowIcon />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useVModel } from '@vueuse/core';
+import { useVModel, useWindowSize } from '@vueuse/core';
+import { computed, onMounted, ref } from 'vue';
+import { applyAdaptiveOptions } from '@/shared/utils/adaptive-options';
+import type { AdaptiveOptions } from '@/shared/types';
+import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 
 interface TabItem {
   label: string
@@ -23,12 +43,48 @@ interface TabItem {
 interface Props {
   items: TabItem[]
   modelValue: string
+  adaptiveOptions?: AdaptiveOptions
 }
 
 type Emits = (e: 'update:modelValue', value: string) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const { width } = useWindowSize();
+
+const adaptiveIndexStart = ref(0);
+const adaptiveIndexEnd = ref(0);
+
+const adaptiveOptions = computed(() => {
+  return [...props.items.slice(adaptiveIndexStart.value, adaptiveIndexEnd.value)];
+});
+
+function handleArrowNextClick() {
+  let diff;
+
+  if (adaptiveIndexEnd.value === 2) {
+    diff = 2;
+  } else diff = props.items.length - adaptiveIndexEnd.value;
+
+  adaptiveIndexStart.value += diff;
+  adaptiveIndexEnd.value += diff;
+}
+
+function handleArrowPrevClick() {
+  let diff;
+
+  if (adaptiveIndexStart.value === 4) {
+    diff = 2;
+  } else diff = adaptiveIndexStart.value;
+
+  adaptiveIndexStart.value -= diff;
+  adaptiveIndexEnd.value -= diff;
+}
+
+onMounted(() => {
+  adaptiveIndexEnd.value = applyAdaptiveOptions(width.value, props.adaptiveOptions ?? props.items.length);
+});
 
 const model = useVModel(props, 'modelValue', emit);
 </script>
@@ -47,6 +103,31 @@ const model = useVModel(props, 'modelValue', emit);
   background: theme-color('background');
 
   @include shadow-input;
+
+  &__arrow {
+    border-radius: 50%;
+    color: theme-color('content-on-surface-variant');
+    background: theme-color('content-quaternary');
+    width: size(2);
+    height: size(2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-left: 4px;
+    cursor: pointer;
+
+    &:last-child {
+      transform: rotateY(180deg);
+      margin-right: 4px;
+    }
+
+    svg {
+      fill: theme-color('content-on-surface-variant');
+      width: size(2);
+      height: size(2);
+    }
+  }
 
   &__tab {
     padding: size(0.5) size(1);
