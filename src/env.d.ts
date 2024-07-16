@@ -11,3 +11,9 @@ interface ImportMetaEnv {
   readonly VITE_API_URL: string
   readonly VITE_FAKE_API_ENABLED?: 'TRUE' | 'FALSE'
 }
+
+declare module '@soramitsu-ui/icons/*' {
+  import type { DefineComponent } from 'vue';
+  const component: DefineComponent<{}, {}, any>;
+  export default component;
+}
