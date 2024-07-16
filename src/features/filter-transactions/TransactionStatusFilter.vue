@@ -12,10 +12,10 @@ import { useVModel } from '@vueuse/core';
 import BaseRadioGroup from '@/shared/ui/components/BaseRadioGroup.vue';
 
 interface Props {
-  modelValue: ftm.Status
+  modelValue: ftm.TransactionStatus
 }
 
-type Emits = (e: 'update:modelValue', value: ftm.Status) => void;
+type Emits = (e: 'update:modelValue', value: ftm.TransactionStatus) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
