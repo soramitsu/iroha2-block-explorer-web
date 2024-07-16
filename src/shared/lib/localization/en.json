@@ -66,5 +66,20 @@
     "mostValue": "Most Value",
     "wasm": "WebAssembly",
     "instruction": "Instruction"
+  },
+  "accountDetails": {
+    "totalValue": "Total Value",
+    "reserved": "Reserved",
+    "locked": "Locked",
+    "tokens": "Tokens",
+    "amount": "Amount",
+    "price": "Price",
+    "value": "Value",
+    "transactionID": "TxID",
+    "accountInformation": "Account information",
+    "accountAssets": "Account assets",
+    "accountTransactions": "Account transactions",
+    "cryptos": "Cryptos",
+    "nfts": "NFTs"
   }
 }
