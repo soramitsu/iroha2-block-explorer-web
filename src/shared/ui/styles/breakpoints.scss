@@ -41,3 +41,9 @@ $xxs: 320px;
     @content;
   }
 }
+
+@mixin xxs() {
+  @media (min-width: $xxs) {
+    @content;
+  }
+}
