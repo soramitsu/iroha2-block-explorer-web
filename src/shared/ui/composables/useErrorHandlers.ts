@@ -5,11 +5,7 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  return '';
+  return String(error);
 }
 
 export const useErrorHandlers = () => {
