@@ -15,13 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import BasePageLayout from '~base/BasePageLayout.vue';
-import NotificationsInstance from '~base/NotificationsInstance.vue';
-import { TheHeader } from '~widgets/header';
+import NotificationsInstance from '@/shared/ui/components/NotificationsInstance.vue';
+import BasePageLayout from '@/shared/ui/components/BasePageLayout.vue';
+import { TheHeader } from '@/widgets/header';
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 html {
   &:not(.dark) {

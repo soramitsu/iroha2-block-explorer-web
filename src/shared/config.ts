@@ -1,4 +1,4 @@
-import { i18n } from '~shared/lib/localization';
+import { i18n } from '@/shared/lib/localization';
 
 export const menu = [
   { label: i18n.global.t('blocks'), to: '/blocks' },

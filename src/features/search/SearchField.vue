@@ -22,9 +22,9 @@ import SearchIcon from '@soramitsu-ui/icons/icomoon/basic-search-24.svg';
 import { ref, computed } from 'vue';
 import { useActiveElement } from '@vueuse/core';
 
-type Props = {
-  size?: 'sm' | 'md' | 'lg',
-  placeholder?: string,
+interface Props {
+  size?: 'sm' | 'md' | 'lg'
+  placeholder?: string
 }
 
 const props = defineProps<Props>();
@@ -41,15 +41,17 @@ function submit() {
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .search-field {
   display: flex;
   align-items: center;
-  transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
+  transition:
+    color 300ms ease-in-out,
+    box-shadow 300ms ease-in-out;
 
   input {
-    color: theme-color('content-primary');;
+    color: theme-color('content-primary');
     background: transparent;
     border: none;
     width: 100%;
@@ -75,7 +77,7 @@ function submit() {
     fill: theme-color('border-secondary');
   }
 
-  &[data-size=lg] {
+  &[data-size='lg'] {
     width: 100%;
     background: theme-color('surface');
     @include shadow-large-input;
@@ -128,7 +130,7 @@ function submit() {
     }
   }
 
-  &[data-size=md] {
+  &[data-size='md'] {
     display: flex;
     height: size(6);
     padding: 0 size(2);
@@ -172,7 +174,7 @@ function submit() {
     }
   }
 
-  &[data-size=sm] {
+  &[data-size='sm'] {
     display: flex;
     height: size(6);
     padding: 0 size(2);

@@ -1,5 +1,8 @@
 <template>
-  <BaseContentBlock :title="$t('blocks')" class="blocks-list-page">
+  <BaseContentBlock
+    :title="$t('blocks')"
+    class="blocks-list-page"
+  >
     <BaseTable
       :loading="table.loading.value"
       :pagination="table.pagination"
@@ -21,7 +24,10 @@
 
       <template #row="{ item }: { item: Block }">
         <div class="blocks-list-page__row">
-          <BaseLink :to="`/blocks/${item.height}`" class="cell">
+          <BaseLink
+            :to="`/blocks/${item.height}`"
+            class="cell"
+          >
             {{ item.height }}
           </BaseLink>
 
@@ -37,7 +43,9 @@
             class="cell"
           />
 
-          <div class="cell row-text">{{ item.transactions }}</div>
+          <div class="cell row-text">
+            {{ item.transactions }}
+          </div>
         </div>
       </template>
 
@@ -46,7 +54,9 @@
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('height') }}</span>
 
-            <BaseLink :to="`/blocks/${item.height}`">{{ item.height }}</BaseLink>
+            <BaseLink :to="`/blocks/${item.height}`">
+              {{ item.height }}
+            </BaseLink>
           </div>
 
           <div class="blocks-list-page__mobile-row">
@@ -76,20 +86,20 @@
 </template>
 
 <script setup lang="ts">
-import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseTable from '~base/BaseTable.vue';
-import BaseHash from '~base/BaseHash.vue';
-import BaseLink from '~shared/ui/components/BaseLink.vue';
-import { useTable } from '~shared/lib/table';
-import { http } from '~shared/api';
-import { format } from '~shared/lib/time';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { useTable } from '@/shared/lib/table';
+import { http } from '@/shared/api';
+import { format } from '@/shared/lib/time';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 
 const table = useTable(http.fetchBlocks);
 table.fetch();
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .blocks-list-page {
   &__row {

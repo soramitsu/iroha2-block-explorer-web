@@ -6,18 +6,16 @@
 </template>
 
 <script setup lang="ts">
-import BaseRadioGroup from '~base/BaseRadioGroup.vue';
 import { useI18n } from 'vue-i18n';
-import * as ftm from './model';
+import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
+import BaseRadioGroup from '@/shared/ui/components/BaseRadioGroup.vue';
 
-type Props = {
-  modelValue: ftm.Status,
+interface Props {
+  modelValue: ftm.Status
 }
 
-type Emits = {
-  (e: 'update:modelValue', value: ftm.Status): void,
-}
+type Emits = (e: 'update:modelValue', value: ftm.Status) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();

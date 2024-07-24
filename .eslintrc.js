@@ -1,46 +1,42 @@
 module.exports = {
-  env: {
-    browser: true,
-    es2021: true,
-    'vue/setup-compiler-macros': true,
-  },
-  extends: [
-    'plugin:vue/vue3-recommended',
-    'standard',
-  ],
+  root: true,
+  extends: ['alloy', 'alloy/typescript', 'plugin:vue/vue3-recommended'],
+  parser: 'vue-eslint-parser',
   parserOptions: {
-    ecmaVersion: 'latest',
     parser: '@typescript-eslint/parser',
+    ecmaVersion: 2021,
     sourceType: 'module',
   },
-  plugins: [
-    'vue',
-    '@typescript-eslint',
-  ],
-  rules: {
-    'vue/max-attributes-per-line': ['error', {
-      singleline: { max: 3 },
-      multiline: { max: 1 },
-    }],
-    semi: ['error', 'always'],
-    'comma-dangle': ['error', 'always-multiline'],
-    'vue/singleline-html-element-content-newline': ['off'],
-    'space-before-function-paren': ['error', {
-      anonymous: 'never',
-      named: 'never',
-      asyncArrow: 'always',
-    }],
-    'no-use-before-define': 'off',
-    camelcase: 'off',
-    'no-unused-vars': 'off',
+  globals: {
+    defineProps: 'readonly',
+    defineEmits: 'readonly',
+    defineExpose: 'readonly',
+    withDefaults: 'readonly',
   },
+  rules: {
+    'vue/html-indent': ['warn', 2],
 
-  overrides: [
-    {
-      files: ['*.ts', '*.vue'],
-      rules: {
-        'no-undef': 'off',
+    'no-unused-vars': ['warn'],
+    // make possible `/// <reference...`
+    'spaced-comment': ['error', 'always', { markers: ['/'] }],
+    'no-undef': ['off'],
+    '@typescript-eslint/no-unused-vars': ['off'],
+    '@typescript-eslint/explicit-member-accessibility': ['off'],
+    '@typescript-eslint/no-parameter-properties': ['off'],
+    '@typescript-eslint/unified-signatures': ['off'],
+    '@typescript-eslint/member-delimiter-style': [
+      'warn',
+      {
+        multiline: {
+          delimiter: 'none',
+          requireLast: false,
+        },
+        singleline: {
+          delimiter: 'comma',
+          requireLast: false,
+        },
+        multilineDetection: 'brackets',
       },
-    },
-  ],
+    ],
+  },
 };

@@ -1,13 +1,14 @@
-import { reactive, Ref, ref } from 'vue';
+import type { Ref } from 'vue';
+import { reactive, ref } from 'vue';
 
 export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;
 
-export type TablePagination = {
-  page: number;
-  page_size: number;
-  pages: number;
-  total: number;
-};
+export interface TablePagination {
+  page: number
+  page_size: number
+  pages: number
+  total: number
+}
 
 export function useTable<T>(fetchFn: TableFetchFn<T>) {
   const loading = ref(false);

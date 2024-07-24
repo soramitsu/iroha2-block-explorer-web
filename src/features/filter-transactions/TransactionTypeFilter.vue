@@ -7,17 +7,15 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import * as ftm from './model';
-import BaseTabs from '~base/BaseTabs.vue';
+import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
+import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 
-type Props = {
-  modelValue: ftm.Tab,
+interface Props {
+  modelValue: ftm.Tab
 }
 
-type Emits = {
-  (e: 'update:modelValue', value: ftm.Tab): void,
-}
+type Emits = (e: 'update:modelValue', value: ftm.Tab) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
