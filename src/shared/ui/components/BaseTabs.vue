@@ -57,7 +57,7 @@ const adaptiveIndexStart = ref(0);
 const adaptiveIndexEnd = ref(0);
 
 const adaptiveOptions = computed(() => {
-  return [...props.items.slice(adaptiveIndexStart.value, adaptiveIndexEnd.value)];
+  return props.items.slice(adaptiveIndexStart.value, adaptiveIndexEnd.value);
 });
 
 function handleArrowNextClick() {
