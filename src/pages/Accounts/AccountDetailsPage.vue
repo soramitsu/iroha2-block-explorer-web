@@ -23,6 +23,7 @@ import { format } from '@/shared/lib/time';
 import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { applicationCurrency } from '@/shared/config';
 
 const router = useRouter();
 
@@ -116,16 +117,16 @@ const accountLockedValue = ref(543);
         <template #default>
           <div class="account-details__personal-assets-table-header">
             <DataField
-              :value="formatMoney(accountTotalValue)"
+              :value="formatMoney(accountTotalValue, applicationCurrency)"
               bold
               :title="$t('accountDetails.totalValue')"
             />
             <DataField
-              :value="formatMoney(accountReservedValue)"
+              :value="formatMoney(accountReservedValue, applicationCurrency)"
               :title="$t('accountDetails.reserved')"
             />
             <DataField
-              :value="formatMoney(accountLockedValue)"
+              :value="formatMoney(accountLockedValue, applicationCurrency)"
               :title="$t('accountDetails.locked')"
             />
           </div>
@@ -165,11 +166,11 @@ const accountLockedValue = ref(543);
                 </div>
 
                 <div class="account-details__personal-assets-list-row-price row-text">
-                  <span>{{ formatMoney(item.price) }}</span>
+                  <span>{{ formatMoney(item.price, applicationCurrency) }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-list-row-value row-text">
-                  <span>{{ formatMoney(item.amount * item.price) }}</span>
+                  <span>{{ formatMoney(item.amount * item.price, applicationCurrency) }}</span>
                 </div>
               </div>
             </template>
@@ -200,12 +201,12 @@ const accountLockedValue = ref(543);
 
                 <div class="account-details__personal-assets-mobile-list-row-price row-text">
                   <span class="h-sm">{{ $t('accountDetails.price') }}</span>
-                  <span>{{ formatMoney(item.price) }}</span>
+                  <span>{{ formatMoney(item.price, applicationCurrency) }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-value row-text">
                   <span class="h-sm">{{ $t('accountDetails.value') }}</span>
-                  <span>{{ formatMoney(item.amount * item.price) }}</span>
+                  <span>{{ formatMoney(item.amount * item.price, applicationCurrency) }}</span>
                 </div>
               </div>
             </template>
