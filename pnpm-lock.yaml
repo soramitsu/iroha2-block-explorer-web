@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 dependencies:
   '@iroha2/crypto-target-web':
     specifier: ^0.4.0
@@ -55,9 +51,6 @@ devDependencies:
   eslint-config-alloy:
     specifier: ^5.1.2
     version: 5.1.2(@typescript-eslint/eslint-plugin@6.21.0)(@typescript-eslint/parser@6.21.0)(eslint-plugin-vue@9.6.0)(eslint@8.57.0)(typescript@4.8.4)(vue-eslint-parser@9.4.3)
-  eslint-config-prettier:
-    specifier: ^9.1.0
-    version: 9.1.0(eslint@8.57.0)
   eslint-plugin-vue:
     specifier: ^9.4.0
     version: 9.6.0(eslint@8.57.0)
@@ -1405,15 +1398,6 @@ packages:
       eslint-plugin-vue: 9.6.0(eslint@8.57.0)
       typescript: 4.8.4
       vue-eslint-parser: 9.4.3(eslint@8.57.0)
-    dev: true
-
-  /eslint-config-prettier@9.1.0(eslint@8.57.0):
-    resolution: {integrity: sha512-NSWl5BFQWEPi1j4TjVNItzYV7dZXZ+wP6I6ZhrBGpChQhZRUaElihE9uRRkcbRnNb76UMKDF3r+WTmNcGPKsqw==}
-    hasBin: true
-    peerDependencies:
-      eslint: '>=7.0.0'
-    dependencies:
-      eslint: 8.57.0
     dev: true
 
   /eslint-plugin-vue@9.6.0(eslint@8.57.0):
@@ -3044,3 +3028,7 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
