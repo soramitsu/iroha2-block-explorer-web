@@ -5,12 +5,12 @@
       :to="props.link"
       monospace
     >
-      <span v-if="type === 'two-line'">{{ content[0] }}<br>{{ content[1] }}</span>
-      <span v-else>{{ content }}</span>
+      <span v-if="content.t === 'two-line'">{{ content.first }}<br>{{ content.second }}</span>
+      <span v-else>{{ content.value }}</span>
     </BaseLink>
 
-    <span v-else-if="type === 'two-line'">{{ content[0] }}<br>{{ content[1] }}</span>
-    <span v-else>{{ content }}</span>
+    <span v-else-if="content.t === 'two-line'">{{ content.first }}<br>{{ content.second }}</span>
+    <span v-else>{{ content.value }}</span>
 
     <CopyIcon
       v-if="props.copy"
@@ -49,21 +49,29 @@ async function copy() {
   }
 }
 
-const content = computed(() => {
-  switch (props.type) {
-    case 'short':
-      return props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
-    case 'medium':
-      return props.hash.slice(0, 10) + '...' + props.hash.slice(-10);
-    case 'two-line':
-      // eslint-disable-next-line no-case-declarations
-      const center = Math.ceil(props.hash.length / 2);
+type Content = { t: 'plain', value: string } | { t: 'two-line', first: string, second: string };
 
-      return [props.hash.slice(0, center), props.hash.slice(-center + (props.hash.length % 2))];
+const content = computed<Content>(() => {
+  let value = props.hash;
 
-    default:
-      return props.hash;
+  if (props.type === 'short') {
+    value = props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
+  } else if (props.type === 'medium') {
+    value = props.hash.slice(0, 10) + '...' + props.hash.slice(-10);
+  } else if (props.type === 'two-line') {
+    const center = Math.ceil(props.hash.length / 2);
+
+    return {
+      t: 'two-line',
+      first: props.hash.slice(0, center),
+      second: props.hash.slice(-center + (props.hash.length % 2)),
+    };
   }
+
+  return {
+    t: 'plain',
+    value,
+  };
 });
 </script>
 
