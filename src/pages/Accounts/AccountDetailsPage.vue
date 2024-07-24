@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
 import { http } from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
 import { formatMoney, numberFormatter } from '@/shared/utils/money-formatters';
@@ -21,7 +20,7 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { transactionModel } from '@/entities/transaction';
 import { computedEager, useWindowSize } from '@vueuse/core';
 import { format } from '@/shared/lib/time';
-import { adaptiveTransactionTypeOptions, assetsItems } from './consts';
+import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 
@@ -53,8 +52,6 @@ onMounted(async () => {
     isFetchingAccount.value = false;
   }
 });
-
-const assetsFilter = ref('cryptos');
 
 // use account's assets from payload instead or replace with fetching account's assets method
 const assetsTable = useTable(getFakeAssets);
@@ -116,13 +113,6 @@ const accountLockedValue = ref(543);
         :title="$t('accountDetails.accountAssets')"
         class="account-details__personal-assets"
       >
-        <template #header-action>
-          <BaseTabs
-            v-model="assetsFilter"
-            :items="assetsItems"
-          />
-        </template>
-
         <template #default>
           <div class="account-details__personal-assets-table-header">
             <DataField
