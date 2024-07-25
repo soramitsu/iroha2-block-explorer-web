@@ -59,8 +59,8 @@
             v-for="(item, i) in numbers"
             :key="i"
             class="base-table__number"
-            :data-active="item === table.pagination.page || null"
-            @click="Number.isInteger(item) ? table.setPage(Number(item)) : null"
+            :data-active="item === props.pagination.page || null"
+            @click="Number.isInteger(item) ? emit('setPage', Number(item)) : null"
           >
             {{ item }}
           </span>
@@ -69,11 +69,11 @@
         <div class="base-table__arrows">
           <ArrowIcon
             class="base-table"
-            @click="table.prevPage()"
+            @click="emit('prevPage')"
           />
           <ArrowIcon
             class="base-table"
-            @click="table.nextPage()"
+            @click="emit('nextPage')"
           />
         </div>
       </div>
@@ -91,40 +91,40 @@ import type { TablePagination } from '@/shared/lib/table';
 import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 
 interface Props {
-  table: {
-    loading: Ref<boolean>
-    items: Ref<any[]>
-    nextPage: () => Promise<void>
-    prevPage: () => Promise<void>
-    setSize: (value: number) => Promise<void>
-    setPage: (value: number) => Promise<void>
-    pagination: TablePagination
-  }
+  loading: boolean
+  pagination: TablePagination
+  items: any[]
   containerClass: string
   breakpoint?: string | number
   disabledPagination?: boolean
 }
 
+interface Emits {
+  (e: 'nextPage'): void
+  (e: 'prevPage'): void
+  (e: 'setPage', value: number): void
+  (e: 'setSize', value: number): void
+}
+
 const props = withDefaults(defineProps<Props>(), {
   breakpoint: 1200,
 });
-
-const table = computed(() => props.table);
+const emit = defineEmits<Emits>();
 
 const { width } = useWindowSize();
 
 const PAGINATION_BREAKPOINT = 960;
 
 const items = computed(() => {
-  if (table.value.loading.value) {
-    return Array.from({ length: table.value.pagination.page_size }, () => null);
+  if (props.loading) {
+    return Array.from({ length: props.pagination.page_size }, () => null);
   }
 
-  return table.value.items.value;
+  return props.items;
 });
 
 const segmentInfo = computed(() => {
-  const p = table.value.pagination;
+  const p = props.pagination;
   const start = (p.page - 1) * p.page_size + 1;
   const end = p.page * p.page_size;
   return `${start}—${end > p.total ? p.total : end} of ${p.total}`;
@@ -136,7 +136,7 @@ const numbers = computed(() => {
   const side = isMobile ? 4 : 7;
   const offset = isMobile ? 1 : 3;
 
-  const p = table.value.pagination;
+  const p = props.pagination;
   if (p.pages < max) {
     return new Array(p.pages).fill(0).map((_, i) => i + 1);
   }
@@ -186,8 +186,8 @@ const sizeOptions = [
 ];
 
 const pageSizeModel = computed({
-  get: () => table.value.pagination.page_size,
-  set: (v) => table.value.setSize(v),
+  get: () => props.pagination.page_size,
+  set: (v) => emit('setSize', v),
 });
 </script>
 
