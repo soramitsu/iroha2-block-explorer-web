@@ -16,8 +16,14 @@
     </div>
 
     <BaseTable
-      :table="table"
+      :loading="table.loading.value"
+      :pagination="table.pagination"
+      :items="table.items.value"
       container-class="transactions-list-page__container"
+      @next-page="table.nextPage()"
+      @prev-page="table.prevPage()"
+      @set-page="table.setPage($event)"
+      @set-size="table.setSize($event)"
     >
       <template #row="{ item }: { item: Transaction }">
         <div class="transactions-list-page__row">

@@ -4,8 +4,14 @@
     class="blocks-list-page"
   >
     <BaseTable
-      :table="table"
+      :loading="table.loading.value"
+      :pagination="table.pagination"
+      :items="table.items.value"
       container-class="blocks-list-page__container"
+      @next-page="table.nextPage()"
+      @prev-page="table.prevPage()"
+      @set-page="table.setPage($event)"
+      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="blocks-list-page__row">

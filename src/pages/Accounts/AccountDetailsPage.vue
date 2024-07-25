@@ -132,10 +132,16 @@ const accountLockedValue = ref(543);
           </div>
 
           <BaseTable
-            :table="assetsTable"
+            :loading="assetsTable.loading.value"
+            :pagination="assetsTable.pagination"
+            :items="assetsTable.items.value"
             container-class="account-details__personal-assets-list"
             breakpoint="960"
             disabled-pagination
+            @next-page="assetsTable.nextPage()"
+            @prev-page="assetsTable.prevPage()"
+            @set-page="assetsTable.setPage($event)"
+            @set-size="assetsTable.setSize($event)"
           >
             <template #header>
               <div class="account-details__personal-assets-list-row">
@@ -233,9 +239,15 @@ const accountLockedValue = ref(543);
       </div>
 
       <BaseTable
-        :table="transactionsTable"
+        :loading="transactionsTable.loading.value"
+        :pagination="transactionsTable.pagination"
+        :items="transactionsTable.items.value"
         container-class="account-details__transactions-container"
         disabled-pagination
+        @next-page="transactionsTable.nextPage()"
+        @prev-page="transactionsTable.prevPage()"
+        @set-page="transactionsTable.setPage($event)"
+        @set-size="transactionsTable.setSize($event)"
       >
         <template #row="{ item }: { item: Transaction }">
           <div class="account-details__transactions-row">
