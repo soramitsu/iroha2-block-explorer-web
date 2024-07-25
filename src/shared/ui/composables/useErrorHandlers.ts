@@ -18,5 +18,5 @@ export const useErrorHandlers = () => {
     notifications.error(errorMessage);
   }
 
-  return { handleUnknownError } as const;
+  return { handleUnknownError };
 };
