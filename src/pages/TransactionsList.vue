@@ -61,8 +61,8 @@
 
 <script setup lang="ts">
 import { transactionModel } from '@/entities/transaction';
-import { ref } from 'vue';
-import { useWindowSize, computedEager } from '@vueuse/core';
+import { computed, ref } from 'vue';
+import { useWindowSize } from '@vueuse/core';
 import TransactionTypeFilter from '@/features/filter-transactions/TransactionTypeFilter.vue';
 import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -81,7 +81,7 @@ const tab = ref<ftm.TransactionTypeTabs>('all');
 
 const { width } = useWindowSize();
 
-const hashType = computedEager(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
 const table = useTable(transactionModel.fetchList);
 table.fetch();

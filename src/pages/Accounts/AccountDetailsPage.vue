@@ -18,7 +18,7 @@ import {
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { transactionModel } from '@/entities/transaction';
-import { computedEager, useWindowSize } from '@vueuse/core';
+import { useWindowSize } from '@vueuse/core';
 import { format } from '@/shared/lib/time';
 import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
@@ -32,7 +32,7 @@ const { handleUnknownError } = useErrorHandlers();
 const HASH_BREAKPOINT = 1200;
 const { width } = useWindowSize();
 
-const hashType = computedEager(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medium'));
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medium'));
 
 const accountId = computed(() => String(router.currentRoute.value.params['id']));
 
