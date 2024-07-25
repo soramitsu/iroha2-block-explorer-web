@@ -5,11 +5,8 @@ import { http } from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
-import { formatMoney, numberFormatter } from '@/shared/utils/money-formatters';
+import { formatMoney } from '@/shared/utils/money-formatters';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import type { TableAsset } from './types';
-import { getFakeAssets } from './utils';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import {
   type filterTransactionsModel as ftm,
   TransactionStatusFilter,
@@ -55,21 +52,13 @@ onMounted(async () => {
 });
 
 // use account's assets from payload instead or replace with fetching account's assets method
-const assetsTable = useTable(getFakeAssets);
+const assetsTable = useTable(http.fetchAssetDefinitions);
 
 const transactionStatus = ref<ftm.TransactionStatus>(null);
 const transactionType = ref<ftm.DefaultTransactionTypeTabs>('transactions');
 
 // use account's transactions from payload instead or replace with fetching account's transactions method
 const transactionsTable = useTable(transactionModel.fetchList);
-
-// replace with account's data
-const accountAlias = ref('genesis@genesis.com"');
-const accountSignature = ref('0xF9450D254A66abs3fsf334vds4341cdsas06b30Cfa9c6e7AE1B7598c7172');
-
-const accountTotalValue = ref(875123);
-const accountReservedValue = ref(1234);
-const accountLockedValue = ref(543);
 </script>
 
 <template>
@@ -93,18 +82,6 @@ const accountLockedValue = ref(543);
                 :hash="accountId"
                 copy
               />
-              <DataField
-                title="Alias"
-                :hash="accountAlias"
-                link="/"
-              />
-            </div>
-
-            <div class="account-details__personal-information-row">
-              <DataField
-                title="Signature"
-                :hash="accountSignature"
-              />
             </div>
           </div>
         </template>
@@ -117,16 +94,16 @@ const accountLockedValue = ref(543);
         <template #default>
           <div class="account-details__personal-assets-table-header">
             <DataField
-              :value="formatMoney(accountTotalValue, applicationCurrency)"
+              :value="formatMoney(875123, applicationCurrency)"
               bold
               :title="$t('accountDetails.totalValue')"
             />
             <DataField
-              :value="formatMoney(accountReservedValue, applicationCurrency)"
+              :value="formatMoney(1234, applicationCurrency)"
               :title="$t('accountDetails.reserved')"
             />
             <DataField
-              :value="formatMoney(accountLockedValue, applicationCurrency)"
+              :value="formatMoney(543, applicationCurrency)"
               :title="$t('accountDetails.locked')"
             />
           </div>
@@ -145,74 +122,43 @@ const accountLockedValue = ref(543);
           >
             <template #header>
               <div class="account-details__personal-assets-list-row">
-                <span class="h-sm">{{ $t('accountDetails.tokens') }}</span>
-                <span class="h-sm">{{ $t('accountDetails.amount') }}</span>
-                <span class="h-sm">{{ $t('accountDetails.price') }}</span>
-                <span class="h-sm">{{ $t('accountDetails.value') }}</span>
+                <span class="h-sm">{{ $t('accountDetails.name') }}</span>
+                <span class="h-sm">{{ $t('accountDetails.type') }}</span>
+                <span class="h-sm">{{ $t('accountDetails.mintable') }}</span>
               </div>
             </template>
 
-            <template #row="{ item }: { item: TableAsset }">
+            <template #row="{ item }: { item: AssetDefinition }">
               <div class="account-details__personal-assets-list-row">
-                <div class="account-details__personal-assets-list-row-asset">
-                  <div class="account-details__personal-assets-list-row-asset-logo">
-                    <component :is="item.icon" />
-                  </div>
-
-                  <div class="account-details__personal-assets-list-row-asset-name">
-                    <span class="h-sm">{{ item.symbol }}</span>
-                    <BaseLink :to="`/assets/${item.symbol}`">
-                      {{ item.name }}
-                    </BaseLink>
-                  </div>
+                <div class="account-details__personal-assets-list-row-data row-text">
+                  <span>{{ item.id.split('#')[0] }}</span>
                 </div>
 
-                <div class="account-details__personal-assets-list-row-amount row-text">
-                  <span>{{ numberFormatter(item.amount) + ' ' + item.symbol.toUpperCase() }}</span>
+                <div class="account-details__personal-assets-list-row-data row-text">
+                  <span>{{ item.value_type }}</span>
                 </div>
 
-                <div class="account-details__personal-assets-list-row-price row-text">
-                  <span>{{ formatMoney(item.price, applicationCurrency) }}</span>
-                </div>
-
-                <div class="account-details__personal-assets-list-row-value row-text">
-                  <span>{{ formatMoney(item.amount * item.price, applicationCurrency) }}</span>
+                <div class="account-details__personal-assets-list-row-data row-text">
+                  <span>{{ item.mintable }}</span>
                 </div>
               </div>
             </template>
 
-            <template #mobile-card="{ item }: { item: TableAsset }">
+            <template #mobile-card="{ item }: { item: AssetDefinition }">
               <div class="account-details__personal-assets-mobile-list-row">
-                <div class="account-details__personal-assets-mobile-list-row-asset">
-                  <span class="h-sm">{{ $t('accountDetails.tokens') }}</span>
-
-                  <div>
-                    <div class="account-details__personal-assets-mobile-list-row-asset-logo">
-                      <component :is="item.icon" />
-                    </div>
-
-                    <div class="account-details__personal-assets-mobile-list-row-asset-name">
-                      <span class="h-sm">{{ item.symbol }}</span>
-                      <BaseLink to="/">
-                        {{ item.name }}
-                      </BaseLink>
-                    </div>
-                  </div>
+                <div class="account-details__personal-assets-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('accountDetails.name') }}</span>
+                  <span>{{ item.id.split('#')[0] }}</span>
                 </div>
 
-                <div class="account-details__personal-assets-mobile-list-row-amount row-text">
-                  <span class="h-sm">{{ $t('accountDetails.amount') }}</span>
-                  <span>{{ numberFormatter(item.amount) + ' ' + item.symbol.toUpperCase() }}</span>
+                <div class="account-details__personal-assets-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('accountDetails.type') }}</span>
+                  <span>{{ item.value_type }}</span>
                 </div>
 
-                <div class="account-details__personal-assets-mobile-list-row-price row-text">
-                  <span class="h-sm">{{ $t('accountDetails.price') }}</span>
-                  <span>{{ formatMoney(item.price, applicationCurrency) }}</span>
-                </div>
-
-                <div class="account-details__personal-assets-mobile-list-row-value row-text">
-                  <span class="h-sm">{{ $t('accountDetails.value') }}</span>
-                  <span>{{ formatMoney(item.amount * item.price, applicationCurrency) }}</span>
+                <div class="account-details__personal-assets-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('accountDetails.mintable') }}</span>
+                  <span>{{ item.mintable }}</span>
                 </div>
               </div>
             </template>
@@ -308,7 +254,7 @@ const accountLockedValue = ref(543);
     flex-direction: column;
 
     &-information {
-      margin-bottom: size(4);
+      margin-bottom: size(3);
 
       &_loading {
         margin-top: size(1);
@@ -319,34 +265,7 @@ const accountLockedValue = ref(543);
 
       &-row {
         margin-top: size(2);
-        display: flex;
-        flex-direction: column;
         padding: 0 size(2) 0 size(4);
-
-        & > div:first-child {
-          margin: 0 size(4) size(2) 0;
-        }
-
-        &:nth-child(2) {
-          display: -webkit-box;
-          word-break: break-all;
-        }
-
-        @include xs() {
-          padding: 0 size(4);
-        }
-
-        @include md {
-          flex-direction: row;
-        }
-
-        @include lg {
-          flex-direction: column;
-        }
-
-        @include xl {
-          flex-direction: row;
-        }
       }
     }
 
@@ -420,47 +339,16 @@ const accountLockedValue = ref(543);
         display: grid;
 
         @include md {
-          grid-template-columns: 22vw 22vw 22vw 22vw;
+          grid-template-columns: 25vw 25vw 25vw;
         }
 
         @include lg {
-          grid-template-columns: 12vw 12vw 10vw 8vw;
+          grid-template-columns: 13vw 13vw 13vw;
         }
 
-        & > span {
-          padding: 0;
-        }
-
-        &-asset {
-          display: flex;
-
-          &-logo {
-            width: 32px;
-            height: 32px;
-            margin-right: size(2);
-
-            svg {
-              width: 100%;
-              height: 100%;
-            }
-          }
-
-          &-name {
-            display: flex;
-            flex-direction: column;
-          }
-        }
-
-        &-amount,
-        &-price,
-        &-value {
+        &-data {
           display: flex;
           align-items: center;
-
-          span {
-            text-overflow: ellipsis;
-            overflow: hidden;
-          }
         }
       }
     }
@@ -472,57 +360,20 @@ const accountLockedValue = ref(543);
         display: flex;
         flex-direction: column;
 
-        & > span {
-          padding: 0;
-        }
-
-        &-asset {
-          display: flex;
-
-          & > span {
-            display: flex;
-            align-items: center;
-            width: 25%;
-            margin-right: 10%;
-          }
-
-          & > div {
-            display: flex;
-          }
-
-          &-logo {
-            width: 32px;
-            height: 32px;
-            margin-right: size(2);
-
-            svg {
-              width: 100%;
-              height: 100%;
-            }
-          }
-
-          &-name {
-            display: flex;
-            flex-direction: column;
-          }
-        }
-
-        &-amount,
-        &-price,
-        &-value {
+        &-data {
           display: flex;
           align-items: center;
           margin-top: size(2);
 
           span:first-child {
-            width: 25%;
-            margin-right: 10%;
-          }
+            @include xxs {
+              width: 20%;
+            }
+            @include xs {
+              width: 25%;
+            }
 
-          span:nth-child(2) {
-            width: 60%;
-            text-overflow: ellipsis;
-            overflow: hidden;
+            margin-right: 10%;
           }
         }
       }
