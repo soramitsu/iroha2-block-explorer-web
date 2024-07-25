@@ -58,7 +58,6 @@ import { ref } from 'vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { transactionModel } from '@/entities/transaction';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
-
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -67,7 +66,7 @@ import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 
 const status = ref<ftm.TransactionStatus>(null);
-const transactions = ref<Transaction[]>([]);
+const transactions = ref<TransactionDto[]>([]);
 
 transactionModel.fetchList({ page: 1, page_size: 6 }).then((res) => {
   transactions.value = res.data;

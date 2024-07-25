@@ -25,7 +25,7 @@
       @set-page="table.setPage($event)"
       @set-size="table.setSize($event)"
     >
-      <template #row="{ item }: { item: Transaction }">
+      <template #row="{ item }: { item: TransactionDto }">
         <div class="transactions-list-page__row">
           <TransactionStatus
             type="tooltip"

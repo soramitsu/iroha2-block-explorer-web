@@ -1,6 +1,23 @@
 import type { Instruction } from '@iroha2/data-model';
 import { http } from '@/shared/api';
 
+export interface Transaction {
+  committed: boolean
+  block_hash: string
+  block_height: number
+  hash: string
+  payload: {
+    account_id: string
+    instructions: Instruction[]
+    creation_time: string
+    time_to_live_ms: number | null
+    nonce: null | number
+    metadata: any
+  }
+  signatures: Signature[]
+  rejection_reason?: string
+}
+
 function hexToBytes(hex: string) {
   const bytes = [];
   for (let i = 0; i < hex.length; i += 2) {
@@ -10,7 +27,7 @@ function hexToBytes(hex: string) {
   return Uint8Array.from(bytes);
 }
 
-export function mapFromDto(transaction: TransactionDto) {
+export function mapFromDto(transaction: TransactionDto): Transaction {
   const instructions: Instruction[] = [];
   // TypeError: Invalid argument type in ToBigInt operation (@iroha2_data-model.js:240)
   //   transaction.c.payload.instructions.c?.map((i: string) => Instruction.fromBuffer(hexToBytes(i))) ?? [];
@@ -18,7 +35,7 @@ export function mapFromDto(transaction: TransactionDto) {
   return {
     committed: !!transaction.rejection_reason,
     block_hash: transaction.block_hash,
-    block_height: transaction.block_height ?? 0,
+    block_height: transaction.block_height,
     hash: transaction.hash,
     signatures: transaction.signatures,
     payload: {
@@ -28,12 +45,6 @@ export function mapFromDto(transaction: TransactionDto) {
   };
 }
 
-export async function fetchList(params?: PaginationParams): Promise<Paginated<Transaction>> {
-  const res = await http.fetchTransactions(params);
-  const data = res.data.map(mapFromDto);
-
-  return {
-    pagination: res.pagination,
-    data,
-  };
+export async function fetchList(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
+  return await http.fetchTransactions(params);
 }

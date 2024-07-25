@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable camelcase */
 import type { JsonObject } from 'type-fest';
-import type { Instruction } from '@iroha2/data-model';
 
 export {};
 
@@ -148,34 +147,14 @@ declare global {
     block_hash: string
     // TODO: bloch_height is missing from backend response
     block_height: number
-    payload: TransactionDtoPayload
-    signatures: Signature[]
-    /**
-     * List of serialized {@link @iroha2/data-model#TransactionRejectionReason}
-     */
-    rejection_reason?: string
-  }
-
-  export interface TransactionDtoPayload extends TransactionDefaultPayload {
-    instructions: TransactionInstructions
-  }
-
-  // TODO: Research difference with TransactionDto and design, instructions, block_height
-  export interface Transaction {
-    hash: string
-    block_hash: string
-    block_height: number
     payload: TransactionPayload
     signatures: Signature[]
     rejection_reason?: string
   }
 
-  export interface TransactionPayload extends TransactionDefaultPayload {
-    instructions: Instruction[]
-  }
-
-  export interface TransactionDefaultPayload {
+  export interface TransactionPayload {
     account_id: string
+    instructions: TransactionInstructions
     /**
      * ISO timestamp
      */

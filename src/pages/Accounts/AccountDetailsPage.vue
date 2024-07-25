@@ -195,7 +195,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
         @set-page="transactionsTable.setPage($event)"
         @set-size="transactionsTable.setSize($event)"
       >
-        <template #row="{ item }: { item: Transaction }">
+        <template #row="{ item }: { item: TransactionDto }">
           <div class="account-details__transactions-row">
             <TransactionStatus
               type="tooltip"

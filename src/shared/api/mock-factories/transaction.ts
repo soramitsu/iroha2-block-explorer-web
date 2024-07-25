@@ -26,19 +26,14 @@ function makeTransactionContent(): TransactionDto {
   };
 }
 
-export function makeCommittedTransaction(): TransactionDto {
-  return makeTransactionContent();
-}
-
-export function makeRejectedTransaction(): TransactionDto {
-  return {
-    ...makeTransactionContent(),
-    rejection_reason: randTextRange({ min: 10, max: 100 }),
-  };
-}
-
 export function transactionList(length: number): TransactionDto[] {
   const n = length ?? randNumber({ min: 0, max: 400 });
 
-  return new Array(n).fill(null).map((_, i) => (i % 5 === 0 ? makeRejectedTransaction() : makeCommittedTransaction()));
+  return new Array(n)
+    .fill(null)
+    .map((_, i) =>
+      i % 5 === 0
+        ? { ...makeTransactionContent(), rejection_reason: randTextRange({ min: 10, max: 100 }) }
+        : makeTransactionContent()
+    );
 }
