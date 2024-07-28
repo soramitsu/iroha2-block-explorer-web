@@ -82,7 +82,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Ref } from 'vue';
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import ArrowIcon from '@/shared/ui/icons/arrow.svg';
