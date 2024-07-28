@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { useVModel, useWindowSize } from '@vueuse/core';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref, watchSyncEffect } from 'vue';
 import { applyAdaptiveOptions } from '@/shared/utils/adaptive-options';
 import type { AdaptiveOptions } from '@/shared/types';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
@@ -82,7 +82,7 @@ function handleArrowPrevClick() {
   adaptiveIndexEnd.value -= diff;
 }
 
-onMounted(() => {
+watchSyncEffect(() => {
   adaptiveIndexEnd.value = applyAdaptiveOptions(width.value, props.adaptiveOptions ?? props.items.length);
 });
 

@@ -1,6 +1,6 @@
 import type { AdaptiveOptions } from '@/shared/types';
 
-export const applyAdaptiveOptions = (width: number, options: AdaptiveOptions | number) => {
+export const applyAdaptiveOptions = (width: number, options: AdaptiveOptions | number): number => {
   if (typeof options === 'number') return options;
 
   if (width >= 1700) return options['XXL'];
