@@ -31,6 +31,7 @@ export function mapFromDto(transaction: TransactionDto): Transaction {
   const instructions: Instruction[] = [];
   // TypeError: Invalid argument type in ToBigInt operation (@iroha2_data-model.js:240)
   //   transaction.c.payload.instructions.c?.map((i: string) => Instruction.fromBuffer(hexToBytes(i))) ?? [];
+  // probably incompatibility between the version of @iroha2/data-model package and Iroha itself
 
   return {
     committed: !!transaction.rejection_reason,
