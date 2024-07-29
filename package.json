@@ -8,7 +8,7 @@
     "build:vite": "vite build",
     "preview": "vite preview",
     "lint": "eslint --ext=.js,.ts,.vue .",
-    "test": "vitest --config ./test/vitest.config.ts",
+    "test": "vitest",
     "typecheck": "vue-tsc --noEmit",
     "format:fix": "prettier-eslint '{**/*,*}.{vue,js,ts,jsx,tsx,md,css,scss,sass}'  --write"
   },
@@ -40,7 +40,7 @@
     "prettier-eslint-cli": "^8.0.1",
     "sass": "^1.54.6",
     "typescript": "^4.8.2",
-    "vite": "^3.0.9",
+    "vite": "5.2.6",
     "vite-svg-loader": "^3.4.0",
     "vitest": "^2.0.4",
     "vue-eslint-parser": "^9.4.3",
