@@ -1,4 +1,12 @@
-import type { AdaptiveOptions } from '@/shared/types';
+export interface AdaptiveOptions {
+  XXL: number
+  XL: number
+  LG: number
+  MD: number
+  SM: number
+  XS: number
+  XXS: number
+}
 
 export const applyAdaptiveOptions = (width: number, options: AdaptiveOptions | number): number => {
   if (typeof options === 'number') return options;

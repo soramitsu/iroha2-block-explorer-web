@@ -10,9 +10,9 @@
 import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
-import type { AdaptiveOptions } from '@/shared/types';
 import { computed } from 'vue';
 import { blockTransactionTypeOptions, defaultTransactionTypeOptions } from './model';
+import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
   modelValue: ftm.DefaultTransactionTypeTabs | ftm.BlockTransactionTypeTabs

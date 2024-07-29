@@ -5,7 +5,7 @@ import type { BlockTransactionTypeTabs } from '../src/features/filter-transactio
 import { blockTransactionTypeOptions } from '../src/features/filter-transactions/model';
 import { ref } from 'vue';
 import { adaptiveTransactionTypeOptions } from '../src/pages/Accounts/consts';
-import { applyAdaptiveOptions } from '../src/shared/utils/adaptive-options';
+import { applyAdaptiveOptions } from '../src/shared/ui/utils/adaptive-options';
 import { i18n } from '../src/shared/lib/localization';
 
 test('BaseTabs adaptive display correctness', async () => {

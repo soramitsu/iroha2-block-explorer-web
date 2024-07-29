@@ -31,8 +31,8 @@
 <script setup lang="ts">
 import { useVModel, useWindowSize } from '@vueuse/core';
 import { computed, ref, watchSyncEffect } from 'vue';
-import { applyAdaptiveOptions } from '@/shared/utils/adaptive-options';
-import type { AdaptiveOptions } from '@/shared/types';
+import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
+import { applyAdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 
 interface TabItem {
