@@ -12,20 +12,20 @@ import { useVModel } from '@vueuse/core';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import type { AdaptiveOptions } from '@/shared/types';
 import { computed } from 'vue';
-import { defaultTransactionTypeOptions, transactionTypeOptions } from './model';
+import { blockTransactionTypeOptions, defaultTransactionTypeOptions } from './model';
 
 interface Props {
-  modelValue: ftm.TransactionTypeTabs | ftm.DefaultTransactionTypeTabs
+  modelValue: ftm.DefaultTransactionTypeTabs | ftm.BlockTransactionTypeTabs
   defaultOptions?: boolean
   adaptiveOptions?: AdaptiveOptions
 }
 
-type Emits = (e: 'update:modelValue', value: ftm.TransactionTypeTabs) => void;
+type Emits = (e: 'update:modelValue', value: ftm.DefaultTransactionTypeTabs) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const tabs = computed(() => (props.defaultOptions ? defaultTransactionTypeOptions : transactionTypeOptions));
+const tabs = computed(() => (props.defaultOptions ? defaultTransactionTypeOptions : blockTransactionTypeOptions));
 
 const model = useVModel(props, 'modelValue', emit);
 </script>

@@ -55,7 +55,7 @@ onMounted(async () => {
 const assetsTable = useTable(http.fetchAssetDefinitions);
 
 const transactionStatus = ref<ftm.TransactionStatus>(null);
-const transactionType = ref<ftm.DefaultTransactionTypeTabs>('transactions');
+const transactionType = ref<ftm.BlockTransactionTypeTabs>('transactions');
 
 // use account's transactions from payload instead or replace with fetching account's transactions method
 const transactionsTable = useTable(transactionModel.fetchList);
@@ -176,7 +176,6 @@ const transactionsTable = useTable(transactionModel.fetchList);
           v-model="transactionType"
           class="account-details__transactions-type"
           :adaptive-options="adaptiveTransactionTypeOptions"
-          default-options
         />
         <TransactionStatusFilter
           v-model="transactionStatus"

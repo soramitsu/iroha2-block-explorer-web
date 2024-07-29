@@ -1,8 +1,8 @@
 export type TransactionStatus = 'committed' | 'rejected' | null;
-export type TransactionTypeTabs = 'all' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
-export type DefaultTransactionTypeTabs = 'transactions' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
+export type DefaultTransactionTypeTabs = 'all' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
+export type BlockTransactionTypeTabs = 'transactions' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
 
-export const defaultTransactionTypeOptions = [
+export const blockTransactionTypeOptions = [
   { label: 'transactions', value: 'transactions' },
   { label: 'transfers', value: 'transfers' },
   { label: 'mints', value: 'mints' },
@@ -11,7 +11,7 @@ export const defaultTransactionTypeOptions = [
   { label: 'revokes', value: 'revokes' },
 ];
 
-export const transactionTypeOptions = [
+export const defaultTransactionTypeOptions = [
   { label: 'all', value: 'all' },
   { label: 'transfers', value: 'transfers' },
   { label: 'mints', value: 'mints' },

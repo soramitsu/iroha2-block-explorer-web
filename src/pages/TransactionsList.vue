@@ -8,6 +8,7 @@
       <TransactionTypeFilter
         v-model="tab"
         class="transactions-list-page__tabs"
+        default-options
       />
       <TransactionStatusFilter
         v-model="status"
@@ -83,7 +84,7 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 const HASH_BREAKPOINT = 1200;
 
 const status = ref<ftm.TransactionStatus>(null);
-const tab = ref<ftm.TransactionTypeTabs>('all');
+const tab = ref<ftm.DefaultTransactionTypeTabs>('all');
 
 const { width } = useWindowSize();
 
