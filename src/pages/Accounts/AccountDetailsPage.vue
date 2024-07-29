@@ -5,7 +5,7 @@ import { http } from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
-import { formatMoney } from '@/shared/utils/money-formatters';
+import { formatMoney } from '@/shared/ui/utils/money-formatters/money-formatters';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import {
   type filterTransactionsModel as ftm,
