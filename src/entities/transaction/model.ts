@@ -9,7 +9,7 @@ export interface Transaction {
   payload: {
     account_id: string
     instructions: Instruction[]
-    creation_time: string
+    creation_time: Date
     time_to_live_ms: number | null
     nonce: null | number
     metadata: any
@@ -41,6 +41,7 @@ export function mapFromDto(transaction: TransactionDto): Transaction {
     signatures: transaction.signatures,
     payload: {
       ...transaction.payload,
+      creation_time: new Date(transaction.payload.creation_time),
       instructions,
     },
   };
