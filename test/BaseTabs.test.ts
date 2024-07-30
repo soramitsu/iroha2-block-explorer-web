@@ -1,42 +1,60 @@
-import { test, expect } from 'vitest';
-import { render } from '@testing-library/vue';
+import { expect, test } from 'vitest';
+import { ref } from 'vue';
+import { adaptiveTransactionTypeOptions } from '../src/pages/Accounts/consts';
+import { mount } from '@vue/test-utils';
 import BaseTabs from '../src/shared/ui/components/BaseTabs.vue';
 import type { BlockTransactionTypeTabs } from '../src/features/filter-transactions/model';
 import { blockTransactionTypeOptions } from '../src/features/filter-transactions/model';
-import { ref } from 'vue';
-import { adaptiveTransactionTypeOptions } from '../src/pages/Accounts/consts';
-import { applyAdaptiveOptions } from '../src/shared/ui/utils/adaptive-options';
-import { i18n } from '../src/shared/lib/localization';
 
-test('BaseTabs adaptive display correctness', async () => {
+test.each([
+  [1700, 6],
+  [1440, 5],
+  [1200, 3],
+  [960, 6],
+  [640, 3],
+  [480, 5],
+  [365, 2],
+])('BaseTabs adaptive display correctness', async (windowWidth, expectedTabs) => {
   const model = ref<BlockTransactionTypeTabs>('transactions');
 
-  // Since rerender method doesn't work as expected due to changing window width
-  // we will render & unmount our component every time
-  function renderBaseTabs(width: number) {
-    window.innerWidth = width;
+  window.innerWidth = windowWidth;
 
-    const { unmount } = render(BaseTabs, {
-      global: {
-        plugins: [i18n],
-      },
-      props: {
-        items: blockTransactionTypeOptions,
-        modelValue: model.value,
-        adaptiveOptions: adaptiveTransactionTypeOptions,
-      },
-    });
+  const wrapper = mount(BaseTabs, {
+    props: {
+      items: blockTransactionTypeOptions,
+      modelValue: model.value,
+      adaptiveOptions: adaptiveTransactionTypeOptions,
+    },
+  });
 
-    const tabs = document.getElementsByClassName('base-tabs__tab').length;
-    expect(tabs).toBe(applyAdaptiveOptions(width, adaptiveTransactionTypeOptions));
-
-    unmount();
+  function checkTabs() {
+    expect(wrapper.findAll('.base-tabs__tab').length).toBe(expectedTabs);
   }
 
-  renderBaseTabs(365);
-  renderBaseTabs(480);
-  renderBaseTabs(960);
-  renderBaseTabs(1200);
-  renderBaseTabs(1440);
-  renderBaseTabs(1700);
+  if (expectedTabs === 2) {
+    const nextButton = wrapper.find('.base-tabs__arrow');
+
+    await nextButton.trigger('click');
+    checkTabs();
+
+    await nextButton.trigger('click');
+    checkTabs();
+
+    const prevButton = wrapper.find('.base-tabs__arrow');
+    await prevButton.trigger('click');
+
+    checkTabs();
+  } else if (expectedTabs !== wrapper.vm.items.length) {
+    const nextButton = wrapper.find('.base-tabs__arrow');
+
+    await nextButton.trigger('click');
+    checkTabs();
+
+    const prevButton = wrapper.find('.base-tabs__arrow');
+
+    await prevButton.trigger('click');
+    checkTabs();
+  }
+
+  wrapper.unmount();
 });
