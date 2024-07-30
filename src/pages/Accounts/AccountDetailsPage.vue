@@ -31,7 +31,13 @@ const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medium'));
 
-const accountId = computed(() => String(router.currentRoute.value.params['id']));
+const accountId = computed(() => {
+  const id = router.currentRoute.value.params['id'];
+
+  if (typeof id === 'string') return id;
+
+  return id[0];
+});
 
 const account = ref<Account | null>(null);
 const isFetchingAccount = ref(false);
