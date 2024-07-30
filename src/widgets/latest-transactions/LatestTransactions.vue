@@ -22,7 +22,7 @@
         class="latest-transactions__row"
       >
         <TransactionStatus
-          :committed="!!transaction.rejection_reason"
+          :committed="!transaction.rejection_reason"
           type="tooltip"
           class="latest-transactions__status"
         />

@@ -31,7 +31,7 @@
           <TransactionStatus
             type="tooltip"
             class="transactions-list-page__icon"
-            :committed="!!item.rejection_reason"
+            :committed="!item.rejection_reason"
           />
 
           <div class="transactions-list-page__column">

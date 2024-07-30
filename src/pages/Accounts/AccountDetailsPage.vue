@@ -205,7 +205,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
             <TransactionStatus
               type="tooltip"
               class="account-details__transactions-row-icon"
-              :committed="!!item.rejection_reason"
+              :committed="!item.rejection_reason"
             />
 
             <div class="account-details__transactions-row-column">

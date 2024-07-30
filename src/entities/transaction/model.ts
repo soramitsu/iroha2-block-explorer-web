@@ -34,7 +34,7 @@ export function mapFromDto(transaction: TransactionDto): Transaction {
   // probably incompatibility between the version of @iroha2/data-model package and Iroha itself
 
   return {
-    committed: !!transaction.rejection_reason,
+    committed: !transaction.rejection_reason,
     block_hash: transaction.block_hash,
     block_height: transaction.block_height,
     hash: transaction.hash,
