@@ -37,7 +37,7 @@
     </div>
 
     <div
-      v-if="!disabledPagination"
+      v-if="props.pagination"
       class="base-table__pagination"
     >
       <div class="base-table__pagination-item">
@@ -91,11 +91,10 @@ import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 
 interface Props {
   loading: boolean
-  pagination: TablePagination
+  pagination?: TablePagination | null
   items: any[]
   containerClass: string
   breakpoint?: string | number
-  disabledPagination?: boolean
 }
 
 interface Emits {
@@ -107,6 +106,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   breakpoint: 1200,
+  pagination: null,
 });
 const emit = defineEmits<Emits>();
 
@@ -115,7 +115,7 @@ const { width } = useWindowSize();
 const PAGINATION_BREAKPOINT = 960;
 
 const items = computed(() => {
-  if (props.loading) {
+  if (props.loading && props.pagination) {
     return Array.from({ length: props.pagination.page_size }, () => null);
   }
 
@@ -123,6 +123,8 @@ const items = computed(() => {
 });
 
 const segmentInfo = computed(() => {
+  if (!props.pagination) return '';
+
   const p = props.pagination;
   const start = (p.page - 1) * p.page_size + 1;
   const end = p.page * p.page_size;
@@ -130,6 +132,8 @@ const segmentInfo = computed(() => {
 });
 
 const numbers = computed(() => {
+  if (!props.pagination) return [];
+
   const isMobile = width.value < PAGINATION_BREAKPOINT;
   const max = isMobile ? 6 : 10;
   const side = isMobile ? 4 : 7;
@@ -185,7 +189,7 @@ const sizeOptions = [
 ];
 
 const pageSizeModel = computed({
-  get: () => props.pagination.page_size,
+  get: () => props.pagination?.page_size ?? 0,
   set: (v) => emit('setSize', v),
 });
 </script>

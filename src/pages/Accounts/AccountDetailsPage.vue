@@ -117,11 +117,9 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
           <BaseTable
             :loading="assetsTable.loading.value"
-            :pagination="assetsTable.pagination"
             :items="assetsTable.items.value"
             container-class="account-details__personal-assets-list"
             breakpoint="960"
-            disabled-pagination
             @next-page="assetsTable.nextPage()"
             @prev-page="assetsTable.prevPage()"
             @set-page="assetsTable.setPage($event)"
@@ -192,10 +190,8 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
       <BaseTable
         :loading="transactionsTable.loading.value"
-        :pagination="transactionsTable.pagination"
         :items="transactionsTable.items.value"
         container-class="account-details__transactions-container"
-        disabled-pagination
         @next-page="transactionsTable.nextPage()"
         @prev-page="transactionsTable.prevPage()"
         @set-page="transactionsTable.setPage($event)"
