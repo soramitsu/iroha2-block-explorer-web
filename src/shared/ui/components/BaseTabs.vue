@@ -15,7 +15,7 @@
       :class="{ 'base-tabs__tab--active': item.value === model }"
       @click="model = item.value"
     >
-      {{ $t(item.label) }}
+      {{ item.label }}
     </div>
 
     <div

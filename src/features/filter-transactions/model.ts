@@ -1,21 +1,23 @@
+import { i18n } from '@/shared/lib/localization';
+
 export type TransactionStatus = 'committed' | 'rejected' | null;
 export type DefaultTransactionTypeTabs = 'all' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
 export type BlockTransactionTypeTabs = 'transactions' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
 
 export const blockTransactionTypeOptions = [
-  { label: 'transactions', value: 'transactions' },
-  { label: 'transfers', value: 'transfers' },
-  { label: 'mints', value: 'mints' },
-  { label: 'burns', value: 'burns' },
-  { label: 'grants', value: 'grants' },
-  { label: 'revokes', value: 'revokes' },
+  { label: i18n.global.t('transactions'), value: 'transactions' },
+  { label: i18n.global.t('transfers'), value: 'transfers' },
+  { label: i18n.global.t('mints'), value: 'mints' },
+  { label: i18n.global.t('burns'), value: 'burns' },
+  { label: i18n.global.t('grants'), value: 'grants' },
+  { label: i18n.global.t('revokes'), value: 'revokes' },
 ];
 
 export const defaultTransactionTypeOptions = [
-  { label: 'all', value: 'all' },
-  { label: 'transfers', value: 'transfers' },
-  { label: 'mints', value: 'mints' },
-  { label: 'burns', value: 'burns' },
-  { label: 'grants', value: 'grants' },
-  { label: 'revokes', value: 'revokes' },
+  { label: i18n.global.t('all'), value: 'all' },
+  { label: i18n.global.t('transfers'), value: 'transfers' },
+  { label: i18n.global.t('mints'), value: 'mints' },
+  { label: i18n.global.t('burns'), value: 'burns' },
+  { label: i18n.global.t('grants'), value: 'grants' },
+  { label: i18n.global.t('revokes'), value: 'revokes' },
 ];
