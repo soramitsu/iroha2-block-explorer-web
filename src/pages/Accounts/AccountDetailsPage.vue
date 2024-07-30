@@ -20,9 +20,10 @@ import { format } from '@/shared/lib/time';
 import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { applicationCurrency } from '@/shared/config';
+import { useApplicationCurrency } from '@/shared/ui/composables/useApplicationCurrency';
 
 const router = useRouter();
+const { applicationCurrency } = useApplicationCurrency();
 
 const { handleUnknownError } = useErrorHandlers();
 
