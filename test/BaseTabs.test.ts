@@ -5,6 +5,7 @@ import { mount } from '@vue/test-utils';
 import BaseTabs from '../src/shared/ui/components/BaseTabs.vue';
 import type { BlockTransactionTypeTabs } from '../src/features/filter-transactions/model';
 import { blockTransactionTypeOptions } from '../src/features/filter-transactions/model';
+import { i18n } from '../src/shared/lib/localization';
 
 test.each([
   [1700, 6],
@@ -24,6 +25,9 @@ test.each([
       items: blockTransactionTypeOptions,
       modelValue: model.value,
       adaptiveOptions: adaptiveTransactionTypeOptions,
+    },
+    global: {
+      plugins: [i18n],
     },
   });
 
