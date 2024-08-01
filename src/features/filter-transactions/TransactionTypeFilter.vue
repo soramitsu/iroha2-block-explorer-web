@@ -11,7 +11,7 @@ import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import { computed } from 'vue';
-import { getBlockTransactionTypeOptions, getDefaultTransactionTypeOptions } from './model';
+import { blockTransactionTypeOptions, defaultTransactionTypeOptions } from './model';
 import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
@@ -26,7 +26,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const tabs = computed(() =>
-  props.defaultOptions ? getDefaultTransactionTypeOptions() : getBlockTransactionTypeOptions()
+  props.defaultOptions ? defaultTransactionTypeOptions : blockTransactionTypeOptions
 );
 
 const model = useVModel(props, 'modelValue', emit);

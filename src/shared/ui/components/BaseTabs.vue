@@ -3,6 +3,7 @@
     <div
       v-if="adaptiveOptions && adaptiveIndexStart !== 0"
       class="base-tabs__arrow"
+      data-testid="prev"
       @click="handleArrowPrevClick"
     >
       <ArrowIcon />
@@ -21,6 +22,7 @@
     <div
       v-if="adaptiveOptions && adaptiveIndexEnd !== props.items.length"
       class="base-tabs__arrow"
+      data-testid="next"
       @click="handleArrowNextClick"
     >
       <ArrowIcon />
@@ -34,6 +36,9 @@ import { computed, ref, watchSyncEffect } from 'vue';
 import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import { applyAdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface TabItem {
   label: string
@@ -57,7 +62,7 @@ const adaptiveIndexStart = ref(0);
 const adaptiveIndexEnd = ref(0);
 
 const adaptiveOptions = computed(() => {
-  return props.items.slice(adaptiveIndexStart.value, adaptiveIndexEnd.value);
+  return props.items.slice(adaptiveIndexStart.value, adaptiveIndexEnd.value).map((i) => ({ ...i, label: t(i.label) }));
 });
 
 function handleArrowNextClick() {

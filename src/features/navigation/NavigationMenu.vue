@@ -1,7 +1,7 @@
 <template>
   <nav class="navigation-menu">
     <BaseButton
-      v-for="(item, i) in getMenu()"
+      v-for="(item, i) in translatedMenu"
       :key="i"
       :to="item.to"
     >
@@ -11,8 +11,14 @@
 </template>
 
 <script setup lang="ts">
-import { getMenu } from '@/shared/config';
+import { menu } from '@/shared/config';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+
+const translatedMenu = computed(() => menu.map((item) => ({ ...item, label: t(item.label) })));
 </script>
 
 <style lang="scss">

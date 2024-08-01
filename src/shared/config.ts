@@ -1,16 +1,10 @@
-import { useI18n } from 'vue-i18n';
-
-export const getMenu = () => {
-  const { t } = useI18n();
-
-  return [
-    { label: t('blocks'), to: '/blocks' },
-    { label: t('assets'), to: '/assets' },
-    { label: t('domains'), to: '/domains' },
-    { label: t('accounts'), to: '/accounts' },
-    { label: t('transactions'), to: '/transactions' },
-  ];
-};
+export const menu = [
+  { label: 'blocks', to: '/blocks' },
+  { label: 'assets', to: '/assets' },
+  { label: 'domains', to: '/domains' },
+  { label: 'accounts', to: '/accounts' },
+  { label: 'transactions', to: '/transactions' },
+];
 
 export const langOptions = [
   { label: 'EN - English', value: 'en' },
