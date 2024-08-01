@@ -6,6 +6,6 @@ test.each([
   [1234123, '1,234,123'],
   [0.22312, '0.22312'],
   [100.1, '100.1'],
-])('format number', (input, expected) => {
+])('format %f as %s', (input, expected) => {
   expect(numberFormatter(input)).toBe(expected);
 });
