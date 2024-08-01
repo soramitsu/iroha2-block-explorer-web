@@ -1,12 +1,16 @@
-import { i18n } from '@/shared/lib/localization';
+import { useI18n } from 'vue-i18n';
 
-export const menu = [
-  { label: i18n.global.t('blocks'), to: '/blocks' },
-  { label: i18n.global.t('assets'), to: '/assets' },
-  { label: i18n.global.t('domains'), to: '/domains' },
-  { label: i18n.global.t('accounts'), to: '/accounts' },
-  { label: i18n.global.t('transactions'), to: '/transactions' },
-];
+export const getMenu = () => {
+  const { t } = useI18n();
+
+  return [
+    { label: t('blocks'), to: '/blocks' },
+    { label: t('assets'), to: '/assets' },
+    { label: t('domains'), to: '/domains' },
+    { label: t('accounts'), to: '/accounts' },
+    { label: t('transactions'), to: '/transactions' },
+  ];
+};
 
 export const langOptions = [
   { label: 'EN - English', value: 'en' },

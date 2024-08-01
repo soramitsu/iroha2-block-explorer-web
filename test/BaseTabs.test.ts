@@ -4,7 +4,7 @@ import { adaptiveTransactionTypeOptions } from '../src/pages/Accounts/consts';
 import { mount } from '@vue/test-utils';
 import BaseTabs from '../src/shared/ui/components/BaseTabs.vue';
 import type { BlockTransactionTypeTabs } from '../src/features/filter-transactions/model';
-import { blockTransactionTypeOptions } from '../src/features/filter-transactions/model';
+import { getBlockTransactionTypeOptions } from '../src/features/filter-transactions/model';
 
 test.each([
   [1700, 6],
@@ -21,7 +21,7 @@ test.each([
 
   const wrapper = mount(BaseTabs, {
     props: {
-      items: blockTransactionTypeOptions,
+      items: getBlockTransactionTypeOptions(),
       modelValue: model.value,
       adaptiveOptions: adaptiveTransactionTypeOptions,
     },

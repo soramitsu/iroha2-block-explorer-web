@@ -1,7 +1,7 @@
 <template>
   <nav class="navigation-menu">
     <BaseButton
-      v-for="(item, i) in menu"
+      v-for="(item, i) in getMenu()"
       :key="i"
       :to="item.to"
     >
@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { menu } from '@/shared/config';
+import { getMenu } from '@/shared/config';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 </script>
 
