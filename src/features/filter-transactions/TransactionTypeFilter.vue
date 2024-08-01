@@ -25,9 +25,7 @@ type Emits = (e: 'update:modelValue', value: ftm.DefaultTransactionTypeTabs) => 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const tabs = computed(() =>
-  props.defaultOptions ? defaultTransactionTypeOptions : blockTransactionTypeOptions
-);
+const tabs = computed(() => (props.defaultOptions ? defaultTransactionTypeOptions : blockTransactionTypeOptions));
 
 const model = useVModel(props, 'modelValue', emit);
 </script>
