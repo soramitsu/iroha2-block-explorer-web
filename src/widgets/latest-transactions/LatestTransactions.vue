@@ -22,7 +22,7 @@
         class="latest-transactions__row"
       >
         <TransactionStatus
-          :committed="!transaction.rejection_reason"
+          :committed="transaction.committed"
           type="tooltip"
           class="latest-transactions__status"
         />
@@ -64,9 +64,10 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import type { Transaction } from '@/entities/transaction/model';
 
 const status = ref<ftm.TransactionStatus>(null);
-const transactions = ref<TransactionDto[]>([]);
+const transactions = ref<Transaction[]>([]);
 
 transactionModel.fetchList({ page: 1, page_size: 6 }).then((res) => {
   transactions.value = res.data;

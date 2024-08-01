@@ -21,6 +21,7 @@ import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { useApplicationCurrency } from '@/shared/ui/composables/useApplicationCurrency';
+import type { Transaction } from '@/entities/transaction/model';
 
 const router = useRouter();
 const { applicationCurrency } = useApplicationCurrency();
@@ -197,12 +198,12 @@ const transactionsTable = useTable(transactionModel.fetchList);
         @set-page="transactionsTable.setPage($event)"
         @set-size="transactionsTable.setSize($event)"
       >
-        <template #row="{ item }: { item: TransactionDto }">
+        <template #row="{ item }: { item: Transaction }">
           <div class="account-details__transactions-row">
             <TransactionStatus
               type="tooltip"
               class="account-details__transactions-row-icon"
-              :committed="!item.rejection_reason"
+              :committed="item.committed"
             />
 
             <div class="account-details__transactions-row-column">

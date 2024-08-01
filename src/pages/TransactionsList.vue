@@ -26,12 +26,12 @@
       @set-page="table.setPage($event)"
       @set-size="table.setSize($event)"
     >
-      <template #row="{ item }: { item: TransactionDto }">
+      <template #row="{ item }: { item: Transaction }">
         <div class="transactions-list-page__row">
           <TransactionStatus
             type="tooltip"
             class="transactions-list-page__icon"
-            :committed="!item.rejection_reason"
+            :committed="item.committed"
           />
 
           <div class="transactions-list-page__column">
@@ -80,6 +80,7 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import type { Transaction } from '@/entities/transaction/model';
 
 const HASH_BREAKPOINT = 1200;
 

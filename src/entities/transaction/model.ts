@@ -34,11 +34,8 @@ export function mapFromDto(transaction: TransactionDto): Transaction {
   // probably incompatibility between the version of @iroha2/data-model package and Iroha itself
 
   return {
+    ...transaction,
     committed: !transaction.rejection_reason,
-    block_hash: transaction.block_hash,
-    block_height: transaction.block_height,
-    hash: transaction.hash,
-    signatures: transaction.signatures,
     payload: {
       ...transaction.payload,
       creation_time: new Date(transaction.payload.creation_time),
@@ -47,6 +44,12 @@ export function mapFromDto(transaction: TransactionDto): Transaction {
   };
 }
 
-export async function fetchList(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
-  return await http.fetchTransactions(params);
+export async function fetchList(params?: PaginationParams): Promise<Paginated<Transaction>> {
+  const res = await http.fetchTransactions(params);
+  const data = res.data.map(mapFromDto);
+
+  return {
+    pagination: res.pagination,
+    data,
+  };
 }
