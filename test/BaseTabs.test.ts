@@ -4,7 +4,7 @@ import { adaptiveTransactionTypeOptions } from '../src/pages/Accounts/consts';
 import { mount } from '@vue/test-utils';
 import BaseTabs from '../src/shared/ui/components/BaseTabs.vue';
 import type { BlockTransactionTypeTabs } from '../src/features/filter-transactions/model';
-import { getBlockTransactionTypeOptions } from '../src/features/filter-transactions/model';
+import { blockTransactionTypeOptions } from '../src/features/filter-transactions/model';
 
 test.each([
   [1700, 6],
@@ -21,7 +21,7 @@ test.each([
 
   const wrapper = mount(BaseTabs, {
     props: {
-      items: getBlockTransactionTypeOptions(),
+      items: blockTransactionTypeOptions,
       modelValue: model.value,
       adaptiveOptions: adaptiveTransactionTypeOptions,
     },
@@ -32,7 +32,7 @@ test.each([
   }
 
   if (expectedTabs === 2) {
-    const nextButton = wrapper.find('.base-tabs__arrow');
+    const nextButton = wrapper.find(`[data-testid="next"]`);
 
     await nextButton.trigger('click');
     checkTabs();
@@ -40,21 +40,19 @@ test.each([
     await nextButton.trigger('click');
     checkTabs();
 
-    const prevButton = wrapper.find('.base-tabs__arrow');
+    const prevButton = wrapper.find(`[data-testid="prev"]`);
     await prevButton.trigger('click');
 
     checkTabs();
-  } else if (expectedTabs !== wrapper.vm.items.length) {
-    const nextButton = wrapper.find('.base-tabs__arrow');
+  } else if (expectedTabs !== 6) {
+    const nextButton = wrapper.find(`[data-testid="next"]`);
 
     await nextButton.trigger('click');
     checkTabs();
 
-    const prevButton = wrapper.find('.base-tabs__arrow');
+    const prevButton = wrapper.find(`[data-testid="prev"]`);
 
     await prevButton.trigger('click');
     checkTabs();
   }
-
-  wrapper.unmount();
 });
