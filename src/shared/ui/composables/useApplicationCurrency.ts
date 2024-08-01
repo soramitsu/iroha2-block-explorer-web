@@ -1,4 +1,5 @@
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
+import { useLocalStorage } from '@vueuse/core';
 
 export const APPLICATION_CURRENCY = ['USD'] as const;
 export type ApplicationCurrency = (typeof APPLICATION_CURRENCY)[number];
@@ -8,10 +9,9 @@ export const APPLICATION_CURRENCY_OPTIONS: Record<ApplicationCurrency, string> =
 } as const;
 
 export function useApplicationCurrency() {
-  const applicationCurrency = ref<ApplicationCurrency>('USD');
+  const applicationCurrency = useLocalStorage<ApplicationCurrency>('app-currency', 'USD');
 
   function setApplicationCurrency(value: ApplicationCurrency) {
-    // TODO: use local storage
     applicationCurrency.value = value;
   }
 
