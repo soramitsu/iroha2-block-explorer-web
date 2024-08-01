@@ -6,7 +6,7 @@
     @click="dropdown.toggle"
   >
     <LangIcon class="lang-dropdown__lang-icon" />
-    <span class="lang-dropdown__code">{{ value }}</span>
+    <span class="lang-dropdown__code">{{ language }}</span>
     <ArrowIcon class="lang-dropdown__arrow-icon" />
   </BaseButton>
 
@@ -15,10 +15,10 @@
     :to="`#${PORTAL_ID}`"
   >
     <BaseDropdownWindow
-      v-model:model-value="value"
+      v-model:model-value="language"
       :items="langOptions"
       size="lg"
-      @update:model-value="dropdown.toggle"
+      @update:model-value="updateLanguage"
     />
   </Teleport>
 </template>
@@ -26,15 +26,29 @@
 <script setup lang="ts">
 import LangIcon from '@/shared/ui/icons/lang.svg';
 import ArrowIcon from '@/shared/ui/icons/arrow.svg';
-import { ref } from 'vue';
-import { langOptions, PORTAL_ID } from '@/shared/config';
 import { useLangDropdown } from '@/shared/ui/composables/header-portal';
 import BaseDropdownWindow from '@/shared/ui/components/BaseDropdownWindow.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import { watch } from 'vue';
+import { langOptions, PORTAL_ID } from '@/shared/config';
+import { useApplicationLanguage } from '@/shared/ui/composables/useApplicationLanguage';
+import { useI18n } from 'vue-i18n';
 
 const dropdown = useLangDropdown();
 
-const value = ref('en');
+const { language, setApplicationCurrency } = useApplicationLanguage();
+
+function updateLanguage(value: string) {
+  if (dropdown.isOpen.value) dropdown.toggle();
+
+  setApplicationCurrency(value);
+}
+
+const { locale } = useI18n();
+
+watch(language, () => {
+  locale.value = language.value;
+});
 </script>
 
 <style lang="scss">
