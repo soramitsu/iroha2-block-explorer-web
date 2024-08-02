@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { ref } from 'vue';
-import { adaptiveTransactionTypeOptions } from '../src/pages/Accounts/consts';
 import { mount } from '@vue/test-utils';
-import BaseTabs from '../src/shared/ui/components/BaseTabs.vue';
-import type { BlockTransactionTypeTabs } from '../src/features/filter-transactions/model';
-import { blockTransactionTypeOptions } from '../src/features/filter-transactions/model';
-import { i18n } from '../src/shared/lib/localization';
+import type { BlockTransactionTypeTabs } from '@/features/filter-transactions/model';
+import { blockTransactionTypeOptions } from '@/features/filter-transactions/model';
+import { adaptiveTransactionTypeOptions } from '@/pages/Accounts/consts';
+import { i18n } from '@/shared/lib/localization';
+import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 
 test.each([
   [1700, 6],
