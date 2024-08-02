@@ -52,26 +52,35 @@ async function copy() {
 type Content = { t: 'plain', value: string } | { t: 'two-line', first: string, second: string };
 
 const content = computed<Content>(() => {
-  let value = props.hash;
+  switch (props.type) {
+    case 'short': {
+      return {
+        t: 'plain',
+        value: props.hash.slice(0, 4) + '...' + props.hash.slice(-4),
+      };
+    }
+    case 'medium': {
+      return {
+        t: 'plain',
+        value: props.hash.slice(0, 10) + '...' + props.hash.slice(-10),
+      };
+    }
+    case 'two-line': {
+      const center = Math.ceil(props.hash.length / 2);
 
-  if (props.type === 'short') {
-    value = props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
-  } else if (props.type === 'medium') {
-    value = props.hash.slice(0, 10) + '...' + props.hash.slice(-10);
-  } else if (props.type === 'two-line') {
-    const center = Math.ceil(props.hash.length / 2);
-
-    return {
-      t: 'two-line',
-      first: props.hash.slice(0, center),
-      second: props.hash.slice(-center + (props.hash.length % 2)),
-    };
+      return {
+        t: 'two-line',
+        first: props.hash.slice(0, center),
+        second: props.hash.slice(-center + (props.hash.length % 2)),
+      };
+    }
+    default: {
+      return {
+        t: 'plain',
+        value: props.hash,
+      };
+    }
   }
-
-  return {
-    t: 'plain',
-    value,
-  };
 });
 </script>
 
