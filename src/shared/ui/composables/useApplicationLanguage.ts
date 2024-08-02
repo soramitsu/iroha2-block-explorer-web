@@ -1,5 +1,5 @@
 import { useLocalStorage } from '@vueuse/core';
-import { watch } from 'vue';
+import { watchSyncEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 export const useApplicationLanguage = () => {
@@ -10,7 +10,7 @@ export const useApplicationLanguage = () => {
     language.value = value;
   }
 
-  watch(language, () => {
+  watchSyncEffect(() => {
     locale.value = language.value;
   });
 
