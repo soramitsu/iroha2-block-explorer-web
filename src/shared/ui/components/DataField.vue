@@ -19,6 +19,7 @@ const props = defineProps<{
       :hash="hash"
       :link="link"
       :copy="copy"
+      type="full"
       :class="{ 'row-text': !props.link }"
     />
     <span

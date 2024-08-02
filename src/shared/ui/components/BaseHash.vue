@@ -27,6 +27,7 @@ import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useNotifications } from '@/shared/ui/composables/notifications';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { assertUnreachable } from '@/shared/ui/utils/assert-unreachable';
 
 interface Props {
   hash: string
@@ -51,8 +52,14 @@ async function copy() {
 
 type Content = { t: 'plain', value: string } | { t: 'two-line', first: string, second: string };
 
-const content = computed<Content>(() => {
+const content = computed<Content | never>(() => {
   switch (props.type) {
+    case 'full': {
+      return {
+        t: 'plain',
+        value: props.hash,
+      };
+    }
     case 'short': {
       return {
         t: 'plain',
@@ -75,10 +82,7 @@ const content = computed<Content>(() => {
       };
     }
     default: {
-      return {
-        t: 'plain',
-        value: props.hash,
-      };
+      return assertUnreachable('Wrong type');
     }
   }
 });
