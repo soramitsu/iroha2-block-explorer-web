@@ -1,9 +1,9 @@
 export const menu = [
-  { label: 'blocks', to: '/blocks' },
-  { label: 'assets', to: '/assets' },
-  { label: 'domains', to: '/domains' },
-  { label: 'accounts', to: '/accounts' },
-  { label: 'transactions', to: '/transactions' },
+  { i18nKey: 'blocks', to: '/blocks' },
+  { i18nKey: 'assets', to: '/assets' },
+  { i18nKey: 'domains', to: '/domains' },
+  { i18nKey: 'accounts', to: '/accounts' },
+  { i18nKey: 'transactions', to: '/transactions' },
 ];
 
 export const langOptions = [

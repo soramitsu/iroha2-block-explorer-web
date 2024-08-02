@@ -34,7 +34,7 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 
 const dropdown = useMenuDropdown();
-const links = computed(() => menu.map((item) => ({ label: t(item.label), value: item.to })));
+const links = computed(() => menu.map((item) => ({ label: t(item.i18nKey), value: item.to })));
 const router = useRouter();
 const route = useRoute();
 

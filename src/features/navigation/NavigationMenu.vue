@@ -18,7 +18,7 @@ import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
-const translatedMenu = computed(() => menu.map((item) => ({ ...item, label: t(item.label) })));
+const translatedMenu = computed(() => menu.map((item) => ({ ...item, label: t(item.i18nKey) })));
 </script>
 
 <style lang="scss">
