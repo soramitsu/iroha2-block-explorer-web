@@ -1,3 +1,3 @@
-export function assertUnreachable(message: string): never {
-  throw new Error(message);
+export function assertUnreachable(x: never): never {
+  throw new Error(`Incorrect BaseHash props.type value : ${x}`);
 }

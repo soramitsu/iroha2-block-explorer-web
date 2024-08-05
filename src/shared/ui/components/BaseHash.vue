@@ -33,7 +33,7 @@ interface Props {
   hash: string
   link?: string
   copy?: boolean
-  type?: 'full' | 'medium' | 'short' | 'two-line'
+  type: 'full' | 'medium' | 'short' | 'two-line'
 }
 
 const props = defineProps<Props>();
@@ -52,7 +52,7 @@ async function copy() {
 
 type Content = { t: 'plain', value: string } | { t: 'two-line', first: string, second: string };
 
-const content = computed<Content | never>(() => {
+const content = computed<Content>(() => {
   switch (props.type) {
     case 'full': {
       return {
@@ -82,7 +82,7 @@ const content = computed<Content | never>(() => {
       };
     }
     default: {
-      return assertUnreachable('Wrong type');
+      return assertUnreachable(props.type);
     }
   }
 });
