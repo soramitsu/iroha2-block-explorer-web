@@ -37,13 +37,9 @@ import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import { applyAdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import { useI18n } from 'vue-i18n';
+import type { TabItem } from '@/features/filter-transactions/model';
 
 const { t } = useI18n();
-
-interface TabItem {
-  label: string
-  value: string
-}
 
 interface Props {
   items: TabItem[]
@@ -62,7 +58,9 @@ const adaptiveIndexStart = ref(0);
 const adaptiveIndexEnd = ref(0);
 
 const adaptiveOptions = computed(() => {
-  return props.items.slice(adaptiveIndexStart.value, adaptiveIndexEnd.value).map((i) => ({ ...i, label: t(i.label) }));
+  return props.items
+    .slice(adaptiveIndexStart.value, adaptiveIndexEnd.value)
+    .map((i) => ({ ...i, label: t(i.i18nKey) }));
 });
 
 function handleArrowNextClick() {
