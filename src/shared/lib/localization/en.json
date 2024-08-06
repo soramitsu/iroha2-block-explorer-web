@@ -68,9 +68,6 @@
     "instruction": "Instruction"
   },
   "accountDetails": {
-    "totalValue": "Total Value",
-    "reserved": "Reserved",
-    "locked": "Locked",
     "transactionID": "TxID",
     "name": "Name",
     "type": "Type",

@@ -5,7 +5,6 @@ import { http } from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
-import { formatMoney } from '@/shared/ui/utils/money-formatters';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import {
   type filterTransactionsModel as ftm,
@@ -20,12 +19,9 @@ import { format } from '@/shared/lib/time';
 import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { useApplicationCurrency } from '@/shared/ui/composables/useApplicationCurrency';
 import type { Transaction } from '@/entities/transaction/model';
 
 const router = useRouter();
-const { applicationCurrency } = useApplicationCurrency();
-
 const { handleUnknownError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 1200;
@@ -100,22 +96,6 @@ const transactionsTable = useTable(transactionModel.fetchList);
         class="account-details__personal-assets"
       >
         <template #default>
-          <div class="account-details__personal-assets-table-header">
-            <DataField
-              :value="formatMoney(875123, applicationCurrency)"
-              bold
-              :title="$t('accountDetails.totalValue')"
-            />
-            <DataField
-              :value="formatMoney(1234, applicationCurrency)"
-              :title="$t('accountDetails.reserved')"
-            />
-            <DataField
-              :value="formatMoney(543, applicationCurrency)"
-              :title="$t('accountDetails.locked')"
-            />
-          </div>
-
           <BaseTable
             :loading="assetsTable.loading.value"
             :items="assetsTable.items.value"
@@ -282,44 +262,8 @@ const transactionsTable = useTable(transactionModel.fetchList);
         margin-bottom: 0;
       }
 
-      &-table-header {
-        padding: 0 size(4);
-        display: flex;
-        justify-content: space-between;
-
-        & > div {
-          margin: size(2) 0;
-        }
-
-        @mixin secondaryFieldsLeftMargins($margin1, $margin2) {
-          & > div:nth-child(2) {
-            margin-left: size($margin1);
-          }
-          & > div:nth-child(3) {
-            margin-left: size($margin2);
-          }
-        }
-
-        @include xs {
-          justify-content: normal;
-          @include secondaryFieldsLeftMargins(4, 6);
-        }
-
-        @include sm {
-          @include secondaryFieldsLeftMargins(10, 16);
-        }
-
-        @include md {
-          @include secondaryFieldsLeftMargins(28, 18);
-        }
-
-        @include lg {
-          @include secondaryFieldsLeftMargins(12, 6);
-        }
-
-        @include xl {
-          @include secondaryFieldsLeftMargins(16, 12);
-        }
+      hr {
+        display: none;
       }
     }
 
@@ -384,6 +328,10 @@ const transactionsTable = useTable(transactionModel.fetchList);
   }
 
   &__transactions {
+    hr {
+      display: none;
+    }
+
     &-filters {
       display: flex;
 
