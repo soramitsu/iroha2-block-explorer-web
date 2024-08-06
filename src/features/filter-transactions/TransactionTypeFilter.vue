@@ -11,21 +11,21 @@ import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import { computed } from 'vue';
-import { blockTransactionTypeOptions, defaultTransactionTypeOptions } from './model';
+import { blockOptions, defaultOptions } from './model';
 import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
-  modelValue: ftm.DefaultTransactionTypeTabs | ftm.BlockTransactionTypeTabs
+  modelValue: ftm.DefaultTabs | ftm.BlockTabs
   defaultOptions?: boolean
   adaptiveOptions?: AdaptiveOptions
 }
 
-type Emits = (e: 'update:modelValue', value: ftm.DefaultTransactionTypeTabs) => void;
+type Emits = (e: 'update:modelValue', value: ftm.DefaultTabs) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const tabs = computed(() => (props.defaultOptions ? defaultTransactionTypeOptions : blockTransactionTypeOptions));
+const tabs = computed(() => (props.defaultOptions ? defaultOptions : blockOptions));
 
 const model = useVModel(props, 'modelValue', emit);
 </script>

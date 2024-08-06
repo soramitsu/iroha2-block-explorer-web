@@ -84,8 +84,8 @@ import type { Transaction } from '@/entities/transaction/model';
 
 const HASH_BREAKPOINT = 1200;
 
-const status = ref<ftm.TransactionStatus>(null);
-const tab = ref<ftm.DefaultTransactionTypeTabs>('all');
+const status = ref<ftm.Status>(null);
+const tab = ref<ftm.DefaultTabs>('all');
 
 const { width } = useWindowSize();
 

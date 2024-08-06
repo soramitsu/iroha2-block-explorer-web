@@ -66,7 +66,7 @@ import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import type { Transaction } from '@/entities/transaction/model';
 
-const status = ref<ftm.TransactionStatus>(null);
+const status = ref<ftm.Status>(null);
 const transactions = ref<Transaction[]>([]);
 
 transactionModel.fetchList({ page: 1, page_size: 6 }).then((res) => {

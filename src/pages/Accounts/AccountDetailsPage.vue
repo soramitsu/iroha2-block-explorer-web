@@ -62,8 +62,8 @@ onMounted(async () => {
 // use account's assets from payload instead or replace with fetching account's assets method
 const assetsTable = useTable(http.fetchAssetDefinitions);
 
-const transactionStatus = ref<ftm.TransactionStatus>(null);
-const transactionType = ref<ftm.BlockTransactionTypeTabs>('transactions');
+const transactionStatus = ref<ftm.Status>(null);
+const transactionType = ref<ftm.BlockTabs>('transactions');
 
 // use account's transactions from payload instead or replace with fetching account's transactions method
 const transactionsTable = useTable(transactionModel.fetchList);
