@@ -27,7 +27,6 @@ import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useNotifications } from '@/shared/ui/composables/notifications';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { assertUnreachable } from '@/shared/ui/utils/assert-unreachable';
 
 interface Props {
   hash: string
@@ -82,7 +81,8 @@ const content = computed<Content>(() => {
       };
     }
     default: {
-      return assertUnreachable(props.type);
+      const x: never = props.type;
+      throw new Error(`Unexpected props.type: ${String(x)}`);
     }
   }
 });
