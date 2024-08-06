@@ -37,12 +37,12 @@ import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import { applyAdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import { useI18n } from 'vue-i18n';
-import type { TabItem } from '@/features/filter-transactions/model';
+import type { Tab } from '@/features/filter-transactions/model';
 
 const { t } = useI18n();
 
 interface Props {
-  items: TabItem[]
+  items: Tab[]
   modelValue: string
   adaptiveOptions?: AdaptiveOptions
 }
