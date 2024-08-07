@@ -58,5 +58,7 @@ test.each([
 
     await prevButton.trigger('click');
     checkTabs();
+  } else {
+    expect(wrapper.findAll('.base-tabs__arrow').length).toBe(0);
   }
 });
