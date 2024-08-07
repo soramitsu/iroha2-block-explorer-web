@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
-import type { BlockTabs } from '@/features/filter-transactions/model';
+import type { TabBlocksScreen } from '@/features/filter-transactions/model';
 import { blockOptions } from '@/features/filter-transactions/model';
 import { adaptiveTransactionTypeOptions } from '@/pages/Accounts/consts';
 import { i18n } from '@/shared/lib/localization';
@@ -16,7 +16,7 @@ test.each([
   [480, 5],
   [365, 2],
 ])('BaseTabs adaptive display correctness', async (windowWidth, expectedTabs) => {
-  const model = ref<BlockTabs>('transactions');
+  const model = ref<TabBlocksScreen>('transactions');
 
   window.innerWidth = windowWidth;
 

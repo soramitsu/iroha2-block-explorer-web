@@ -59,7 +59,7 @@ onMounted(async () => {
 const assetsTable = useTable(http.fetchAssetDefinitions);
 
 const transactionStatus = ref<ftm.Status>(null);
-const transactionType = ref<ftm.BlockTabs>('transactions');
+const transactionType = ref<ftm.TabBlocksScreen>('transactions');
 
 // use account's transactions from payload instead or replace with fetching account's transactions method
 const transactionsTable = useTable(transactionModel.fetchList);

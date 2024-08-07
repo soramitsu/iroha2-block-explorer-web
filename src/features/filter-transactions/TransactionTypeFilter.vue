@@ -15,12 +15,12 @@ import { blockOptions, defaultOptions } from './model';
 import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
-  modelValue: ftm.DefaultTabs | ftm.BlockTabs
+  modelValue: ftm.TabDefaultScreen | ftm.TabBlocksScreen
   defaultOptions?: boolean
   adaptiveOptions?: AdaptiveOptions
 }
 
-type Emits = (e: 'update:modelValue', value: ftm.DefaultTabs) => void;
+type Emits = (e: 'update:modelValue', value: ftm.TabDefaultScreen) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();

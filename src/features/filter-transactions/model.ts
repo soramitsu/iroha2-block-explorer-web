@@ -1,13 +1,13 @@
 export type Status = 'committed' | 'rejected' | null;
-export type DefaultTabs = 'all' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
-export type BlockTabs = 'transactions' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
+export type TabDefaultScreen = 'all' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
+export type TabBlocksScreen = 'transactions' | 'transfers' | 'mints' | 'burns' | 'grants' | 'revokes';
 
-export interface Tab<T = string> {
+export interface TabItem<T = string> {
   i18nKey: string
   value: T
 }
 
-export const blockOptions: Tab<BlockTabs>[] = [
+export const blockOptions: TabItem<TabBlocksScreen>[] = [
   { i18nKey: 'transactions', value: 'transactions' },
   { i18nKey: 'transfers', value: 'transfers' },
   { i18nKey: 'mints', value: 'mints' },
@@ -16,7 +16,7 @@ export const blockOptions: Tab<BlockTabs>[] = [
   { i18nKey: 'revokes', value: 'revokes' },
 ];
 
-export const defaultOptions: Tab<DefaultTabs>[] = [
+export const defaultOptions: TabItem<TabDefaultScreen>[] = [
   { i18nKey: 'all', value: 'all' },
   { i18nKey: 'transfers', value: 'transfers' },
   { i18nKey: 'mints', value: 'mints' },
