@@ -17,6 +17,11 @@ const routes = [
     component: () => import('@/pages/Assets/AssetsList.vue'),
   },
   {
+    path: '/assets/:id',
+    name: 'asset-details',
+    component: () => import('@/pages/Assets/AssetDetailsPage.vue'),
+  },
+  {
     path: '/accounts',
     name: 'accounts-list',
     component: () => import('@/pages/Accounts/AccountsList.vue'),
