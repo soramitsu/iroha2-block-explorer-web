@@ -26,7 +26,7 @@
       @set-page="table.setPage($event)"
       @set-size="table.setSize($event)"
     >
-      <template #row="{ item }: { item: Transaction }">
+      <template #row="{ item }">
         <div class="transactions-list-page__row">
           <TransactionStatus
             type="tooltip"
@@ -80,7 +80,6 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import type { Transaction } from '@/entities/transaction/model';
 
 const HASH_BREAKPOINT = 1200;
 

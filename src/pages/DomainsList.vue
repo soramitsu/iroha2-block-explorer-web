@@ -22,7 +22,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Domain }">
+      <template #row="{ item }">
         <div class="domains-list-page__row">
           <BaseLink
             :to="`/domains/${item.id}`"
@@ -43,7 +43,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Domain }">
+      <template #mobile-card="{ item }">
         <div class="domains-list-page__mobile-card">
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>

@@ -22,7 +22,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Block }">
+      <template #row="{ item }">
         <div class="blocks-list-page__row">
           <BaseLink
             :to="`/blocks/${item.height}`"
@@ -49,7 +49,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Block }">
+      <template #mobile-card="{ item }">
         <div class="blocks-list-page__mobile-card">
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('height') }}</span>

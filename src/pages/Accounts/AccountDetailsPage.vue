@@ -19,7 +19,6 @@ import { format } from '@/shared/lib/time';
 import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import type { Transaction } from '@/entities/transaction/model';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -114,7 +113,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
               </div>
             </template>
 
-            <template #row="{ item }: { item: AssetDefinition }">
+            <template #row="{ item }">
               <div class="account-details__personal-assets-list-row">
                 <div class="account-details__personal-assets-list-row-data row-text">
                   <span>{{ item.id.split('#')[0] }}</span>
@@ -130,7 +129,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
               </div>
             </template>
 
-            <template #mobile-card="{ item }: { item: AssetDefinition }">
+            <template #mobile-card="{ item }">
               <div class="account-details__personal-assets-mobile-list-row">
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('accountDetails.name') }}</span>
@@ -178,7 +177,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
         @set-page="transactionsTable.setPage($event)"
         @set-size="transactionsTable.setSize($event)"
       >
-        <template #row="{ item }: { item: Transaction }">
+        <template #row="{ item }">
           <div class="account-details__transactions-row">
             <TransactionStatus
               type="tooltip"
