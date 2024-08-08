@@ -75,8 +75,10 @@
     "transactionID": "TxID",
     "accountInformation": "Account information",
     "accountAssets": "Account assets",
-    "accountTransactions": "Account transactions",
-    "cryptos": "Cryptos",
-    "nfts": "NFTs"
+    "accountTransactions": "Account transactions"
+  },
+  "assetDetails": {
+    "assetMetrics": "Asset metrics",
+    "assetTransactions": "Asset transactions"
   }
 }
