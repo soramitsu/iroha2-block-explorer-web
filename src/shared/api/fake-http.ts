@@ -32,6 +32,10 @@ export async function fetchAssetDefinitions(params: PaginationParams): Promise<P
   return pagination(assetDefinitions, params);
 }
 
+export async function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
+  return assetDefinitions[0];
+}
+
 export async function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
   return pagination(domains, params);
 }
