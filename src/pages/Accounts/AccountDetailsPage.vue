@@ -107,9 +107,9 @@ const transactionsTable = useTable(transactionModel.fetchList);
           >
             <template #header>
               <div class="account-details__personal-assets-list-row">
-                <span class="h-sm">{{ $t('accountDetails.name') }}</span>
-                <span class="h-sm">{{ $t('accountDetails.type') }}</span>
-                <span class="h-sm">{{ $t('accountDetails.mintable') }}</span>
+                <span class="h-sm">{{ $t('name') }}</span>
+                <span class="h-sm">{{ $t('type') }}</span>
+                <span class="h-sm">{{ $t('mintable') }}</span>
               </div>
             </template>
 
@@ -132,17 +132,17 @@ const transactionsTable = useTable(transactionModel.fetchList);
             <template #mobile-card="{ item }">
               <div class="account-details__personal-assets-mobile-list-row">
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('accountDetails.name') }}</span>
+                  <span class="h-sm">{{ $t('name') }}</span>
                   <span>{{ item.id.split('#')[0] }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('accountDetails.type') }}</span>
+                  <span class="h-sm">{{ $t('type') }}</span>
                   <span>{{ item.value_type }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('accountDetails.mintable') }}</span>
+                  <span class="h-sm">{{ $t('mintable') }}</span>
                   <span>{{ item.mintable }}</span>
                 </div>
               </div>
