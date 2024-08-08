@@ -81,7 +81,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import ArrowIcon from '@/shared/ui/icons/arrow.svg';
@@ -92,7 +92,7 @@ import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 interface Props {
   loading: boolean
   pagination?: TablePagination | null
-  items: any[]
+  items: T[]
   containerClass: string
   breakpoint?: string | number
 }
