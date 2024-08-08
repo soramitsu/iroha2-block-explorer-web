@@ -103,7 +103,6 @@ interface Emits {
   (e: 'setPage', value: number): void
   (e: 'setSize', value: number): void
 }
-
 const props = withDefaults(defineProps<Props>(), {
   breakpoint: 1200,
   pagination: null,
@@ -115,8 +114,8 @@ const { width } = useWindowSize();
 const PAGINATION_BREAKPOINT = 960;
 
 const items = computed(() => {
-  if (props.loading && props.pagination) {
-    return Array.from({ length: props.pagination.page_size }, () => null);
+  if (props.loading) {
+    return Array.from({ length: props.pagination?.page_size ?? 10 }, () => null);
   }
 
   return props.items;
