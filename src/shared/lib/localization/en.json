@@ -66,5 +66,16 @@
     "mostValue": "Most Value",
     "wasm": "WebAssembly",
     "instruction": "Instruction"
+  },
+  "accountDetails": {
+    "transactionID": "TxID",
+    "name": "Name",
+    "type": "Type",
+    "mintable": "Mintable",
+    "accountInformation": "Account information",
+    "accountAssets": "Account assets",
+    "accountTransactions": "Account transactions",
+    "cryptos": "Cryptos",
+    "nfts": "NFTs"
   }
 }

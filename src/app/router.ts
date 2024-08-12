@@ -19,7 +19,12 @@ const routes = [
   {
     path: '/accounts',
     name: 'accounts-list',
-    component: () => import('@/pages/AccountsList.vue'),
+    component: () => import('@/pages/Accounts/AccountsList.vue'),
+  },
+  {
+    path: '/accounts/:id',
+    name: 'account-details',
+    component: () => import('@/pages/Accounts/AccountDetailsPage.vue'),
   },
   {
     path: '/domains',

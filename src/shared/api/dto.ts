@@ -139,24 +139,17 @@ declare global {
     view_change_proofs: string[]
   }
 
-  export type TransactionDto = Tagged<'Committed', CommittedTransaction> | Tagged<'Rejected', RejectedTransaction>;
-
-  export interface CommittedTransaction {
+  export interface TransactionDto {
     /**
      * WIP zeroed
      */
-    block_hash: string
-    block_height: number
     hash: string
+    block_hash: string
+    // TODO: bloch_height is missing from backend response
+    block_height: number
     payload: TransactionPayload
     signatures: Signature[]
-  }
-
-  export interface RejectedTransaction extends CommittedTransaction {
-    /**
-     * List of serialized {@link @iroha2/data-model#TransactionRejectionReason}
-     */
-    rejection_reason: string
+    rejection_reason?: string
   }
 
   export interface TransactionPayload {
@@ -166,8 +159,8 @@ declare global {
      * ISO timestamp
      */
     creation_time: string
-    time_to_live_ms: number
-    nonce: null | number
+    time_to_live_ms: number | null
+    nonce: number | null
     metadata: any
   }
 

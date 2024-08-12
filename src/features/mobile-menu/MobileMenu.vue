@@ -29,9 +29,12 @@ import { useMenuDropdown } from '@/shared/ui/composables/header-portal';
 import { menu, PORTAL_ID } from '@/shared/config';
 import BaseDropdownWindow from '@/shared/ui/components/BaseDropdownWindow.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const dropdown = useMenuDropdown();
-const links = computed(() => menu.map((item) => ({ label: item.label, value: item.to })));
+const links = computed(() => menu.map((item) => ({ label: t(item.i18nKey), value: item.to })));
 const router = useRouter();
 const route = useRoute();
 

@@ -58,13 +58,13 @@ import { ref } from 'vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { transactionModel } from '@/entities/transaction';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
-
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import type { Transaction } from '@/entities/transaction/model';
 
 const status = ref<ftm.Status>(null);
 const transactions = ref<Transaction[]>([]);

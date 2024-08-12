@@ -5,10 +5,12 @@
       :to="props.link"
       monospace
     >
-      {{ content }}
+      <span v-if="content.t === 'two-line'">{{ content.first }}<br>{{ content.second }}</span>
+      <span v-else>{{ content.value }}</span>
     </BaseLink>
 
-    <span v-else>{{ content }}</span>
+    <span v-else-if="content.t === 'two-line'">{{ content.first }}<br>{{ content.second }}</span>
+    <span v-else>{{ content.value }}</span>
 
     <CopyIcon
       v-if="props.copy"
@@ -19,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue';
+import { computed } from 'vue';
 import CopyIcon from '@/shared/ui/icons/copy.svg';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
@@ -30,7 +32,7 @@ interface Props {
   hash: string
   link?: string
   copy?: boolean
-  type?: 'full' | 'medium' | 'short' | 'two-line'
+  type: 'full' | 'medium' | 'short' | 'two-line'
 }
 
 const props = defineProps<Props>();
@@ -47,20 +49,41 @@ async function copy() {
   }
 }
 
-const content = computed(() => {
+type Content = { t: 'plain', value: string } | { t: 'two-line', first: string, second: string };
+
+const content = computed<Content>(() => {
   switch (props.type) {
-    case 'short':
-      return props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
-    case 'medium':
-      return props.hash.slice(0, 10) + '...' + props.hash.slice(-10);
-    case 'two-line':
-      // eslint-disable-next-line no-case-declarations
+    case 'full': {
+      return {
+        t: 'plain',
+        value: props.hash,
+      };
+    }
+    case 'short': {
+      return {
+        t: 'plain',
+        value: props.hash.slice(0, 4) + '...' + props.hash.slice(-4),
+      };
+    }
+    case 'medium': {
+      return {
+        t: 'plain',
+        value: props.hash.slice(0, 10) + '...' + props.hash.slice(-10),
+      };
+    }
+    case 'two-line': {
       const center = Math.ceil(props.hash.length / 2);
 
-      return [props.hash.slice(0, center), h('br'), props.hash.slice(-center + (props.hash.length % 2))];
-
-    default:
-      return props.hash;
+      return {
+        t: 'two-line',
+        first: props.hash.slice(0, center),
+        second: props.hash.slice(-center + (props.hash.length % 2)),
+      };
+    }
+    default: {
+      const x: never = props.type;
+      throw new Error(`Unexpected props.type: ${String(x)}`);
+    }
   }
 });
 </script>

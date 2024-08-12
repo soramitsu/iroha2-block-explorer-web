@@ -1,7 +1,6 @@
 <template>
   <div
     class="base-dropdown"
-    role="select"
     :style="`width: ${props.width}`"
   >
     <div class="base-dropdown__container">

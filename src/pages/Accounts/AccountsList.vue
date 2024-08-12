@@ -21,7 +21,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Account }">
+      <template #row="{ item }">
         <div class="accounts-list-page__row">
           <BaseHash
             :hash="item.id"
@@ -41,7 +41,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Account }">
+      <template #mobile-card="{ item }">
         <div class="accounts-list-page__mobile-card">
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('address') }}</span>

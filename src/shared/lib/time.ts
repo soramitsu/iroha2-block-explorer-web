@@ -21,7 +21,7 @@ function formatXX(item: number) {
   return item < 10 ? '0' + item : item;
 }
 
-export function format(timestamp: string) {
+export function format(timestamp: Date | string) {
   const date = new Date(timestamp);
   const day = formatXX(date.getDate());
   const month = formatXX(date.getMonth() + 1);

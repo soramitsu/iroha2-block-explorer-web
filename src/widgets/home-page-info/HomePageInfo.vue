@@ -32,6 +32,7 @@ import { SearchField } from '@/features/search';
 
 const { t } = useI18n({ useScope: 'global' });
 
+// TODO: Research what stats should be displayed due to different layouts
 const info = [
   { value: '5.599s', label: t('homePage.averageBlockTime') },
   { value: '654', label: t('homePage.validators') },

@@ -4,9 +4,11 @@
     class="transactions-list-page"
   >
     <div class="content-row">
+      <!--      TODO: Add styles for type filter on mobile-->
       <TransactionTypeFilter
         v-model="tab"
         class="transactions-list-page__tabs"
+        default-options
       />
       <TransactionStatusFilter
         v-model="status"
@@ -24,7 +26,7 @@
       @set-page="table.setPage($event)"
       @set-size="table.setSize($event)"
     >
-      <template #row="{ item }: { item: Transaction }">
+      <template #row="{ item }">
         <div class="transactions-list-page__row">
           <TransactionStatus
             type="tooltip"
@@ -66,8 +68,8 @@
 
 <script setup lang="ts">
 import { transactionModel } from '@/entities/transaction';
-import { ref } from 'vue';
-import { useWindowSize, computedEager } from '@vueuse/core';
+import { computed, ref } from 'vue';
+import { useWindowSize } from '@vueuse/core';
 import TransactionTypeFilter from '@/features/filter-transactions/TransactionTypeFilter.vue';
 import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -77,15 +79,16 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const HASH_BREAKPOINT = 1200;
 
 const status = ref<ftm.Status>(null);
-const tab = ref<ftm.Tab>('all');
+const tab = ref<ftm.TabDefaultScreen>('all');
 
 const { width } = useWindowSize();
 
-const hashType = computedEager(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
 const table = useTable(transactionModel.fetchList);
 table.fetch();

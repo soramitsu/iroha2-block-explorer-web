@@ -2,33 +2,30 @@
   <BaseTabs
     v-model="model"
     :items="tabs"
+    :adaptive-options="props.adaptiveOptions"
   />
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
 import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
+import { computed } from 'vue';
+import { blockOptions, defaultOptions } from './model';
+import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
-  modelValue: ftm.Tab
+  modelValue: ftm.TabDefaultScreen | ftm.TabBlocksScreen
+  defaultOptions?: boolean
+  adaptiveOptions?: AdaptiveOptions
 }
 
-type Emits = (e: 'update:modelValue', value: ftm.Tab) => void;
+type Emits = (e: 'update:modelValue', value: ftm.TabDefaultScreen) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-const { t } = useI18n({ useScope: 'global' });
 
-const tabs = [
-  { label: t('all'), value: 'all' },
-  { label: t('transfers'), value: 'transfers' },
-  { label: t('mints'), value: 'mints' },
-  { label: t('burns'), value: 'burns' },
-  { label: t('grants'), value: 'grants' },
-  { label: t('revokes'), value: 'revokes' },
-];
+const tabs = computed(() => (props.defaultOptions ? defaultOptions : blockOptions));
 
 const model = useVModel(props, 'modelValue', emit);
 </script>

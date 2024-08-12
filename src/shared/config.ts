@@ -1,11 +1,9 @@
-import { i18n } from '@/shared/lib/localization';
-
 export const menu = [
-  { label: i18n.global.t('blocks'), to: '/blocks' },
-  { label: i18n.global.t('assets'), to: '/assets' },
-  { label: i18n.global.t('domains'), to: '/domains' },
-  { label: i18n.global.t('accounts'), to: '/accounts' },
-  { label: i18n.global.t('transactions'), to: '/transactions' },
+  { i18nKey: 'blocks', to: '/blocks' },
+  { i18nKey: 'assets', to: '/assets' },
+  { i18nKey: 'domains', to: '/domains' },
+  { i18nKey: 'accounts', to: '/accounts' },
+  { i18nKey: 'transactions', to: '/transactions' },
 ];
 
 export const langOptions = [

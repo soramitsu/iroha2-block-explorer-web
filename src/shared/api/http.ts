@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta.env.VITE_API_URL as string) ?? '/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
 
 async function get<T>(path: string, params?: PaginationParams): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);

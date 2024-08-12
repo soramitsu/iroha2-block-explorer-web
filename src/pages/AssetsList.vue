@@ -21,7 +21,7 @@
         </div>
       </template>
 
-      <template #row="{ item }: { item: Asset }">
+      <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
             :to="`/assets/${item.definition_id}`"
@@ -48,7 +48,7 @@
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Asset }">
+      <template #mobile-card="{ item }">
         <div class="assets-list-page__mobile-card">
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
