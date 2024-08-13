@@ -1,10 +1,10 @@
 {
   "search": "Search",
-  "latestTransactions": "Latest Transactions",
-  "timespan": "Timespan",
-  "latestBlocks": "Latest Blocks",
+  "widgets": {
+    "latestTransactions": "Latest Transactions",
+    "latestBlocks": "Latest Blocks"
+  },
   "viewAll": "view all",
-  "token": "Token",
   "accounts": "Accounts",
   "blocks": "Blocks",
   "domains": "Domains",
@@ -12,19 +12,15 @@
   "rowsPerPage": "Rows per page",
   "address": "Address",
   "cryptos": "Cryptos",
-  "balance": "Balance",
   "name": "Name",
   "type": "Type",
   "mintable": "Mintable",
-  "mostRecent": "Most recent",
-  "mostValue": "Most value",
   "assets": "Assets",
   "nfts": "NFTs",
   "height": "Height",
   "age": "Age",
   "hash": "Hash",
   "transaction": "Transaction",
-  "validators": "Validators",
   "pageNotFound": "Page not found",
   "transactions": "Transactions",
   "all": "All",
@@ -58,18 +54,11 @@
   "time": {
     "min": "{0} min",
     "sec": "{0} sec",
-    "ago": "ago",
-    "today": "Today",
-    "week": "Week",
-    "month": "Month",
-    "year": "Year",
-    "allTime": "All time"
+    "ago": "ago"
   },
   "sort": {
     "mostRecent": "Most Recent",
-    "mostValue": "Most Value",
-    "wasm": "WebAssembly",
-    "instruction": "Instruction"
+    "mostValue": "Most Value"
   },
   "accountDetails": {
     "transactionID": "TxID",

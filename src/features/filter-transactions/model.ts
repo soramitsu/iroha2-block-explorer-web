@@ -9,8 +9,8 @@ export interface TabItem<T = string> {
 }
 
 export const sortOptions: TabItem<TabAssetsSort>[] = [
-  { i18nKey: 'mostRecent', value: 'recent' },
-  { i18nKey: 'mostValue', value: 'value' },
+  { i18nKey: 'sort.mostRecent', value: 'recent' },
+  { i18nKey: 'sort.mostValue', value: 'value' },
 ];
 
 export const blockOptions: TabItem<TabBlocksScreen>[] = [
