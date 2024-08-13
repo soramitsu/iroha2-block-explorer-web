@@ -54,13 +54,15 @@ onMounted(async () => {
   }
 });
 
-// use account's assets from payload instead or replace with fetching account's assets method
+// TODO: use assets from account payload instead
+//  or replace with fetching account's assets method
 const assetsTable = useTable(http.fetchAssetDefinitions);
 
 const transactionStatus = ref<ftm.Status>(null);
 const transactionType = ref<ftm.TabBlocksScreen>('transactions');
 
-// use account's transactions from payload instead or replace with fetching account's transactions method
+// TODO: use transactions from account payload instead
+//  or replace with fetching specific transactions method
 const transactionsTable = useTable(transactionModel.fetchList);
 </script>
 

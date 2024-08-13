@@ -55,7 +55,8 @@ onMounted(async () => {
 const transactionStatus = ref<ftm.Status>(null);
 const transactionType = ref<TabAssetsSort>('recent');
 
-// use asset's transactions from payload instead or replace with fetching asset's transactions method
+// TODO: use transactions from asset definition payload instead
+//  or replace with fetching specific transactions
 const transactionsTable = useTable(transactionModel.fetchList);
 </script>
 
