@@ -115,7 +115,7 @@ const PAGINATION_BREAKPOINT = 960;
 
 const items = computed(() => {
   if (props.loading) {
-    return Array.from({ length: props.pagination?.page_size ?? 10 }, () => null);
+    return [null];
   }
 
   return props.items;
