@@ -26,15 +26,21 @@ const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
-const assetId = computed(() => {
-  const assetName = router.currentRoute.value.params['id'];
+const assetName = computed(() => {
+  const name = router.currentRoute.value.params['id'];
 
+  if (typeof name === 'string') return name;
+
+  return name[0];
+});
+
+const assetDomain = computed(() => {
   const domain = router.currentRoute.value.hash;
 
-  if (typeof assetName === 'string') return assetName + domain;
-
-  return assetName[0] + domain;
+  return domain.split('#')[1];
 });
+
+const assetId = computed(() => assetName.value + '#' + assetDomain.value);
 
 const asset = ref<AssetDefinition | null>(null);
 const isFetchingAsset = ref(false);
@@ -73,24 +79,24 @@ const transactionsTable = useTable(transactionModel.fetchList);
         >
           <BaseLoading />
         </div>
-        <div v-else>
+        <div v-else-if="asset">
           <div class="asset-details__metrics-data">
             <DataField
               :title="$t('name')"
-              :value="asset?.id.split('#')[0]"
+              :value="assetName"
             />
             <DataField
               :title="$t('type')"
-              :value="asset?.value_type"
+              :value="asset.value_type"
             />
             <DataField
               :title="$t('mintable')"
-              :value="asset?.mintable"
+              :value="asset.mintable"
             />
             <DataField
               :title="$t('domain')"
-              :hash="asset?.id.split('#')[1]"
-              :link="`/domains/${asset?.id.split('#')[1]}`"
+              :hash="assetDomain"
+              :link="`/domains/${assetDomain}`"
             />
           </div>
         </div>
