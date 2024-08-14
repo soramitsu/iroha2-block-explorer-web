@@ -67,7 +67,10 @@
   "accountDetails": {
     "accountInformation": "Account information",
     "accountAssets": "Account assets",
-    "accountTransactions": "Account transactions"
+    "accountTransactions": "Account transactions",
+    "definitionId": "Definition ID",
+    "accountId": "Account ID",
+    "value": "Value"
   },
   "assetDetails": {
     "assetMetrics": "Asset metrics",

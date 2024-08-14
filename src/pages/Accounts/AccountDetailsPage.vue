@@ -50,7 +50,7 @@ onMounted(async () => {
 });
 
 // FIXME: this loads ALL assets, not only related to the account
-const assetsTable = useTable(http.fetchAssetDefinitions);
+const assetsTable = useTable(http.fetchAssets);
 
 const transactionStatus = ref<ftm.Status>(null);
 
@@ -101,24 +101,24 @@ const transactionsTable = useTable(transactionModel.fetchList);
           >
             <template #header>
               <div class="account-details__personal-assets-list-row">
-                <span class="h-sm">{{ $t('name') }}</span>
-                <span class="h-sm">{{ $t('type') }}</span>
-                <span class="h-sm">{{ $t('mintable') }}</span>
+                <span class="h-sm">{{ $t('accountDetails.value') }}</span>
+                <span class="h-sm">{{ $t('accountDetails.accountId') }}</span>
+                <span class="h-sm">{{ $t('accountDetails.definitionId') }}</span>
               </div>
             </template>
 
             <template #row="{ item }">
               <div class="account-details__personal-assets-list-row">
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.id.split('#')[0] }}</span>
+                  <span>{{ item.account_id }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.value_type }}</span>
+                  <span>{{ item.definition_id }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.mintable }}</span>
+                  <span>{{ item.value.t }}</span>
                 </div>
               </div>
             </template>
@@ -126,18 +126,18 @@ const transactionsTable = useTable(transactionModel.fetchList);
             <template #mobile-card="{ item }">
               <div class="account-details__personal-assets-mobile-list-row">
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('name') }}</span>
-                  <span>{{ item.id.split('#')[0] }}</span>
+                  <span class="h-sm">{{ $t('accountDetails.accountId') }}</span>
+                  <span>{{ item.account_id }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('type') }}</span>
-                  <span>{{ item.value_type }}</span>
+                  <span class="h-sm">{{ $t('accountDetails.definitionId') }}</span>
+                  <span>{{ item.definition_id }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('mintable') }}</span>
-                  <span>{{ item.mintable }}</span>
+                  <span class="h-sm">{{ $t('accountDetails.value') }}</span>
+                  <span>{{ item.value.t }}</span>
                 </div>
               </div>
             </template>
@@ -274,16 +274,21 @@ const transactionsTable = useTable(transactionModel.fetchList);
         display: grid;
 
         @include md {
-          grid-template-columns: 25vw 25vw 25vw;
+          grid-template-columns: 15vw 35vw 36vw;
         }
 
         @include lg {
-          grid-template-columns: 13vw 13vw 13vw;
+          grid-template-columns: 8vw 17vw 16vw;
         }
 
         &-data {
           display: flex;
           align-items: center;
+
+          span {
+            text-overflow: ellipsis;
+            overflow: hidden;
+          }
         }
       }
     }
@@ -291,7 +296,12 @@ const transactionsTable = useTable(transactionModel.fetchList);
     &-assets-mobile-list {
       &-row {
         padding: size(2) size(4);
-        width: 100%;
+        @include xxs {
+          width: 100%;
+        }
+        @include sm {
+          width: 45vw;
+        }
         display: flex;
         flex-direction: column;
 
@@ -300,15 +310,42 @@ const transactionsTable = useTable(transactionModel.fetchList);
           align-items: center;
           margin-top: size(2);
 
+          @include xxs {
+            width: 78vw;
+          }
+          @include xs {
+            width: 75vw;
+          }
+
+          @include sm {
+            width: 100%;
+          }
+
           span:first-child {
             @include xxs {
-              width: 20%;
+              width: size(14);
             }
             @include xs {
-              width: 25%;
+              width: size(14);
+            }
+            @include sm {
+              width: 20vw;
+            }
+          }
+
+          span:nth-child(2) {
+            @include xxs {
+              width: 58vw;
+            }
+            @include xs {
+              width: 52vw;
+            }
+            @include sm {
+              width: 28vw;
             }
 
-            margin-right: 10%;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
         }
       }
