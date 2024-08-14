@@ -1,6 +1,6 @@
 <template>
   <BaseContentBlock
-    :title="$t('transactions')"
+    :title="$t('transactions.transactions')"
     class="transactions-list-page"
   >
     <div class="content-row">
@@ -30,7 +30,7 @@
 
           <div class="transactions-list-page__column">
             <div class="transactions-list-page__label">
-              TxID
+              {{ $t('transactions.transactionID') }}
             </div>
 
             <BaseHash
@@ -47,7 +47,7 @@
 
           <div class="transactions-list-page__column">
             <div class="transactions-list-page__label">
-              Block
+              {{ $t('transactions.block') }}
             </div>
 
             <BaseLink :to="'/blocks/' + item.block_height">

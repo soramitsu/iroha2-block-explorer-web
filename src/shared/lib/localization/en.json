@@ -22,18 +22,8 @@
   "hash": "Hash",
   "transaction": "Transaction",
   "pageNotFound": "Page not found",
-  "transactions": "Transactions",
-  "all": "All",
-  "transfers": "Transfers",
-  "mints": "Mints",
-  "burns": "Burns",
-  "grants": "Grants",
-  "revokes": "Revokes",
-  "transfer": "Transfer",
   "tokens": "Tokens",
   "total": "Total",
-  "committed": "Committed",
-  "rejected": "Rejected",
   "clipboard": {
     "success": "Copied to clipboard",
     "error": "Impossible copy to clipboard"
@@ -60,8 +50,21 @@
     "mostRecent": "Most Recent",
     "mostValue": "Most Value"
   },
-  "accountDetails": {
+  "transactions": {
+    "transactions": "Transactions",
     "transactionID": "TxID",
+    "committed": "Committed",
+    "rejected": "Rejected",
+    "all": "All",
+    "transfers": "Transfers",
+    "mints": "Mints",
+    "burns": "Burns",
+    "grants": "Grants",
+    "revokes": "Revokes",
+    "transfer": "Transfer",
+    "block": "Block"
+  },
+  "accountDetails": {
     "accountInformation": "Account information",
     "accountAssets": "Account assets",
     "accountTransactions": "Account transactions"

@@ -176,7 +176,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
             <div class="account-details__transactions-row-column">
               <div class="account-details__transactions-row-column-label row-text">
-                {{ $t('accountDetails.transactionID') }}
+                {{ $t('transactions.transactionID') }}
               </div>
 
               <BaseHash

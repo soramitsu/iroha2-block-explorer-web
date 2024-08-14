@@ -76,7 +76,7 @@
           </div>
 
           <div class="blocks-list-page__mobile-row">
-            <span class="h-sm blocks-list-page__mobile-label">{{ $t('transactions') }}</span>
+            <span class="h-sm blocks-list-page__mobile-label">{{ $t('transactions.transactions') }}</span>
             <span class="row-text">{{ item.transactions }}</span>
           </div>
         </div>

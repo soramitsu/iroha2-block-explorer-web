@@ -14,19 +14,19 @@ export const sortOptions: TabItem<TabAssetsSort>[] = [
 ];
 
 export const blockOptions: TabItem<TabBlocksScreen>[] = [
-  { i18nKey: 'transactions', value: 'transactions' },
-  { i18nKey: 'transfers', value: 'transfers' },
-  { i18nKey: 'mints', value: 'mints' },
-  { i18nKey: 'burns', value: 'burns' },
-  { i18nKey: 'grants', value: 'grants' },
-  { i18nKey: 'revokes', value: 'revokes' },
+  { i18nKey: 'transactions.transactions', value: 'transactions' },
+  { i18nKey: 'transactions.transfers', value: 'transfers' },
+  { i18nKey: 'transactions.mints', value: 'mints' },
+  { i18nKey: 'transactions.burns', value: 'burns' },
+  { i18nKey: 'transactions.grants', value: 'grants' },
+  { i18nKey: 'transactions.revokes', value: 'revokes' },
 ];
 
 export const defaultOptions: TabItem<TabDefaultScreen>[] = [
-  { i18nKey: 'all', value: 'all' },
-  { i18nKey: 'transfers', value: 'transfers' },
-  { i18nKey: 'mints', value: 'mints' },
-  { i18nKey: 'burns', value: 'burns' },
-  { i18nKey: 'grants', value: 'grants' },
-  { i18nKey: 'revokes', value: 'revokes' },
+  { i18nKey: 'transactions.all', value: 'all' },
+  { i18nKey: 'transactions.transfers', value: 'transfers' },
+  { i18nKey: 'transactions.mints', value: 'mints' },
+  { i18nKey: 'transactions.burns', value: 'burns' },
+  { i18nKey: 'transactions.grants', value: 'grants' },
+  { i18nKey: 'transactions.revokes', value: 'revokes' },
 ];
