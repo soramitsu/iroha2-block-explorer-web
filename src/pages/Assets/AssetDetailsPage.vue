@@ -10,11 +10,8 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { transactionModel } from '@/entities/transaction';
 import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
-import type { TabAssetsSort } from '@/features/filter-transactions/model';
-import { sortOptions } from '@/features/filter-transactions/model';
 import { elapsed } from '@/shared/lib/time';
 
 const router = useRouter();
@@ -59,10 +56,8 @@ onMounted(async () => {
 });
 
 const transactionStatus = ref<ftm.Status>(null);
-const transactionType = ref<TabAssetsSort>('recent');
 
-// TODO: use transactions from asset definition payload instead
-//  or replace with fetching specific transactions
+// FIXME: this loads ALL transactions, not only related to the asset
 const transactionsTable = useTable(transactionModel.fetchList);
 </script>
 
@@ -107,11 +102,6 @@ const transactionsTable = useTable(transactionModel.fetchList);
       class="asset-details__transactions"
     >
       <div class="asset-details__transactions-filters content-row">
-        <BaseTabs
-          v-model="transactionType"
-          :items="sortOptions"
-          class="asset-details__transactions-filters-type"
-        />
         <TransactionStatusFilter
           v-model="transactionStatus"
           class="asset-details__transactions-filters-status"
@@ -193,17 +183,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
     &-filters {
       border-top: 0;
       display: flex;
-      gap: size(1);
-
-      @include xxs {
-        padding: size(2) 0;
-        flex-direction: column;
-      }
-
-      @include sm {
-        padding: 0 size(4);
-        flex-direction: row;
-      }
+      padding: size(2) size(4);
     }
 
     &-container {

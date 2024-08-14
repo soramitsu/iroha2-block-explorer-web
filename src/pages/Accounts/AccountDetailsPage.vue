@@ -6,17 +6,12 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import {
-  type filterTransactionsModel as ftm,
-  TransactionStatusFilter,
-  TransactionTypeFilter,
-} from '@/features/filter-transactions';
+import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { transactionModel } from '@/entities/transaction';
 import { useWindowSize } from '@vueuse/core';
 import { format } from '@/shared/lib/time';
-import { adaptiveTransactionTypeOptions } from './consts';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 
@@ -54,15 +49,12 @@ onMounted(async () => {
   }
 });
 
-// TODO: use assets from account payload instead
-//  or replace with fetching account's assets method
+// FIXME: this loads ALL assets, not only related to the account
 const assetsTable = useTable(http.fetchAssetDefinitions);
 
 const transactionStatus = ref<ftm.Status>(null);
-const transactionType = ref<ftm.TabBlocksScreen>('transactions');
 
-// TODO: use transactions from account payload instead
-//  or replace with fetching specific transactions method
+// FIXME: this loads ALL transactions, not only related to the account
 const transactionsTable = useTable(transactionModel.fetchList);
 </script>
 
@@ -159,11 +151,6 @@ const transactionsTable = useTable(transactionModel.fetchList);
       class="account-details__transactions"
     >
       <div class="account-details__transactions-filters content-row">
-        <TransactionTypeFilter
-          v-model="transactionType"
-          class="account-details__transactions-type"
-          :adaptive-options="adaptiveTransactionTypeOptions"
-        />
         <TransactionStatusFilter
           v-model="transactionStatus"
           class="account-details__transactions-status"
@@ -335,26 +322,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
     &-filters {
       display: flex;
-
-      @include xxs {
-        padding: size(1) 0;
-        flex-direction: column;
-      }
-
-      @include sm {
-        padding: 0 size(3);
-        flex-direction: row;
-      }
-    }
-
-    &-type {
-      @include xxs {
-        margin-bottom: size(1);
-      }
-
-      @include sm {
-        margin-bottom: 0;
-      }
+      padding: size(2) size(4);
     }
 
     &-container {
@@ -363,6 +331,14 @@ const transactionsTable = useTable(transactionModel.fetchList);
       .content-row {
         height: 48px;
         min-height: 0;
+
+        @include xxs {
+          padding: 0 size(2);
+        }
+
+        @include xs {
+          padding: 0 size(4);
+        }
       }
     }
 
