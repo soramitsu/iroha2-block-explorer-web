@@ -1,3 +1,5 @@
+import { makeBlock } from '@/shared/api/mock-factories/block';
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
 
 async function get<T>(path: string, params?: PaginationParams): Promise<T> {
@@ -57,6 +59,11 @@ export function fetchRoles(): Promise<Role[]> {
 
 export function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
   return get('/blocks', params);
+}
+
+export async function fetchBlock(height: number): Promise<BlockShallow> {
+  // FIXME: replace with real api
+  return makeBlock();
 }
 
 export function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {

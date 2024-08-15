@@ -68,6 +68,10 @@ export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<
   return pagination(blocks, params);
 }
 
+export async function fetchBlock(height: number): Promise<BlockShallow> {
+  return blocks[0];
+}
+
 export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
   return pagination(transactions, params);
 }
