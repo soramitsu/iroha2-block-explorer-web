@@ -3,7 +3,7 @@ export const menu = [
   { i18nKey: 'assets', to: '/assets' },
   { i18nKey: 'domains', to: '/domains' },
   { i18nKey: 'accounts', to: '/accounts' },
-  { i18nKey: 'transactions', to: '/transactions' },
+  { i18nKey: 'transactions.transactions', to: '/transactions' },
 ];
 
 export const langOptions = [

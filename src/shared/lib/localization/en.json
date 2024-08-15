@@ -1,10 +1,10 @@
 {
   "search": "Search",
-  "latestTransactions": "Latest Transactions",
-  "timespan": "Timespan",
-  "latestBlocks": "Latest Blocks",
+  "widgets": {
+    "latestTransactions": "Latest Transactions",
+    "latestBlocks": "Latest Blocks"
+  },
   "viewAll": "view all",
-  "token": "Token",
   "accounts": "Accounts",
   "blocks": "Blocks",
   "domains": "Domains",
@@ -12,28 +12,18 @@
   "rowsPerPage": "Rows per page",
   "address": "Address",
   "cryptos": "Cryptos",
-  "balance": "Balance",
   "name": "Name",
+  "type": "Type",
+  "mintable": "Mintable",
   "assets": "Assets",
   "nfts": "NFTs",
   "height": "Height",
   "age": "Age",
   "hash": "Hash",
   "transaction": "Transaction",
-  "validators": "Validators",
   "pageNotFound": "Page not found",
-  "transactions": "Transactions",
-  "all": "All",
-  "transfers": "Transfers",
-  "mints": "Mints",
-  "burns": "Burns",
-  "grants": "Grants",
-  "revokes": "Revokes",
-  "transfer": "Transfer",
   "tokens": "Tokens",
   "total": "Total",
-  "committed": "Committed",
-  "rejected": "Rejected",
   "clipboard": {
     "success": "Copied to clipboard",
     "error": "Impossible copy to clipboard"
@@ -54,28 +44,36 @@
   "time": {
     "min": "{0} min",
     "sec": "{0} sec",
-    "ago": "ago",
-    "today": "Today",
-    "week": "Week",
-    "month": "Month",
-    "year": "Year",
-    "allTime": "All time"
+    "ago": "ago"
   },
   "sort": {
     "mostRecent": "Most Recent",
-    "mostValue": "Most Value",
-    "wasm": "WebAssembly",
-    "instruction": "Instruction"
+    "mostValue": "Most Value"
+  },
+  "transactions": {
+    "transactions": "Transactions",
+    "transactionID": "TxID",
+    "committed": "Committed",
+    "rejected": "Rejected",
+    "all": "All",
+    "transfers": "Transfers",
+    "mints": "Mints",
+    "burns": "Burns",
+    "grants": "Grants",
+    "revokes": "Revokes",
+    "transfer": "Transfer",
+    "block": "Block"
   },
   "accountDetails": {
-    "transactionID": "TxID",
-    "name": "Name",
-    "type": "Type",
-    "mintable": "Mintable",
     "accountInformation": "Account information",
     "accountAssets": "Account assets",
     "accountTransactions": "Account transactions",
-    "cryptos": "Cryptos",
-    "nfts": "NFTs"
+    "definitionId": "Definition ID",
+    "accountId": "Account ID",
+    "value": "Value"
+  },
+  "assetDetails": {
+    "assetMetrics": "Asset metrics",
+    "assetTransactions": "Asset transactions"
   }
 }

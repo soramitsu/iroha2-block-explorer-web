@@ -1,4 +1,4 @@
-function getAllElapsedMinutes(dateString: string) {
+function getAllElapsedMinutes(dateString: string | Date) {
   const date = new Date(dateString);
   const diff = Date.now() - date.getTime();
 

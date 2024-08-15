@@ -1,6 +1,6 @@
 <template>
   <BaseContentBlock
-    :title="$t('latestBlocks')"
+    :title="$t('widgets.latestBlocks')"
     class="latest-blocks"
   >
     <template #header-action>

@@ -22,8 +22,8 @@ const emit = defineEmits<Emits>();
 const { t } = useI18n({ useScope: 'global' });
 
 const items = [
-  { label: t('committed'), value: 'committed' },
-  { label: t('rejected'), value: 'rejected' },
+  { label: t('transactions.committed'), value: 'committed' },
+  { label: t('transactions.rejected'), value: 'rejected' },
 ];
 
 const model = useVModel(props, 'modelValue', emit);

@@ -1,15 +1,9 @@
 <template>
   <BaseContentBlock
-    :title="$t('transactions')"
+    :title="$t('transactions.transactions')"
     class="transactions-list-page"
   >
     <div class="content-row">
-      <!--      TODO: Add styles for type filter on mobile-->
-      <TransactionTypeFilter
-        v-model="tab"
-        class="transactions-list-page__tabs"
-        default-options
-      />
       <TransactionStatusFilter
         v-model="status"
         class="transactions-list-page__status"
@@ -36,7 +30,7 @@
 
           <div class="transactions-list-page__column">
             <div class="transactions-list-page__label">
-              TxID
+              {{ $t('transactions.transactionID') }}
             </div>
 
             <BaseHash
@@ -53,7 +47,7 @@
 
           <div class="transactions-list-page__column">
             <div class="transactions-list-page__label">
-              Block
+              {{ $t('transactions.block') }}
             </div>
 
             <BaseLink :to="'/blocks/' + item.block_height">
@@ -70,7 +64,6 @@
 import { transactionModel } from '@/entities/transaction';
 import { computed, ref } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-import TransactionTypeFilter from '@/features/filter-transactions/TransactionTypeFilter.vue';
 import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { format } from '@/shared/lib/time';
@@ -84,7 +77,6 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 const HASH_BREAKPOINT = 1200;
 
 const status = ref<ftm.Status>(null);
-const tab = ref<ftm.TabDefaultScreen>('all');
 
 const { width } = useWindowSize();
 
@@ -98,6 +90,10 @@ table.fetch();
 @import '@/shared/ui/styles/main';
 
 .transactions-list-page {
+  .content-row {
+    padding: 0 size(4);
+  }
+
   &__row {
     width: 100%;
     display: grid;
@@ -121,22 +117,6 @@ table.fetch();
 
   &__container {
     display: grid;
-  }
-
-  &__tabs {
-    display: none; // need a mobile version of the component
-
-    @include md {
-      display: grid;
-    }
-  }
-
-  &__status {
-    margin: 0 auto;
-
-    @include xs {
-      margin: 0 0 0 auto;
-    }
   }
 
   &__icon {

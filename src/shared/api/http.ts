@@ -31,6 +31,10 @@ export function fetchAssetDefinitions(params: PaginationParams): Promise<Paginat
   return get('/asset-definitions', params);
 }
 
+export function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
+  return get(`/asset-definitions/${id}`);
+}
+
 export function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
   return get('/domains', params);
 }

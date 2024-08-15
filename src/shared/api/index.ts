@@ -4,6 +4,7 @@ interface HTTPService {
   fetchAssets: (params?: PaginationParams) => Promise<Paginated<Asset>>
   fetchAsset: (definition_id: string, account_id: string) => Promise<Asset>
   fetchAssetDefinitions: (params: PaginationParams) => Promise<Paginated<AssetDefinition>>
+  fetchAssetDefinition: (id: string) => Promise<AssetDefinition>
   fetchDomains: (params?: PaginationParams) => Promise<Paginated<Domain>>
   fetchDomain: (id: string) => Promise<Domain>
   fetchPeers: () => Promise<Peer[]>
