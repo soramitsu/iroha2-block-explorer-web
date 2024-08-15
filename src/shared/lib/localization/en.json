@@ -75,5 +75,13 @@
   "assetDetails": {
     "assetMetrics": "Asset metrics",
     "assetTransactions": "Asset transactions"
+  },
+  "blockDetails": {
+    "block": "Block #{0}",
+    "tableBlockHash": "Block Hash",
+    "tableDate": "Date",
+    "tableTransactions": "Transactions",
+    "tableRejectedTransactions": "Rejected transactions",
+    "blockTransactions": "Block Transactions"
   }
 }
