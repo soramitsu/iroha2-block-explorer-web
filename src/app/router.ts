@@ -9,8 +9,14 @@ const routes = [
   {
     path: '/blocks',
     name: 'blocks-list',
-    component: () => import('@/pages/BlocksList.vue'),
+    component: () => import('@/pages/Blocks/BlocksList.vue'),
   },
+  {
+    path: '/blocks/:height',
+    name: 'blocks-details',
+    component: () => import('@/pages/Blocks/BlockDetailsPage.vue'),
+  },
+
   {
     path: '/assets',
     name: 'assets-list',
