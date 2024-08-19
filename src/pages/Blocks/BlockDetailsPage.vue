@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { http } from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useTable } from '@/shared/lib/table';
@@ -15,6 +15,7 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import { format } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import invariant from 'ts-invariant';
+import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 
 const router = useRouter();
 
@@ -37,19 +38,42 @@ const blockHeightOrHash = computed(() => {
 
 const block = ref<Block | null>(null);
 const isFetchingBlock = ref(false);
+const isNextBlockExists = ref(false);
+const isPreviousBlockExists = ref(true);
 
-onMounted(async () => {
-  try {
-    isFetchingBlock.value = true;
-    block.value = await http.fetchBlock(blockHeightOrHash.value);
+watch(
+  () => blockHeightOrHash.value,
+  async () => {
+    try {
+      isFetchingBlock.value = true;
+      block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-    await transactionsTable.fetch();
-  } catch (e) {
-    handleUnknownError(e);
-  } finally {
-    isFetchingBlock.value = false;
-  }
-});
+      const { blocks } = await http.fetchPeerStatus();
+
+      isNextBlockExists.value = block.value.height < Number(blocks);
+      isPreviousBlockExists.value = block.value.height > 1;
+
+      await transactionsTable.fetch();
+    } catch (e) {
+      handleUnknownError(e);
+    } finally {
+      isFetchingBlock.value = false;
+    }
+  },
+  { immediate: true }
+);
+
+function handlePreviousBlockClick() {
+  if (!block.value) return;
+
+  router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height - 1 } });
+}
+
+function handleNextBlockClick() {
+  if (!block.value) return;
+
+  router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
+}
 
 const transactionStatus = ref<ftm.Status>(null);
 
@@ -59,10 +83,22 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
 <template>
   <div class="block-details">
-    <BaseContentBlock
-      :title="$t('blockDetails.block', [blockHeightOrHash])"
-      class="block-details__metrics"
-    >
+    <BaseContentBlock class="block-details__metrics">
+      <template #header>
+        <div class="block-details__metrics-header">
+          <ArrowIcon
+            v-if="isPreviousBlockExists"
+            data-testid="prevBlock"
+            @click="handlePreviousBlockClick"
+          />
+          {{ $t('blockDetails.block', [blockHeightOrHash]) }}
+          <ArrowIcon
+            v-if="isNextBlockExists"
+            data-testid="nextBlock"
+            @click="handleNextBlockClick"
+          />
+        </div>
+      </template>
       <template #default>
         <div
           v-if="isFetchingBlock"
@@ -179,6 +215,32 @@ const transactionsTable = useTable(transactionModel.fetchList);
   }
 
   &__metrics {
+    .base-content-block__header {
+      &:has([data-testid='prevBlock']) {
+        padding: 0 size(3);
+      }
+
+      padding: 0 size(4);
+    }
+
+    &-header {
+      display: flex;
+      align-items: center;
+      color: theme-color('content-primary');
+      @include tpg-h2();
+
+      svg {
+        cursor: pointer;
+        height: size(4);
+        width: size(4);
+        fill: theme-color('content-quaternary');
+      }
+
+      [data-testid='nextBlock'] {
+        transform: scaleX(-1);
+      }
+    }
+
     &_loading {
       margin-top: size(1);
       display: flex;
