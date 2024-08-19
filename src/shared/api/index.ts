@@ -1,3 +1,5 @@
+import { Transaction } from '@/entities/transaction/model';
+
 interface HTTPService {
   fetchAccounts: (params?: PaginationParams) => Promise<Paginated<Account>>
   fetchAccount: (id: string) => Promise<Account>
@@ -11,7 +13,7 @@ interface HTTPService {
   fetchPeerStatus: () => Promise<Status>
   fetchRoles: () => Promise<Role[]>
   fetchBlocks: (params?: PaginationParams) => Promise<Paginated<BlockShallow>>
-  fetchBlock: (height: number) => Promise<BlockShallow>
+  fetchBlock: (heightOrHash: number | string) => Promise<Block>
   fetchTransactions: (params?: PaginationParams) => Promise<Paginated<TransactionDto>>
 }
 
