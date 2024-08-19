@@ -12,7 +12,7 @@ const routes = [
     component: () => import('@/pages/Blocks/BlocksList.vue'),
   },
   {
-    path: '/blocks/:height',
+    path: '/blocks/:heightOrHash',
     name: 'blocks-details',
     component: () => import('@/pages/Blocks/BlockDetailsPage.vue'),
   },

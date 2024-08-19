@@ -14,31 +14,34 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { format } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
+import invariant from 'ts-invariant';
 
 const router = useRouter();
 
 const { handleUnknownError } = useErrorHandlers();
 
 const TRANSACTION_HASH_BREAKPOINT = 1200;
+const METRICS_HASH_BREAKPOINT = 1440;
 const { width } = useWindowSize();
 
 const transactionHashType = computed(() => (width.value < TRANSACTION_HASH_BREAKPOINT ? 'short' : 'full'));
+const metricsHashType = computed(() => (width.value < METRICS_HASH_BREAKPOINT ? 'medium' : 'full'));
 
-const blockHeight = computed(() => {
-  const height = router.currentRoute.value.params['height'];
+const blockHeightOrHash = computed(() => {
+  const heightOrHash = router.currentRoute.value.params['heightOrHash'];
 
-  if (typeof height === 'string') return height;
+  invariant(typeof heightOrHash === 'string', 'Expected string or number');
 
-  return height[0];
+  return Number(heightOrHash) || heightOrHash;
 });
 
-const block = ref<BlockShallow | null>(null);
+const block = ref<Block | null>(null);
 const isFetchingBlock = ref(false);
 
 onMounted(async () => {
   try {
     isFetchingBlock.value = true;
-    block.value = await http.fetchBlock(Number(blockHeight.value));
+    block.value = await http.fetchBlock(blockHeightOrHash.value);
 
     await transactionsTable.fetch();
   } catch (e) {
@@ -57,7 +60,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
 <template>
   <div class="block-details">
     <BaseContentBlock
-      :title="$t('blockDetails.block', [blockHeight])"
+      :title="$t('blockDetails.block', [blockHeightOrHash])"
       class="block-details__metrics"
     >
       <template #default>
@@ -69,24 +72,37 @@ const transactionsTable = useTable(transactionModel.fetchList);
         </div>
         <div v-else-if="block">
           <div class="block-details__metrics-data">
-            <DataField
-              :title="$t('blockDetails.tableBlockHash')"
-              :hash="block.block_hash"
-              type="medium"
-              copy
-            />
-            <DataField
-              :title="$t('blockDetails.tableDate')"
-              :value="format(block.timestamp)"
-            />
-            <DataField
-              :title="$t('blockDetails.tableTransactions')"
-              :value="block.transactions"
-            />
-            <DataField
-              :title="$t('blockDetails.tableRejectedTransactions')"
-              :value="block.rejected_transactions"
-            />
+            <div class="block-details__metrics-data-row">
+              <DataField
+                :title="$t('blockDetails.blockHash')"
+                :hash="block.block_hash"
+                :type="metricsHashType"
+                copy
+              />
+
+              <DataField
+                :title="$t('blockDetails.transactionsMerkleRootHash')"
+                :hash="block.parent_block_hash"
+                :type="metricsHashType"
+                copy
+              />
+            </div>
+
+            <div class="block-details__metrics-data-row">
+              <DataField
+                :title="$t('blockDetails.parentBlockHash')"
+                :hash="block.parent_block_hash"
+                :type="metricsHashType"
+                copy
+              />
+
+              <DataField
+                :title="$t('blockDetails.rejectedTransactionsMerkleRootHash')"
+                :hash="block.rejected_transactions_merkle_root_hash"
+                :type="metricsHashType"
+                copy
+              />
+            </div>
           </div>
         </div>
       </template>
@@ -176,12 +192,13 @@ const transactionsTable = useTable(transactionModel.fetchList);
       gap: size(2);
       grid-template-columns: 1fr;
 
-      @include sm {
+      @include md {
         grid-template-columns: 1fr 1fr;
       }
 
-      @include lg {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+      &-row {
+        display: grid;
+        gap: size(2);
       }
 
       .base-link {
