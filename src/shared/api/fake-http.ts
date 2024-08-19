@@ -9,7 +9,6 @@ const accounts = list(makeAccount, 200);
 const assets = list(makeAsset, 200);
 const assetDefinitions = list(makeAssetDefinition, 100);
 const domains = list(makeDomain, 50);
-const blocks = list(makeBlock, 50);
 const blockShallows = list(makeBlockShallow, 50);
 const transactions = transactionList(400);
 

@@ -1,5 +1,3 @@
-import { Transaction } from '@/entities/transaction/model';
-
 interface HTTPService {
   fetchAccounts: (params?: PaginationParams) => Promise<Paginated<Account>>
   fetchAccount: (id: string) => Promise<Account>
