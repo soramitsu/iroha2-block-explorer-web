@@ -85,7 +85,10 @@ const transactionsTable = useTable(transactionModel.fetchList);
   <div class="block-details">
     <BaseContentBlock class="block-details__metrics">
       <template #header>
-        <div class="block-details__metrics-header">
+        <div
+          v-if="!isFetchingBlock"
+          class="block-details__metrics-header"
+        >
           <ArrowIcon
             v-if="isPreviousBlockExists"
             data-testid="prevBlock"
