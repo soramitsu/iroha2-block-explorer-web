@@ -23,7 +23,7 @@
 import { useSlots } from 'vue';
 
 interface Props {
-  title: string
+  title?: string
 }
 
 const props = defineProps<Props>();
