@@ -78,10 +78,10 @@
   },
   "blockDetails": {
     "block": "Block #{0}",
-    "tableBlockHash": "Block Hash",
-    "tableDate": "Date",
-    "tableTransactions": "Transactions",
-    "tableRejectedTransactions": "Rejected transactions",
-    "blockTransactions": "Block Transactions"
+    "blockHash": "Block Hash",
+    "blockTransactions": "Block Transactions",
+    "transactionsMerkleRootHash": "Transaction's Merkle Root Hash",
+    "parentBlockHash": "Parent block hash",
+    "rejectedTransactionsMerkleRootHash": "Rejected Transaction's Merkle Root Hash"
   }
 }
