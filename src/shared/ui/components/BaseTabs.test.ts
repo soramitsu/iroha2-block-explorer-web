@@ -3,9 +3,9 @@ import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import type { TabBlocksScreen } from '@/features/filter-transactions/model';
 import { blockOptions } from '@/features/filter-transactions/model';
-import { adaptiveTransactionTypeOptions } from '@/pages/Accounts/consts';
 import { i18n } from '@/shared/lib/localization';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
+import { adaptiveTransactionTypeOptions } from '@/features/filter-transactions/adaptive-options';
 
 test.each([
   [1700, 6],
