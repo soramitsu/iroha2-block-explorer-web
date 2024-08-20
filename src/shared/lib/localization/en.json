@@ -75,5 +75,13 @@
   "assetDetails": {
     "assetMetrics": "Asset metrics",
     "assetTransactions": "Asset transactions"
+  },
+  "blockDetails": {
+    "block": "Block #{0}",
+    "blockHash": "Block Hash",
+    "blockTransactions": "Block Transactions",
+    "transactionsMerkleRootHash": "Transaction's Merkle Root Hash",
+    "parentBlockHash": "Parent block hash",
+    "rejectedTransactionsMerkleRootHash": "Rejected Transaction's Merkle Root Hash"
   }
 }

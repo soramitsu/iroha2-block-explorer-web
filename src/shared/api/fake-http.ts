@@ -1,6 +1,6 @@
 import { makeAccount } from './mock-factories/account';
 import { makeAsset, makeAssetDefinition } from './mock-factories/asset';
-import { makeBlock } from './mock-factories/block';
+import { makeBlock, makeBlockShallow } from './mock-factories/block';
 import { makeDomain } from './mock-factories/domain';
 import { transactionList } from './mock-factories/transaction';
 import { list, pagination } from './mock-factories/utils';
@@ -9,7 +9,7 @@ const accounts = list(makeAccount, 200);
 const assets = list(makeAsset, 200);
 const assetDefinitions = list(makeAssetDefinition, 100);
 const domains = list(makeDomain, 50);
-const blocks = list(makeBlock, 50);
+const blockShallows = list(makeBlockShallow, 50);
 const transactions = transactionList(400);
 
 export async function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
@@ -65,7 +65,11 @@ export async function fetchRoles(): Promise<Role[]> {
 }
 
 export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
-  return pagination(blocks, params);
+  return pagination(blockShallows, params);
+}
+
+export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
+  return makeBlock(heightOrHash);
 }
 
 export async function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {

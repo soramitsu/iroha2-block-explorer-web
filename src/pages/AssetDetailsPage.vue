@@ -13,6 +13,7 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
+import invariant from 'tiny-invariant';
 
 const router = useRouter();
 
@@ -26,9 +27,9 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'ful
 const assetName = computed(() => {
   const name = router.currentRoute.value.params['id'];
 
-  if (typeof name === 'string') return name;
+  invariant(typeof name === 'string', 'Expected string');
 
-  return name[0];
+  return name;
 });
 
 const assetDomain = computed(() => {

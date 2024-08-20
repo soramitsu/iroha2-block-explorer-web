@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 
-const props = defineProps<{
-  title: string
-  value?: string | number
-  bold?: boolean
-  hash?: string
-  link?: string
-  copy?: boolean
-}>();
+const props = withDefaults(
+  defineProps<{
+    title: string
+    value?: string | number
+    bold?: boolean
+    hash?: string
+    link?: string
+    copy?: boolean
+    type?: 'full' | 'medium' | 'short' | 'two-line'
+  }>(),
+  {
+    type: 'full',
+  }
+);
 </script>
 
 <template>
@@ -19,7 +25,7 @@ const props = defineProps<{
       :hash="hash"
       :link="link"
       :copy="copy"
-      type="full"
+      :type="type"
       :class="{ 'row-text': !props.link }"
     />
     <span

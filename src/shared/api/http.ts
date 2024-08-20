@@ -59,6 +59,10 @@ export function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockS
   return get('/blocks', params);
 }
 
+export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
+  return get(`/blocks/${heightOrHash}`);
+}
+
 export function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
   return get('/transactions', params);
 }

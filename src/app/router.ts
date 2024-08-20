@@ -12,24 +12,30 @@ const routes = [
     component: () => import('@/pages/BlocksList.vue'),
   },
   {
+    path: '/blocks/:heightOrHash',
+    name: 'blocks-details',
+    component: () => import('@/pages/BlockDetailsPage.vue'),
+  },
+
+  {
     path: '/assets',
     name: 'assets-list',
-    component: () => import('@/pages/Assets/AssetsList.vue'),
+    component: () => import('@/pages/AssetsList.vue'),
   },
   {
     path: '/assets/:id',
     name: 'asset-details',
-    component: () => import('@/pages/Assets/AssetDetailsPage.vue'),
+    component: () => import('@/pages/AssetDetailsPage.vue'),
   },
   {
     path: '/accounts',
     name: 'accounts-list',
-    component: () => import('@/pages/Accounts/AccountsList.vue'),
+    component: () => import('@/pages/AccountsList.vue'),
   },
   {
     path: '/accounts/:id',
     name: 'account-details',
-    component: () => import('@/pages/Accounts/AccountDetailsPage.vue'),
+    component: () => import('@/pages/AccountDetailsPage.vue'),
   },
   {
     path: '/domains',

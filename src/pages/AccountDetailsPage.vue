@@ -14,6 +14,7 @@ import { useWindowSize } from '@vueuse/core';
 import { format } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import invariant from 'tiny-invariant';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -26,9 +27,9 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medi
 const accountId = computed(() => {
   const id = router.currentRoute.value.params['id'];
 
-  if (typeof id === 'string') return id;
+  invariant(typeof id === 'string', 'Expected string');
 
-  return id[0];
+  return id;
 });
 
 const account = ref<Account | null>(null);

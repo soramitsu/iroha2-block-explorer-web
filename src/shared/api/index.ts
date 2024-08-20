@@ -11,6 +11,7 @@ interface HTTPService {
   fetchPeerStatus: () => Promise<Status>
   fetchRoles: () => Promise<Role[]>
   fetchBlocks: (params?: PaginationParams) => Promise<Paginated<BlockShallow>>
+  fetchBlock: (heightOrHash: number | string) => Promise<Block>
   fetchTransactions: (params?: PaginationParams) => Promise<Paginated<TransactionDto>>
 }
 
