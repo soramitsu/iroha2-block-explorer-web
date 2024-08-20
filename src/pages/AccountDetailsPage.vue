@@ -14,7 +14,7 @@ import { useWindowSize } from '@vueuse/core';
 import { format } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import invariant from 'ts-invariant';
+import invariant from 'tiny-invariant';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();

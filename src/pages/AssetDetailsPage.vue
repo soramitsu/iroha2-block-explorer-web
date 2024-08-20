@@ -13,7 +13,7 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
-import invariant from 'ts-invariant';
+import invariant from 'tiny-invariant';
 
 const router = useRouter();
 

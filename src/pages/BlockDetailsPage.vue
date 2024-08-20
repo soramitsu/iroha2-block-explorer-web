@@ -14,8 +14,8 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { format } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import invariant from 'ts-invariant';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
+import invariant from 'tiny-invariant';
 
 const router = useRouter();
 
