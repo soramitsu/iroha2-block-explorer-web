@@ -94,7 +94,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
             data-testid="prevBlock"
             @click="handlePreviousBlockClick"
           />
-          {{ $t('blockDetails.block', [blockHeightOrHash]) }}
+          {{ $t('blockDetails.block', [block?.height]) }}
           <ArrowIcon
             v-if="isNextBlockExists"
             data-testid="nextBlock"
