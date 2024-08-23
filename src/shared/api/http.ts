@@ -1,3 +1,16 @@
+import type {
+  AccountDto,
+  AssetDefinitionDto,
+  AssetDto,
+  DomainDto,
+  PaginationParams,
+  BlockDto,
+  Paginated,
+  TransactionDto,
+  AssetSearchDto,
+  TransactionSearchDto,
+} from '@/shared/api/dto';
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
 
 async function get<T>(path: string, params?: PaginationParams): Promise<T> {
@@ -11,58 +24,46 @@ async function get<T>(path: string, params?: PaginationParams): Promise<T> {
   return res.json();
 }
 
-export function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
+export function fetchAccounts(params?: PaginationParams): Promise<Paginated<AccountDto>> {
   return get('/accounts', params);
 }
 
-export function fetchAccount(id: string): Promise<Account> {
+export function fetchAccount(id: string): Promise<AccountDto> {
   return get(`/accounts/${id}`);
 }
 
-export function fetchAssets(params?: PaginationParams): Promise<Paginated<Asset>> {
+export function fetchAssets(params?: AssetSearchDto): Promise<Paginated<AssetDto>> {
   return get('/assets', params);
 }
 
-export function fetchAsset(definition_id: string, account_id: string): Promise<Asset> {
-  return get(`/assets/${definition_id}/${account_id}`);
+export function fetchAsset(id: string): Promise<AssetDto> {
+  return get(`/assets/${id}`);
 }
 
-export function fetchAssetDefinitions(params: PaginationParams): Promise<Paginated<AssetDefinition>> {
+export function fetchAssetDefinitions(params: PaginationParams): Promise<Paginated<AssetDefinitionDto>> {
   return get('/asset-definitions', params);
 }
 
-export function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
+export function fetchAssetDefinition(id: string): Promise<AssetDefinitionDto> {
   return get(`/asset-definitions/${id}`);
 }
 
-export function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
+export function fetchDomains(params?: PaginationParams): Promise<Paginated<DomainDto>> {
   return get('/domains', params);
 }
 
-export function fetchDomain(id: string): Promise<Domain> {
+export function fetchDomain(id: string): Promise<DomainDto> {
   return get(`/domains/${id}`);
 }
 
-export function fetchPeers(): Promise<Peer[]> {
-  return get('/peer/peers');
-}
-
-export function fetchPeerStatus(): Promise<Status> {
-  return get('/peer/status');
-}
-
-export function fetchRoles(): Promise<Role[]> {
-  return get('/roles');
-}
-
-export function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
+export function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockDto>> {
   return get('/blocks', params);
 }
 
-export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
+export async function fetchBlock(heightOrHash: number | string): Promise<BlockDto> {
   return get(`/blocks/${heightOrHash}`);
 }
 
-export function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
+export function fetchTransactions(params?: TransactionSearchDto): Promise<Paginated<TransactionDto>> {
   return get('/transactions', params);
 }

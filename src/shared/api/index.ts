@@ -1,19 +1,28 @@
+import type {
+  AccountDto,
+  AssetDefinitionDto,
+  AssetDto,
+  AssetSearchDto,
+  BlockDto,
+  DomainDto,
+  Paginated,
+  PaginationParams,
+  TransactionDto,
+  TransactionSearchDto,
+} from '@/shared/api/dto';
+
 interface HTTPService {
-  fetchAccounts: (params?: PaginationParams) => Promise<Paginated<Account>>
-  fetchAccount: (id: string) => Promise<Account>
-  fetchAssets: (params?: PaginationParams) => Promise<Paginated<Asset>>
-  fetchAsset: (definition_id: string, account_id: string) => Promise<Asset>
-  fetchAssetDefinitions: (params: PaginationParams) => Promise<Paginated<AssetDefinition>>
-  fetchAssetDefinition: (id: string) => Promise<AssetDefinition>
-  fetchDomains: (params?: PaginationParams) => Promise<Paginated<Domain>>
-  fetchDomain: (id: string) => Promise<Domain>
-  fetchPeers: () => Promise<Peer[]>
-  fetchPeerStatus: () => Promise<Status>
-  fetchRoles: () => Promise<Role[]>
-  fetchBlocks: (params?: PaginationParams) => Promise<Paginated<BlockShallow>>
-  fetchBlock: (heightOrHash: number | string) => Promise<Block>
-  fetchTransactions: (params?: PaginationParams) => Promise<Paginated<TransactionDto>>
+  fetchAccounts: (params?: PaginationParams) => Promise<Paginated<AccountDto>>
+  fetchAccount: (id: string) => Promise<AccountDto>
+  fetchAssets: (params?: AssetSearchDto) => Promise<Paginated<AssetDto>>
+  fetchAsset: (id: string) => Promise<AssetDto>
+  fetchAssetDefinitions: (params: PaginationParams) => Promise<Paginated<AssetDefinitionDto>>
+  fetchAssetDefinition: (id: string) => Promise<AssetDefinitionDto>
+  fetchDomains: (params?: PaginationParams) => Promise<Paginated<DomainDto>>
+  fetchDomain: (id: string) => Promise<DomainDto>
+  fetchBlocks: (params?: PaginationParams) => Promise<Paginated<BlockDto>>
+  fetchBlock: (heightOrHash: number | string) => Promise<BlockDto>
+  fetchTransactions: (params?: TransactionSearchDto) => Promise<Paginated<TransactionDto>>
 }
 
-export const http: HTTPService =
-  import.meta.env.VITE_FAKE_API_ENABLED === 'TRUE' ? await import('./fake-http') : await import('./http');
+export const http: HTTPService = await import('./http');
