@@ -169,9 +169,9 @@ const numbers = computed(() => {
       .fill(0)
       .map<string | number>((_, i) => i + 1);
 
-    if (props.sticky) return [p.total_pages, '. . .'].concat(numbersArray.reverse());
-
-    return numbersArray.concat(['. . .', p.total_pages]);
+    return props.sticky
+      ? [p.total_pages, '. . .'].concat(numbersArray.reverse())
+      : numbersArray.concat(['. . .', p.total_pages]);
   }
 
   if (p.page > p.total_pages - side + 1) {
@@ -184,6 +184,7 @@ const numbers = computed(() => {
     return [1, '. . .'].concat(
       Array(side)
         .fill(0)
+        // TODO: remove Number when backend is ready
         .map((_, i) => Number(p.total_pages) - i)
         .reverse()
     );
@@ -194,13 +195,9 @@ const numbers = computed(() => {
 
   const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
 
-  return [
-    props.sticky ? p.total_pages : 1,
-    '. . .',
-    ...(props.sticky ? middleNumbers.reverse() : middleNumbers),
-    '. . .',
-    props.sticky ? 1 : p.total_pages,
-  ];
+  return props.sticky
+    ? [p.total_pages, '. . .', middleNumbers.reverse(), '. . .', 1]
+    : [1, '. . .', middleNumbers, '. . .', p.total_pages];
 });
 
 const sizeOptions = [
