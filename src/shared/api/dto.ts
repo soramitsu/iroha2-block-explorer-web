@@ -1,183 +1,136 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable camelcase */
-import type { JsonObject } from 'type-fest';
+import { z } from 'zod';
 
-export {};
+const paginationSchema = z.object({
+  page: z.number(),
+  per_page: z.number(),
+  // TODO: remove nullable when backend is ready
+  total_pages: z.number().nullable(),
+  total_items: z.number().nullable(),
+});
 
-declare global {
-  interface Tagged<T, Content> {
-    t: T
-    c: Content
-  }
+export type Pagination = z.infer<typeof paginationSchema>;
 
-  interface PaginationParams {
-    page: number
-    page_size: number
-  }
-
-  interface Paginated<T> {
-    pagination: {
-      page: number
-      page_size: number
-      total: number
-    }
-    data: T[]
-  }
-
-  interface Asset {
-    account_id: string
-    definition_id: string
-    value: AssetValue
-  }
-
-  type AssetValue =
-    | Tagged<'Quantity', string>
-    | Tagged<'BigQuantity', string>
-    | Tagged<'Fixed', string>
-    | Tagged<'Store', JsonObject>;
-
-  type AssetValueType = 'Quantity' | 'BigQuantity' | 'Fixed' | 'Store';
-
-  interface AssetDefinition {
-    id: string
-    value_type: AssetValueType
-    mintable: Mintable
-  }
-
-  type Mintable = 'Once' | 'Infinitely' | 'Not';
-
-  interface Peer {
-    address: string
-    public_key: PublicKey
-  }
-
-  interface Role {
-    id: string
-    permissions: PermissionToken[]
-  }
-
-  interface PermissionToken {
-    name: string
-    params: any
-  }
-
-  interface Account {
-    id: string
-    assets: Asset[]
-    signatories?: PublicKey[]
-    permission_tokens?: PermissionToken[]
-    roles: Role[]
-    signature_check_condition?: any
-    metadata: any
-  }
-
-  interface Domain {
-    id: string
-    accounts: Account[]
-    asset_definitions: AssetDefinition[]
-    logo: null | string
-    metadata: any
-    /**
-     * amount of triggers, always 0 for now
-     */
-    triggers: number
-  }
-
-  interface PublicKey {
-    digest_function: string
-    payload: string
-  }
-
-  interface Status {
-    peers: string
-    blocks: string
-    txs: string
-    uptime: {
-      secs: string
-      nanos: string
-    }
-  }
-
-  export interface BlockShallow {
-    height: number
-    /**
-     * ISO DateTime
-     */
-    timestamp: string
-    block_hash: string
-    /**
-     * Transactions count
-     */
-    transactions: number
-    /**
-     * Rejected transactions count
-     */
-    rejected_transactions: number
-  }
-
-  export interface Block {
-    height: number
-    /**
-     * See {@link BlockShallow.timestamp}
-     */
-    timestamp: string
-    block_hash: string
-    parent_block_hash: string
-    rejected_transactions_merkle_root_hash: string
-    invalidated_blocks_hashes: string[]
-    /**
-     * List of serialized {@link @iroha2/data-model#VersionedValidTransaction}
-     */
-    transactions: string[]
-    /**
-     * List of serialized {@link @iroha2/data-model#VersionedRejectedTransaction}
-     */
-    rejected_transactions: string[]
-    /**
-     * List of hashes. WIP always empty
-     */
-    view_change_proofs: string[]
-  }
-
-  export interface TransactionDto {
-    /**
-     * WIP zeroed
-     */
-    hash: string
-    block_hash: string
-    // TODO: bloch_height is missing from backend response
-    block_height: number
-    payload: TransactionPayload
-    signatures: Signature[]
-    rejection_reason?: string
-  }
-
-  export interface TransactionPayload {
-    account_id: string
-    instructions: TransactionInstructions
-    /**
-     * ISO timestamp
-     */
-    creation_time: string
-    time_to_live_ms: number | null
-    nonce: number | null
-    metadata: any
-  }
-
-  /**
-   * `Instructions` `string[]` - list of serialized
-   * {@link @iroha2/data-model#Instruction}
-   */
-  export type TransactionInstructions = Tagged<'Instructions', string[]> | Tagged<'Wasm', undefined>;
-
-  export interface Signature {
-    /**
-     * Public key's multihash
-     */
-    public_key: string
-    /**
-     * Hex binary
-     */
-    payload: string
-  }
+export interface Paginated<T> {
+  pagination: Pagination
+  items: T[]
 }
+
+const paginationParamsSchema = z
+  .object({
+    page: z.number(),
+    per_page: z.number(),
+  })
+  .partial();
+
+export type PaginationParams = z.infer<typeof paginationParamsSchema>;
+
+export const accountSchema = z.object({
+  id: z.string(),
+  metadata: z.record(z.string(), z.any()),
+});
+
+export type AccountDto = z.infer<typeof accountSchema>;
+
+const assetSearchDto = paginationParamsSchema.extend({
+  owned_by: z.string().optional(),
+});
+export type AssetSearchDto = z.infer<typeof assetSearchDto>;
+
+export const assetSchema = z.object({
+  id: z.string(),
+  value: z.union([
+    z.object({ kind: z.literal('Numeric'), value: z.string() }),
+    z.object({ kind: z.literal('Store'), metadata: z.record(z.string(), z.any()) }),
+  ]),
+});
+
+export type AssetDto = z.infer<typeof assetSchema>;
+
+export const assetDefinitionSchema = z.object({
+  id: z.string(),
+  logo: z.string().nullable(),
+  metadata: z.record(z.string()),
+  mintable: z.enum(['Infinitely', 'Once', 'Not']),
+  owned_by: z.string(),
+  type: z.union([
+    z.object({ kind: z.literal('Numeric'), scale: z.number().min(0).nullable() }),
+    z.object({ kind: z.literal('Store') }),
+  ]),
+});
+
+export type AssetDefinitionDto = z.infer<typeof assetDefinitionSchema>;
+
+const transactionSearchSchema = paginationParamsSchema.extend({
+  account: z.string().optional(),
+});
+export type TransactionSearchDto = z.infer<typeof transactionSearchSchema>;
+
+const transactionPayloadSchema = z.object({
+  authority: z.string(),
+  chain: z.string(),
+  created_at: z.string(),
+  instructions: z.union([
+    z.object({ kind: z.literal('Instructions'), value: z.record(z.string(), z.any()).array() }),
+    z.object({ kind: z.literal('Wasm') }),
+  ]),
+  metadata: z.record(z.string(), z.any()),
+  time_to_live: z
+    .object({
+      ms: z.number().min(0),
+    })
+    .nullable(),
+  nonce: z.number().nullable(),
+});
+
+export const transactionSchema = z.object({
+  hash: z.string(),
+  error: z
+    .object({
+      Validation: z.object({
+        InstructionFailed: z.object({
+          Math: z.string(),
+        }),
+      }),
+    })
+    .nullable(),
+  payload: transactionPayloadSchema,
+  signature: z.string(),
+  block_hash: z.string(),
+});
+
+export type TransactionDto = z.infer<typeof transactionSchema>;
+
+const transactionBlockSchema = transactionSchema.omit({ block_hash: true });
+
+export const blockSchema = z.object({
+  hash: z.string(),
+  header: z.object({
+    consensus_estimation: z.object({
+      ms: z.number().min(0),
+    }),
+    created_at: z.string(),
+    height: z.number(),
+    prev_block_hash: z.string().nullable(),
+    transactions_hash: z.string(),
+  }),
+
+  signatures: z.array(
+    z.object({
+      payload: z.string(),
+      topology_index: z.number().min(0),
+    })
+  ),
+
+  transactions: transactionBlockSchema.array(),
+});
+
+export type BlockDto = z.infer<typeof blockSchema>;
+
+export const domainSchema = z.object({
+  id: z.string(),
+  logo: z.string().nullable(),
+  metadata: z.record(z.string(), z.any()),
+  owned_by: z.string(),
+});
+
+export type DomainDto = z.infer<typeof domainSchema>;
