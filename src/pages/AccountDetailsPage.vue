@@ -257,7 +257,7 @@ const transactions = computed(() => {
   display: flex;
 
   @include xxs {
-    gap: size(3);
+    gap: size(2);
     padding: 0 size(3);
     flex-direction: column;
   }
@@ -279,7 +279,7 @@ const transactions = computed(() => {
     }
 
     &-information {
-      margin-bottom: size(3);
+      margin-bottom: size(2);
 
       &_loading {
         margin-top: size(1);

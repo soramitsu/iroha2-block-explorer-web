@@ -169,12 +169,11 @@ const transactions = computed(() => {
 
   @include xxs {
     padding: 0 size(2);
-    gap: size(1);
+    gap: size(2);
   }
 
   @include md {
     padding: 0 size(3);
-    gap: size(3);
   }
 
   &__metrics {

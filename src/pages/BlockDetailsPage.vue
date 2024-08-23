@@ -209,7 +209,6 @@ const transactions = computed(() => {
 
   @include md {
     padding: 0 size(3);
-    gap: size(3);
   }
 
   &__metrics {
