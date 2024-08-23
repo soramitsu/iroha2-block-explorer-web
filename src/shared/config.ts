@@ -1,8 +1,8 @@
 export const menu = [
-  { i18nKey: 'blocks', to: '/blocks' },
-  { i18nKey: 'assets', to: '/assets' },
-  { i18nKey: 'domains', to: '/domains' },
-  { i18nKey: 'accounts', to: '/accounts' },
+  { i18nKey: 'blocks.blocks', to: '/blocks' },
+  { i18nKey: 'assets.assets', to: '/assets' },
+  { i18nKey: 'domains.domains', to: '/domains' },
+  { i18nKey: 'accounts.accounts', to: '/accounts' },
   { i18nKey: 'transactions.transactions', to: '/transactions' },
 ];
 
