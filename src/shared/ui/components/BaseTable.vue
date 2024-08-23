@@ -155,6 +155,7 @@ const numbers = computed(() => {
 
   const p = props.pagination;
 
+  // TODO: remove when backend is ready
   if (!p.total_pages) p.total_pages = 1;
 
   if (p.total_pages < max) {
@@ -163,20 +164,14 @@ const numbers = computed(() => {
     return props.sticky ? numbers.reverse() : numbers;
   }
 
-  let start = p.page - offset;
-  let end = p.page + offset;
-
   if (p.page < side) {
-    if (props.sticky)
-      return Array(side)
-        .fill(p.total_pages)
-        .map<string | number>((_, i) => _ - i)
-        .concat(['. . .', 1]);
-
-    return Array(side)
+    const numbersArray = Array(side)
       .fill(0)
-      .map<string | number>((_, i) => i + 1)
-      .concat(['. . .', p.total_pages]);
+      .map<string | number>((_, i) => i + 1);
+
+    if (props.sticky) return [p.total_pages, '. . .'].concat(numbersArray.reverse());
+
+    return numbersArray.concat(['. . .', p.total_pages]);
   }
 
   if (p.page > p.total_pages - side + 1) {
@@ -189,27 +184,23 @@ const numbers = computed(() => {
     return [1, '. . .'].concat(
       Array(side)
         .fill(0)
-        .map((_, i) => p.per_page - i)
+        .map((_, i) => Number(p.total_pages) - i)
         .reverse()
     );
   }
 
-  start = start < 1 ? 1 : start;
-  end = end > p.total_pages ? p.total_pages : end;
+  const start = Math.max(p.page - offset, 1);
+  const end = Math.min(p.page + offset, p.total_pages);
 
-  if (props.sticky)
-    return [
-      p.total_pages,
-      '. . .',
-      ...new Array(end - start + 1)
-        .fill(0)
-        .map((_, i) => i + start)
-        .reverse(),
-      '. . .',
-      1,
-    ];
+  const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
 
-  return [1, '. . .', ...new Array(end - start + 1).fill(0).map((_, i) => i + start), '. . .', p.total_pages];
+  return [
+    props.sticky ? p.total_pages : 1,
+    '. . .',
+    ...(props.sticky ? middleNumbers.reverse() : middleNumbers),
+    '. . .',
+    props.sticky ? 1 : p.total_pages,
+  ];
 });
 
 const sizeOptions = [
