@@ -70,7 +70,7 @@ hr {
   }
 
   @include md {
-    padding: 0 size(4);
+    padding: 0 size(2);
   }
 }
 
