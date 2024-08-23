@@ -1,6 +1,6 @@
 <template>
   <BaseContentBlock
-    :title="$t('accounts')"
+    :title="$t('accounts.accounts')"
     class="accounts-list-page"
   >
     <BaseTable
@@ -15,9 +15,7 @@
     >
       <template #header>
         <div class="accounts-list-page__row">
-          <span class="h-sm cell">{{ $t('address') }}</span>
-          <span class="h-sm cell">{{ $t('cryptos') }}</span>
-          <span class="h-sm cell">{{ $t('nfts') }}</span>
+          <span class="h-sm cell">{{ $t('accounts.address') }}</span>
         </div>
       </template>
 
@@ -30,41 +28,19 @@
             copy
             class="cell"
           />
-
-          <div class="cell row-text">
-            {{ accountModel.countCryptos(item) }}
-          </div>
-
-          <div class="cell row-text">
-            {{ accountModel.countNFTs(item) }}
-          </div>
         </div>
       </template>
 
       <template #mobile-card="{ item }">
         <div class="accounts-list-page__mobile-card">
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('address') }}</span>
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('accounts.address') }}</span>
             <BaseHash
               :hash="item.id"
               :link="`/accounts/${item.id}`"
-              type="short"
+              :type="hashType"
               copy
             />
-          </div>
-
-          <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('cryptos') }}</span>
-            <div class="row-text">
-              {{ accountModel.countCryptos(item) }}
-            </div>
-          </div>
-
-          <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('nfts') }}</span>
-            <div class="row-text">
-              {{ accountModel.countNFTs(item) }}
-            </div>
           </div>
         </div>
       </template>
@@ -75,13 +51,33 @@
 <script setup lang="ts">
 import { http } from '@/shared/api';
 import { useTable } from '@/shared/lib/table';
-import { accountModel } from '@/entities/account';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import { useWindowSize } from '@vueuse/core';
+import { computed, onMounted } from 'vue';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { accountSchema } from '@/shared/api/dto';
+import { ZodError } from 'zod';
 
 const table = useTable(http.fetchAccounts);
-table.fetch();
+const { handleUnknownError, handleZodError } = useErrorHandlers();
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+
+    accountSchema.array().parse(table.items.value);
+  } catch (e) {
+    if (e instanceof ZodError) handleZodError(e);
+    else handleUnknownError(e);
+  }
+});
+
+const HASH_BREAKPOINT = 1000;
+const { width } = useWindowSize();
+
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 </script>
 
 <style lang="scss">
@@ -95,7 +91,7 @@ table.fetch();
   }
 
   &__mobile-card {
-    padding: size(2);
+    padding: size(2) size(4);
   }
 
   &__mobile-row {
@@ -104,23 +100,12 @@ table.fetch();
   }
 
   &__mobile-label {
-    text-align: right;
-    width: 80px;
-    padding: size(1);
-    margin-right: size(3);
+    width: size(12);
   }
 
   &__container {
     display: grid;
     grid-template-columns: 1fr;
-
-    @include sm {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    @include lg {
-      grid-template-columns: 1fr;
-    }
   }
 }
 </style>

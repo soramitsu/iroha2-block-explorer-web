@@ -1,6 +1,6 @@
 <template>
   <BaseContentBlock
-    :title="$t('domains')"
+    :title="$t('domains.domains')"
     class="domains-list-page"
   >
     <BaseTable
@@ -16,9 +16,7 @@
       <template #header>
         <div class="domains-list-page__row">
           <span class="h-sm cell">{{ $t('name') }}</span>
-          <span class="h-sm cell">{{ $t('cryptos') }}</span>
-          <span class="h-sm cell">{{ $t('nfts') }}</span>
-          <span class="h-sm cell">{{ $t('accounts') }}</span>
+          <span class="h-sm">{{ $t('domains.ownedBy') }}</span>
         </div>
       </template>
 
@@ -31,15 +29,12 @@
             {{ item.id }}
           </BaseLink>
 
-          <div class="cell row-text">
-            {{ domainModel.countCryptos(item) }}
-          </div>
-
-          <div class="cell row-text">
-            {{ domainModel.countNFTs(item) }}
-          </div>
-
-          <span class="cell row-text">{{ item.accounts.length }}</span>
+          <BaseHash
+            :hash="item.owned_by"
+            :link="`/accounts/${item.owned_by}`"
+            :type="hashType"
+            copy
+          />
         </div>
       </template>
 
@@ -54,18 +49,13 @@
           </div>
 
           <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ $t('cryptos') }}</span>
-            <span class="row-text">{{ domainModel.countCryptos(item) }}</span>
-          </div>
-
-          <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ $t('nfts') }}</span>
-            <span class="row-text">{{ domainModel.countNFTs(item) }}</span>
-          </div>
-
-          <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ $t('accounts') }}</span>
-            <span class="row-text">{{ item.accounts.length }}</span>
+            <span class="h-sm domains-list-page__mobile-label">{{ 'Owned by' }}</span>
+            <BaseHash
+              :hash="item.owned_by"
+              :link="`/accounts/${item.owned_by}`"
+              :type="hashType"
+              copy
+            />
           </div>
         </div>
       </template>
@@ -76,13 +66,35 @@
 <script setup lang="ts">
 import { http } from '@/shared/api';
 import { useTable } from '@/shared/lib/table';
-import { domainModel } from '@/entities/domain';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import { useWindowSize } from '@vueuse/core';
+import { computed, onMounted } from 'vue';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { domainSchema } from '@/shared/api/dto';
+import { ZodError } from 'zod';
 
 const table = useTable(http.fetchDomains);
-table.fetch();
+
+const { handleUnknownError, handleZodError } = useErrorHandlers();
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+
+    domainSchema.array().parse(table.items.value);
+  } catch (e) {
+    if (e instanceof ZodError) handleZodError(e);
+    else handleUnknownError(e);
+  }
+});
+
+const HASH_BREAKPOINT = 1200;
+const { width } = useWindowSize();
+
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 </script>
 
 <style lang="scss">
@@ -92,11 +104,11 @@ table.fetch();
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 3fr 1fr 1fr 1fr;
+    grid-template-columns: 0.5fr 2fr;
   }
 
   &__mobile-card {
-    padding: size(2);
+    padding: size(2) size(3);
   }
 
   &__mobile-row {
@@ -105,8 +117,8 @@ table.fetch();
   }
 
   &__mobile-label {
-    text-align: right;
-    width: 80px;
+    text-align: left;
+    width: size(12);
     padding: size(1);
     margin-right: size(3);
   }

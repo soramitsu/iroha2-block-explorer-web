@@ -1,6 +1,6 @@
 <template>
   <BaseContentBlock
-    :title="$t('blocks')"
+    :title="$t('blocks.blocks')"
     class="blocks-list-page"
   >
     <BaseTable
@@ -8,6 +8,7 @@
       :pagination="table.pagination"
       :items="table.items.value"
       container-class="blocks-list-page__container"
+      sticky
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -15,36 +16,36 @@
     >
       <template #header>
         <div class="blocks-list-page__row">
-          <span class="h-sm cell">{{ $t('height') }}</span>
-          <span class="h-sm cell">{{ $t('age') }}</span>
-          <span class="h-sm cell">{{ $t('hash') }}</span>
-          <span class="h-sm cell">{{ $t('transaction') }}</span>
+          <span class="h-sm cell">{{ $t('blocks.height') }}</span>
+          <span class="h-sm cell">{{ $t('blocks.age') }}</span>
+          <span class="h-sm cell">{{ $t('blocks.hash') }}</span>
+          <span class="h-sm cell">{{ $t('transactions.transactions') }}</span>
         </div>
       </template>
 
       <template #row="{ item }">
         <div class="blocks-list-page__row">
           <BaseLink
-            :to="`/blocks/${item.height}`"
+            :to="`/blocks/${item.header.height}`"
             class="cell"
           >
-            {{ item.height }}
+            {{ item.header.height }}
           </BaseLink>
 
           <div class="cell">
-            <time class="row-text">{{ format(item.timestamp) }}</time>
+            <time class="row-text">{{ format(item.header.created_at) }}</time>
           </div>
 
           <BaseHash
-            :hash="item.block_hash"
-            :link="`/blocks/${item.height}`"
+            :hash="item.hash"
+            :link="`/blocks/${item.hash}`"
             type="full"
             copy
             class="cell"
           />
 
           <div class="cell row-text">
-            {{ item.transactions }}
+            {{ item.transactions.length }}
           </div>
         </div>
       </template>
@@ -52,24 +53,24 @@
       <template #mobile-card="{ item }">
         <div class="blocks-list-page__mobile-card">
           <div class="blocks-list-page__mobile-row">
-            <span class="h-sm blocks-list-page__mobile-label">{{ $t('height') }}</span>
+            <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.height') }}</span>
 
-            <BaseLink :to="`/blocks/${item.height}`">
-              {{ item.height }}
+            <BaseLink :to="`/blocks/${item.header.height}`">
+              {{ item.header.height }}
             </BaseLink>
           </div>
 
           <div class="blocks-list-page__mobile-row">
-            <span class="h-sm blocks-list-page__mobile-label">{{ $t('age') }}</span>
-            <time class="row-text">{{ format(item.timestamp) }}</time>
+            <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.age') }}</span>
+            <time class="row-text">{{ format(item.header.created_at) }}</time>
           </div>
 
           <div class="blocks-list-page__mobile-row">
-            <span class="h-sm blocks-list-page__mobile-label">{{ $t('hash') }}</span>
+            <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.hash') }}</span>
 
             <BaseHash
-              :hash="item.block_hash"
-              :link="`/blocks/${item.height}`"
+              :hash="item.hash"
+              :link="`/blocks/${item.header.height}`"
               type="short"
               copy
             />
@@ -77,7 +78,7 @@
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('transactions.transactions') }}</span>
-            <span class="row-text">{{ item.transactions }}</span>
+            <span class="row-text">{{ item.transactions.length }}</span>
           </div>
         </div>
       </template>
@@ -93,9 +94,25 @@ import { format } from '@/shared/lib/time';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { onMounted } from 'vue';
+import { blockSchema } from '@/shared/api/dto';
+import { ZodError } from 'zod';
 
-const table = useTable(http.fetchBlocks);
-table.fetch();
+const table = useTable(http.fetchBlocks, { sticky: true });
+
+const { handleUnknownError, handleZodError } = useErrorHandlers();
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+
+    blockSchema.array().parse(table.items.value);
+  } catch (e) {
+    if (e instanceof ZodError) handleZodError(e);
+    else handleUnknownError(e);
+  }
+});
 </script>
 
 <style lang="scss">
@@ -110,7 +127,7 @@ table.fetch();
   }
 
   &__mobile-card {
-    padding: size(2);
+    padding: size(2) size(3);
   }
 
   &__mobile-row {
@@ -119,8 +136,8 @@ table.fetch();
   }
 
   &__mobile-label {
-    text-align: right;
-    width: 80px;
+    text-align: left;
+    width: size(12);
     padding: size(1);
     margin-right: size(3);
   }
