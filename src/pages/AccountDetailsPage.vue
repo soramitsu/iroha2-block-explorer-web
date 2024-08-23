@@ -15,8 +15,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import invariant from 'tiny-invariant';
 import type { AccountDto } from '@/shared/api/dto';
-import { accountSchema } from '@/shared/api/dto';
-import { assetSchema, transactionSchema } from '@/shared/api/dto';
+import { accountSchema, assetSchema, transactionSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import { getAssetName } from '@/features/assets';
 
