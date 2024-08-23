@@ -5,21 +5,15 @@
     "latestBlocks": "Latest Blocks"
   },
   "viewAll": "view all",
-  "accounts": "Accounts",
-  "blocks": "Blocks",
-  "domains": "Domains",
   "domain": "Domain",
   "rowsPerPage": "Rows per page",
   "address": "Address",
   "cryptos": "Cryptos",
   "name": "Name",
   "type": "Type",
+  "value": "Value",
   "mintable": "Mintable",
-  "assets": "Assets",
   "nfts": "NFTs",
-  "height": "Height",
-  "age": "Age",
-  "hash": "Hash",
   "transaction": "Transaction",
   "pageNotFound": "Page not found",
   "tokens": "Tokens",
@@ -64,24 +58,38 @@
     "transfer": "Transfer",
     "block": "Block"
   },
-  "accountDetails": {
+  "accounts": {
+    "address": "Address",
+    "accounts": "Accounts",
     "accountInformation": "Account information",
     "accountAssets": "Account assets",
     "accountTransactions": "Account transactions",
     "definitionId": "Definition ID",
     "accountId": "Account ID",
-    "value": "Value"
+    "value": "Value",
+    "accountDoesntHaveAnyAssets": "Account doesn't have any assets",
+    "accountDoesntHaveAnyTransactions": "Account doesn't have any transactions"
   },
-  "assetDetails": {
+  "assets": {
+    "assets": "Assets",
     "assetMetrics": "Asset metrics",
     "assetTransactions": "Asset transactions"
   },
-  "blockDetails": {
+  "blocks": {
+    "age": "Age",
+    "hash": "Hash",
+    "createdAt": "Created At",
+    "blocks": "Blocks",
+    "height": "Height",
     "block": "Block #{0}",
     "blockHash": "Block Hash",
     "blockTransactions": "Block Transactions",
     "transactionsMerkleRootHash": "Transaction's Merkle Root Hash",
     "parentBlockHash": "Parent block hash",
     "rejectedTransactionsMerkleRootHash": "Rejected Transaction's Merkle Root Hash"
+  },
+  "domains": {
+    "domains": "Domains",
+    "ownedBy": "Owned By"
   }
 }
