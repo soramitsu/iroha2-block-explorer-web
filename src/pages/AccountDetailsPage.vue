@@ -200,10 +200,8 @@ const transactions = computed(() => {
 
           <span
             v-if="isEmptyTransactions"
-            class="account-details__transactions_empty row-text"
-          >{{
-            $t('accounts.accountDoesntHaveAnyTransactions')
-          }}</span>
+            class="row-text"
+          >{{ $t('accounts.accountDoesntHaveAnyTransactions') }}</span>
           <BaseTable
             v-else
             :loading="transactionsTable.loading.value"
@@ -375,16 +373,16 @@ const transactions = computed(() => {
   }
 
   &__transactions {
+    .base-content-block__body {
+      padding: size(0) size(4) size(4);
+    }
+
     @include xxs {
       width: 90vw;
     }
 
     @include lg {
       width: 46vw;
-    }
-
-    &_empty {
-      padding: 0 size(4);
     }
 
     hr {
