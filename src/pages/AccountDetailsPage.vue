@@ -123,10 +123,6 @@ const transactions = computed(() => {
             :items="assetsTable.items.value"
             container-class="account-details__personal-assets-list"
             breakpoint="960"
-            @next-page="assetsTable.nextPage()"
-            @prev-page="assetsTable.prevPage()"
-            @set-page="assetsTable.setPage($event)"
-            @set-size="assetsTable.setSize($event)"
           >
             <template #header>
               <div class="account-details__personal-assets-list-row">
@@ -209,10 +205,6 @@ const transactions = computed(() => {
             :loading="transactionsTable.loading.value"
             :items="transactions"
             container-class="account-details__transactions-container"
-            @next-page="transactionsTable.nextPage()"
-            @prev-page="transactionsTable.prevPage()"
-            @set-page="transactionsTable.setPage($event)"
-            @set-size="transactionsTable.setSize($event)"
           >
             <template #row="{ item }">
               <div class="account-details__transactions-row">

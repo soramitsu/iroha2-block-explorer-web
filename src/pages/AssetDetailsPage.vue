@@ -132,10 +132,6 @@ const transactions = computed(() => {
         :loading="transactionsTable.loading.value"
         :items="transactions"
         container-class="asset-details__transactions-container"
-        @next-page="transactionsTable.nextPage()"
-        @prev-page="transactionsTable.prevPage()"
-        @set-page="transactionsTable.setPage($event)"
-        @set-size="transactionsTable.setSize($event)"
       >
         <template #row="{ item }">
           <div class="asset-details__transactions-row">
