@@ -102,15 +102,7 @@ const transactionPayloadSchema = z.object({
 
 const transactionSchema = z.object({
   hash: z.string(),
-  error: z
-    .object({
-      Validation: z.object({
-        InstructionFailed: z.object({
-          Math: z.string(),
-        }),
-      }),
-    })
-    .nullable(),
+  error: z.record(z.string(), z.any()).nullable(),
   payload: transactionPayloadSchema,
   signature: z.string(),
 });
