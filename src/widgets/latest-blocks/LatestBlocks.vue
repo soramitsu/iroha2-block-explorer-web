@@ -47,12 +47,12 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { BlockDto } from '@/shared/api/dto';
+import type { Block } from '@/shared/api/dto';
 import { blockSchema } from '@/shared/api/dto';
 import { onMounted, ref, shallowRef } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 
-const blocks = shallowRef<BlockDto[]>([]);
+const blocks = shallowRef<Block[]>([]);
 const isLoading = ref(false);
 
 const { handleUnknownError } = useErrorHandlers();

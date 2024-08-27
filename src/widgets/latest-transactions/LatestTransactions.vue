@@ -69,14 +69,14 @@ import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { elapsed } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { TransactionDto } from '@/shared/api/dto';
+import type { Transaction } from '@/shared/api/dto';
 import { transactionsWithHashSchema } from '@/shared/api/dto';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { http } from '@/shared/api';
 
 const status = ref<ftm.Status>(null);
 
-const transactions = shallowRef<TransactionDto[]>([]);
+const transactions = shallowRef<Transaction[]>([]);
 const isLoading = ref(false);
 
 const { handleUnknownError } = useErrorHandlers();

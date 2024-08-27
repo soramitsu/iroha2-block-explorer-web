@@ -14,7 +14,7 @@ import { format } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import invariant from 'tiny-invariant';
-import type { AccountDto } from '@/shared/api/dto';
+import type { Account } from '@/shared/api/dto';
 import { accountSchema, assetSchema, transactionsWithHashSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import { getAssetName } from '@/features/assets';
@@ -35,7 +35,7 @@ const accountId = computed(() => {
   return id;
 });
 
-const account = ref<AccountDto | null>(null);
+const account = ref<Account | null>(null);
 const isFetchingAccount = ref(false);
 
 const isEmptyAssets = ref(false);

@@ -37,12 +37,12 @@ export const accountSchema = z.object({
   metadata: metadataSchema,
 });
 
-export type AccountDto = z.infer<typeof accountSchema>;
+export type Account = z.infer<typeof accountSchema>;
 
-const assetSearchDto = paginationParamsSchema.extend({
+const assetSearchParamsSchema = paginationParamsSchema.extend({
   owned_by: accountIdSchema.optional(),
 });
-export type AssetSearchDto = z.infer<typeof assetSearchDto>;
+export type AssetSearchParams = z.infer<typeof assetSearchParamsSchema>;
 
 export const assetSchema = z.object({
   id: assetIdSchema,
@@ -52,7 +52,7 @@ export const assetSchema = z.object({
   ]),
 });
 
-export type AssetDto = z.infer<typeof assetSchema>;
+export type Asset = z.infer<typeof assetSchema>;
 
 export const assetDefinitionSchema = z.object({
   id: assetDefinitionIdSchema,
@@ -73,12 +73,12 @@ export const assetDefinitionSchema = z.object({
   ]),
 });
 
-export type AssetDefinitionDto = z.infer<typeof assetDefinitionSchema>;
+export type AssetDefinition = z.infer<typeof assetDefinitionSchema>;
 
-const transactionSearchSchema = paginationParamsSchema.extend({
+const transactionSearchParamsSchema = paginationParamsSchema.extend({
   account: accountIdSchema.optional(),
 });
-export type TransactionSearchDto = z.infer<typeof transactionSearchSchema>;
+export type TransactionSearchParams = z.infer<typeof transactionSearchParamsSchema>;
 
 const transactionPayloadSchema = z.object({
   authority: z.string(),
@@ -119,8 +119,8 @@ export const transactionsWithHashSchema = transactionSchema.extend({
   block_hash: z.string(),
 });
 
-export type TransactionDto = z.infer<typeof transactionSchema>;
-export type TransactionWithHashDto = z.infer<typeof transactionsWithHashSchema>;
+export type Transaction = z.infer<typeof transactionSchema>;
+export type TransactionWithHash = z.infer<typeof transactionsWithHashSchema>;
 
 export const blockSchema = z.object({
   hash: z.string(),
@@ -150,7 +150,7 @@ export const blockSchema = z.object({
   transactions: transactionSchema.array(),
 });
 
-export type BlockDto = z.infer<typeof blockSchema>;
+export type Block = z.infer<typeof blockSchema>;
 
 export const domainSchema = z.object({
   id: domainIdSchema,
@@ -159,4 +159,4 @@ export const domainSchema = z.object({
   owned_by: z.string(),
 });
 
-export type DomainDto = z.infer<typeof domainSchema>;
+export type Domain = z.infer<typeof domainSchema>;

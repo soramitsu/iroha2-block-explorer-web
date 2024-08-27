@@ -14,7 +14,7 @@ import { format } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
-import type { BlockDto } from '@/shared/api/dto';
+import type { Block } from '@/shared/api/dto';
 import { blockSchema } from '@/shared/api/dto';
 
 const router = useRouter();
@@ -36,7 +36,7 @@ const blockHeightOrHash = computed(() => {
   return Number(heightOrHash) || heightOrHash;
 });
 
-const block = ref<BlockDto | null>(null);
+const block = ref<Block | null>(null);
 const isFetchingBlock = ref(false);
 const isNextBlockExists = ref(false);
 const isPreviousBlockExists = ref(false);

@@ -1,28 +1,28 @@
 import type {
-  AccountDto,
-  AssetDefinitionDto,
-  AssetDto,
-  AssetSearchDto,
-  BlockDto,
-  DomainDto,
+  Account,
+  AssetDefinition,
+  Asset,
+  AssetSearchParams,
+  Block,
+  Domain,
   Paginated,
   PaginationParams,
-  TransactionSearchDto,
-  TransactionWithHashDto,
+  TransactionSearchParams,
+  TransactionWithHash,
 } from '@/shared/api/dto';
 
 interface HTTPService {
-  fetchAccounts: (params?: PaginationParams) => Promise<Paginated<AccountDto>>
-  fetchAccount: (id: string) => Promise<AccountDto>
-  fetchAssets: (params?: AssetSearchDto) => Promise<Paginated<AssetDto>>
-  fetchAsset: (id: string) => Promise<AssetDto>
-  fetchAssetDefinitions: (params: PaginationParams) => Promise<Paginated<AssetDefinitionDto>>
-  fetchAssetDefinition: (id: string) => Promise<AssetDefinitionDto>
-  fetchDomains: (params?: PaginationParams) => Promise<Paginated<DomainDto>>
-  fetchDomain: (id: string) => Promise<DomainDto>
-  fetchBlocks: (params?: PaginationParams) => Promise<Paginated<BlockDto>>
-  fetchBlock: (heightOrHash: number | string) => Promise<BlockDto>
-  fetchTransactions: (params?: TransactionSearchDto) => Promise<Paginated<TransactionWithHashDto>>
+  fetchAccounts: (params?: PaginationParams) => Promise<Paginated<Account>>
+  fetchAccount: (id: string) => Promise<Account>
+  fetchAssets: (params?: AssetSearchParams) => Promise<Paginated<Asset>>
+  fetchAsset: (id: string) => Promise<Asset>
+  fetchAssetDefinitions: (params: PaginationParams) => Promise<Paginated<AssetDefinition>>
+  fetchAssetDefinition: (id: string) => Promise<AssetDefinition>
+  fetchDomains: (params?: PaginationParams) => Promise<Paginated<Domain>>
+  fetchDomain: (id: string) => Promise<Domain>
+  fetchBlocks: (params?: PaginationParams) => Promise<Paginated<Block>>
+  fetchBlock: (heightOrHash: number | string) => Promise<Block>
+  fetchTransactions: (params?: TransactionSearchParams) => Promise<Paginated<TransactionWithHash>>
 }
 
 export const http: HTTPService = await import('./http');

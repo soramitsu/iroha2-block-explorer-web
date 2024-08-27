@@ -13,7 +13,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
 import invariant from 'tiny-invariant';
-import type { AssetDefinitionDto } from '@/shared/api/dto';
+import type { AssetDefinition } from '@/shared/api/dto';
 import { assetDefinitionSchema, transactionsWithHashSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -47,7 +47,7 @@ const assetDomain = computed(() => {
 
 const assetId = computed(() => assetName.value + '#' + assetDomain.value);
 
-const asset = ref<AssetDefinitionDto | null>(null);
+const asset = ref<AssetDefinition | null>(null);
 const isFetchingAsset = ref(false);
 
 onMounted(async () => {
