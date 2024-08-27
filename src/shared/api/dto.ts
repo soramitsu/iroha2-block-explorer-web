@@ -100,7 +100,7 @@ const transactionPayloadSchema = z.object({
   nonce: z.number().nullable(),
 });
 
-export const transactionSchema = z.object({
+const transactionSchema = z.object({
   hash: z.string(),
   error: z
     .object({
@@ -113,12 +113,14 @@ export const transactionSchema = z.object({
     .nullable(),
   payload: transactionPayloadSchema,
   signature: z.string(),
+});
+
+export const transactionsWithHashSchema = transactionSchema.extend({
   block_hash: z.string(),
 });
 
 export type TransactionDto = z.infer<typeof transactionSchema>;
-
-const transactionBlockSchema = transactionSchema.omit({ block_hash: true });
+export type TransactionWithHashDto = z.infer<typeof transactionsWithHashSchema>;
 
 export const blockSchema = z.object({
   hash: z.string(),
@@ -145,7 +147,7 @@ export const blockSchema = z.object({
     })
   ),
 
-  transactions: transactionBlockSchema.array(),
+  transactions: transactionSchema.array(),
 });
 
 export type BlockDto = z.infer<typeof blockSchema>;

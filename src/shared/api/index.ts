@@ -7,8 +7,8 @@ import type {
   DomainDto,
   Paginated,
   PaginationParams,
-  TransactionDto,
   TransactionSearchDto,
+  TransactionWithHashDto,
 } from '@/shared/api/dto';
 
 interface HTTPService {
@@ -22,7 +22,7 @@ interface HTTPService {
   fetchDomain: (id: string) => Promise<DomainDto>
   fetchBlocks: (params?: PaginationParams) => Promise<Paginated<BlockDto>>
   fetchBlock: (heightOrHash: number | string) => Promise<BlockDto>
-  fetchTransactions: (params?: TransactionSearchDto) => Promise<Paginated<TransactionDto>>
+  fetchTransactions: (params?: TransactionSearchDto) => Promise<Paginated<TransactionWithHashDto>>
 }
 
 export const http: HTTPService = await import('./http');

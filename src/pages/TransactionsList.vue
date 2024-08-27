@@ -74,7 +74,7 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { transactionSchema } from '@/shared/api/dto';
+import { transactionsWithHashSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import { http } from '@/shared/api';
 
@@ -93,7 +93,7 @@ onMounted(async () => {
   try {
     await table.fetch();
 
-    transactionSchema.array().parse(table.items.value);
+    transactionsWithHashSchema.array().parse(table.items.value);
   } catch (e) {
     if (e instanceof ZodError) handleZodError(e);
     else handleUnknownError(e);

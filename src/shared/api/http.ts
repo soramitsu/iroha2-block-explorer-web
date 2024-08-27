@@ -6,9 +6,9 @@ import type {
   PaginationParams,
   BlockDto,
   Paginated,
-  TransactionDto,
-  AssetSearchDto,
   TransactionSearchDto,
+  TransactionWithHashDto,
+  AssetSearchDto,
 } from '@/shared/api/dto';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
@@ -64,6 +64,6 @@ export async function fetchBlock(heightOrHash: number | string): Promise<BlockDt
   return get(`/blocks/${heightOrHash}`);
 }
 
-export function fetchTransactions(params?: TransactionSearchDto): Promise<Paginated<TransactionDto>> {
+export function fetchTransactions(params?: TransactionSearchDto): Promise<Paginated<TransactionWithHashDto>> {
   return get('/transactions', params);
 }
