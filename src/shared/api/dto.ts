@@ -24,9 +24,11 @@ const paginationParamsSchema = z
 
 export type PaginationParams = z.infer<typeof paginationParamsSchema>;
 
+const metadataSchema = z.record(z.string(), z.any());
+
 export const accountSchema = z.object({
   id: z.string(),
-  metadata: z.record(z.string(), z.any()),
+  metadata: metadataSchema,
 });
 
 export type AccountDto = z.infer<typeof accountSchema>;
@@ -40,7 +42,7 @@ export const assetSchema = z.object({
   id: z.string(),
   value: z.union([
     z.object({ kind: z.literal('Numeric'), value: z.string() }),
-    z.object({ kind: z.literal('Store'), metadata: z.record(z.string(), z.any()) }),
+    z.object({ kind: z.literal('Store'), metadata: metadataSchema }),
   ]),
 });
 
@@ -49,7 +51,7 @@ export type AssetDto = z.infer<typeof assetSchema>;
 export const assetDefinitionSchema = z.object({
   id: z.string(),
   logo: z.string().nullable(),
-  metadata: z.record(z.string()),
+  metadata: metadataSchema,
   mintable: z.enum(['Infinitely', 'Once', 'Not']),
   owned_by: z.string(),
   type: z.union([
@@ -73,7 +75,7 @@ const transactionPayloadSchema = z.object({
     z.object({ kind: z.literal('Instructions'), value: z.record(z.string(), z.any()).array() }),
     z.object({ kind: z.literal('Wasm') }),
   ]),
-  metadata: z.record(z.string(), z.any()),
+  metadata: metadataSchema,
   time_to_live: z
     .object({
       ms: z.number().min(0),
@@ -129,7 +131,7 @@ export type BlockDto = z.infer<typeof blockSchema>;
 export const domainSchema = z.object({
   id: z.string(),
   logo: z.string().nullable(),
-  metadata: z.record(z.string(), z.any()),
+  metadata: metadataSchema,
   owned_by: z.string(),
 });
 
