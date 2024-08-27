@@ -57,7 +57,6 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { accountSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 
 const table = useTable(http.fetchAccounts);
