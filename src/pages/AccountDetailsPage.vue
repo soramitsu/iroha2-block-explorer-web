@@ -15,7 +15,6 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import invariant from 'tiny-invariant';
 import type { Account } from '@/shared/api/dto';
-import { accountSchema, assetSchema, transactionsWithHashSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import { getAssetName } from '@/features/assets';
 
@@ -46,14 +45,9 @@ onMounted(async () => {
     isFetchingAccount.value = true;
     account.value = await http.fetchAccount(accountId.value);
 
-    accountSchema.parse(account.value);
-
     if (account.value) {
       await Promise.all([assetsTable.fetch(), transactionsTable.fetch()]);
     }
-
-    transactionsWithHashSchema.array().parse(transactionsTable.items.value);
-    assetSchema.array().parse(assetsTable.items.value);
 
     isEmptyAssets.value = !assetsTable.items.value.length;
     isEmptyTransactions.value = !transactionsTable.items.value.length;

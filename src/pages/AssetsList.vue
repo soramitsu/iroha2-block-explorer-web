@@ -89,7 +89,6 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { onMounted } from 'vue';
-import { assetSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import { getAssetDomain, getAssetName } from '@/features/assets';
 
@@ -99,8 +98,6 @@ const { handleUnknownError, handleZodError } = useErrorHandlers();
 onMounted(async () => {
   try {
     await table.fetch();
-
-    assetSchema.array().parse(table.items.value);
   } catch (e) {
     if (e instanceof ZodError) handleZodError(e);
     else handleUnknownError(e);

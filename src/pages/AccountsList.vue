@@ -66,8 +66,6 @@ const { handleUnknownError, handleZodError } = useErrorHandlers();
 onMounted(async () => {
   try {
     await table.fetch();
-
-    accountSchema.array().parse(table.items.value);
   } catch (e) {
     if (e instanceof ZodError) handleZodError(e);
     else handleUnknownError(e);

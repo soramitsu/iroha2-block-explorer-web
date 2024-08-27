@@ -14,7 +14,6 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
 import invariant from 'tiny-invariant';
 import type { AssetDefinition } from '@/shared/api/dto';
-import { assetDefinitionSchema, transactionsWithHashSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 
@@ -55,11 +54,7 @@ onMounted(async () => {
     isFetchingAsset.value = true;
     asset.value = await http.fetchAssetDefinition(encodeURIComponent(assetId.value));
 
-    assetDefinitionSchema.parse(asset.value);
-
     await transactionsTable.fetch();
-
-    transactionsWithHashSchema.array().parse(transactionsTable.items.value);
   } catch (e) {
     if (e instanceof ZodError) handleZodError(e);
     else handleUnknownError(e);

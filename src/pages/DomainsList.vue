@@ -73,7 +73,6 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { domainSchema } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 
 const table = useTable(http.fetchDomains);
@@ -83,8 +82,6 @@ const { handleUnknownError, handleZodError } = useErrorHandlers();
 onMounted(async () => {
   try {
     await table.fetch();
-
-    domainSchema.array().parse(table.items.value);
   } catch (e) {
     if (e instanceof ZodError) handleZodError(e);
     else handleUnknownError(e);

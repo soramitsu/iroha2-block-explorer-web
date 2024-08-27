@@ -15,11 +15,11 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/dto';
-import { blockSchema } from '@/shared/api/dto';
+import { ZodError } from 'zod';
 
 const router = useRouter();
 
-const { handleUnknownError } = useErrorHandlers();
+const { handleUnknownError, handleZodError } = useErrorHandlers();
 
 const TRANSACTION_HASH_BREAKPOINT = 1200;
 const METRICS_HASH_BREAKPOINT = 1440;
@@ -48,14 +48,14 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-      blockSchema.parse(block.value);
       // TODO: replace with fetching peer status when backend is ready
       const blocks = 30;
 
       isNextBlockExists.value = block.value.header.height < blocks;
       isPreviousBlockExists.value = block.value.header.height > 1;
     } catch (e) {
-      handleUnknownError(e);
+      if (e instanceof ZodError) handleZodError(e);
+      else handleUnknownError(e);
     } finally {
       isFetchingBlock.value = false;
     }

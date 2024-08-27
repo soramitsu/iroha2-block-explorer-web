@@ -10,6 +10,14 @@ import type {
   TransactionWithHash,
   AssetSearchParams,
 } from '@/shared/api/dto';
+import {
+  accountSchema,
+  assetSchema,
+  assetDefinitionSchema,
+  domainSchema,
+  blockSchema,
+  transactionsWithHashSchema,
+} from '@/shared/api/dto';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
 
@@ -24,46 +32,69 @@ async function get<T>(path: string, params?: PaginationParams): Promise<T> {
   return res.json();
 }
 
-export function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
-  return get('/accounts', params);
+export async function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
+  const res = await get<Paginated<Account>>('/accounts', params);
+  accountSchema.array().parse(res.items);
+
+  return res;
 }
 
-export function fetchAccount(id: string): Promise<Account> {
-  return get(`/accounts/${id}`);
+export async function fetchAccount(id: string): Promise<Account> {
+  const res = await get<Account>(`/accounts/${id}`);
+  return accountSchema.parse(res);
 }
 
-export function fetchAssets(params?: AssetSearchParams): Promise<Paginated<Asset>> {
-  return get('/assets', params);
+export async function fetchAssets(params?: AssetSearchParams): Promise<Paginated<Asset>> {
+  const res = await get<Paginated<Asset>>('/assets', params);
+  assetSchema.array().parse(res.items);
+
+  return res;
 }
 
-export function fetchAsset(id: string): Promise<Asset> {
-  return get(`/assets/${id}`);
+export async function fetchAsset(id: string): Promise<Asset> {
+  const res = await get<Asset>(`/assets/${id}`);
+  return assetSchema.parse(res);
 }
 
-export function fetchAssetDefinitions(params: PaginationParams): Promise<Paginated<AssetDefinition>> {
-  return get('/asset-definitions', params);
+export async function fetchAssetDefinitions(params: PaginationParams): Promise<Paginated<AssetDefinition>> {
+  const res = await get<Paginated<AssetDefinition>>('/asset-definitions', params);
+  assetDefinitionSchema.array().parse(res.items);
+
+  return res;
 }
 
-export function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
-  return get(`/asset-definitions/${id}`);
+export async function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
+  const res = await get<AssetDefinition>(`/asset-definitions/${id}`);
+  return assetDefinitionSchema.parse(res);
 }
 
-export function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
-  return get('/domains', params);
+export async function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
+  const res = await get<Paginated<Domain>>('/domains', params);
+  domainSchema.array().parse(res.items);
+
+  return res;
 }
 
-export function fetchDomain(id: string): Promise<Domain> {
-  return get(`/domains/${id}`);
+export async function fetchDomain(id: string): Promise<Domain> {
+  const res = await get<Domain>(`/domains/${id}`);
+  return domainSchema.parse(res);
 }
 
-export function fetchBlocks(params?: PaginationParams): Promise<Paginated<Block>> {
-  return get('/blocks', params);
+export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<Block>> {
+  const res = await get<Paginated<Block>>('/blocks', params);
+  blockSchema.array().parse(res.items);
+
+  return res;
 }
 
 export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
-  return get(`/blocks/${heightOrHash}`);
+  const res = await get<Block>(`/blocks/${heightOrHash}`);
+  return blockSchema.parse(res);
 }
 
-export function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<TransactionWithHash>> {
-  return get('/transactions', params);
+export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<TransactionWithHash>> {
+  const res = await get<Paginated<TransactionWithHash>>('/transactions', params);
+  transactionsWithHashSchema.array().parse(res.items);
+
+  return res;
 }
