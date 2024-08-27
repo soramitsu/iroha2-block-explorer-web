@@ -26,20 +26,25 @@ export type PaginationParams = z.infer<typeof paginationParamsSchema>;
 
 const metadataSchema = z.record(z.string(), z.any());
 
+const accountIdSchema = z.string().brand('AccountId');
+const domainIdSchema = z.string().brand('DomainId');
+const assetDefinitionIdSchema = z.string().brand('AssetDefinitionId');
+const assetIdSchema = z.string().brand('AssetId');
+
 export const accountSchema = z.object({
-  id: z.string(),
+  id: accountIdSchema,
   metadata: metadataSchema,
 });
 
 export type AccountDto = z.infer<typeof accountSchema>;
 
 const assetSearchDto = paginationParamsSchema.extend({
-  owned_by: z.string().optional(),
+  owned_by: accountIdSchema.optional(),
 });
 export type AssetSearchDto = z.infer<typeof assetSearchDto>;
 
 export const assetSchema = z.object({
-  id: z.string(),
+  id: assetIdSchema,
   value: z.union([
     z.object({ kind: z.literal('Numeric'), value: z.string() }),
     z.object({ kind: z.literal('Store'), metadata: metadataSchema }),
@@ -49,11 +54,11 @@ export const assetSchema = z.object({
 export type AssetDto = z.infer<typeof assetSchema>;
 
 export const assetDefinitionSchema = z.object({
-  id: z.string(),
+  id: assetDefinitionIdSchema,
   logo: z.string().nullable(),
   metadata: metadataSchema,
   mintable: z.enum(['Infinitely', 'Once', 'Not']),
-  owned_by: z.string(),
+  owned_by: accountIdSchema,
   type: z.union([
     z.object({ kind: z.literal('Numeric'), scale: z.number().min(0).nullable() }),
     z.object({ kind: z.literal('Store') }),
@@ -63,7 +68,7 @@ export const assetDefinitionSchema = z.object({
 export type AssetDefinitionDto = z.infer<typeof assetDefinitionSchema>;
 
 const transactionSearchSchema = paginationParamsSchema.extend({
-  account: z.string().optional(),
+  account: accountIdSchema.optional(),
 });
 export type TransactionSearchDto = z.infer<typeof transactionSearchSchema>;
 
@@ -129,7 +134,7 @@ export const blockSchema = z.object({
 export type BlockDto = z.infer<typeof blockSchema>;
 
 export const domainSchema = z.object({
-  id: z.string(),
+  id: domainIdSchema,
   logo: z.string().nullable(),
   metadata: metadataSchema,
   owned_by: z.string(),
