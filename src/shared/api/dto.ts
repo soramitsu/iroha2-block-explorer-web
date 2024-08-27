@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import BigNumber from 'bignumber.js';
 
 const paginationSchema = z.object({
   page: z.number(),
@@ -46,7 +47,7 @@ export type AssetSearchDto = z.infer<typeof assetSearchDto>;
 export const assetSchema = z.object({
   id: assetIdSchema,
   value: z.union([
-    z.object({ kind: z.literal('Numeric'), value: z.string() }),
+    z.object({ kind: z.literal('Numeric'), value: z.string().transform((value) => BigNumber(value)) }),
     z.object({ kind: z.literal('Store'), metadata: metadataSchema }),
   ]),
 });
@@ -60,7 +61,14 @@ export const assetDefinitionSchema = z.object({
   mintable: z.enum(['Infinitely', 'Once', 'Not']),
   owned_by: accountIdSchema,
   type: z.union([
-    z.object({ kind: z.literal('Numeric'), scale: z.number().min(0).nullable() }),
+    z.object({
+      kind: z.literal('Numeric'),
+      scale: z
+        .number()
+        .min(0)
+        .transform((value) => BigNumber(value))
+        .nullable(),
+    }),
     z.object({ kind: z.literal('Store') }),
   ]),
 });
@@ -75,7 +83,7 @@ export type TransactionSearchDto = z.infer<typeof transactionSearchSchema>;
 const transactionPayloadSchema = z.object({
   authority: z.string(),
   chain: z.string(),
-  created_at: z.string(),
+  created_at: z.string().transform((x) => new Date(x)),
   instructions: z.union([
     z.object({ kind: z.literal('Instructions'), value: z.record(z.string(), z.any()).array() }),
     z.object({ kind: z.literal('Wasm') }),
@@ -83,7 +91,10 @@ const transactionPayloadSchema = z.object({
   metadata: metadataSchema,
   time_to_live: z
     .object({
-      ms: z.number().min(0),
+      ms: z
+        .number()
+        .min(0)
+        .transform((value) => BigNumber(value)),
     })
     .nullable(),
   nonce: z.number().nullable(),
@@ -113,9 +124,12 @@ export const blockSchema = z.object({
   hash: z.string(),
   header: z.object({
     consensus_estimation: z.object({
-      ms: z.number().min(0),
+      ms: z
+        .number()
+        .min(0)
+        .transform((value) => BigNumber(value)),
     }),
-    created_at: z.string(),
+    created_at: z.string().transform((x) => new Date(x)),
     height: z.number(),
     prev_block_hash: z.string().nullable(),
     transactions_hash: z.string(),
@@ -124,7 +138,10 @@ export const blockSchema = z.object({
   signatures: z.array(
     z.object({
       payload: z.string(),
-      topology_index: z.number().min(0),
+      topology_index: z
+        .number()
+        .min(0)
+        .transform((value) => BigNumber(value)),
     })
   ),
 

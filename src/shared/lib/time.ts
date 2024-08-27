@@ -5,7 +5,7 @@ function getAllElapsedMinutes(dateString: string | Date) {
   return Math.floor(diff / 1000 / 60);
 }
 
-function getElapsedSeconds(dateString: string) {
+function getElapsedSeconds(dateString: string | Date) {
   const date = new Date(dateString);
   const diff = Date.now() - date.getTime();
 
