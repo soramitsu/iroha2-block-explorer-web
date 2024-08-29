@@ -45,10 +45,9 @@ export const accountSchema = z.object({
 
 export type Account = z.infer<typeof accountSchema>;
 
-const assetSearchParamsSchema = paginationParamsSchema.extend({
-  owned_by: accountIdSchema.optional(),
-});
-export type AssetSearchParams = z.infer<typeof assetSearchParamsSchema>;
+export interface AssetSearchParams extends PaginationParams {
+  owned_by?: string
+}
 
 export const assetSchema = z.object({
   id: assetIdSchema,
@@ -77,10 +76,18 @@ export const assetDefinitionSchema = z.object({
 
 export type AssetDefinition = z.infer<typeof assetDefinitionSchema>;
 
-const transactionSearchParamsSchema = paginationParamsSchema.extend({
-  account: accountIdSchema.optional(),
+export const domainSchema = z.object({
+  id: domainIdSchema,
+  logo: z.string().nullable(),
+  metadata: metadataSchema,
+  owned_by: z.string(),
 });
-export type TransactionSearchParams = z.infer<typeof transactionSearchParamsSchema>;
+
+export type Domain = z.infer<typeof domainSchema>;
+
+export interface TransactionSearchParams extends PaginationParams {
+  account?: string
+}
 
 const transactionPayloadSchema = z.object({
   authority: z.string(),
@@ -136,12 +143,3 @@ export const blockSchema = z.object({
 });
 
 export type Block = z.infer<typeof blockSchema>;
-
-export const domainSchema = z.object({
-  id: domainIdSchema,
-  logo: z.string().nullable(),
-  metadata: metadataSchema,
-  owned_by: z.string(),
-});
-
-export type Domain = z.infer<typeof domainSchema>;
