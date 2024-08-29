@@ -70,7 +70,6 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { elapsed } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Transaction } from '@/shared/api/dto';
-import { transactionsWithHashSchema } from '@/shared/api/dto';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { http } from '@/shared/api';
 
