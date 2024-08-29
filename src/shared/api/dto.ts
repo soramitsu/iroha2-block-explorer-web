@@ -46,7 +46,7 @@ export type AssetSearchParams = z.infer<typeof assetSearchParamsSchema>;
 
 export const assetSchema = z.object({
   id: assetIdSchema,
-  value: z.union([
+  value: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('Numeric'), value: z.string().transform((value) => BigNumber(value)) }),
     z.object({ kind: z.literal('Store'), metadata: metadataSchema }),
   ]),
@@ -60,14 +60,10 @@ export const assetDefinitionSchema = z.object({
   metadata: metadataSchema,
   mintable: z.enum(['Infinitely', 'Once', 'Not']),
   owned_by: accountIdSchema,
-  type: z.union([
+  type: z.discriminatedUnion('kind', [
     z.object({
       kind: z.literal('Numeric'),
-      scale: z
-        .number()
-        .min(0)
-        .transform((value) => BigNumber(value))
-        .nullable(),
+      scale: z.number().min(0).nullable(),
     }),
     z.object({ kind: z.literal('Store') }),
   ]),
@@ -84,17 +80,14 @@ const transactionPayloadSchema = z.object({
   authority: z.string(),
   chain: z.string(),
   created_at: z.string().transform((x) => new Date(x)),
-  instructions: z.union([
+  instructions: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('Instructions'), value: z.record(z.string(), z.any()).array() }),
     z.object({ kind: z.literal('Wasm') }),
   ]),
   metadata: metadataSchema,
   time_to_live: z
     .object({
-      ms: z
-        .number()
-        .min(0)
-        .transform((value) => BigNumber(value)),
+      ms: z.number().min(0),
     })
     .nullable(),
   nonce: z.number().nullable(),
@@ -118,10 +111,7 @@ export const blockSchema = z.object({
   hash: z.string(),
   header: z.object({
     consensus_estimation: z.object({
-      ms: z
-        .number()
-        .min(0)
-        .transform((value) => BigNumber(value)),
+      ms: z.number().min(0),
     }),
     created_at: z.string().transform((x) => new Date(x)),
     height: z.number(),
@@ -132,10 +122,7 @@ export const blockSchema = z.object({
   signatures: z.array(
     z.object({
       payload: z.string(),
-      topology_index: z
-        .number()
-        .min(0)
-        .transform((value) => BigNumber(value)),
+      topology_index: z.number().min(0),
     })
   ),
 
