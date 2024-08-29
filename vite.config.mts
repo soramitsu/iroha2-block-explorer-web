@@ -8,13 +8,7 @@ import svg from 'vite-svg-loader';
 export default defineConfig({
   server: {
     proxy: {
-      '/api-proxy': {
-        target: 'http://127.0.0.1:4000',
-        changeOrigin: true,
-        secure: false,
-        ws: false,
-        rewrite: (path) => '/api/v1' + path.replace(/api-proxy\//, ''),
-      },
+      '/api/v1': 'http://127.0.0.1:4000',
     },
   },
   test: {
