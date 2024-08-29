@@ -87,7 +87,6 @@ onMounted(async () => {
 
     const { items } = await http.fetchTransactions();
 
-    transactionsWithHashSchema.array().parse(items);
     transactions.value = items;
   } catch (error) {
     handleUnknownError(error);

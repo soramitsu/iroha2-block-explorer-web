@@ -11,6 +11,12 @@ const paginationSchema = z.object({
 
 export type Pagination = z.infer<typeof paginationSchema>;
 
+export const paginatedSchema = <T extends z.ZodType>(item: T) =>
+  z.object({
+    pagination: paginationSchema,
+    items: item.array(),
+  });
+
 export interface Paginated<T> {
   pagination: Pagination
   items: T[]

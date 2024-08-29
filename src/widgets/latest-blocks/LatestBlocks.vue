@@ -63,7 +63,6 @@ onMounted(async () => {
 
     const { items } = await http.fetchBlocks();
 
-    blockSchema.array().parse(items);
     blocks.value = items;
   } catch (error) {
     handleUnknownError(error);
