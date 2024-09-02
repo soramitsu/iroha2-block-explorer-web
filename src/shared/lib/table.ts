@@ -4,7 +4,7 @@ import type { Paginated, Pagination, PaginationParams } from '@/shared/api/dto';
 
 export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;
 
-export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { params?: Record<string, any>, sticky?: boolean }) {
+export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boolean }) {
   const loading = ref(false);
 
   const items: Ref<T[]> = ref([]);
@@ -19,7 +19,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { params?: Recor
     total_items: 10,
   });
 
-  async function fetch() {
+  async function fetch(params?: Record<string, any>) {
     loading.value = true;
 
     const res = await fetchFn({
@@ -28,7 +28,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { params?: Recor
         page: pagination.page,
       }),
       per_page: pagination.per_page,
-      ...options?.params,
+      ...params,
     });
 
     if (isFirstFetch.value) isLengthBiggerThanPerPage.value = res.items.length !== res.pagination.per_page;
@@ -67,6 +67,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { params?: Recor
       if (pagination.total_pages && pagination.page < pagination.total_pages) {
         pagination.page++;
         await fetch();
+        if (pagination.page !== pagination.total_pages) pagination.page++;
       }
     } else if (pagination.page > 1) {
       pagination.page -= 1;
