@@ -7,17 +7,19 @@ import type {
   Block,
   Paginated,
   TransactionSearchParams,
-  TransactionWithHash,
   AssetSearchParams,
+  Transaction,
+  PeerStatus,
 } from '@/shared/api/dto';
 import {
+  peerStatusSchema,
   accountSchema,
   assetSchema,
   assetDefinitionSchema,
   domainSchema,
   blockSchema,
-  transactionsWithHashSchema,
   paginatedSchema,
+  transactionSchema,
 } from '@/shared/api/dto';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
@@ -53,13 +55,13 @@ export async function fetchAsset(id: string): Promise<Asset> {
   return assetSchema.parse(res);
 }
 
-export async function fetchAssetDefinitions(params: PaginationParams): Promise<Paginated<AssetDefinition>> {
-  const res = await get('/asset-definitions', params);
+export async function fetchAssetDefinitions(params?: PaginationParams): Promise<Paginated<AssetDefinition>> {
+  const res = await get('/assets-definitions', params);
   return paginatedSchema(assetDefinitionSchema).parse(res);
 }
 
 export async function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
-  const res = await get(`/asset-definitions/${id}`);
+  const res = await get(`/assets-definitions/${id}`);
   return assetDefinitionSchema.parse(res);
 }
 
@@ -83,7 +85,12 @@ export async function fetchBlock(heightOrHash: number | string): Promise<Block> 
   return blockSchema.parse(res);
 }
 
-export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<TransactionWithHash>> {
+export async function fetchPeerStatus(): Promise<PeerStatus> {
+  const res = await get('/status');
+  return peerStatusSchema.parse(res);
+}
+
+export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<Transaction>> {
   const res = await get('/transactions', params);
-  return paginatedSchema(transactionsWithHashSchema).parse(res);
+  return paginatedSchema(transactionSchema).parse(res);
 }

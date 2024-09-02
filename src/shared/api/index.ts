@@ -8,7 +8,8 @@ import type {
   Paginated,
   PaginationParams,
   TransactionSearchParams,
-  TransactionWithHash,
+  Transaction,
+  PeerStatus,
 } from '@/shared/api/dto';
 
 interface HTTPService {
@@ -16,13 +17,14 @@ interface HTTPService {
   fetchAccount: (id: string) => Promise<Account>
   fetchAssets: (params?: AssetSearchParams) => Promise<Paginated<Asset>>
   fetchAsset: (id: string) => Promise<Asset>
-  fetchAssetDefinitions: (params: PaginationParams) => Promise<Paginated<AssetDefinition>>
+  fetchAssetDefinitions: (params?: PaginationParams) => Promise<Paginated<AssetDefinition>>
   fetchAssetDefinition: (id: string) => Promise<AssetDefinition>
   fetchDomains: (params?: PaginationParams) => Promise<Paginated<Domain>>
   fetchDomain: (id: string) => Promise<Domain>
   fetchBlocks: (params?: PaginationParams) => Promise<Paginated<Block>>
   fetchBlock: (heightOrHash: number | string) => Promise<Block>
-  fetchTransactions: (params?: TransactionSearchParams) => Promise<Paginated<TransactionWithHash>>
+  fetchTransactions: (params?: TransactionSearchParams) => Promise<Paginated<Transaction>>
+  fetchPeerStatus: () => Promise<PeerStatus>
 }
 
 export const http: HTTPService = await import('./http');
