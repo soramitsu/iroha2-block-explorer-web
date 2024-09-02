@@ -196,8 +196,8 @@ const numbers = computed(() => {
   const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
 
   return props.sticky
-    ? [p.total_pages, '. . .', middleNumbers.reverse(), '. . .', 1]
-    : [1, '. . .', middleNumbers, '. . .', p.total_pages];
+    ? [p.total_pages, '. . .', ...middleNumbers.reverse(), '. . .', 1]
+    : [1, '. . .', ...middleNumbers, '. . .', p.total_pages];
 });
 
 const sizeOptions = [
