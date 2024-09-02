@@ -14,6 +14,8 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
 import invariant from 'tiny-invariant';
 import type { AssetDefinition } from '@/shared/api/dto';
+import { transformToAssetId } from '@/shared/api/dto';
+import { transformToAssetDefinitionId } from '@/shared/api/dto';
 import { ZodError } from 'zod';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 
@@ -26,25 +28,17 @@ const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
-const assetName = computed(() => {
+const assetDefinitionId = computed(() => {
   const name = router.currentRoute.value.params['id'];
 
   invariant(typeof name === 'string', 'Expected string');
 
-  return name;
+  const rest = router.currentRoute.value.hash;
+
+  const assetId = transformToAssetId(name + rest);
+
+  return transformToAssetDefinitionId(assetId.asset_definition_id);
 });
-
-const assetDomain = computed(() => {
-  const str = router.currentRoute.value.hash;
-
-  const domain = str.split('#')[1];
-
-  if (domain) return domain;
-
-  return str.split('@')[1];
-});
-
-const assetId = computed(() => assetName.value + '#' + assetDomain.value);
 
 const asset = ref<AssetDefinition | null>(null);
 const isFetchingAsset = ref(false);
@@ -52,7 +46,7 @@ const isFetchingAsset = ref(false);
 onMounted(async () => {
   try {
     isFetchingAsset.value = true;
-    asset.value = await http.fetchAssetDefinition(encodeURIComponent(assetId.value));
+    asset.value = await http.fetchAssetDefinition(encodeURIComponent(assetDefinitionId.value.toString()));
 
     await transactionsTable.fetch();
   } catch (e) {
@@ -93,12 +87,12 @@ const transactions = computed(() => {
           <div class="asset-details__metrics-data">
             <DataField
               :title="$t('name')"
-              :value="assetName"
+              :value="assetDefinitionId.name"
             />
             <DataField
               :title="$t('domain')"
-              :hash="assetDomain"
-              :link="`/domains/${assetDomain}`"
+              :hash="assetDefinitionId.domain"
+              :link="`/domains/${assetDefinitionId.domain}`"
             />
           </div>
           <div class="asset-details__metrics-data">

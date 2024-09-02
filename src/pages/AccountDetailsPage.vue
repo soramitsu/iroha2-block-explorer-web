@@ -16,7 +16,6 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import invariant from 'tiny-invariant';
 import type { Account } from '@/shared/api/dto';
 import { ZodError } from 'zod';
-import { getAssetName } from '@/features/assets';
 
 const router = useRouter();
 const { handleUnknownError, handleZodError } = useErrorHandlers();
@@ -135,7 +134,7 @@ const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
             <template #row="{ item }">
               <div class="account-details__personal-assets-list-row">
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ getAssetName(item.id) }}</span>
+                  <span>{{ item.id.asset }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-list-row-data row-text">
@@ -157,7 +156,7 @@ const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
               <div class="account-details__personal-assets-mobile-list-row">
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <span>{{ getAssetName(item.id) }}</span>
+                  <span>{{ item.id.asset }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">

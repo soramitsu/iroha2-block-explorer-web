@@ -27,14 +27,14 @@
             :to="`/assets/${item.id}`"
             class="cell"
           >
-            {{ getAssetName(item.id) }}
+            {{ item.id.asset }}
           </BaseLink>
 
           <BaseLink
-            :to="`/domains/${getAssetDomain(item.id)}`"
+            :to="`/domains/${item.id.domain}`"
             class="cell"
           >
-            {{ getAssetDomain(item.id) }}
+            {{ item.id.domain }}
           </BaseLink>
 
           <div class="cell row-text">
@@ -54,15 +54,15 @@
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
             <BaseLink :to="`/assets/${item.id}`">
-              {{ getAssetName(item.id) }}
+              {{ item.id.asset }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('domain') }}</span>
 
-            <BaseLink :to="`/domains/${getAssetDomain(item.id)}`">
-              {{ getAssetDomain(item.id) }}
+            <BaseLink :to="`/domains/${item.id.domain}`">
+              {{ item.id.domain }}
             </BaseLink>
           </div>
 
@@ -90,7 +90,6 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { onMounted } from 'vue';
 import { ZodError } from 'zod';
-import { getAssetDomain, getAssetName } from '@/features/assets';
 
 const table = useTable(http.fetchAssets);
 const { handleUnknownError, handleZodError } = useErrorHandlers();

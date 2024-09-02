@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import BigNumber from 'bignumber.js';
+import invariant from 'tiny-invariant';
 
 const paginationSchema = z.object({
   page: z.number(),
@@ -35,8 +36,87 @@ const metadataSchema = z.record(z.string(), z.any());
 
 const accountIdSchema = z.string().brand('AccountId');
 const domainIdSchema = z.string().brand('DomainId');
-const assetDefinitionIdSchema = z.string().brand('AssetDefinitionId');
-const assetIdSchema = z.string().brand('AssetId');
+
+class AssetDefinitionId {
+  private assetName = '';
+  private assetDomain = '';
+
+  public constructor(name: string, domain: string) {
+    this.assetName = name;
+    this.assetDomain = domain;
+  }
+
+  public get name() {
+    return this.assetName;
+  }
+  public get domain() {
+    return this.assetDomain;
+  }
+  public toString() {
+    return this.assetName + '#' + this.assetDomain;
+  }
+}
+
+export function transformToAssetDefinitionId(assetDefinitionId: string): AssetDefinitionId {
+  const parts = assetDefinitionId.split('#');
+  invariant(parts.length === 2, 'Invalid assetDefinitionId format');
+
+  const [asset, asset_domain] = parts;
+
+  return new AssetDefinitionId(asset, asset_domain);
+}
+
+class AssetId {
+  private assetName = '';
+  private assetDomain = '';
+  private accountSignatory = '';
+  private accountDomain = '';
+
+  public constructor(data: { asset: string, asset_domain: string, signatory: string, account_domain: string }) {
+    this.assetName = data.asset;
+    this.assetDomain = data.asset_domain;
+    this.accountSignatory = data.signatory;
+    this.accountDomain = data.account_domain;
+  }
+
+  public get asset() {
+    return this.assetName;
+  }
+  public get domain() {
+    return this.assetDomain ? this.assetDomain : this.accountDomain;
+  }
+  public get signatory() {
+    return this.accountSignatory;
+  }
+  public get account_domain() {
+    return this.accountDomain;
+  }
+  public get asset_definition_id() {
+    return this.assetName + '#' + this.domain;
+  }
+  public toString() {
+    return this.assetName + '#' + this.assetDomain + '#' + this.accountSignatory + '@' + this.accountDomain;
+  }
+}
+
+export function transformToAssetId(assetId: string): AssetId {
+  const assetIdParts = assetId.split('#');
+  invariant(assetIdParts.length === 3, 'Invalid assetId format');
+  const [asset, asset_domain, account] = assetIdParts;
+
+  const accountParts = account.split('@');
+  invariant(accountParts.length === 2, 'Invalid account format');
+  const [signatory, account_domain] = accountParts;
+
+  const data = {
+    asset,
+    asset_domain,
+    signatory,
+    account_domain,
+  };
+
+  return new AssetId(data);
+}
 
 export const accountSchema = z.object({
   id: accountIdSchema,
@@ -52,7 +132,7 @@ export interface AssetSearchParams extends PaginationParams {
 }
 
 export const assetSchema = z.object({
-  id: assetIdSchema,
+  id: z.string().transform(transformToAssetId),
   value: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('Numeric'), value: z.string().transform((value) => BigNumber(value)) }),
     z.object({ kind: z.literal('Store'), metadata: metadataSchema }),
@@ -62,7 +142,7 @@ export const assetSchema = z.object({
 export type Asset = z.infer<typeof assetSchema>;
 
 export const assetDefinitionSchema = z.object({
-  id: assetDefinitionIdSchema,
+  id: z.string().transform(transformToAssetDefinitionId),
   type: z.enum(['Numeric', 'Store']),
   logo: z.string().nullable(),
   assets: z.number(),
