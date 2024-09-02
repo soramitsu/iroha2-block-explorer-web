@@ -29,12 +29,10 @@ const props = withDefaults(
       :class="{ 'row-text': !props.link }"
     />
     <span
-      v-else-if="value"
+      v-else-if="typeof props.value !== 'undefined'"
       class="data-field__value"
       :class="{ 'data-field__value_bold': props.bold }"
-    >{{
-      props.value
-    }}</span>
+    >{{ props.value }}</span>
   </div>
 </template>
 
