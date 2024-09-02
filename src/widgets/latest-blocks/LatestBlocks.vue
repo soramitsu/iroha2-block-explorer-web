@@ -16,18 +16,18 @@
           :key="block.height"
         >
           <div class="latest-blocks__row">
-            <BaseLink :to="`/blocks/${block.header.height}`">
-              {{ block.header.height }}
+            <BaseLink :to="`/blocks/${block.height}`">
+              {{ block.height }}
             </BaseLink>
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
-              {{ $t('time.min', [elapsed.allMinutes(block.header.created_at)]) }}
-              {{ $t('time.sec', [elapsed.seconds(block.header.created_at)]) }}
+              {{ $t('time.min', [elapsed.allMinutes(block.created_at)]) }}
+              {{ $t('time.sec', [elapsed.seconds(block.created_at)]) }}
               {{ $t('time.ago') }}
             </div>
 
-            <span class="latest-blocks__number">{{ block.transactions.length }} txns</span>
+            <span class="latest-blocks__number">{{ block.transactions_total }} txns</span>
           </div>
         </template>
       </div>

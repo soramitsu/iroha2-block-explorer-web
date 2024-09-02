@@ -38,13 +38,13 @@
           <div class="latest-transactions__info">
             <div class="latest-transactions__time">
               <TimeIcon />
-              <span>{{ $t('time.min', [elapsed.allMinutes(transaction.payload.created_at)]) }} {{ $t('time.ago') }}</span>
+              <span>{{ $t('time.min', [elapsed.allMinutes(transaction.created_at)]) }} {{ $t('time.ago') }}</span>
             </div>
 
             <BaseHash
-              :hash="transaction.payload.authority"
+              :hash="transaction.authority"
               type="medium"
-              :link="`/accounts/${transaction.payload.authority}`"
+              :link="`/accounts/${transaction.authority}`"
               class="latest-transactions__account"
             />
           </div>
@@ -84,7 +84,7 @@ onMounted(async () => {
   try {
     isLoading.value = true;
 
-    const { items } = await http.fetchTransactions();
+    const { items } = await http.fetchTransactions({ per_page: 5 });
 
     transactions.value = items;
   } catch (error) {
