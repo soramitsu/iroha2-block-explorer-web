@@ -6,6 +6,7 @@ export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>
 
 export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boolean }) {
   const loading = ref(false);
+  const additionalFetchingParams = ref<Record<string, any> | null>(null);
 
   const items: Ref<T[]> = ref([]);
 
@@ -21,14 +22,14 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
 
   async function fetch(params?: Record<string, any>) {
     loading.value = true;
-
+    if (params) additionalFetchingParams.value = params;
     const res = await fetchFn({
       ...((!options?.sticky ||
         (options?.sticky && !isFirstFetch.value && pagination.page !== pagination.total_pages)) && {
         page: pagination.page,
       }),
       per_page: pagination.per_page,
-      ...params,
+      ...additionalFetchingParams.value,
     });
 
     if (isFirstFetch.value) isLengthBiggerThanPerPage.value = res.items.length !== res.pagination.per_page;
