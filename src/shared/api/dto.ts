@@ -41,6 +41,8 @@ const assetIdSchema = z.string().brand('AssetId');
 export const accountSchema = z.object({
   id: accountIdSchema,
   metadata: metadataSchema,
+  owned_assets: z.number(),
+  owned_domains: z.number(),
 });
 
 export type Account = z.infer<typeof accountSchema>;
@@ -61,17 +63,12 @@ export type Asset = z.infer<typeof assetSchema>;
 
 export const assetDefinitionSchema = z.object({
   id: assetDefinitionIdSchema,
+  type: z.enum(['Numeric', 'Store']),
   logo: z.string().nullable(),
+  assets: z.number(),
   metadata: metadataSchema,
   mintable: z.enum(['Infinitely', 'Once', 'Not']),
   owned_by: accountIdSchema,
-  type: z.discriminatedUnion('kind', [
-    z.object({
-      kind: z.literal('Numeric'),
-      scale: z.number().min(0).nullable(),
-    }),
-    z.object({ kind: z.literal('Store') }),
-  ]),
 });
 
 export type AssetDefinition = z.infer<typeof assetDefinitionSchema>;
@@ -81,65 +78,71 @@ export const domainSchema = z.object({
   logo: z.string().nullable(),
   metadata: metadataSchema,
   owned_by: z.string(),
+  accounts: z.number(),
+  assets: z.number(),
 });
 
 export type Domain = z.infer<typeof domainSchema>;
 
 export interface TransactionSearchParams extends PaginationParams {
-  account?: string
+  authority?: string
+  block_hash?: string
 }
 
-const transactionPayloadSchema = z.object({
+export const transactionSchema = z.object({
   authority: z.string(),
-  chain: z.string(),
+  hash: z.string(),
+  block_hash: z.string(),
+  error: z.boolean(),
   created_at: z.string().transform((x) => new Date(x)),
-  instructions: z.discriminatedUnion('kind', [
-    z.object({ kind: z.literal('Instructions'), value: z.record(z.string(), z.any()).array() }),
-    z.object({ kind: z.literal('Wasm') }),
-  ]),
+  instructions: z.enum(['Instructions', 'Wasm']),
+});
+
+export const detailedTransactionSchema = z.object({
+  authority: z.string(),
+  hash: z.string(),
+  block_hash: z.string(),
+  created_at: z.string().transform((x) => new Date(x)),
+  instructions: z.enum(['Instructions', 'Wasm']),
+  error: z.record(z.string(), z.any()).nullable(),
   metadata: metadataSchema,
+  nonce: z.number().nullable(),
+  signature: z.string(),
   time_to_live: z
     .object({
       ms: z.number().min(0),
     })
     .nullable(),
-  nonce: z.number().nullable(),
-});
-
-const transactionSchema = z.object({
-  hash: z.string(),
-  error: z.record(z.string(), z.any()).nullable(),
-  payload: transactionPayloadSchema,
-  signature: z.string(),
-});
-
-export const transactionsWithHashSchema = transactionSchema.extend({
-  block_hash: z.string(),
 });
 
 export type Transaction = z.infer<typeof transactionSchema>;
-export type TransactionWithHash = z.infer<typeof transactionsWithHashSchema>;
+export type DetailedTransaction = z.infer<typeof detailedTransactionSchema>;
 
 export const blockSchema = z.object({
   hash: z.string(),
-  header: z.object({
-    consensus_estimation: z.object({
-      ms: z.number().min(0),
-    }),
-    created_at: z.string().transform((x) => new Date(x)),
-    height: z.number(),
-    prev_block_hash: z.string().nullable(),
-    transactions_hash: z.string(),
+  height: z.number(),
+  created_at: z.string().transform((x) => new Date(x)),
+  prev_block_hash: z.string().nullable(),
+  transactions_hash: z.string(),
+  transactions_rejected: z.number(),
+  transactions_total: z.number(),
+  consensus_estimation: z.object({
+    ms: z.number().min(0),
   }),
-
-  signatures: z.array(
-    z.object({
-      payload: z.string(),
-      topology_index: z.number().min(0),
-    })
-  ),
-
-  transactions: transactionSchema.array(),
 });
 
 export type Block = z.infer<typeof blockSchema>;
+
+export const peerStatusSchema = z.object({
+  blocks: z.number(),
+  peers: z.number(),
+  queue_size: z.number(),
+  txs_accepted: z.number(),
+  txs_rejected: z.number(),
+  uptime: z.object({
+    ms: z.number().min(0),
+  }),
+  view_changes: z.number(),
+});
+
+export type PeerStatus = z.infer<typeof peerStatusSchema>;
