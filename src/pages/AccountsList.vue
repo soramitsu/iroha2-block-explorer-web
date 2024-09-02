@@ -16,6 +16,8 @@
       <template #header>
         <div class="accounts-list-page__row">
           <span class="h-sm cell">{{ $t('accounts.address') }}</span>
+          <span class="h-sm">{{ $t('domains.domains') }}</span>
+          <span class="h-sm">{{ $t('assets.assets') }}</span>
         </div>
       </template>
 
@@ -24,10 +26,13 @@
           <BaseHash
             :hash="item.id"
             :link="`/accounts/${item.id}`"
-            type="full"
+            :type="hashType"
             copy
             class="cell"
           />
+
+          <span class="row-text">{{ item.owned_domains }}</span>
+          <span class="row-text">{{ item.owned_assets }}</span>
         </div>
       </template>
 
@@ -41,6 +46,16 @@
               :type="hashType"
               copy
             />
+          </div>
+
+          <div class="accounts-list-page__mobile-row">
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('domains.domains') }}</span>
+            <span class="row-text">{{ item.owned_domains }}</span>
+          </div>
+
+          <div class="accounts-list-page__mobile-row">
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('assets.assets') }}</span>
+            <span class="row-text">{{ item.owned_assets }}</span>
           </div>
         </div>
       </template>
@@ -71,7 +86,7 @@ onMounted(async () => {
   }
 });
 
-const HASH_BREAKPOINT = 1000;
+const HASH_BREAKPOINT = 1300;
 const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
@@ -84,7 +99,7 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 3fr 1fr 1fr;
+    grid-template-columns: 2.5fr 0.5fr 0.5fr;
   }
 
   &__mobile-card {
@@ -97,7 +112,10 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full
   }
 
   &__mobile-label {
+    text-align: left;
     width: size(12);
+    padding: size(1);
+    margin-right: size(3);
   }
 
   &__container {

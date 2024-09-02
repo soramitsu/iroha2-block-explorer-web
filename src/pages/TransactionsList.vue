@@ -15,6 +15,7 @@
       :pagination="table.pagination"
       :items="table.items.value"
       container-class="transactions-list-page__container"
+      sticky
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -41,7 +42,7 @@
             />
 
             <div class="transactions-list-page__time">
-              {{ format(item.payload.created_at) }}
+              {{ format(item.created_at) }}
             </div>
           </div>
 
@@ -85,7 +86,7 @@ const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
-const table = useTable(http.fetchTransactions);
+const table = useTable(http.fetchTransactions, { sticky: true });
 const { handleUnknownError, handleZodError } = useErrorHandlers();
 
 onMounted(async () => {

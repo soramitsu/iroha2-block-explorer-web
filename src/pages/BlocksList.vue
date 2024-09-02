@@ -26,14 +26,14 @@
       <template #row="{ item }">
         <div class="blocks-list-page__row">
           <BaseLink
-            :to="`/blocks/${item.header.height}`"
+            :to="`/blocks/${item.height}`"
             class="cell"
           >
-            {{ item.header.height }}
+            {{ item.height }}
           </BaseLink>
 
           <div class="cell">
-            <time class="row-text">{{ format(item.header.created_at) }}</time>
+            <time class="row-text">{{ format(item.created_at) }}</time>
           </div>
 
           <BaseHash
@@ -45,7 +45,7 @@
           />
 
           <div class="cell row-text">
-            {{ item.transactions.length }}
+            {{ item.transactions_total }}
           </div>
         </div>
       </template>
@@ -55,14 +55,14 @@
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.height') }}</span>
 
-            <BaseLink :to="`/blocks/${item.header.height}`">
-              {{ item.header.height }}
+            <BaseLink :to="`/blocks/${item.height}`">
+              {{ item.height }}
             </BaseLink>
           </div>
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.age') }}</span>
-            <time class="row-text">{{ format(item.header.created_at) }}</time>
+            <time class="row-text">{{ format(item.created_at) }}</time>
           </div>
 
           <div class="blocks-list-page__mobile-row">
@@ -70,7 +70,7 @@
 
             <BaseHash
               :hash="item.hash"
-              :link="`/blocks/${item.header.height}`"
+              :link="`/blocks/${item.height}`"
               type="short"
               copy
             />
@@ -78,7 +78,7 @@
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('transactions.transactions') }}</span>
-            <span class="row-text">{{ item.transactions.length }}</span>
+            <span class="row-text">{{ item.transactions_total }}</span>
           </div>
         </div>
       </template>

@@ -17,6 +17,8 @@
         <div class="domains-list-page__row">
           <span class="h-sm cell">{{ $t('name') }}</span>
           <span class="h-sm">{{ $t('domains.ownedBy') }}</span>
+          <span class="h-sm">{{ $t('domains.totalAccounts') }}</span>
+          <span class="h-sm">{{ $t('domains.totalAssets') }}</span>
         </div>
       </template>
 
@@ -35,6 +37,9 @@
             :type="hashType"
             copy
           />
+
+          <span class="row-text">{{ item.accounts }}</span>
+          <span class="row-text">{{ item.assets }}</span>
         </div>
       </template>
 
@@ -49,13 +54,22 @@
           </div>
 
           <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ 'Owned by' }}</span>
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.ownedBy') }}</span>
             <BaseHash
               :hash="item.owned_by"
               :link="`/accounts/${item.owned_by}`"
               :type="hashType"
               copy
             />
+          </div>
+
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAccounts') }}</span>
+            <span class="row-text">{{ item.accounts }}</span>
+          </div>
+          <div class="domains-list-page__mobile-row">
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAssets') }}</span>
+            <span class="row-text">{{ item.assets }}</span>
           </div>
         </div>
       </template>
@@ -88,7 +102,7 @@ onMounted(async () => {
   }
 });
 
-const HASH_BREAKPOINT = 1200;
+const HASH_BREAKPOINT = 1350;
 const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
@@ -101,7 +115,7 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 0.5fr 2fr;
+    grid-template-columns: 0.5fr 2.2fr 0.4fr 0.5fr;
   }
 
   &__mobile-card {
