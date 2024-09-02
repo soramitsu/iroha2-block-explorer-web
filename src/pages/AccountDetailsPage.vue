@@ -46,7 +46,10 @@ onMounted(async () => {
     account.value = await http.fetchAccount(accountId.value);
 
     if (account.value) {
-      await Promise.all([assetsTable.fetch(), transactionsTable.fetch()]);
+      await Promise.all([
+        assetsTable.fetch({ owned_by: accountId.value }),
+        transactionsTable.fetch({ authority: accountId.value }),
+      ]);
     }
 
     isEmptyAssets.value = !assetsTable.items.value.length;
@@ -59,18 +62,11 @@ onMounted(async () => {
   }
 });
 
-const assetsTable = useTable(http.fetchAssets, { params: { owned_by: accountId.value } });
+const assetsTable = useTable(http.fetchAssets);
 
 const transactionStatus = ref<ftm.Status>(null);
 
-const transactionsTable = useTable(http.fetchTransactions, { params: { account: accountId.value } });
-
-const transactions = computed(() => {
-  if (transactionStatus.value === 'committed') return transactionsTable.items.value.filter((t) => !t.error);
-  else if (transactionStatus.value === 'rejected') return transactionsTable.items.value.filter((t) => t.error);
-
-  return transactionsTable.items.value;
-});
+const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
 </script>
 
 <template>
@@ -87,13 +83,23 @@ const transactions = computed(() => {
           >
             <BaseLoading />
           </div>
-          <div v-else>
+          <div v-else-if="account">
             <div class="account-details__personal-information-row">
               <DataField
                 :title="$t('accounts.accountId')"
                 :hash="accountId"
                 copy
                 type="medium"
+              />
+
+              <DataField
+                :title="$t('accounts.ownedDomains')"
+                :value="account.owned_domains"
+              />
+
+              <DataField
+                :title="$t('accounts.ownedAssets')"
+                :value="account.owned_assets"
               />
             </div>
           </div>
@@ -197,8 +203,14 @@ const transactions = computed(() => {
           <BaseTable
             v-else
             :loading="transactionsTable.loading.value"
-            :items="transactions"
+            :items="transactionsTable.items.value"
             container-class="account-details__transactions-container"
+            sticky
+            :pagination="transactionsTable.pagination"
+            @next-page="transactionsTable.nextPage()"
+            @prev-page="transactionsTable.prevPage()"
+            @set-page="transactionsTable.setPage($event)"
+            @set-size="transactionsTable.setSize($event)"
           >
             <template #row="{ item }">
               <div class="account-details__transactions-row">
@@ -223,7 +235,7 @@ const transactions = computed(() => {
 
                 <span class="account-details__transactions-row-column">
                   <span class="account-details__transactions-row-column-time row-text">{{
-                    format(item.payload.created_at)
+                    format(item.created_at)
                   }}</span>
                 </span>
               </div>
@@ -276,6 +288,10 @@ const transactions = computed(() => {
       &-row {
         margin-top: size(2);
         padding: 0 size(2) 0 size(4);
+
+        & > div:not(:first-child) {
+          margin-top: size(2);
+        }
       }
     }
 
