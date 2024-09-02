@@ -68,7 +68,9 @@
     "accountId": "Account ID",
     "value": "Value",
     "accountDoesntHaveAnyAssets": "Account doesn't have any assets",
-    "accountDoesntHaveAnyTransactions": "Account doesn't have any transactions"
+    "accountDoesntHaveAnyTransactions": "Account doesn't have any transactions",
+    "ownedDomains": "Owned Domains",
+    "ownedAssets": "Owned Assets"
   },
   "assets": {
     "assets": "Assets",
@@ -90,6 +92,8 @@
   },
   "domains": {
     "domains": "Domains",
-    "ownedBy": "Owned By"
+    "ownedBy": "Owned By",
+    "totalAccounts": "Total Accounts",
+    "totalAssets": "Total Assets"
   }
 }
