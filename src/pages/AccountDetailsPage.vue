@@ -122,6 +122,11 @@ const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
             :items="assetsTable.items.value"
             container-class="account-details__personal-assets-list"
             breakpoint="960"
+            :pagination="assetsTable.pagination"
+            @next-page="assetsTable.nextPage()"
+            @prev-page="assetsTable.prevPage()"
+            @set-page="assetsTable.setPage($event)"
+            @set-size="assetsTable.setSize($event)"
           >
             <template #header>
               <div class="account-details__personal-assets-list-row">
