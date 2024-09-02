@@ -90,9 +90,12 @@ const transactions = computed(() => {
               :value="assetDefinitionId.name"
             />
             <DataField
-              :title="$t('domain')"
-              :hash="assetDefinitionId.domain"
-              :link="`/domains/${assetDefinitionId.domain}`"
+              :title="$t('type')"
+              :value="asset.type"
+            />
+            <DataField
+              :title="$t('mintable')"
+              :value="asset.mintable"
             />
           </div>
           <div class="asset-details__metrics-data">
@@ -101,12 +104,9 @@ const transactions = computed(() => {
               :value="asset.assets"
             />
             <DataField
-              :title="$t('type')"
-              :value="asset.type"
-            />
-            <DataField
-              :title="$t('mintable')"
-              :value="asset.mintable"
+              :title="$t('domain')"
+              :hash="assetDefinitionId.domain"
+              :link="`/domains/${assetDefinitionId.domain}`"
             />
           </div>
         </div>
@@ -186,10 +186,6 @@ const transactions = computed(() => {
       }
 
       @include sm {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      @include md {
         grid-template-columns: 1fr 1fr 1fr;
       }
 
