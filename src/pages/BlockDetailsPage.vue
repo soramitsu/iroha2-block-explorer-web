@@ -16,6 +16,7 @@ import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-2
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/dto';
 import { ZodError } from 'zod';
+import { useTable } from '@/shared/lib/table';
 
 const router = useRouter();
 
@@ -48,11 +49,13 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-      // TODO: replace with fetching peer status when backend is ready
-      const blocks = 30;
+      const [, { blocks }] = await Promise.all([
+        transactionsTable.fetch({ block_hash: block.value.hash }),
+        http.fetchPeerStatus(),
+      ]);
 
-      isNextBlockExists.value = block.value.header.height < blocks;
-      isPreviousBlockExists.value = block.value.header.height > 1;
+      isNextBlockExists.value = block.value.height < blocks;
+      isPreviousBlockExists.value = block.value.height > 1;
     } catch (e) {
       if (e instanceof ZodError) handleZodError(e);
       else handleUnknownError(e);
@@ -66,25 +69,18 @@ watch(
 function handlePreviousBlockClick() {
   if (!block.value) return;
 
-  router.push({ name: 'blocks-details', params: { heightOrHash: block.value.header.height - 1 } });
+  router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height - 1 } });
 }
 
 function handleNextBlockClick() {
   if (!block.value) return;
 
-  router.push({ name: 'blocks-details', params: { heightOrHash: block.value.header.height + 1 } });
+  router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
 
 const transactionStatus = ref<ftm.Status>(null);
 
-const transactions = computed(() => {
-  if (!block.value) return [];
-
-  if (transactionStatus.value === 'committed') return block.value.transactions.filter((t) => !t.error);
-  else if (transactionStatus.value === 'rejected') return block.value.transactions.filter((t) => t.error);
-
-  return block.value.transactions;
-});
+const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
 </script>
 
 <template>
@@ -100,7 +96,7 @@ const transactions = computed(() => {
             data-testid="prevBlock"
             @click="handlePreviousBlockClick"
           />
-          {{ $t('blocks.block', [block?.header.height]) }}
+          {{ $t('blocks.block', [block?.height]) }}
           <ArrowIcon
             v-if="isNextBlockExists"
             data-testid="nextBlock"
@@ -126,17 +122,17 @@ const transactions = computed(() => {
               />
 
               <DataField
-                v-if="block.header.prev_block_hash"
+                v-if="block.prev_block_hash"
                 :title="$t('blocks.parentBlockHash')"
-                :hash="block.header.prev_block_hash"
+                :hash="block.prev_block_hash"
                 :type="metricsHashType"
-                :link="`/blocks/${block.header.prev_block_hash}`"
+                :link="`/blocks/${block.prev_block_hash}`"
                 copy
               />
 
               <DataField
                 :title="$t('blocks.createdAt')"
-                :value="format(block.header.created_at)"
+                :value="format(block.created_at)"
                 copy
               />
             </div>
@@ -155,12 +151,17 @@ const transactions = computed(() => {
         />
       </div>
 
-      <!--      TODO: Add pagination when backend is ready-->
       <BaseTable
         v-if="block"
-        :loading="isFetchingBlock"
-        :items="transactions"
+        :loading="isFetchingBlock || transactionsTable.loading.value"
+        :items="transactionsTable.items.value"
         container-class="block-details__transactions-container"
+        sticky
+        :pagination="transactionsTable.pagination"
+        @next-page="transactionsTable.nextPage()"
+        @prev-page="transactionsTable.prevPage()"
+        @set-page="transactionsTable.setPage($event)"
+        @set-size="transactionsTable.setSize($event)"
       >
         <template #row="{ item }">
           <div class="block-details__transactions-row">
@@ -184,9 +185,7 @@ const transactions = computed(() => {
             </div>
 
             <span class="block-details__transactions-row-column">
-              <span class="block-details__transactions-row-column-time row-text">{{
-                format(item.payload.created_at)
-              }}</span>
+              <span class="block-details__transactions-row-column-time row-text">{{ format(item.created_at) }}</span>
             </span>
           </div>
         </template>
