@@ -96,17 +96,23 @@ const transactions = computed(() => {
               :value="assetName"
             />
             <DataField
+              :title="$t('domain')"
+              :hash="assetDomain"
+              :link="`/domains/${assetDomain}`"
+            />
+          </div>
+          <div class="asset-details__metrics-data">
+            <DataField
+              :title="$t('assets.assets')"
+              :value="asset.assets"
+            />
+            <DataField
               :title="$t('type')"
-              :value="asset.type.kind"
+              :value="asset.type"
             />
             <DataField
               :title="$t('mintable')"
               :value="asset.mintable"
-            />
-            <DataField
-              :title="$t('domain')"
-              :hash="assetDomain"
-              :link="`/domains/${assetDomain}`"
             />
           </div>
         </div>
@@ -142,7 +148,7 @@ const transactions = computed(() => {
                 :hash="item.hash"
                 :link="`/transactions/${item.hash}`"
               />
-              <span class="asset-details__transactions-row-data-time row-text">{{ $t('time.min', [elapsed.allMinutes(item.payload.created_at)]) }} {{ $t('time.ago') }}</span>
+              <span class="asset-details__transactions-row-data-time row-text">{{ $t('time.min', [elapsed.allMinutes(item.created_at)]) }} {{ $t('time.ago') }}</span>
             </div>
           </div>
         </template>
@@ -181,12 +187,16 @@ const transactions = computed(() => {
       gap: size(2);
       grid-template-columns: 1fr;
 
+      @include xxs {
+        grid-template-columns: 1fr;
+      }
+
       @include sm {
         grid-template-columns: 1fr 1fr;
       }
 
-      @include lg {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+      @include md {
+        grid-template-columns: 1fr 1fr 1fr;
       }
 
       .base-link {
