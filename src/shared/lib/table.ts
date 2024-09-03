@@ -33,7 +33,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { reversed?: boo
       ...additionalFetchingParams.value,
     });
 
-    if (isFirstFetch.value) isLengthBiggerThanPerPage.value = res.items.length !== res.pagination.per_page;
+    if (isFirstFetch.value) isLengthBiggerThanPerPage.value = res.items.length > res.pagination.per_page;
 
     items.value = res.items;
     pagination.page = res.pagination.page;
