@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
@@ -13,9 +13,9 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
 import invariant from 'tiny-invariant';
-import type { AssetDefinition } from '@/shared/api/dto';
-import { transformToAssetId } from '@/shared/api/dto';
-import { transformToAssetDefinitionId } from '@/shared/api/dto';
+import type { AssetDefinition } from '@/shared/api/schemas';
+import { transformToAssetId } from '@/shared/api/schemas';
+import { transformToAssetDefinitionId } from '@/shared/api/schemas';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 
 const router = useRouter();
@@ -45,7 +45,7 @@ const isFetchingAsset = ref(false);
 onMounted(async () => {
   try {
     isFetchingAsset.value = true;
-    asset.value = await http.fetchAssetDefinition(encodeURIComponent(assetDefinitionId.value.toString()));
+    asset.value = await http.fetchAssetDefinition(assetDefinitionId.value);
 
     await transactionsTable.fetch();
   } catch (e) {

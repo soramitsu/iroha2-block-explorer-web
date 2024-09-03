@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
@@ -14,7 +14,8 @@ import { format } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import invariant from 'tiny-invariant';
-import type { Account } from '@/shared/api/dto';
+import type { Account } from '@/shared/api/schemas';
+import { transformToAccountId } from '@/shared/api/schemas';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -29,7 +30,7 @@ const accountId = computed(() => {
 
   invariant(typeof id === 'string', 'Expected string');
 
-  return id;
+  return transformToAccountId(id);
 });
 
 const account = ref<Account | null>(null);
@@ -45,8 +46,8 @@ onMounted(async () => {
 
     if (account.value) {
       await Promise.all([
-        assetsTable.fetch({ owned_by: accountId.value }),
-        transactionsTable.fetch({ authority: accountId.value }),
+        assetsTable.fetch({ owned_by: accountId.value.toString() }),
+        transactionsTable.fetch({ authority: accountId.value.toString() }),
       ]);
     }
 
@@ -84,7 +85,7 @@ const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
             <div class="account-details__personal-information-row">
               <DataField
                 :title="$t('accounts.accountId')"
-                :hash="accountId"
+                :hash="accountId.toString()"
                 copy
                 type="medium"
               />

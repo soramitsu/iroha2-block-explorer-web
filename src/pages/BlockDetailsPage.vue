@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
@@ -14,7 +14,7 @@ import { format } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
-import type { Block } from '@/shared/api/dto';
+import type { Block } from '@/shared/api/schemas';
 import { useTable } from '@/shared/lib/table';
 
 const router = useRouter();
