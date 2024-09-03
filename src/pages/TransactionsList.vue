@@ -75,7 +75,6 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { ZodError } from 'zod';
 import { http } from '@/shared/api';
 
 const HASH_BREAKPOINT = 1200;
@@ -87,14 +86,13 @@ const { width } = useWindowSize();
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
 const table = useTable(http.fetchTransactions, { sticky: true });
-const { handleUnknownError, handleZodError } = useErrorHandlers();
+const { handleUnknownError } = useErrorHandlers();
 
 onMounted(async () => {
   try {
     await table.fetch();
   } catch (e) {
-    if (e instanceof ZodError) handleZodError(e);
-    else handleUnknownError(e);
+    handleUnknownError(e);
   }
 });
 </script>

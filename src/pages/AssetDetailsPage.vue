@@ -16,12 +16,11 @@ import invariant from 'tiny-invariant';
 import type { AssetDefinition } from '@/shared/api/dto';
 import { transformToAssetId } from '@/shared/api/dto';
 import { transformToAssetDefinitionId } from '@/shared/api/dto';
-import { ZodError } from 'zod';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 
 const router = useRouter();
 
-const { handleUnknownError, handleZodError } = useErrorHandlers();
+const { handleUnknownError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 800;
 const { width } = useWindowSize();
@@ -50,8 +49,7 @@ onMounted(async () => {
 
     await transactionsTable.fetch();
   } catch (e) {
-    if (e instanceof ZodError) handleZodError(e);
-    else handleUnknownError(e);
+    handleUnknownError(e);
   } finally {
     isFetchingAsset.value = false;
   }

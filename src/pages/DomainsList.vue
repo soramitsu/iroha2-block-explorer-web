@@ -87,18 +87,16 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { ZodError } from 'zod';
 
 const table = useTable(http.fetchDomains);
 
-const { handleUnknownError, handleZodError } = useErrorHandlers();
+const { handleUnknownError } = useErrorHandlers();
 
 onMounted(async () => {
   try {
     await table.fetch();
   } catch (e) {
-    if (e instanceof ZodError) handleZodError(e);
-    else handleUnknownError(e);
+    handleUnknownError(e);
   }
 });
 

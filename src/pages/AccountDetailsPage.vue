@@ -15,10 +15,9 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import invariant from 'tiny-invariant';
 import type { Account } from '@/shared/api/dto';
-import { ZodError } from 'zod';
 
 const router = useRouter();
-const { handleUnknownError, handleZodError } = useErrorHandlers();
+const { handleUnknownError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 1200;
 const { width } = useWindowSize();
@@ -54,8 +53,7 @@ onMounted(async () => {
     isEmptyAssets.value = !assetsTable.items.value.length;
     isEmptyTransactions.value = !transactionsTable.items.value.length;
   } catch (e) {
-    if (e instanceof ZodError) handleZodError(e);
-    else handleUnknownError(e);
+    handleUnknownError(e);
   } finally {
     isFetchingAccount.value = false;
   }

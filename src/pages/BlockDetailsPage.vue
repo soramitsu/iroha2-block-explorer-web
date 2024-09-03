@@ -15,12 +15,11 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/dto';
-import { ZodError } from 'zod';
 import { useTable } from '@/shared/lib/table';
 
 const router = useRouter();
 
-const { handleUnknownError, handleZodError } = useErrorHandlers();
+const { handleUnknownError } = useErrorHandlers();
 
 const TRANSACTION_HASH_BREAKPOINT = 1200;
 const METRICS_HASH_BREAKPOINT = 1440;
@@ -57,8 +56,7 @@ watch(
       isNextBlockExists.value = block.value.height < blocks;
       isPreviousBlockExists.value = block.value.height > 1;
     } catch (e) {
-      if (e instanceof ZodError) handleZodError(e);
-      else handleUnknownError(e);
+      handleUnknownError(e);
     } finally {
       isFetchingBlock.value = false;
     }

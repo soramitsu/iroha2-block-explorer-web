@@ -96,18 +96,16 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { onMounted } from 'vue';
-import { ZodError } from 'zod';
 
 const table = useTable(http.fetchBlocks, { sticky: true });
 
-const { handleUnknownError, handleZodError } = useErrorHandlers();
+const { handleUnknownError } = useErrorHandlers();
 
 onMounted(async () => {
   try {
     await table.fetch();
   } catch (e) {
-    if (e instanceof ZodError) handleZodError(e);
-    else handleUnknownError(e);
+    handleUnknownError(e);
   }
 });
 </script>
