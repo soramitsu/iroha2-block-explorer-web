@@ -41,13 +41,13 @@
 
 <script setup lang="ts">
 import TimeIcon from '@/shared/ui/icons/clock.svg';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import { elapsed } from '@/shared/lib/time';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { Block } from '@/shared/api/dto';
+import type { Block } from '@/shared/api/schemas';
 import { onMounted, ref, shallowRef } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 

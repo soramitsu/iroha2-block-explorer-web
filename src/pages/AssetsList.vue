@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import { useTable } from '@/shared/lib/table';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';

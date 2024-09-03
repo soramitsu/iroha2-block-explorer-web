@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 import { reactive, ref } from 'vue';
-import type { Paginated, Pagination, PaginationParams } from '@/shared/api/dto';
+import type { Paginated, Pagination, PaginationParams } from '@/shared/api/schemas';
 
 export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;
 

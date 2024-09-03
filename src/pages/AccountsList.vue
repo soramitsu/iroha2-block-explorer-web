@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import { useTable } from '@/shared/lib/table';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';

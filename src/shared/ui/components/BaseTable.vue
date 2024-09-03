@@ -87,7 +87,7 @@ import { useWindowSize } from '@vueuse/core';
 import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
 import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
-import type { Pagination } from '@/shared/api/dto';
+import type { Pagination } from '@/shared/api/schemas';
 
 interface Props {
   loading: boolean

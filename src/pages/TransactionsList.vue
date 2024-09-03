@@ -75,7 +75,7 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 
 const HASH_BREAKPOINT = 1200;
 

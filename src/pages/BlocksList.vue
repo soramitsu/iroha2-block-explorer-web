@@ -89,7 +89,7 @@
 <script setup lang="ts">
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { useTable } from '@/shared/lib/table';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import { format } from '@/shared/lib/time';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
