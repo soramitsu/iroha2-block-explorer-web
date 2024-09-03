@@ -37,7 +37,7 @@ const assetDefinitionId = computed(() => {
 
   const assetId = transformToAssetId(name + rest);
 
-  return transformToAssetDefinitionId(assetId.asset_definition_id);
+  return transformToAssetDefinitionId(assetId.assetDefinition);
 });
 
 const asset = ref<AssetDefinition | null>(null);
@@ -87,7 +87,7 @@ const transactions = computed(() => {
           <div class="asset-details__metrics-data">
             <DataField
               :title="$t('name')"
-              :value="assetDefinitionId.name"
+              :value="assetDefinitionId.getName()"
             />
             <DataField
               :title="$t('type')"
@@ -105,8 +105,8 @@ const transactions = computed(() => {
             />
             <DataField
               :title="$t('domain')"
-              :hash="assetDefinitionId.domain"
-              :link="`/domains/${assetDefinitionId.domain}`"
+              :hash="assetDefinitionId.getDomain()"
+              :link="`/domains/${assetDefinitionId.getDomain()}`"
             />
           </div>
         </div>

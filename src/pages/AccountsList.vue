@@ -24,8 +24,8 @@
       <template #row="{ item }">
         <div class="accounts-list-page__row">
           <BaseHash
-            :hash="item.id"
-            :link="`/accounts/${item.id}`"
+            :hash="item.id.toString()"
+            :link="`/accounts/${item.id.toString()}`"
             :type="hashType"
             copy
             class="cell"
@@ -41,8 +41,8 @@
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('accounts.address') }}</span>
             <BaseHash
-              :hash="item.id"
-              :link="`/accounts/${item.id}`"
+              :hash="item.id.toString()"
+              :link="`/accounts/${item.id.toString()}`"
               :type="hashType"
               copy
             />

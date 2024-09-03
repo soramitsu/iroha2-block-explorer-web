@@ -25,10 +25,10 @@
       <template #row="{ item }">
         <div class="domains-list-page__row">
           <BaseLink
-            :to="`/domains/${item.id}`"
+            :to="`/domains/${item.id.getDomain()}`"
             class="cell"
           >
-            {{ item.id }}
+            {{ item.id.getDomain() }}
           </BaseLink>
 
           <BaseHash
@@ -48,8 +48,8 @@
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/domains/${item.id}`">
-              {{ item.id }}
+            <BaseLink :to="`/domains/${item.id.getDomain()}`">
+              {{ item.id.getDomain() }}
             </BaseLink>
           </div>
 
