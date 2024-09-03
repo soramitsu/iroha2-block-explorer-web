@@ -1,19 +1,30 @@
+import type {
+  Account,
+  AssetDefinition,
+  Asset,
+  AssetSearchParams,
+  Block,
+  Domain,
+  Paginated,
+  PaginationParams,
+  TransactionSearchParams,
+  Transaction,
+  PeerStatus,
+} from '@/shared/api/dto';
+
 interface HTTPService {
   fetchAccounts: (params?: PaginationParams) => Promise<Paginated<Account>>
   fetchAccount: (id: string) => Promise<Account>
-  fetchAssets: (params?: PaginationParams) => Promise<Paginated<Asset>>
-  fetchAsset: (definition_id: string, account_id: string) => Promise<Asset>
-  fetchAssetDefinitions: (params: PaginationParams) => Promise<Paginated<AssetDefinition>>
+  fetchAssets: (params?: AssetSearchParams) => Promise<Paginated<Asset>>
+  fetchAsset: (id: string) => Promise<Asset>
+  fetchAssetDefinitions: (params?: PaginationParams) => Promise<Paginated<AssetDefinition>>
   fetchAssetDefinition: (id: string) => Promise<AssetDefinition>
   fetchDomains: (params?: PaginationParams) => Promise<Paginated<Domain>>
   fetchDomain: (id: string) => Promise<Domain>
-  fetchPeers: () => Promise<Peer[]>
-  fetchPeerStatus: () => Promise<Status>
-  fetchRoles: () => Promise<Role[]>
-  fetchBlocks: (params?: PaginationParams) => Promise<Paginated<BlockShallow>>
+  fetchBlocks: (params?: PaginationParams) => Promise<Paginated<Block>>
   fetchBlock: (heightOrHash: number | string) => Promise<Block>
-  fetchTransactions: (params?: PaginationParams) => Promise<Paginated<TransactionDto>>
+  fetchTransactions: (params?: TransactionSearchParams) => Promise<Paginated<Transaction>>
+  fetchPeerStatus: () => Promise<PeerStatus>
 }
 
-export const http: HTTPService =
-  import.meta.env.VITE_FAKE_API_ENABLED === 'TRUE' ? await import('./fake-http') : await import('./http');
+export const http: HTTPService = await import('./http');

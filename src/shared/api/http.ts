@@ -1,3 +1,27 @@
+import type {
+  Account,
+  AssetDefinition,
+  Asset,
+  Domain,
+  PaginationParams,
+  Block,
+  Paginated,
+  TransactionSearchParams,
+  AssetSearchParams,
+  Transaction,
+  PeerStatus,
+} from '@/shared/api/dto';
+import {
+  peerStatusSchema,
+  accountSchema,
+  assetSchema,
+  assetDefinitionSchema,
+  domainSchema,
+  blockSchema,
+  paginatedSchema,
+  transactionSchema,
+} from '@/shared/api/dto';
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
 
 async function get<T>(path: string, params?: PaginationParams): Promise<T> {
@@ -11,58 +35,62 @@ async function get<T>(path: string, params?: PaginationParams): Promise<T> {
   return res.json();
 }
 
-export function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
-  return get('/accounts', params);
+export async function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
+  const res = await get('/accounts', params);
+  return paginatedSchema(accountSchema).parse(res);
 }
 
-export function fetchAccount(id: string): Promise<Account> {
-  return get(`/accounts/${id}`);
+export async function fetchAccount(id: string): Promise<Account> {
+  const res = await get(`/accounts/${id}`);
+  return accountSchema.parse(res);
 }
 
-export function fetchAssets(params?: PaginationParams): Promise<Paginated<Asset>> {
-  return get('/assets', params);
+export async function fetchAssets(params?: AssetSearchParams): Promise<Paginated<Asset>> {
+  const res = await get('/assets', params);
+  return paginatedSchema(assetSchema).parse(res);
 }
 
-export function fetchAsset(definition_id: string, account_id: string): Promise<Asset> {
-  return get(`/assets/${definition_id}/${account_id}`);
+export async function fetchAsset(id: string): Promise<Asset> {
+  const res = await get(`/assets/${id}`);
+  return assetSchema.parse(res);
 }
 
-export function fetchAssetDefinitions(params: PaginationParams): Promise<Paginated<AssetDefinition>> {
-  return get('/asset-definitions', params);
+export async function fetchAssetDefinitions(params?: PaginationParams): Promise<Paginated<AssetDefinition>> {
+  const res = await get('/assets-definitions', params);
+  return paginatedSchema(assetDefinitionSchema).parse(res);
 }
 
-export function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
-  return get(`/asset-definitions/${id}`);
+export async function fetchAssetDefinition(id: string): Promise<AssetDefinition> {
+  const res = await get(`/assets-definitions/${id}`);
+  return assetDefinitionSchema.parse(res);
 }
 
-export function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
-  return get('/domains', params);
+export async function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
+  const res = await get('/domains', params);
+  return paginatedSchema(domainSchema).parse(res);
 }
 
-export function fetchDomain(id: string): Promise<Domain> {
-  return get(`/domains/${id}`);
+export async function fetchDomain(id: string): Promise<Domain> {
+  const res = await get(`/domains/${id}`);
+  return domainSchema.parse(res);
 }
 
-export function fetchPeers(): Promise<Peer[]> {
-  return get('/peer/peers');
-}
-
-export function fetchPeerStatus(): Promise<Status> {
-  return get('/peer/status');
-}
-
-export function fetchRoles(): Promise<Role[]> {
-  return get('/roles');
-}
-
-export function fetchBlocks(params?: PaginationParams): Promise<Paginated<BlockShallow>> {
-  return get('/blocks', params);
+export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<Block>> {
+  const res = await get('/blocks', params);
+  return paginatedSchema(blockSchema).parse(res);
 }
 
 export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
-  return get(`/blocks/${heightOrHash}`);
+  const res = await get(`/blocks/${heightOrHash}`);
+  return blockSchema.parse(res);
 }
 
-export function fetchTransactions(params?: PaginationParams): Promise<Paginated<TransactionDto>> {
-  return get('/transactions', params);
+export async function fetchPeerStatus(): Promise<PeerStatus> {
+  const res = await get('/status');
+  return peerStatusSchema.parse(res);
+}
+
+export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<Transaction>> {
+  const res = await get('/transactions', params);
+  return paginatedSchema(transactionSchema).parse(res);
 }
