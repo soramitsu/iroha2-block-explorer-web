@@ -7,38 +7,38 @@ import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { transactionModel } from '@/entities/transaction';
 import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
 import invariant from 'tiny-invariant';
+import type { AssetDefinition } from '@/shared/api/dto';
+import { transformToAssetId } from '@/shared/api/dto';
+import { transformToAssetDefinitionId } from '@/shared/api/dto';
+import { ZodError } from 'zod';
+import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 
 const router = useRouter();
 
-const { handleUnknownError } = useErrorHandlers();
+const { handleUnknownError, handleZodError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 800;
 const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
-const assetName = computed(() => {
+const assetDefinitionId = computed(() => {
   const name = router.currentRoute.value.params['id'];
 
   invariant(typeof name === 'string', 'Expected string');
 
-  return name;
+  const rest = router.currentRoute.value.hash;
+
+  const assetId = transformToAssetId(name + rest);
+
+  return transformToAssetDefinitionId(assetId.asset_definition_id);
 });
-
-const assetDomain = computed(() => {
-  const domain = router.currentRoute.value.hash;
-
-  return domain.split('#')[1];
-});
-
-const assetId = computed(() => assetName.value + '#' + assetDomain.value);
 
 const asset = ref<AssetDefinition | null>(null);
 const isFetchingAsset = ref(false);
@@ -46,11 +46,12 @@ const isFetchingAsset = ref(false);
 onMounted(async () => {
   try {
     isFetchingAsset.value = true;
-    asset.value = await http.fetchAssetDefinition(encodeURIComponent(assetId.value));
+    asset.value = await http.fetchAssetDefinition(encodeURIComponent(assetDefinitionId.value.toString()));
 
     await transactionsTable.fetch();
   } catch (e) {
-    handleUnknownError(e);
+    if (e instanceof ZodError) handleZodError(e);
+    else handleUnknownError(e);
   } finally {
     isFetchingAsset.value = false;
   }
@@ -59,13 +60,20 @@ onMounted(async () => {
 const transactionStatus = ref<ftm.Status>(null);
 
 // FIXME: this loads ALL transactions, not only related to the asset
-const transactionsTable = useTable(transactionModel.fetchList);
+const transactionsTable = useTable(http.fetchTransactions);
+
+const transactions = computed(() => {
+  if (transactionStatus.value === 'committed') return transactionsTable.items.value.filter((t) => !t.error);
+  else if (transactionStatus.value === 'rejected') return transactionsTable.items.value.filter((t) => t.error);
+
+  return transactionsTable.items.value;
+});
 </script>
 
 <template>
   <div class="asset-details">
     <BaseContentBlock
-      :title="$t('assetDetails.assetMetrics')"
+      :title="$t('assets.assetMetrics')"
       class="asset-details__metrics"
     >
       <template #default>
@@ -79,27 +87,33 @@ const transactionsTable = useTable(transactionModel.fetchList);
           <div class="asset-details__metrics-data">
             <DataField
               :title="$t('name')"
-              :value="assetName"
+              :value="assetDefinitionId.name"
             />
             <DataField
               :title="$t('type')"
-              :value="asset.value_type"
+              :value="asset.type"
             />
             <DataField
               :title="$t('mintable')"
               :value="asset.mintable"
             />
+          </div>
+          <div class="asset-details__metrics-data">
+            <DataField
+              :title="$t('assets.assets')"
+              :value="asset.assets"
+            />
             <DataField
               :title="$t('domain')"
-              :hash="assetDomain"
-              :link="`/domains/${assetDomain}`"
+              :hash="assetDefinitionId.domain"
+              :link="`/domains/${assetDefinitionId.domain}`"
             />
           </div>
         </div>
       </template>
     </BaseContentBlock>
     <BaseContentBlock
-      :title="$t('assetDetails.assetTransactions')"
+      :title="$t('assets.assetTransactions')"
       class="asset-details__transactions"
     >
       <div class="asset-details__transactions-filters content-row">
@@ -111,22 +125,24 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
       <BaseTable
         :loading="transactionsTable.loading.value"
-        :items="transactionsTable.items.value"
+        :items="transactions"
         container-class="asset-details__transactions-container"
-        @next-page="transactionsTable.nextPage()"
-        @prev-page="transactionsTable.prevPage()"
-        @set-page="transactionsTable.setPage($event)"
-        @set-size="transactionsTable.setSize($event)"
       >
         <template #row="{ item }">
           <div class="asset-details__transactions-row">
+            <TransactionStatus
+              type="tooltip"
+              class="asset-details__transactions-row-icon"
+              :committed="!item.error"
+            />
+
             <div class="asset-details__transactions-row-data">
               <BaseHash
                 :type="hashType"
                 :hash="item.hash"
                 :link="`/transactions/${item.hash}`"
               />
-              <span class="asset-details__transactions-row-data-time row-text">{{ $t('time.min', [elapsed.allMinutes(item.payload.creation_time)]) }} {{ $t('time.ago') }}</span>
+              <span class="asset-details__transactions-row-data-time row-text">{{ $t('time.min', [elapsed.allMinutes(item.created_at)]) }} {{ $t('time.ago') }}</span>
             </div>
           </div>
         </template>
@@ -144,12 +160,11 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
   @include xxs {
     padding: 0 size(2);
-    gap: size(1);
+    gap: size(2);
   }
 
   @include md {
     padding: 0 size(3);
-    gap: size(3);
   }
 
   &__metrics {
@@ -166,12 +181,12 @@ const transactionsTable = useTable(transactionModel.fetchList);
       gap: size(2);
       grid-template-columns: 1fr;
 
-      @include sm {
-        grid-template-columns: 1fr 1fr;
+      @include xxs {
+        grid-template-columns: 1fr;
       }
 
-      @include lg {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+      @include sm {
+        grid-template-columns: 1fr 1fr 1fr;
       }
 
       .base-link {
@@ -189,15 +204,14 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
     &-container {
       display: grid;
+      .content-row:last-child {
+        border-bottom: 1px solid theme-color('border-primary');
+      }
     }
 
     &-row {
       @include xxs {
         padding: 0 size(2);
-      }
-
-      @include md {
-        padding: 0;
       }
 
       width: 100%;
@@ -206,6 +220,15 @@ const transactionsTable = useTable(transactionModel.fetchList);
       &-data {
         &-time {
           @include tpg-s5;
+        }
+      }
+
+      &-icon {
+        display: none;
+        margin-right: size(2);
+
+        @include xs {
+          display: grid;
         }
       }
     }
