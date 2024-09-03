@@ -41,7 +41,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
     pagination.total_items = res.pagination.total_items;
     pagination.total_pages = res.pagination.total_pages;
 
-    if (options?.sticky && pagination.total_pages && isLengthBiggerThanPerPage.value) {
+    if (options?.sticky && isLengthBiggerThanPerPage.value) {
       pagination.total_pages--;
       pagination.page--;
     }
@@ -58,7 +58,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
 
         if (isLengthBiggerThanPerPage.value) pagination.page++;
       }
-    } else if (pagination.total_pages && pagination.page < pagination.total_pages) {
+    } else if (pagination.page < pagination.total_pages) {
       pagination.page += 1;
       await fetch();
     }
@@ -66,7 +66,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
 
   async function prevPage() {
     if (options?.sticky) {
-      if (pagination.total_pages && pagination.page < pagination.total_pages) {
+      if (pagination.page < pagination.total_pages) {
         pagination.page++;
         await fetch();
         if (pagination.page !== pagination.total_pages) pagination.page++;

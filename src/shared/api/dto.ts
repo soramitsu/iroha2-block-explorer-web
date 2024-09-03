@@ -5,9 +5,8 @@ import invariant from 'tiny-invariant';
 const paginationSchema = z.object({
   page: z.number(),
   per_page: z.number(),
-  // TODO: remove nullable when backend is ready
-  total_pages: z.number().nullable(),
-  total_items: z.number().nullable(),
+  total_pages: z.number(),
+  total_items: z.number(),
 });
 
 export type Pagination = z.infer<typeof paginationSchema>;

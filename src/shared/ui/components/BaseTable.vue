@@ -127,8 +127,6 @@ const segmentInfo = computed(() => {
 
   const p = props.pagination;
 
-  if (!p.total_items) p.total_items = props.items.length;
-
   if (props.sticky) {
     if (p.per_page > props.items.length) return `${props.items.length}—1 of ${p.total_items}`;
 
@@ -154,9 +152,6 @@ const numbers = computed(() => {
   const offset = isMobile ? 1 : 3;
 
   const p = props.pagination;
-
-  // TODO: remove when backend is ready
-  if (!p.total_pages) p.total_pages = 1;
 
   if (p.total_pages < max) {
     const numbers = new Array(p.total_pages).fill(0).map((_, i) => i + 1);
@@ -184,8 +179,7 @@ const numbers = computed(() => {
     return [1, '. . .'].concat(
       Array(side)
         .fill(0)
-        // TODO: remove Number when backend is ready
-        .map((_, i) => Number(p.total_pages) - i)
+        .map((_, i) => p.total_pages - i)
         .reverse()
     );
   }
