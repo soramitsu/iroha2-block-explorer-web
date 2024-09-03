@@ -15,6 +15,7 @@
       :pagination="table.pagination"
       :items="table.items.value"
       container-class="transactions-list-page__container"
+      sticky
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -25,7 +26,7 @@
           <TransactionStatus
             type="tooltip"
             class="transactions-list-page__icon"
-            :committed="item.committed"
+            :committed="!item.error"
           />
 
           <div class="transactions-list-page__column">
@@ -36,12 +37,12 @@
             <BaseHash
               :hash="item.hash"
               :type="hashType"
-              :link="'/transactions/' + item.hash"
+              :link="`/transactions/${item.hash}`"
               copy
             />
 
             <div class="transactions-list-page__time">
-              {{ format(item.payload.creation_time) }}
+              {{ format(item.created_at) }}
             </div>
           </div>
 
@@ -50,9 +51,11 @@
               {{ $t('transactions.block') }}
             </div>
 
-            <BaseLink :to="'/blocks/' + item.block_height">
-              {{ item.block_height }}
-            </BaseLink>
+            <BaseHash
+              :link="`/blocks/${item.block_hash}`"
+              :hash="item.block_hash"
+              type="short"
+            />
           </div>
         </div>
       </template>
@@ -61,8 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { transactionModel } from '@/entities/transaction';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -72,7 +74,9 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { ZodError } from 'zod';
+import { http } from '@/shared/api';
 
 const HASH_BREAKPOINT = 1200;
 
@@ -82,8 +86,17 @@ const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
-const table = useTable(transactionModel.fetchList);
-table.fetch();
+const table = useTable(http.fetchTransactions, { sticky: true });
+const { handleUnknownError, handleZodError } = useErrorHandlers();
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+  } catch (e) {
+    if (e instanceof ZodError) handleZodError(e);
+    else handleUnknownError(e);
+  }
+});
 </script>
 
 <style lang="scss">
@@ -100,13 +113,14 @@ table.fetch();
     grid-template-columns: 1fr 80px;
     margin: size(1) 0;
 
-    @include xs {
-      grid-template-columns: 1fr 150px;
+    @include xxs {
+      grid-template-columns: 1fr 1fr;
       margin: size(2) 0;
+      grid-gap: size(4);
     }
 
     @include sm {
-      grid-template-columns: 32px 1fr 150px;
+      grid-template-columns: 32px 1fr 1fr;
       grid-gap: size(2);
     }
 
