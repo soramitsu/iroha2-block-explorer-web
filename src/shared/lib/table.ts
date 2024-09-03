@@ -1,53 +1,77 @@
 import type { Ref } from 'vue';
 import { reactive, ref } from 'vue';
+import type { Paginated, Pagination, PaginationParams } from '@/shared/api/dto';
 
 export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;
 
-export interface TablePagination {
-  page: number
-  page_size: number
-  pages: number
-  total: number
-}
-
-export function useTable<T>(fetchFn: TableFetchFn<T>) {
+export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boolean }) {
   const loading = ref(false);
+  const additionalFetchingParams = ref<Record<string, any> | null>(null);
 
   const items: Ref<T[]> = ref([]);
 
-  const pagination = reactive<TablePagination>({
+  const isFirstFetch = ref(true);
+  const isLengthBiggerThanPerPage = ref(false);
+
+  const pagination = reactive<Pagination>({
     page: 1,
-    page_size: 10,
-    pages: 1,
-    total: 10,
+    per_page: 10,
+    total_pages: 1,
+    total_items: 10,
   });
 
-  async function fetch() {
+  async function fetch(params?: Record<string, any>) {
     loading.value = true;
 
+    if (params) additionalFetchingParams.value = params;
     const res = await fetchFn({
-      page: pagination.page,
-      page_size: pagination.page_size,
+      ...((!options?.sticky ||
+        (options?.sticky && !isFirstFetch.value && pagination.page !== pagination.total_pages)) && {
+        page: pagination.page,
+      }),
+      per_page: pagination.per_page,
+      ...additionalFetchingParams.value,
     });
 
-    items.value = res.data;
+    if (isFirstFetch.value) isLengthBiggerThanPerPage.value = res.items.length !== res.pagination.per_page;
+
+    items.value = res.items;
     pagination.page = res.pagination.page;
-    pagination.page_size = res.pagination.page_size;
-    pagination.total = res.pagination.total;
-    pagination.pages = Math.ceil(res.pagination.total / res.pagination.page_size);
+    pagination.per_page = res.pagination.per_page;
+    pagination.total_items = res.pagination.total_items;
+    pagination.total_pages = res.pagination.total_pages;
+
+    if (options?.sticky && pagination.total_pages && isLengthBiggerThanPerPage.value) {
+      pagination.total_pages--;
+      pagination.page--;
+    }
 
     loading.value = false;
+    isFirstFetch.value = false;
   }
 
   async function nextPage() {
-    if (pagination.page < pagination.pages) {
+    if (options?.sticky) {
+      if (pagination.page > 1) {
+        pagination.page--;
+        await fetch();
+
+        if (isLengthBiggerThanPerPage.value) pagination.page++;
+      }
+    } else if (pagination.total_pages && pagination.page < pagination.total_pages) {
       pagination.page += 1;
       await fetch();
     }
   }
 
   async function prevPage() {
-    if (pagination.page > 1) {
+    if (options?.sticky) {
+      if (pagination.total_pages && pagination.page < pagination.total_pages) {
+        pagination.page++;
+        await fetch();
+        if (pagination.page !== pagination.total_pages) pagination.page++;
+      }
+    } else if (pagination.page > 1) {
       pagination.page -= 1;
       await fetch();
     }
@@ -57,12 +81,17 @@ export function useTable<T>(fetchFn: TableFetchFn<T>) {
     if (index !== pagination.page) {
       pagination.page = index;
       await fetch();
+      if (options?.sticky) {
+        if (pagination.page < index) pagination.page++;
+        else if (pagination.page > index) pagination.page--;
+      }
     }
   }
 
   async function setSize(n: number) {
-    if (n !== pagination.page_size) {
-      pagination.page_size = n;
+    if (n !== pagination.per_page) {
+      isFirstFetch.value = true;
+      pagination.per_page = n;
       pagination.page = 1;
       await fetch();
     }
