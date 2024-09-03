@@ -252,9 +252,9 @@ export const transactionSchema = z.object({
   authority: z.string(),
   hash: z.string(),
   block_hash: z.string(),
-  error: z.boolean(),
   created_at: z.string().transform((x) => new Date(x)),
   instructions: z.enum(['Instructions', 'Wasm']),
+  status: z.enum(['Committed', 'Rejected']),
 });
 
 export const detailedTransactionSchema = z.object({
@@ -263,7 +263,8 @@ export const detailedTransactionSchema = z.object({
   block_hash: z.string(),
   created_at: z.string().transform((x) => new Date(x)),
   instructions: z.enum(['Instructions', 'Wasm']),
-  error: z.record(z.string(), z.any()).nullable(),
+  status: z.enum(['Committed', 'Rejected']),
+  rejection_reason: z.record(z.string(), z.any()).nullable(),
   metadata: metadataSchema,
   nonce: z.number().nullable(),
   signature: z.string(),
