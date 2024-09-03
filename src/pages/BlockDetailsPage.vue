@@ -166,7 +166,7 @@ const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
             <TransactionStatus
               type="tooltip"
               class="block-details__transactions-row-icon"
-              :committed="!item.error"
+              :committed="item.status === 'Committed'"
             />
 
             <div class="block-details__transactions-row-column">

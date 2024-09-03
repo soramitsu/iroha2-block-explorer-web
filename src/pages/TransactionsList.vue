@@ -26,7 +26,7 @@
           <TransactionStatus
             type="tooltip"
             class="transactions-list-page__icon"
-            :committed="!item.error"
+            :committed="item.status === 'Committed'"
           />
 
           <div class="transactions-list-page__column">

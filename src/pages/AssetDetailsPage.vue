@@ -59,13 +59,6 @@ const transactionStatus = ref<ftm.Status>(null);
 
 // FIXME: this loads ALL transactions, not only related to the asset
 const transactionsTable = useTable(http.fetchTransactions);
-
-const transactions = computed(() => {
-  if (transactionStatus.value === 'committed') return transactionsTable.items.value.filter((t) => !t.error);
-  else if (transactionStatus.value === 'rejected') return transactionsTable.items.value.filter((t) => t.error);
-
-  return transactionsTable.items.value;
-});
 </script>
 
 <template>
@@ -123,7 +116,7 @@ const transactions = computed(() => {
 
       <BaseTable
         :loading="transactionsTable.loading.value"
-        :items="transactions"
+        :items="transactionsTable.items.value"
         container-class="asset-details__transactions-container"
       >
         <template #row="{ item }">
@@ -131,7 +124,7 @@ const transactions = computed(() => {
             <TransactionStatus
               type="tooltip"
               class="asset-details__transactions-row-icon"
-              :committed="!item.error"
+              :committed="item.status === 'Committed'"
             />
 
             <div class="asset-details__transactions-row-data">

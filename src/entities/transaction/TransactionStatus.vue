@@ -13,16 +13,16 @@
       class="transaction-status__label"
       :data-committed="committed"
     >
-      <span v-if="committed">Committed</span>
-      <span v-else>Rejected</span>
+      <span v-if="committed">{{ $t('transactions.committed') }}</span>
+      <span v-else>{{ $t('transactions.rejected') }}</span>
     </div>
 
     <div
       v-if="type === 'tooltip'"
       class="transaction-status__tooltip"
     >
-      <span v-if="committed">Committed transaction</span>
-      <span v-else>Rejected transaction</span>
+      <span v-if="committed">{{ $t('transactions.committedTransaction') }}</span>
+      <span v-else>{{ $t('transactions.rejectedTransaction') }}</span>
     </div>
   </div>
 </template>

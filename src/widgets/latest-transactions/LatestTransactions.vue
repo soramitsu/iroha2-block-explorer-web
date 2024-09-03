@@ -23,7 +23,7 @@
           class="latest-transactions__row"
         >
           <TransactionStatus
-            :committed="!transaction.error"
+            :committed="transaction.status === 'Committed'"
             type="tooltip"
             class="latest-transactions__status"
           />

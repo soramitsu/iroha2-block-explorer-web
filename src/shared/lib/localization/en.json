@@ -49,6 +49,8 @@
     "transactionID": "TxID",
     "committed": "Committed",
     "rejected": "Rejected",
+    "committedTransaction": "Committed transaction",
+    "rejectedTransaction": "Rejected transaction",
     "all": "All",
     "transfers": "Transfers",
     "mints": "Mints",
