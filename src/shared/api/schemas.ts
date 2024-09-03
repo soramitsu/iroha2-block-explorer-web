@@ -32,7 +32,7 @@ export type PaginationParams = z.infer<typeof paginationParamsSchema>;
 
 const metadataSchema = z.record(z.string(), z.any());
 
-class DomainId {
+export class DomainId {
   private domain: string;
   constructor(domain: string) {
     this.domain = domain;
@@ -42,7 +42,7 @@ class DomainId {
   }
 }
 
-class AccountId {
+export class AccountId {
   private signatory: string;
   private accountDomain: string;
   public constructor(signatory: string, domain: string) {
@@ -67,7 +67,7 @@ export function transformToAccountId(accountId: string): AccountId {
   return new AccountId(account, account_domain);
 }
 
-class AssetDefinitionId {
+export class AssetDefinitionId {
   private name: string;
   private domain: DomainId;
 
@@ -93,7 +93,7 @@ export function transformToAssetDefinitionId(assetDefinitionId: string): AssetDe
   return new AssetDefinitionId(asset, asset_domain);
 }
 
-class AssetId {
+export class AssetId {
   private account: AccountId;
   private definition: AssetDefinitionId;
 
