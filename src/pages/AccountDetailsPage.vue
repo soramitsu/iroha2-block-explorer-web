@@ -64,7 +64,7 @@ const assetsTable = useTable(http.fetchAssets);
 
 const transactionStatus = ref<ftm.Status>(null);
 
-const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
+const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 </script>
 
 <template>
@@ -208,7 +208,7 @@ const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
             :loading="transactionsTable.loading.value"
             :items="transactionsTable.items.value"
             container-class="account-details__transactions-container"
-            sticky
+            reversed
             :pagination="transactionsTable.pagination"
             @next-page="transactionsTable.nextPage()"
             @prev-page="transactionsTable.prevPage()"

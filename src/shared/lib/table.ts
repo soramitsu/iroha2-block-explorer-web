@@ -4,7 +4,7 @@ import type { Paginated, Pagination, PaginationParams } from '@/shared/api/schem
 
 export type TableFetchFn<T> = (params: PaginationParams) => Promise<Paginated<T>>;
 
-export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boolean }) {
+export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { reversed?: boolean }) {
   const loading = ref(false);
   const additionalFetchingParams = ref<Record<string, any> | null>(null);
 
@@ -25,8 +25,8 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
 
     if (params) additionalFetchingParams.value = params;
     const res = await fetchFn({
-      ...((!options?.sticky ||
-        (options?.sticky && !isFirstFetch.value && pagination.page !== pagination.total_pages)) && {
+      ...((!options?.reversed ||
+        (options?.reversed && !isFirstFetch.value && pagination.page !== pagination.total_pages)) && {
         page: pagination.page,
       }),
       per_page: pagination.per_page,
@@ -41,7 +41,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
     pagination.total_items = res.pagination.total_items;
     pagination.total_pages = res.pagination.total_pages;
 
-    if (options?.sticky && isLengthBiggerThanPerPage.value) {
+    if (options?.reversed && isLengthBiggerThanPerPage.value) {
       pagination.total_pages--;
       pagination.page--;
     }
@@ -51,7 +51,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
   }
 
   async function nextPage() {
-    if (options?.sticky) {
+    if (options?.reversed) {
       if (pagination.page > 1) {
         pagination.page--;
         await fetch();
@@ -65,7 +65,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
   }
 
   async function prevPage() {
-    if (options?.sticky) {
+    if (options?.reversed) {
       if (pagination.page < pagination.total_pages) {
         pagination.page++;
         await fetch();
@@ -81,7 +81,7 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { sticky?: boole
     if (index !== pagination.page) {
       pagination.page = index;
       await fetch();
-      if (options?.sticky) {
+      if (options?.reversed) {
         if (pagination.page < index) pagination.page++;
         else if (pagination.page > index) pagination.page--;
       }

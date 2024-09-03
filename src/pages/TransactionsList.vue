@@ -15,7 +15,7 @@
       :pagination="table.pagination"
       :items="table.items.value"
       container-class="transactions-list-page__container"
-      sticky
+      reversed
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -85,7 +85,7 @@ const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
-const table = useTable(http.fetchTransactions, { sticky: true });
+const table = useTable(http.fetchTransactions, { reversed: true });
 const { handleUnknownError } = useErrorHandlers();
 
 onMounted(async () => {

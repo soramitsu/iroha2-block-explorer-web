@@ -78,7 +78,7 @@ function handleNextBlockClick() {
 
 const transactionStatus = ref<ftm.Status>(null);
 
-const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
+const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 </script>
 
 <template>
@@ -154,7 +154,7 @@ const transactionsTable = useTable(http.fetchTransactions, { sticky: true });
         :loading="isFetchingBlock || transactionsTable.loading.value"
         :items="transactionsTable.items.value"
         container-class="block-details__transactions-container"
-        sticky
+        reversed
         :pagination="transactionsTable.pagination"
         @next-page="transactionsTable.nextPage()"
         @prev-page="transactionsTable.prevPage()"

@@ -95,7 +95,7 @@ interface Props {
   items: T[]
   containerClass: string
   breakpoint?: string | number
-  sticky?: boolean
+  reversed?: boolean
 }
 
 interface Emits {
@@ -127,7 +127,7 @@ const segmentInfo = computed(() => {
 
   const p = props.pagination;
 
-  if (props.sticky) {
+  if (props.reversed) {
     if (p.per_page > props.items.length) return `${props.items.length}—1 of ${p.total_items}`;
 
     const start = (p.page - 1) * p.per_page + props.items.length;
@@ -156,7 +156,7 @@ const numbers = computed(() => {
   if (p.total_pages < max) {
     const numbers = new Array(p.total_pages).fill(0).map((_, i) => i + 1);
 
-    return props.sticky ? numbers.reverse() : numbers;
+    return props.reversed ? numbers.reverse() : numbers;
   }
 
   if (p.page < side) {
@@ -164,13 +164,13 @@ const numbers = computed(() => {
       .fill(0)
       .map<string | number>((_, i) => i + 1);
 
-    return props.sticky
+    return props.reversed
       ? [p.total_pages, '. . .'].concat(numbersArray.reverse())
       : numbersArray.concat(['. . .', p.total_pages]);
   }
 
   if (p.page > p.total_pages - side + 1) {
-    if (props.sticky)
+    if (props.reversed)
       return Array(side)
         .fill(p.total_pages)
         .map<string | number>((_, i) => _ - i)
@@ -189,7 +189,7 @@ const numbers = computed(() => {
 
   const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
 
-  return props.sticky
+  return props.reversed
     ? [p.total_pages, '. . .', ...middleNumbers.reverse(), '. . .', 1]
     : [1, '. . .', ...middleNumbers, '. . .', p.total_pages];
 });

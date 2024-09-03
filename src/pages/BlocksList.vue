@@ -8,7 +8,7 @@
       :pagination="table.pagination"
       :items="table.items.value"
       container-class="blocks-list-page__container"
-      sticky
+      reversed
       @next-page="table.nextPage()"
       @prev-page="table.prevPage()"
       @set-page="table.setPage($event)"
@@ -97,7 +97,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { onMounted } from 'vue';
 
-const table = useTable(http.fetchBlocks, { sticky: true });
+const table = useTable(http.fetchBlocks, { reversed: true });
 
 const { handleUnknownError } = useErrorHandlers();
 
