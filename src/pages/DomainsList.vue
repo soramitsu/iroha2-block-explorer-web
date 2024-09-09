@@ -25,15 +25,15 @@
       <template #row="{ item }">
         <div class="domains-list-page__row">
           <BaseLink
-            :to="`/domains/${item.id.getDomain()}`"
+            :to="`/domains/${item.id}`"
             class="cell"
           >
-            {{ item.id.getDomain() }}
+            {{ item.id }}
           </BaseLink>
 
           <BaseHash
-            :hash="item.owned_by"
-            :link="`/accounts/${item.owned_by}`"
+            :hash="item.owned_by.toString()"
+            :link="`/accounts/${item.owned_by.toString()}`"
             :type="hashType"
             copy
           />
@@ -48,16 +48,16 @@
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/domains/${item.id.getDomain()}`">
-              {{ item.id.getDomain() }}
+            <BaseLink :to="`/domains/${item.id}`">
+              {{ item.id }}
             </BaseLink>
           </div>
 
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.ownedBy') }}</span>
             <BaseHash
-              :hash="item.owned_by"
-              :link="`/accounts/${item.owned_by}`"
+              :hash="item.owned_by.toString()"
+              :link="`/accounts/${item.owned_by.toString()}`"
               :type="hashType"
               copy
             />

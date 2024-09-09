@@ -36,7 +36,7 @@ const assetDefinitionId = computed(() => {
 
   const assetId = transformToAssetId(name + rest);
 
-  return transformToAssetDefinitionId(assetId.assetDefinition);
+  return transformToAssetDefinitionId(assetId.getDefintion().toString());
 });
 
 const asset = ref<AssetDefinition | null>(null);

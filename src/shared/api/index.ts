@@ -75,7 +75,7 @@ export async function fetchDomains(params?: PaginationParams): Promise<Paginated
 }
 
 export async function fetchDomain(id: DomainId): Promise<Domain> {
-  const res = await get(`/domains/${id.getDomain()}`);
+  const res = await get(`/domains/${id}`);
   return domainSchema.parse(res);
 }
 
