@@ -1,18 +1,18 @@
 import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 
-const paginationSchema = z.object({
+const pagination = z.object({
   page: z.number(),
   per_page: z.number(),
   total_pages: z.number(),
   total_items: z.number(),
 });
 
-export type Pagination = z.infer<typeof paginationSchema>;
+export type Pagination = z.infer<typeof pagination>;
 
-export const paginatedSchema = <T extends z.ZodType>(item: T) =>
+export const paginated = <T extends z.ZodType>(item: T) =>
   z.object({
-    pagination: paginationSchema,
+    pagination: pagination,
     items: item.array(),
   });
 
@@ -21,41 +21,41 @@ export interface Paginated<T> {
   items: T[]
 }
 
-const paginationParamsSchema = z
+const paginationParams = z
   .object({
     page: z.number(),
     per_page: z.number(),
   })
   .partial();
 
-export type PaginationParams = z.infer<typeof paginationParamsSchema>;
+export type PaginationParams = z.infer<typeof paginationParams>;
 
-const metadataSchema = z.record(z.string(), z.any());
+const metadata = z.record(z.string(), z.any());
 
-const durationSchema = z.object({
+const duration = z.object({
   ms: z.number().min(0),
 });
-const dateSchema = z.string().transform((ctx) => new Date(ctx));
+const date = z.string().transform((ctx) => new Date(ctx));
 
-const domainIdSchema = z.string().brand('DomainId');
-export type DomainId = z.infer<typeof domainIdSchema>;
+const domainId = z.string().brand('DomainId');
+export type DomainId = z.infer<typeof domainId>;
 
 export class AccountId {
-  private signatory: string;
-  private accountDomain: DomainId;
+  private readonly signatory: string;
+  private readonly domain: DomainId;
   public constructor(signatory: string, domain: DomainId) {
     this.signatory = signatory;
-    this.accountDomain = domain;
+    this.domain = domain;
   }
 
   public getSignatory() {
     return this.signatory;
   }
   public getAccountDomain() {
-    return this.accountDomain;
+    return this.domain;
   }
   public toString() {
-    return this.signatory + '@' + this.accountDomain;
+    return this.signatory + '@' + this.domain;
   }
 }
 
@@ -128,7 +128,7 @@ export function transformToAssetId(assetId: string): AssetId {
   );
 }
 
-export const accountSchema = z.object({
+export const account = z.object({
   id: z.string().transform((val, ctx) => {
     if (val.split('@').length !== 2) {
       ctx.addIssue({
@@ -141,18 +141,18 @@ export const accountSchema = z.object({
 
     return transformToAccountId(val);
   }),
-  metadata: metadataSchema,
+  metadata: metadata,
   owned_assets: z.number(),
   owned_domains: z.number(),
 });
 
-export type Account = z.infer<typeof accountSchema>;
+export type Account = z.infer<typeof account>;
 
 export interface AssetSearchParams extends PaginationParams {
   owned_by?: string
 }
 
-export const assetSchema = z.object({
+export const asset = z.object({
   id: z.string().transform((val, ctx) => {
     const assetIdParts = val.split('#');
     if (assetIdParts.length !== 3) {
@@ -180,13 +180,13 @@ export const assetSchema = z.object({
   }),
   value: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('Numeric'), value: z.string().transform((value) => BigNumber(value)) }),
-    z.object({ kind: z.literal('Store'), metadata: metadataSchema }),
+    z.object({ kind: z.literal('Store'), metadata: metadata }),
   ]),
 });
 
-export type Asset = z.infer<typeof assetSchema>;
+export type Asset = z.infer<typeof asset>;
 
-export const assetDefinitionSchema = z.object({
+export const assetDefinition = z.object({
   id: z.string().transform((val, ctx) => {
     if (val.split('#').length !== 2) {
       ctx.addIssue({
@@ -202,7 +202,7 @@ export const assetDefinitionSchema = z.object({
   type: z.enum(['Numeric', 'Store']),
   logo: z.string().nullable(),
   assets: z.number(),
-  metadata: metadataSchema,
+  metadata: metadata,
   mintable: z.enum(['Infinitely', 'Once', 'Not']),
   owned_by: z.string().transform((val, ctx) => {
     if (val.split('@').length !== 2) {
@@ -218,12 +218,12 @@ export const assetDefinitionSchema = z.object({
   }),
 });
 
-export type AssetDefinition = z.infer<typeof assetDefinitionSchema>;
+export type AssetDefinition = z.infer<typeof assetDefinition>;
 
-export const domainSchema = z.object({
-  id: domainIdSchema,
+export const domain = z.object({
+  id: domainId,
   logo: z.string().nullable(),
-  metadata: metadataSchema,
+  metadata: metadata,
   owned_by: z.string().transform((val, ctx) => {
     if (val.split('@').length !== 2) {
       ctx.addIssue({
@@ -240,60 +240,60 @@ export const domainSchema = z.object({
   assets: z.number(),
 });
 
-export type Domain = z.infer<typeof domainSchema>;
+export type Domain = z.infer<typeof domain>;
 
 export interface TransactionSearchParams extends PaginationParams {
   authority?: string
   block_hash?: string
 }
 
-export const transactionSchema = z.object({
+export const transaction = z.object({
   authority: z.string(),
   hash: z.string(),
   block_hash: z.string(),
-  created_at: dateSchema,
+  created_at: date,
   instructions: z.enum(['Instructions', 'Wasm']),
   status: z.enum(['Committed', 'Rejected']),
 });
 
-export const detailedTransactionSchema = z.object({
+export const detailedTransaction = z.object({
   authority: z.string(),
   hash: z.string(),
   block_hash: z.string(),
-  created_at: dateSchema,
+  created_at: date,
   instructions: z.enum(['Instructions', 'Wasm']),
   status: z.enum(['Committed', 'Rejected']),
   rejection_reason: z.record(z.string(), z.any()).nullable(),
-  metadata: metadataSchema,
+  metadata: metadata,
   nonce: z.number().nullable(),
   signature: z.string(),
-  time_to_live: durationSchema.nullable(),
+  time_to_live: duration.nullable(),
 });
 
-export type Transaction = z.infer<typeof transactionSchema>;
-export type DetailedTransaction = z.infer<typeof detailedTransactionSchema>;
+export type Transaction = z.infer<typeof transaction>;
+export type DetailedTransaction = z.infer<typeof detailedTransaction>;
 
-export const blockSchema = z.object({
+export const block = z.object({
   hash: z.string(),
   height: z.number(),
-  created_at: dateSchema,
+  created_at: date,
   prev_block_hash: z.string().nullable(),
   transactions_hash: z.string(),
   transactions_rejected: z.number(),
   transactions_total: z.number(),
-  consensus_estimation: durationSchema,
+  consensus_estimation: duration,
 });
 
-export type Block = z.infer<typeof blockSchema>;
+export type Block = z.infer<typeof block>;
 
-export const peerStatusSchema = z.object({
+export const peerStatus = z.object({
   blocks: z.number(),
   peers: z.number(),
   queue_size: z.number(),
   txs_accepted: z.number(),
   txs_rejected: z.number(),
-  uptime: durationSchema,
+  uptime: duration,
   view_changes: z.number(),
 });
 
-export type PeerStatus = z.infer<typeof peerStatusSchema>;
+export type PeerStatus = z.infer<typeof peerStatus>;
