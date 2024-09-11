@@ -51,11 +51,9 @@
               {{ $t('transactions.block') }}
             </div>
 
-            <BaseHash
-              :link="`/blocks/${item.block_hash}`"
-              :hash="item.block_hash"
-              type="short"
-            />
+            <BaseLink :to="`/blocks/${item.block}`">
+              {{ item.block }}
+            </BaseLink>
           </div>
         </div>
       </template>
@@ -76,6 +74,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const HASH_BREAKPOINT = 1200;
 

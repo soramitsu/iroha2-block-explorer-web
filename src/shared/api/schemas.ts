@@ -223,15 +223,15 @@ export type Domain = z.infer<typeof Domain>;
 
 export interface TransactionSearchParams extends PaginationParams {
   authority?: string
-  block_hash?: string
+  block?: number
 }
 
 export const Transaction = z.object({
   authority: z.string(),
   hash: z.string(),
-  block_hash: z.string(),
+  block: z.number(),
   created_at: Timestamp,
-  instructions: z.enum(['Instructions', 'Wasm']),
+  executable: z.enum(['Instructions', 'Wasm']),
   status: z.enum(['Committed', 'Rejected']),
 });
 
