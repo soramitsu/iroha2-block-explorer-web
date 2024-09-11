@@ -12,10 +12,8 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
-import invariant from 'tiny-invariant';
 import type { AssetDefinition } from '@/shared/api/schemas';
-import { transformToAssetId } from '@/shared/api/schemas';
-import { transformToAssetDefinitionId } from '@/shared/api/schemas';
+import { AssetDefinitionIdSchema, AssetIdSchema } from '@/shared/api/schemas';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 
 const router = useRouter();
@@ -29,14 +27,11 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'ful
 
 const assetDefinitionId = computed(() => {
   const name = router.currentRoute.value.params['id'];
-
-  invariant(typeof name === 'string', 'Expected string');
-
   const rest = router.currentRoute.value.hash;
 
-  const assetId = transformToAssetId(name + rest);
+  const assetId = AssetIdSchema.parse(name + rest);
 
-  return transformToAssetDefinitionId(assetId.definition.toString());
+  return AssetDefinitionIdSchema.parse(assetId.definition.toString());
 });
 
 const asset = ref<AssetDefinition | null>(null);

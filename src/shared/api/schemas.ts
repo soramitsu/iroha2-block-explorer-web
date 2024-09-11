@@ -53,11 +53,21 @@ export class AccountId {
   }
 }
 
-export function transformToAccountId(accountId: string): AccountId {
-  const [account, account_domain] = accountId.split('@');
+export const AccountIdSchema = z.string().transform((val, ctx) => {
+  const accountParts = val.split('@');
+  if (accountParts.length !== 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.invalid_literal,
+      message: 'Invalid accountId format',
+      expected: 'signatory@account_domain format',
+      received: val,
+    });
+  }
+
+  const [account, account_domain] = accountParts;
 
   return new AccountId(account, account_domain as DomainId);
-}
+});
 
 export class AssetDefinitionId {
   public readonly name: string;
@@ -73,11 +83,22 @@ export class AssetDefinitionId {
   }
 }
 
-export function transformToAssetDefinitionId(assetDefinitionId: string): AssetDefinitionId {
-  const [asset, asset_domain] = assetDefinitionId.split('#');
+export const AssetDefinitionIdSchema = z.string().transform((val, ctx) => {
+  const assetDefinitionParts = val.split('#');
+
+  if (assetDefinitionParts.length !== 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.invalid_literal,
+      message: 'Invalid assetDefinitionId format',
+      expected: 'asset#asset_domain format',
+      received: val,
+    });
+  }
+
+  const [asset, asset_domain] = assetDefinitionParts;
 
   return new AssetDefinitionId(asset, asset_domain as DomainId);
-}
+});
 
 export class AssetId {
   public readonly account: AccountId;
@@ -97,29 +118,39 @@ export class AssetId {
   }
 }
 
-export function transformToAssetId(assetId: string): AssetId {
-  const [asset, asset_domain, account] = assetId.split('#');
-  const [signatory, account_domain] = account.split('@');
+export const AssetIdSchema = z.string().transform((val, ctx) => {
+  const assetIdParts = val.split('#');
+  if (assetIdParts.length !== 3) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.invalid_literal,
+      message: 'Invalid assetId format',
+      expected: 'asset#asset_domain#signatory@account_domain or asset##signatory@domain format',
+      received: val,
+    });
+  }
+
+  const [asset, asset_domain, account] = assetIdParts;
+
+  const accountParts = account.split('@');
+  if (accountParts.length !== 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.invalid_literal,
+      message: 'Invalid account format',
+      expected: 'signatory@account_domain format',
+      received: account,
+    });
+  }
+
+  const [signatory, account_domain] = accountParts;
 
   return new AssetId(
     new AccountId(signatory, account_domain as DomainId),
     new AssetDefinitionId(asset, asset_domain as DomainId)
   );
-}
+});
 
 export const Account = z.object({
-  id: z.string().transform((val, ctx) => {
-    if (val.split('@').length !== 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_literal,
-        message: 'Invalid accountId format',
-        expected: 'signatory@account_domain format',
-        received: val,
-      });
-    }
-
-    return transformToAccountId(val);
-  }),
+  id: AccountIdSchema,
   metadata: Metadata,
   owned_assets: z.number(),
   owned_domains: z.number(),
@@ -132,31 +163,7 @@ export interface AssetSearchParams extends PaginationParams {
 }
 
 export const Asset = z.object({
-  id: z.string().transform((val, ctx) => {
-    const assetIdParts = val.split('#');
-    if (assetIdParts.length !== 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_literal,
-        message: 'Invalid assetId format',
-        expected: 'asset#asset_domain#signatory@account_domain or asset##signatory@domain format',
-        received: val,
-      });
-    }
-
-    const [, , account] = assetIdParts;
-
-    const accountParts = account.split('@');
-    if (accountParts.length !== 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_literal,
-        message: 'Invalid account format',
-        expected: 'signatory@account_domain format',
-        received: account,
-      });
-    }
-
-    return transformToAssetId(val);
-  }),
+  id: AssetIdSchema,
   value: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('Numeric'), value: z.string().transform((value) => BigNumber(value)) }),
     z.object({ kind: z.literal('Store'), metadata: Metadata }),
@@ -166,35 +173,13 @@ export const Asset = z.object({
 export type Asset = z.infer<typeof Asset>;
 
 export const AssetDefinition = z.object({
-  id: z.string().transform((val, ctx) => {
-    if (val.split('#').length !== 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_literal,
-        message: 'Invalid assetDefinitionId format',
-        expected: 'asset#asset_domain format',
-        received: val,
-      });
-    }
-
-    return transformToAssetDefinitionId(val);
-  }),
+  id: AssetDefinitionIdSchema,
   type: z.enum(['Numeric', 'Store']),
   logo: z.string().nullable(),
   assets: z.number(),
   metadata: Metadata,
   mintable: z.enum(['Infinitely', 'Once', 'Not']),
-  owned_by: z.string().transform((val, ctx) => {
-    if (val.split('@').length !== 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_literal,
-        message: 'Invalid accountId format',
-        expected: 'signatory@account_domain format',
-        received: val,
-      });
-    }
-
-    return transformToAccountId(val);
-  }),
+  owned_by: AccountIdSchema,
 });
 
 export type AssetDefinition = z.infer<typeof AssetDefinition>;
@@ -203,18 +188,7 @@ export const Domain = z.object({
   id: DomainId,
   logo: z.string().nullable(),
   metadata: Metadata,
-  owned_by: z.string().transform((val, ctx) => {
-    if (val.split('@').length !== 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_literal,
-        message: 'Invalid accountId format',
-        expected: 'signatory@account_domain format',
-        received: val,
-      });
-    }
-
-    return transformToAccountId(val);
-  }),
+  owned_by: AccountIdSchema,
   accounts: z.number(),
   assets: z.number(),
 });
