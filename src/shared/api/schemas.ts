@@ -41,19 +41,13 @@ const DomainId = z.string().brand('DomainId');
 export type DomainId = z.infer<typeof DomainId>;
 
 export class AccountId {
-  private readonly signatory: string;
-  private readonly domain: DomainId;
+  public readonly signatory: string;
+  public readonly domain: DomainId;
   public constructor(signatory: string, domain: DomainId) {
     this.signatory = signatory;
     this.domain = domain;
   }
 
-  public getSignatory() {
-    return this.signatory;
-  }
-  public getAccountDomain() {
-    return this.domain;
-  }
   public toString() {
     return this.signatory + '@' + this.domain;
   }
@@ -66,20 +60,14 @@ export function transformToAccountId(accountId: string): AccountId {
 }
 
 export class AssetDefinitionId {
-  private readonly name: string;
-  private readonly domain: DomainId;
+  public readonly name: string;
+  public readonly domain: DomainId;
 
   public constructor(name: string, domain: DomainId) {
     this.name = name;
     this.domain = domain;
   }
 
-  public getName() {
-    return this.name;
-  }
-  public getDomain() {
-    return this.domain;
-  }
   public toString() {
     return this.name + '#' + this.domain;
   }
@@ -92,26 +80,17 @@ export function transformToAssetDefinitionId(assetDefinitionId: string): AssetDe
 }
 
 export class AssetId {
-  private readonly account: AccountId;
-  private readonly definition: AssetDefinitionId;
+  public readonly account: AccountId;
+  public readonly definition: AssetDefinitionId;
 
   public constructor(account: AccountId, definition: AssetDefinitionId) {
-    this.account = new AccountId(account.getSignatory(), account.getAccountDomain());
-    this.definition = new AssetDefinitionId(
-      definition.getName(),
-      definition.getDomain() ? definition.getDomain() : account.getAccountDomain()
-    );
+    this.account = new AccountId(account.signatory, account.domain);
+    this.definition = new AssetDefinitionId(definition.name, definition.domain ? definition.domain : account.domain);
   }
 
-  public getAccount() {
-    return this.account;
-  }
-  public getDefintion() {
-    return this.definition;
-  }
   public toString() {
-    if (this.account.getAccountDomain() === this.definition.getDomain()) {
-      return this.definition.getName() + '##' + this.account.toString();
+    if (this.account.domain === this.definition.domain) {
+      return this.definition.name + '##' + this.account.toString();
     }
 
     return this.definition.toString() + '#' + this.account.toString();

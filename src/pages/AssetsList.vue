@@ -27,14 +27,14 @@
             :to="`/assets/${item.id.toString()}`"
             class="cell"
           >
-            {{ item.id.getDefintion().getName() }}
+            {{ item.id.definition.name }}
           </BaseLink>
 
           <BaseLink
-            :to="`/domains/${item.id.getDefintion().getDomain()}`"
+            :to="`/domains/${item.id.definition.name}`"
             class="cell"
           >
-            {{ item.id.getDefintion().getDomain() }}
+            {{ item.id.definition.domain }}
           </BaseLink>
 
           <div class="cell row-text">
@@ -54,15 +54,15 @@
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
             <BaseLink :to="`/assets/${item.id}`">
-              {{ item.id.getDefintion().getName() }}
+              {{ item.id.definition.name }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('domain') }}</span>
 
-            <BaseLink :to="`/domains/${item.id.getDefintion().getDomain()}`">
-              {{ item.id.getDefintion().getDomain() }}
+            <BaseLink :to="`/domains/${item.id.definition.domain}`">
+              {{ item.id.definition.domain }}
             </BaseLink>
           </div>
 

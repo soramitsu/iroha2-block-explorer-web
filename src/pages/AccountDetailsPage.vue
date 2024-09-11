@@ -138,7 +138,7 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
             <template #row="{ item }">
               <div class="account-details__personal-assets-list-row">
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.id.getDefintion().getName() }}</span>
+                  <span>{{ item.id.definition.name }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-list-row-data row-text">
@@ -160,7 +160,7 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
               <div class="account-details__personal-assets-mobile-list-row">
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <span>{{ item.id.getDefintion().getName() }}</span>
+                  <span>{{ item.id.definition.name }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
