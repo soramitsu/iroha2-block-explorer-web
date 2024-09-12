@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { transactionModel } from '@/entities/transaction';
 import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
@@ -16,6 +14,8 @@ import { format } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
+import type { Block } from '@/shared/api/schemas';
+import { useTable } from '@/shared/lib/table';
 
 const router = useRouter();
 
@@ -39,7 +39,7 @@ const blockHeightOrHash = computed(() => {
 const block = ref<Block | null>(null);
 const isFetchingBlock = ref(false);
 const isNextBlockExists = ref(false);
-const isPreviousBlockExists = ref(true);
+const isPreviousBlockExists = ref(false);
 
 watch(
   () => blockHeightOrHash.value,
@@ -48,12 +48,13 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-      const { blocks } = await http.fetchPeerStatus();
+      const [, { blocks }] = await Promise.all([
+        transactionsTable.fetch({ block_hash: block.value.hash }),
+        http.fetchPeerStatus(),
+      ]);
 
-      isNextBlockExists.value = block.value.height < Number(blocks);
+      isNextBlockExists.value = block.value.height < blocks;
       isPreviousBlockExists.value = block.value.height > 1;
-
-      await transactionsTable.fetch();
     } catch (e) {
       handleUnknownError(e);
     } finally {
@@ -77,8 +78,7 @@ function handleNextBlockClick() {
 
 const transactionStatus = ref<ftm.Status>(null);
 
-// FIXME: this loads ALL transactions, not only related to the block
-const transactionsTable = useTable(transactionModel.fetchList);
+const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 </script>
 
 <template>
@@ -94,7 +94,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
             data-testid="prevBlock"
             @click="handlePreviousBlockClick"
           />
-          {{ $t('blockDetails.block', [block?.height]) }}
+          {{ $t('blocks.block', [block?.height]) }}
           <ArrowIcon
             v-if="isNextBlockExists"
             data-testid="nextBlock"
@@ -113,32 +113,24 @@ const transactionsTable = useTable(transactionModel.fetchList);
           <div class="block-details__metrics-data">
             <div class="block-details__metrics-data-row">
               <DataField
-                :title="$t('blockDetails.blockHash')"
-                :hash="block.block_hash"
+                :title="$t('blocks.blockHash')"
+                :hash="block.hash"
                 :type="metricsHashType"
                 copy
               />
 
               <DataField
-                :title="$t('blockDetails.transactionsMerkleRootHash')"
-                :hash="block.parent_block_hash"
+                v-if="block.prev_block_hash"
+                :title="$t('blocks.parentBlockHash')"
+                :hash="block.prev_block_hash"
                 :type="metricsHashType"
-                copy
-              />
-            </div>
-
-            <div class="block-details__metrics-data-row">
-              <DataField
-                :title="$t('blockDetails.parentBlockHash')"
-                :hash="block.parent_block_hash"
-                :type="metricsHashType"
+                :link="`/blocks/${block.prev_block_hash}`"
                 copy
               />
 
               <DataField
-                :title="$t('blockDetails.rejectedTransactionsMerkleRootHash')"
-                :hash="block.rejected_transactions_merkle_root_hash"
-                :type="metricsHashType"
+                :title="$t('blocks.createdAt')"
+                :value="format(block.created_at)"
                 copy
               />
             </div>
@@ -147,7 +139,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
       </template>
     </BaseContentBlock>
     <BaseContentBlock
-      :title="$t('blockDetails.blockTransactions')"
+      :title="$t('blocks.blockTransactions')"
       class="block-details__transactions"
     >
       <div class="block-details__transactions-filters content-row">
@@ -158,10 +150,12 @@ const transactionsTable = useTable(transactionModel.fetchList);
       </div>
 
       <BaseTable
-        :loading="transactionsTable.loading.value"
+        v-if="block"
+        :loading="isFetchingBlock || transactionsTable.loading.value"
         :items="transactionsTable.items.value"
-        :pagination="transactionsTable.pagination"
         container-class="block-details__transactions-container"
+        reversed
+        :pagination="transactionsTable.pagination"
         @next-page="transactionsTable.nextPage()"
         @prev-page="transactionsTable.prevPage()"
         @set-page="transactionsTable.setPage($event)"
@@ -172,7 +166,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
             <TransactionStatus
               type="tooltip"
               class="block-details__transactions-row-icon"
-              :committed="item.committed"
+              :committed="item.status === 'Committed'"
             />
 
             <div class="block-details__transactions-row-column">
@@ -189,9 +183,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
             </div>
 
             <span class="block-details__transactions-row-column">
-              <span class="block-details__transactions-row-column-time row-text">{{
-                format(item.payload.creation_time)
-              }}</span>
+              <span class="block-details__transactions-row-column-time row-text">{{ format(item.created_at) }}</span>
             </span>
           </div>
         </template>
@@ -209,12 +201,11 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
   @include xxs {
     padding: 0 size(2);
-    gap: size(1);
+    gap: size(2);
   }
 
   @include md {
     padding: 0 size(3);
-    gap: size(3);
   }
 
   &__metrics {
@@ -283,8 +274,13 @@ const transactionsTable = useTable(transactionModel.fetchList);
       display: grid;
 
       .content-row {
+        padding: 0 size(4);
         height: 48px;
         min-height: 0;
+
+        &:last-child {
+          border-bottom: 1px solid theme-color('border-primary');
+        }
       }
     }
 
@@ -298,25 +294,15 @@ const transactionsTable = useTable(transactionModel.fetchList);
       @include xxs {
         grid-template-columns: 1fr 1fr;
         margin: size(2) 0;
-        padding: 0 size(2);
+        padding: 0;
       }
 
       @include xs {
         grid-template-columns: 32px 1fr 1fr;
-        padding: 0 size(2);
-      }
-
-      @include sm {
-        padding: 0 size(1);
-      }
-
-      @include md {
-        padding: 0;
       }
 
       @include lg {
         grid-template-columns: 32px 2fr 1fr;
-        padding: 0;
       }
 
       &-column {

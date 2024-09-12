@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
@@ -9,12 +9,12 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import { transactionModel } from '@/entities/transaction';
 import { useWindowSize } from '@vueuse/core';
 import { format } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import invariant from 'tiny-invariant';
+import type { Account } from '@/shared/api/schemas';
+import { AccountIdSchema } from '@/shared/api/schemas';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -27,13 +27,14 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medi
 const accountId = computed(() => {
   const id = router.currentRoute.value.params['id'];
 
-  invariant(typeof id === 'string', 'Expected string');
-
-  return id;
+  return AccountIdSchema.parse(id);
 });
 
 const account = ref<Account | null>(null);
 const isFetchingAccount = ref(false);
+
+const isEmptyAssets = ref(false);
+const isEmptyTransactions = ref(false);
 
 onMounted(async () => {
   try {
@@ -41,8 +42,14 @@ onMounted(async () => {
     account.value = await http.fetchAccount(accountId.value);
 
     if (account.value) {
-      await Promise.all([assetsTable.fetch(), transactionsTable.fetch()]);
+      await Promise.all([
+        assetsTable.fetch({ owned_by: accountId.value }),
+        transactionsTable.fetch({ authority: accountId.value }),
+      ]);
     }
+
+    isEmptyAssets.value = !assetsTable.items.value.length;
+    isEmptyTransactions.value = !transactionsTable.items.value.length;
   } catch (e) {
     handleUnknownError(e);
   } finally {
@@ -50,20 +57,18 @@ onMounted(async () => {
   }
 });
 
-// FIXME: this loads ALL assets, not only related to the account
 const assetsTable = useTable(http.fetchAssets);
 
 const transactionStatus = ref<ftm.Status>(null);
 
-// FIXME: this loads ALL transactions, not only related to the account
-const transactionsTable = useTable(transactionModel.fetchList);
+const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 </script>
 
 <template>
   <div class="account-details">
     <div class="account-details__personal">
       <BaseContentBlock
-        :title="$t('accountDetails.accountInformation')"
+        :title="$t('accounts.accountInformation')"
         class="account-details__personal-information"
       >
         <template #default>
@@ -73,12 +78,23 @@ const transactionsTable = useTable(transactionModel.fetchList);
           >
             <BaseLoading />
           </div>
-          <div v-else>
+          <div v-else-if="account">
             <div class="account-details__personal-information-row">
               <DataField
-                title="Account ID"
-                :hash="accountId"
+                :title="$t('accounts.accountId')"
+                :hash="accountId.toString()"
                 copy
+                type="medium"
+              />
+
+              <DataField
+                :title="$t('accounts.ownedDomains')"
+                :value="account.owned_domains"
+              />
+
+              <DataField
+                :title="$t('accounts.ownedAssets')"
+                :value="account.owned_assets"
               />
             </div>
           </div>
@@ -86,15 +102,23 @@ const transactionsTable = useTable(transactionModel.fetchList);
       </BaseContentBlock>
 
       <BaseContentBlock
-        :title="$t('accountDetails.accountAssets')"
+        :title="$t('accounts.accountAssets')"
         class="account-details__personal-assets"
       >
         <template #default>
+          <span
+            v-if="isEmptyAssets"
+            class="account-details__personal-assets_empty row-text"
+          >{{
+            $t('accounts.accountDoesntHaveAnyAssets')
+          }}</span>
           <BaseTable
+            v-else
             :loading="assetsTable.loading.value"
             :items="assetsTable.items.value"
             container-class="account-details__personal-assets-list"
             breakpoint="960"
+            :pagination="assetsTable.pagination"
             @next-page="assetsTable.nextPage()"
             @prev-page="assetsTable.prevPage()"
             @set-page="assetsTable.setPage($event)"
@@ -102,24 +126,29 @@ const transactionsTable = useTable(transactionModel.fetchList);
           >
             <template #header>
               <div class="account-details__personal-assets-list-row">
-                <span class="h-sm">{{ $t('accountDetails.value') }}</span>
-                <span class="h-sm">{{ $t('accountDetails.accountId') }}</span>
-                <span class="h-sm">{{ $t('accountDetails.definitionId') }}</span>
+                <span class="h-sm">{{ $t('name') }}</span>
+                <span class="h-sm">{{ $t('type') }}</span>
+                <span class="h-sm">{{ $t('value') }}</span>
               </div>
             </template>
 
             <template #row="{ item }">
               <div class="account-details__personal-assets-list-row">
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.account_id }}</span>
+                  <span>{{ item.id.definition.name }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.definition_id }}</span>
+                  <span>{{ item.value.kind }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.value.t }}</span>
+                  <template v-if="item.value.kind === 'Store'">
+                    🔑: {{ Object.keys(item.value.metadata).length }}
+                  </template>
+                  <template v-else>
+                    {{ item.value.value }}
+                  </template>
                 </div>
               </div>
             </template>
@@ -127,18 +156,23 @@ const transactionsTable = useTable(transactionModel.fetchList);
             <template #mobile-card="{ item }">
               <div class="account-details__personal-assets-mobile-list-row">
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('accountDetails.accountId') }}</span>
-                  <span>{{ item.account_id }}</span>
+                  <span class="h-sm">{{ $t('name') }}</span>
+                  <span>{{ item.id.definition.name }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('accountDetails.definitionId') }}</span>
-                  <span>{{ item.definition_id }}</span>
+                  <span class="h-sm">{{ $t('type') }}</span>
+                  <span>{{ item.value.kind }}</span>
                 </div>
 
                 <div class="account-details__personal-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('accountDetails.value') }}</span>
-                  <span>{{ item.value.t }}</span>
+                  <span class="h-sm">{{ $t('value') }}</span>
+                  <template v-if="item.value.kind === 'Store'">
+                    🔑: {{ Object.keys(item.value.metadata).length }}
+                  </template>
+                  <template v-else>
+                    {{ item.value.value }}
+                  </template>
                 </div>
               </div>
             </template>
@@ -147,56 +181,69 @@ const transactionsTable = useTable(transactionModel.fetchList);
       </BaseContentBlock>
     </div>
 
-    <BaseContentBlock
-      :title="$t('accountDetails.accountTransactions')"
-      class="account-details__transactions"
-    >
-      <div class="account-details__transactions-filters content-row">
-        <TransactionStatusFilter
-          v-model="transactionStatus"
-          class="account-details__transactions-status"
-        />
-      </div>
-
-      <BaseTable
-        :loading="transactionsTable.loading.value"
-        :items="transactionsTable.items.value"
-        container-class="account-details__transactions-container"
-        @next-page="transactionsTable.nextPage()"
-        @prev-page="transactionsTable.prevPage()"
-        @set-page="transactionsTable.setPage($event)"
-        @set-size="transactionsTable.setSize($event)"
-      >
-        <template #row="{ item }">
-          <div class="account-details__transactions-row">
-            <TransactionStatus
-              type="tooltip"
-              class="account-details__transactions-row-icon"
-              :committed="item.committed"
+    <div class="account-details__transactions">
+      <BaseContentBlock :title="$t('accounts.accountTransactions')">
+        <template #default>
+          <div
+            v-if="!isEmptyTransactions"
+            class="account-details__transactions-filters content-row"
+          >
+            <TransactionStatusFilter
+              v-model="transactionStatus"
+              class="account-details__transactions-status"
             />
-
-            <div class="account-details__transactions-row-column">
-              <div class="account-details__transactions-row-column-label row-text">
-                {{ $t('transactions.transactionID') }}
-              </div>
-
-              <BaseHash
-                :hash="item.hash"
-                :type="hashType"
-                :link="'/transactions/' + item.hash"
-                copy
-              />
-            </div>
-
-            <span class="account-details__transactions-row-column">
-              <span class="account-details__transactions-row-column-time row-text">{{
-                format(item.payload.creation_time)
-              }}</span>
-            </span>
           </div>
+
+          <span
+            v-if="isEmptyTransactions"
+            class="account-details__transactions_empty row-text"
+          >{{
+            $t('accounts.accountDoesntHaveAnyTransactions')
+          }}</span>
+          <BaseTable
+            v-else
+            :loading="transactionsTable.loading.value"
+            :items="transactionsTable.items.value"
+            container-class="account-details__transactions-container"
+            reversed
+            :pagination="transactionsTable.pagination"
+            @next-page="transactionsTable.nextPage()"
+            @prev-page="transactionsTable.prevPage()"
+            @set-page="transactionsTable.setPage($event)"
+            @set-size="transactionsTable.setSize($event)"
+          >
+            <template #row="{ item }">
+              <div class="account-details__transactions-row">
+                <TransactionStatus
+                  type="tooltip"
+                  class="account-details__transactions-row-icon"
+                  :committed="item.status === 'Committed'"
+                />
+
+                <div class="account-details__transactions-row-column">
+                  <div class="account-details__transactions-row-column-label row-text">
+                    {{ $t('transactions.transactionID') }}
+                  </div>
+
+                  <BaseHash
+                    :hash="item.hash"
+                    :type="hashType"
+                    :link="`/transactions/${item.hash}`"
+                    copy
+                  />
+                </div>
+
+                <span class="account-details__transactions-row-column">
+                  <span class="account-details__transactions-row-column-time row-text">{{
+                    format(item.created_at)
+                  }}</span>
+                </span>
+              </div>
+            </template>
+          </BaseTable>
         </template>
-      </BaseTable>
-    </BaseContentBlock>
+      </BaseContentBlock>
+    </div>
   </div>
 </template>
 
@@ -204,29 +251,32 @@ const transactionsTable = useTable(transactionModel.fetchList);
 @import '@/shared/ui/styles/main';
 
 .account-details {
-  display: grid;
+  display: flex;
 
-  @include xs {
-    padding: 0 size(2);
-    grid-gap: size(1);
-  }
-
-  @include md {
+  @include xxs {
+    gap: size(2);
     padding: 0 size(3);
-    grid-gap: size(3);
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   @include lg {
-    grid-template-columns: 50% 50%;
+    flex-direction: row;
   }
 
   &__personal {
     display: flex;
     flex-direction: column;
 
+    @include xxs {
+      width: 90vw;
+    }
+
+    @include lg {
+      width: 46vw;
+    }
+
     &-information {
-      margin-bottom: size(3);
+      margin-bottom: size(2);
 
       &_loading {
         margin-top: size(1);
@@ -238,17 +288,22 @@ const transactionsTable = useTable(transactionModel.fetchList);
       &-row {
         margin-top: size(2);
         padding: 0 size(2) 0 size(4);
+
+        & > div:not(:first-child) {
+          margin-top: size(2);
+        }
       }
     }
 
     &-assets {
-      margin-bottom: size(3);
-      @include xs {
-        margin-bottom: size(2);
+      &_empty {
+        padding: 0 size(4);
       }
 
-      @include lg {
-        margin-bottom: 0;
+      .content-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 0 size(4);
       }
 
       hr {
@@ -258,6 +313,9 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
     &-assets-list {
       display: grid;
+      .content-row:last-child {
+        border-bottom: 1px solid theme-color('border-primary');
+      }
 
       @include xxs {
         grid-template-columns: 1fr;
@@ -275,27 +333,18 @@ const transactionsTable = useTable(transactionModel.fetchList);
         display: grid;
 
         @include md {
-          grid-template-columns: 15vw 35vw 36vw;
+          grid-template-columns: 25vw 25vw 25vw;
         }
 
         @include lg {
-          grid-template-columns: 8vw 17vw 16vw;
-        }
-
-        &-data {
-          display: flex;
-          align-items: center;
-
-          span {
-            text-overflow: ellipsis;
-            overflow: hidden;
-          }
+          grid-template-columns: 12vw 12vw 12vw;
         }
       }
     }
 
     &-assets-mobile-list {
       &-row {
+        border-bottom: 1px solid theme-color('border-primary');
         padding: size(2) size(4);
         @include xxs {
           width: 100%;
@@ -311,42 +360,16 @@ const transactionsTable = useTable(transactionModel.fetchList);
           align-items: center;
           margin-top: size(2);
 
-          @include xxs {
-            width: 78vw;
-          }
-          @include xs {
-            width: 75vw;
-          }
-
-          @include sm {
-            width: 100%;
-          }
-
           span:first-child {
             @include xxs {
-              width: size(14);
+              width: size(16);
             }
             @include xs {
-              width: size(14);
+              width: size(20);
             }
             @include sm {
-              width: 20vw;
+              width: size(16);
             }
-          }
-
-          span:nth-child(2) {
-            @include xxs {
-              width: 58vw;
-            }
-            @include xs {
-              width: 52vw;
-            }
-            @include sm {
-              width: 28vw;
-            }
-
-            overflow: hidden;
-            text-overflow: ellipsis;
           }
         }
       }
@@ -354,6 +377,18 @@ const transactionsTable = useTable(transactionModel.fetchList);
   }
 
   &__transactions {
+    .base-content-block__body:has(.account-details__transactions_empty) {
+      padding: size(0) size(4) size(4);
+    }
+
+    @include xxs {
+      width: 90vw;
+    }
+
+    @include lg {
+      width: 46vw;
+    }
+
     hr {
       display: none;
     }
@@ -370,6 +405,10 @@ const transactionsTable = useTable(transactionModel.fetchList);
         height: 48px;
         min-height: 0;
 
+        &:last-child {
+          border-bottom: 1px solid theme-color('border-primary');
+        }
+
         @include xxs {
           padding: 0 size(2);
         }
@@ -384,7 +423,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
       width: 100%;
       height: 32px;
       display: grid;
-      grid-gap: size(2);
+      grid-gap: size(1);
       grid-template-columns: 32px 2fr 1fr;
 
       @include xxs {
@@ -409,7 +448,7 @@ const transactionsTable = useTable(transactionModel.fetchList);
         align-items: center;
 
         & > div {
-          margin-right: 3vw;
+          margin-right: size(1);
         }
       }
 

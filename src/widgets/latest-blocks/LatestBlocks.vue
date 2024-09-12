@@ -10,42 +10,64 @@
     </template>
 
     <template #default>
-      <template
-        v-for="block in blocks"
-        :key="block.height"
-      >
-        <div class="latest-blocks__row">
-          <BaseLink :to="`/blocks/${block.height}`">
-            {{ block.height }}
-          </BaseLink>
+      <div v-if="!isLoading">
+        <template
+          v-for="block in blocks"
+          :key="block.height"
+        >
+          <div class="latest-blocks__row">
+            <BaseLink :to="`/blocks/${block.height}`">
+              {{ block.height }}
+            </BaseLink>
 
-          <div class="latest-blocks__time">
-            <TimeIcon />
-            {{ $t('time.min', [elapsed.allMinutes(block.timestamp)]) }}
-            {{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}
-            {{ $t('time.ago') }}
+            <div class="latest-blocks__time">
+              <TimeIcon class="latest-blocks__time-icon" />
+              {{ $t('time.min', [elapsed.allMinutes(block.created_at)]) }}
+              {{ $t('time.sec', [elapsed.seconds(block.created_at)]) }}
+              {{ $t('time.ago') }}
+            </div>
+
+            <span class="latest-blocks__number">{{ block.transactions_total }} txns</span>
           </div>
-
-          <span class="latest-blocks__number">{{ block.transactions }} txns</span>
-        </div>
-      </template>
+        </template>
+      </div>
+      <BaseLoading
+        v-else
+        class="latest-blocks_loading"
+      />
     </template>
   </BaseContentBlock>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import { elapsed } from '@/shared/lib/time';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import type { Block } from '@/shared/api/schemas';
+import { onMounted, ref, shallowRef } from 'vue';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 
-const blocks = ref<BlockShallow[]>([]);
+const blocks = shallowRef<Block[]>([]);
+const isLoading = ref(false);
 
-http.fetchBlocks({ page_size: 10, page: 1 }).then((res) => {
-  blocks.value = res.data;
+const { handleUnknownError } = useErrorHandlers();
+
+onMounted(async () => {
+  try {
+    isLoading.value = true;
+
+    const { items } = await http.fetchBlocks();
+
+    blocks.value = items;
+  } catch (error) {
+    handleUnknownError(error);
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>
 
@@ -53,8 +75,15 @@ http.fetchBlocks({ page_size: 10, page: 1 }).then((res) => {
 @import '@/shared/ui/styles/main';
 
 .latest-blocks {
+  &_loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+
   &__row {
-    padding: size(1) size(2);
+    padding: size(1) size(4);
     border-bottom: 1px solid theme-color('border-primary');
     display: grid;
     grid-gap: size(1);
@@ -84,14 +113,17 @@ http.fetchBlocks({ page_size: 10, page: 1 }).then((res) => {
 
   &__time {
     display: grid;
+    width: size(24);
     grid-gap: size(1);
     grid-auto-flow: column;
     color: theme-color('content-primary');
     @include tpg-s3;
-  }
 
-  path {
-    fill: theme-color('content-quaternary');
+    &-icon {
+      path {
+        fill: theme-color('content-quaternary');
+      }
+    }
   }
 
   &__number {

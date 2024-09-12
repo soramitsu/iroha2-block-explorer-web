@@ -86,15 +86,16 @@ import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
-import type { TablePagination } from '@/shared/lib/table';
 import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
+import type { Pagination } from '@/shared/api/schemas';
 
 interface Props {
   loading: boolean
-  pagination?: TablePagination | null
+  pagination?: Pagination | null
   items: T[]
   containerClass: string
   breakpoint?: string | number
+  reversed?: boolean
 }
 
 interface Emits {
@@ -125,9 +126,21 @@ const segmentInfo = computed(() => {
   if (!props.pagination) return '';
 
   const p = props.pagination;
-  const start = (p.page - 1) * p.page_size + 1;
-  const end = p.page * p.page_size;
-  return `${start}—${end > p.total ? p.total : end} of ${p.total}`;
+
+  if (props.reversed) {
+    if (p.per_page > props.items.length) return `${props.items.length}—1 of ${p.total_items}`;
+
+    const start = (p.page - 1) * p.per_page + props.items.length;
+
+    const end = start - props.items.length + 1;
+
+    return `${start}—${end} of ${p.total_items}`;
+  }
+
+  const start = (p.page - 1) * p.per_page + 1;
+  const end = p.page * p.per_page;
+
+  return `${start}—${end > p.total_items ? p.total_items : end} of ${p.total_items}`;
 });
 
 const numbers = computed(() => {
@@ -139,33 +152,46 @@ const numbers = computed(() => {
   const offset = isMobile ? 1 : 3;
 
   const p = props.pagination;
-  if (p.pages < max) {
-    return new Array(p.pages).fill(0).map((_, i) => i + 1);
-  }
 
-  let start = p.page - offset;
-  let end = p.page + offset;
+  if (p.total_pages < max) {
+    const numbers = new Array(p.total_pages).fill(0).map((_, i) => i + 1);
+
+    return props.reversed ? numbers.reverse() : numbers;
+  }
 
   if (p.page < side) {
-    return Array(side)
+    const numbersArray = Array(side)
       .fill(0)
-      .map<string | number>((_, i) => i + 1)
-      .concat(['. . .', p.pages]);
+      .map<string | number>((_, i) => i + 1);
+
+    return props.reversed
+      ? [p.total_pages, '. . .'].concat(numbersArray.reverse())
+      : numbersArray.concat(['. . .', p.total_pages]);
   }
 
-  if (p.page > p.pages - side + 1) {
+  if (p.page > p.total_pages - side + 1) {
+    if (props.reversed)
+      return Array(side)
+        .fill(p.total_pages)
+        .map<string | number>((_, i) => _ - i)
+        .concat(['. . .', 1]);
+
     return [1, '. . .'].concat(
       Array(side)
         .fill(0)
-        .map((_, i) => p.pages - i)
+        .map((_, i) => p.total_pages - i)
         .reverse()
     );
   }
 
-  start = start < 1 ? 1 : start;
-  end = end > p.pages ? p.pages : end;
+  const start = Math.max(p.page - offset, 1);
+  const end = Math.min(p.page + offset, p.total_pages);
 
-  return [1, '. . .', ...new Array(end - start + 1).fill(0).map((_, i) => i + start), '. . .', p.pages];
+  const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
+
+  return props.reversed
+    ? [p.total_pages, '. . .', ...middleNumbers.reverse(), '. . .', 1]
+    : [1, '. . .', ...middleNumbers, '. . .', p.total_pages];
 });
 
 const sizeOptions = [
@@ -188,7 +214,7 @@ const sizeOptions = [
 ];
 
 const pageSizeModel = computed({
-  get: () => props.pagination?.page_size ?? 0,
+  get: () => props.pagination?.per_page ?? 0,
   set: (v) => emit('setSize', v),
 });
 </script>

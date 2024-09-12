@@ -6,6 +6,11 @@ import svg from 'vite-svg-loader';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api/v1': 'http://127.0.0.1:4000',
+    },
+  },
   test: {
     environment: 'jsdom',
   },

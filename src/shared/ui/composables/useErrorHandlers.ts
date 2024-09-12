@@ -1,4 +1,5 @@
 import { useNotifications } from './notifications';
+import { ZodError } from 'zod';
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
@@ -14,8 +15,12 @@ export const useErrorHandlers = () => {
   function handleUnknownError(error: unknown) {
     console.error(error);
 
-    const errorMessage = getErrorMessage(error);
-    notifications.error(errorMessage);
+    if (error instanceof ZodError) {
+      notifications.error(error.errors[0].code);
+    } else {
+      const errorMessage = getErrorMessage(error);
+      notifications.error(errorMessage);
+    }
   }
 
   return { handleUnknownError };

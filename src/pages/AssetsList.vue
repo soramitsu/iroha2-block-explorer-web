@@ -1,6 +1,6 @@
 <template>
   <BaseContentBlock
-    :title="$t('assets')"
+    :title="$t('assets.assets')"
     class="assets-list-page"
   >
     <BaseTable
@@ -24,25 +24,25 @@
       <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
-            :to="`/assets/${item.definition_id}`"
+            :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`"
             class="cell"
           >
-            {{ item.definition_id.split('#')[0] }}
+            {{ item.id.definition.name }}
           </BaseLink>
 
           <BaseLink
-            :to="`/domains/${item.definition_id.split('#')[1]}`"
+            :to="`/domains/${item.id.definition.domain}`"
             class="cell"
           >
-            {{ item.definition_id.split('#')[1] }}
+            {{ item.id.definition.domain }}
           </BaseLink>
 
           <div class="cell row-text">
-            <template v-if="item.value.t === 'Store'">
-              🔑: {{ Object.keys(item.value.c).length }}
+            <template v-if="item.value.kind === 'Store'">
+              🔑: {{ Object.keys(item.value.metadata).length }}
             </template>
             <template v-else>
-              {{ item.value.c }}
+              {{ item.value.value }}
             </template>
           </div>
         </div>
@@ -53,22 +53,27 @@
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/assets/${item.definition_id}`">
-              {{ item.definition_id.split('#')[0] }}
+            <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
+              {{ item.id.definition.name }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('domain') }}</span>
 
-            <BaseLink :to="`/domains/${item.definition_id.split('#')[1]}`">
-              {{ item.definition_id.split('#')[1] }}
+            <BaseLink :to="`/domains/${item.id.definition.domain}`">
+              {{ item.id.definition.domain }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('total') }}</span>
-            <span class="row-text">{{ item.value.c }}</span>
+            <template v-if="item.value.kind === 'Store'">
+              <span class="row-text">🔑: {{ Object.keys(item.value.metadata).length }}</span>
+            </template>
+            <template v-else>
+              <span class="row-text">{{ item.value.value }}</span>
+            </template>
           </div>
         </div>
       </template>
@@ -77,14 +82,24 @@
 </template>
 
 <script setup lang="ts">
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import { useTable } from '@/shared/lib/table';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { onMounted } from 'vue';
 
 const table = useTable(http.fetchAssets);
-table.fetch();
+const { handleUnknownError } = useErrorHandlers();
+
+onMounted(async () => {
+  try {
+    await table.fetch();
+  } catch (e) {
+    handleUnknownError(e);
+  }
+});
 </script>
 
 <style lang="scss">
@@ -99,7 +114,7 @@ table.fetch();
   }
 
   &__mobile-card {
-    padding: size(2);
+    padding: size(2) size(3);
   }
 
   &__mobile-row {
@@ -108,8 +123,8 @@ table.fetch();
   }
 
   &__mobile-label {
-    text-align: right;
-    width: 80px;
+    text-align: left;
+    width: size(12);
     padding: size(1);
     margin-right: size(3);
   }

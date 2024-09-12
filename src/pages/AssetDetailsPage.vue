@@ -1,44 +1,23 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
-import { http } from '@/shared/api';
+import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useTable } from '@/shared/lib/table';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { transactionModel } from '@/entities/transaction';
-import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
-import { elapsed } from '@/shared/lib/time';
-import invariant from 'tiny-invariant';
+import type { AssetDefinition } from '@/shared/api/schemas';
+import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 
 const router = useRouter();
 
 const { handleUnknownError } = useErrorHandlers();
 
-const HASH_BREAKPOINT = 800;
-const { width } = useWindowSize();
+const assetDefinitionId = computed(() => {
+  const id = router.currentRoute.value.params['id'];
 
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
-
-const assetName = computed(() => {
-  const name = router.currentRoute.value.params['id'];
-
-  invariant(typeof name === 'string', 'Expected string');
-
-  return name;
+  return AssetDefinitionIdSchema.parse(id);
 });
-
-const assetDomain = computed(() => {
-  const domain = router.currentRoute.value.hash;
-
-  return domain.split('#')[1];
-});
-
-const assetId = computed(() => assetName.value + '#' + assetDomain.value);
 
 const asset = ref<AssetDefinition | null>(null);
 const isFetchingAsset = ref(false);
@@ -46,26 +25,19 @@ const isFetchingAsset = ref(false);
 onMounted(async () => {
   try {
     isFetchingAsset.value = true;
-    asset.value = await http.fetchAssetDefinition(encodeURIComponent(assetId.value));
-
-    await transactionsTable.fetch();
+    asset.value = await http.fetchAssetDefinition(assetDefinitionId.value);
   } catch (e) {
     handleUnknownError(e);
   } finally {
     isFetchingAsset.value = false;
   }
 });
-
-const transactionStatus = ref<ftm.Status>(null);
-
-// FIXME: this loads ALL transactions, not only related to the asset
-const transactionsTable = useTable(transactionModel.fetchList);
 </script>
 
 <template>
   <div class="asset-details">
     <BaseContentBlock
-      :title="$t('assetDetails.assetMetrics')"
+      :title="$t('assets.assetMetrics')"
       class="asset-details__metrics"
     >
       <template #default>
@@ -79,58 +51,30 @@ const transactionsTable = useTable(transactionModel.fetchList);
           <div class="asset-details__metrics-data">
             <DataField
               :title="$t('name')"
-              :value="assetName"
+              :value="assetDefinitionId.name"
             />
             <DataField
               :title="$t('type')"
-              :value="asset.value_type"
+              :value="asset.type"
             />
             <DataField
               :title="$t('mintable')"
               :value="asset.mintable"
             />
+          </div>
+          <div class="asset-details__metrics-data">
+            <DataField
+              :title="$t('assets.assets')"
+              :value="asset.assets"
+            />
             <DataField
               :title="$t('domain')"
-              :hash="assetDomain"
-              :link="`/domains/${assetDomain}`"
+              :hash="assetDefinitionId.domain"
+              :link="`/domains/${assetDefinitionId.domain}`"
             />
           </div>
         </div>
       </template>
-    </BaseContentBlock>
-    <BaseContentBlock
-      :title="$t('assetDetails.assetTransactions')"
-      class="asset-details__transactions"
-    >
-      <div class="asset-details__transactions-filters content-row">
-        <TransactionStatusFilter
-          v-model="transactionStatus"
-          class="asset-details__transactions-filters-status"
-        />
-      </div>
-
-      <BaseTable
-        :loading="transactionsTable.loading.value"
-        :items="transactionsTable.items.value"
-        container-class="asset-details__transactions-container"
-        @next-page="transactionsTable.nextPage()"
-        @prev-page="transactionsTable.prevPage()"
-        @set-page="transactionsTable.setPage($event)"
-        @set-size="transactionsTable.setSize($event)"
-      >
-        <template #row="{ item }">
-          <div class="asset-details__transactions-row">
-            <div class="asset-details__transactions-row-data">
-              <BaseHash
-                :type="hashType"
-                :hash="item.hash"
-                :link="`/transactions/${item.hash}`"
-              />
-              <span class="asset-details__transactions-row-data-time row-text">{{ $t('time.min', [elapsed.allMinutes(item.payload.creation_time)]) }} {{ $t('time.ago') }}</span>
-            </div>
-          </div>
-        </template>
-      </BaseTable>
     </BaseContentBlock>
   </div>
 </template>
@@ -144,12 +88,11 @@ const transactionsTable = useTable(transactionModel.fetchList);
 
   @include xxs {
     padding: 0 size(2);
-    gap: size(1);
+    gap: size(2);
   }
 
   @include md {
     padding: 0 size(3);
-    gap: size(3);
   }
 
   &__metrics {
@@ -166,47 +109,16 @@ const transactionsTable = useTable(transactionModel.fetchList);
       gap: size(2);
       grid-template-columns: 1fr;
 
-      @include sm {
-        grid-template-columns: 1fr 1fr;
+      @include xxs {
+        grid-template-columns: 1fr;
       }
 
-      @include lg {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+      @include sm {
+        grid-template-columns: 1fr 1fr 1fr;
       }
 
       .base-link {
         @include tpg-s3;
-      }
-    }
-  }
-
-  &__transactions {
-    &-filters {
-      border-top: 0;
-      display: flex;
-      padding: size(2) size(4);
-    }
-
-    &-container {
-      display: grid;
-    }
-
-    &-row {
-      @include xxs {
-        padding: 0 size(2);
-      }
-
-      @include md {
-        padding: 0;
-      }
-
-      width: 100%;
-      display: flex;
-
-      &-data {
-        &-time {
-          @include tpg-s5;
-        }
       }
     }
   }

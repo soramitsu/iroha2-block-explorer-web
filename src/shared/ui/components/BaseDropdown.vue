@@ -72,6 +72,8 @@ function choose(value: string | number) {
   height: size(4);
 
   &__container {
+    position: relative;
+    z-index: 10;
     background: theme-color('background');
     color: theme-color('content-quaternary');
     fill: theme-color('content-quaternary');
