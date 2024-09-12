@@ -13,7 +13,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { elapsed } from '@/shared/lib/time';
 import type { AssetDefinition } from '@/shared/api/schemas';
-import { AssetDefinitionIdSchema, AssetIdSchema } from '@/shared/api/schemas';
+import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 
 const router = useRouter();
@@ -26,12 +26,9 @@ const { width } = useWindowSize();
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
 const assetDefinitionId = computed(() => {
-  const name = router.currentRoute.value.params['id'];
-  const rest = router.currentRoute.value.hash;
+  const id = router.currentRoute.value.params['id'];
 
-  const assetId = AssetIdSchema.parse(name + rest);
-
-  return AssetDefinitionIdSchema.parse(assetId.definition.toString());
+  return AssetDefinitionIdSchema.parse(id);
 });
 
 const asset = ref<AssetDefinition | null>(null);

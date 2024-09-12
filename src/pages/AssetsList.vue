@@ -24,14 +24,14 @@
       <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
-            :to="`/assets/${item.id}`"
+            :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`"
             class="cell"
           >
             {{ item.id.definition.name }}
           </BaseLink>
 
           <BaseLink
-            :to="`/domains/${item.id.definition.name}`"
+            :to="`/domains/${item.id.definition.domain}`"
             class="cell"
           >
             {{ item.id.definition.domain }}
@@ -53,7 +53,7 @@
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/assets/${item.id}`">
+            <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
               {{ item.id.definition.name }}
             </BaseLink>
           </div>
