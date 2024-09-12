@@ -43,6 +43,11 @@ const routes = [
     component: () => import('@/pages/DomainsList.vue'),
   },
   {
+    path: '/domains/:id',
+    name: 'domain-details',
+    component: () => import('@/pages/DomainDetailsPage.vue'),
+  },
+  {
     path: '/transactions',
     name: 'transactions-list',
     component: () => import('@/pages/TransactionsList.vue'),
