@@ -11,8 +11,7 @@ import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import invariant from 'tiny-invariant';
-import type { Domain } from '@/shared/api/schemas';
-import type { DomainId } from '@/shared/api/schemas';
+import type { Domain, DomainId } from '@/shared/api/schemas';
 import { getMetadata } from '@/shared/ui/utils/json';
 
 const router = useRouter();
