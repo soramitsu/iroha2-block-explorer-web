@@ -24,7 +24,7 @@
       <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
-            :to="`/assets/${item.id.toString()}`"
+            :to="`/assets/${item.id}`"
             class="cell"
           >
             {{ item.id.definition.name }}

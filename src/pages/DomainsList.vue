@@ -33,7 +33,7 @@
 
           <BaseHash
             :hash="item.owned_by.toString()"
-            :link="`/accounts/${item.owned_by.toString()}`"
+            :link="`/accounts/${item.owned_by}`"
             :type="hashType"
             copy
           />
@@ -57,7 +57,7 @@
             <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.ownedBy') }}</span>
             <BaseHash
               :hash="item.owned_by.toString()"
-              :link="`/accounts/${item.owned_by.toString()}`"
+              :link="`/accounts/${item.owned_by}`"
               :type="hashType"
               copy
             />

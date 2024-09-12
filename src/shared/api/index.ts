@@ -37,7 +37,7 @@ export async function fetchAccounts(params?: PaginationParams): Promise<Paginate
 }
 
 export async function fetchAccount(id: AccountId): Promise<Account> {
-  const res = await get(`/accounts/${id.toString()}`);
+  const res = await get(`/accounts/${id}`);
   return Account.parse(res);
 }
 
@@ -47,7 +47,7 @@ export async function fetchAssets(params?: AssetSearchParams): Promise<Paginated
 }
 
 export async function fetchAsset(id: AssetId): Promise<Asset> {
-  const res = await get(`/assets/${id.toString()}`);
+  const res = await get(`/assets/${id}`);
   return Asset.parse(res);
 }
 

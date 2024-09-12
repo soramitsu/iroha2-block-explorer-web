@@ -51,6 +51,10 @@ export class AccountId {
   public toString() {
     return this.signatory + '@' + this.domain;
   }
+
+  public toJSON() {
+    return this.toString();
+  }
 }
 
 export const AccountIdSchema = z.string().transform((val, ctx) => {
@@ -116,6 +120,10 @@ export class AssetId {
 
     return this.definition.toString() + '#' + this.account.toString();
   }
+
+  public toJSON() {
+    return this.toString();
+  }
 }
 
 export const AssetIdSchema = z.string().transform((val, ctx) => {
@@ -159,7 +167,7 @@ export const Account = z.object({
 export type Account = z.infer<typeof Account>;
 
 export interface AssetSearchParams extends PaginationParams {
-  owned_by?: string
+  owned_by?: AccountId
 }
 
 export const Asset = z.object({
@@ -196,7 +204,7 @@ export const Domain = z.object({
 export type Domain = z.infer<typeof Domain>;
 
 export interface TransactionSearchParams extends PaginationParams {
-  authority?: string
+  authority?: AccountId
   block?: number
 }
 

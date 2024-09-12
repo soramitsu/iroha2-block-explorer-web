@@ -43,8 +43,8 @@ onMounted(async () => {
 
     if (account.value) {
       await Promise.all([
-        assetsTable.fetch({ owned_by: accountId.value.toString() }),
-        transactionsTable.fetch({ authority: accountId.value.toString() }),
+        assetsTable.fetch({ owned_by: accountId.value }),
+        transactionsTable.fetch({ authority: accountId.value }),
       ]);
     }
 
