@@ -15,6 +15,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Account } from '@/shared/api/schemas';
 import { AccountIdSchema } from '@/shared/api/schemas';
+import { getMetadata } from '@/shared/ui/utils/json';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -95,6 +96,11 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
               <DataField
                 :title="$t('accounts.ownedAssets')"
                 :value="account.owned_assets"
+              />
+
+              <DataField
+                :title="$t('metadata')"
+                :value="getMetadata(account.metadata) ?? $t('none')"
               />
             </div>
           </div>
