@@ -6,6 +6,8 @@ import type {
   AssetDefinitionId,
   DomainId,
   TransactionSearchParams,
+  AccountSearchParams,
+  AssetDefinitionSearchParams,
 } from '@/shared/api/schemas';
 import {
   Account,
@@ -31,7 +33,7 @@ async function get<T>(path: string, params?: PaginationParams): Promise<T> {
   return res.json();
 }
 
-export async function fetchAccounts(params?: PaginationParams): Promise<Paginated<Account>> {
+export async function fetchAccounts(params?: AccountSearchParams): Promise<Paginated<Account>> {
   const res = await get('/accounts', params);
   return Paginated(Account).parse(res);
 }
@@ -51,7 +53,7 @@ export async function fetchAsset(id: AssetId): Promise<Asset> {
   return Asset.parse(res);
 }
 
-export async function fetchAssetDefinitions(params?: PaginationParams): Promise<Paginated<AssetDefinition>> {
+export async function fetchAssetDefinitions(params?: AssetDefinitionSearchParams): Promise<Paginated<AssetDefinition>> {
   const res = await get('/assets-definitions', params);
   return Paginated(AssetDefinition).parse(res);
 }
