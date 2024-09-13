@@ -1,5 +1,3 @@
-export function getMetadata(obj: object) {
-  const str = JSON.stringify(obj);
-
-  return str === '{}' ? null : str;
+export function parseMetadata(obj: Record<string, any>) {
+  return Object.keys(obj).length ? obj : null;
 }

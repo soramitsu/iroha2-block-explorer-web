@@ -8,7 +8,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import type { AssetDefinition } from '@/shared/api/schemas';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
-import { getMetadata } from '@/shared/ui/utils/json';
+import { parseMetadata } from '@/shared/ui/utils/json';
 
 const router = useRouter();
 
@@ -75,7 +75,7 @@ onMounted(async () => {
             />
             <DataField
               :title="$t('metadata')"
-              :value="getMetadata(asset.metadata)"
+              :value="parseMetadata(asset.metadata)"
             />
           </div>
         </div>

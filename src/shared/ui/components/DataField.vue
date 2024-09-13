@@ -4,7 +4,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 const props = withDefaults(
   defineProps<{
     title: string
-    value?: string | number | null
+    value?: string | number | Record<string, any> | null
     bold?: boolean
     hash?: string
     link?: string

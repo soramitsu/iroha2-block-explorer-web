@@ -12,7 +12,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Domain } from '@/shared/api/schemas';
 import { DomainId } from '@/shared/api/schemas';
-import { getMetadata } from '@/shared/ui/utils/json';
+import { parseMetadata } from '@/shared/ui/utils/json';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -90,7 +90,7 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
 
               <DataField
                 :title="$t('metadata')"
-                :value="getMetadata(domain.metadata)"
+                :value="parseMetadata(domain.metadata)"
               />
             </div>
           </div>
