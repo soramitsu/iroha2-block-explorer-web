@@ -32,7 +32,9 @@ const props = withDefaults(
       v-else
       class="data-field__value"
       :class="{ 'data-field__value_bold': props.bold }"
-    >{{ props.value ?? $t('none') }}</span>
+    >{{
+      props.value ?? $t('none')
+    }}</span>
   </div>
 </template>
 

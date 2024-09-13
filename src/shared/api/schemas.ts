@@ -159,6 +159,7 @@ export const AssetIdSchema = z.string().transform((val, ctx) => {
 
 export interface AccountSearchParams extends PaginationParams {
   domain?: DomainId
+  with_asset?: AssetDefinitionId
 }
 
 export const Account = z.object({
@@ -186,6 +187,7 @@ export type Asset = z.infer<typeof Asset>;
 
 export interface AssetDefinitionSearchParams extends PaginationParams {
   domain?: DomainId
+  owned_by?: AccountId
 }
 
 export const AssetDefinition = z.object({
