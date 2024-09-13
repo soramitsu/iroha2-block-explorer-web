@@ -75,7 +75,7 @@ onMounted(async () => {
             />
             <DataField
               :title="$t('metadata')"
-              :value="getMetadata(asset.metadata) ?? $t('none')"
+              :value="getMetadata(asset.metadata)"
             />
           </div>
         </div>

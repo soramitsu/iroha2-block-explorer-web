@@ -4,7 +4,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 const props = withDefaults(
   defineProps<{
     title: string
-    value?: string | number
+    value?: string | number | null
     bold?: boolean
     hash?: string
     link?: string
@@ -29,10 +29,10 @@ const props = withDefaults(
       :class="{ 'row-text': !props.link }"
     />
     <span
-      v-else-if="typeof props.value !== 'undefined'"
+      v-else
       class="data-field__value"
       :class="{ 'data-field__value_bold': props.bold }"
-    >{{ props.value }}</span>
+    >{{ props.value ?? $t('none') }}</span>
   </div>
 </template>
 

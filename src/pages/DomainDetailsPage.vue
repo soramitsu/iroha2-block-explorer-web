@@ -10,8 +10,8 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import invariant from 'tiny-invariant';
-import type { Domain, DomainId } from '@/shared/api/schemas';
+import type { Domain } from '@/shared/api/schemas';
+import { DomainId } from '@/shared/api/schemas';
 import { getMetadata } from '@/shared/ui/utils/json';
 
 const router = useRouter();
@@ -25,9 +25,7 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medi
 const domainId = computed(() => {
   const id = router.currentRoute.value.params['id'];
 
-  invariant(typeof id === 'string', 'Expected string');
-
-  return id as DomainId;
+  return DomainId.parse(id);
 });
 
 const domain = ref<Domain | null>(null);
@@ -92,7 +90,7 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
 
               <DataField
                 :title="$t('metadata')"
-                :value="getMetadata(domain.metadata) ?? $t('none')"
+                :value="getMetadata(domain.metadata)"
               />
             </div>
           </div>

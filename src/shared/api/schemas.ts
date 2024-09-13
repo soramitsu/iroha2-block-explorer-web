@@ -37,7 +37,7 @@ const Duration = z.object({
 });
 const Timestamp = z.string().transform((ctx) => new Date(ctx));
 
-const DomainId = z.string().brand('DomainId');
+export const DomainId = z.string().brand('DomainId');
 export type DomainId = z.infer<typeof DomainId>;
 
 export class AccountId {

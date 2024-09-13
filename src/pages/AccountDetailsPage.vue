@@ -100,7 +100,7 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 
               <DataField
                 :title="$t('metadata')"
-                :value="getMetadata(account.metadata) ?? $t('none')"
+                :value="getMetadata(account.metadata)"
               />
             </div>
           </div>
