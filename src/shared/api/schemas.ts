@@ -37,7 +37,7 @@ const Duration = z.object({
 });
 const Timestamp = z.string().transform((ctx) => new Date(ctx));
 
-const DomainId = z.string().brand('DomainId');
+export const DomainId = z.string().brand('DomainId');
 export type DomainId = z.infer<typeof DomainId>;
 
 export class AccountId {
@@ -157,6 +157,11 @@ export const AssetIdSchema = z.string().transform((val, ctx) => {
   );
 });
 
+export interface AccountSearchParams extends PaginationParams {
+  domain?: DomainId
+  with_asset?: AssetDefinitionId
+}
+
 export const Account = z.object({
   id: AccountIdSchema,
   metadata: Metadata,
@@ -179,6 +184,11 @@ export const Asset = z.object({
 });
 
 export type Asset = z.infer<typeof Asset>;
+
+export interface AssetDefinitionSearchParams extends PaginationParams {
+  domain?: DomainId
+  owned_by?: AccountId
+}
 
 export const AssetDefinition = z.object({
   id: AssetDefinitionIdSchema,

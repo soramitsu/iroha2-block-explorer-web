@@ -8,6 +8,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import type { AssetDefinition } from '@/shared/api/schemas';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
+import { parseMetadata } from '@/shared/ui/utils/json';
 
 const router = useRouter();
 
@@ -71,6 +72,10 @@ onMounted(async () => {
               :title="$t('domain')"
               :hash="assetDefinitionId.domain"
               :link="`/domains/${assetDefinitionId.domain}`"
+            />
+            <DataField
+              :title="$t('metadata')"
+              :value="parseMetadata(asset.metadata)"
             />
           </div>
         </div>

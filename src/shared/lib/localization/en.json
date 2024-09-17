@@ -14,6 +14,8 @@
   "value": "Value",
   "mintable": "Mintable",
   "nfts": "NFTs",
+  "metadata": "Metadata",
+  "none": "None",
   "transaction": "Transaction",
   "pageNotFound": "Page not found",
   "tokens": "Tokens",
@@ -88,14 +90,19 @@
     "block": "Block #{0}",
     "blockHash": "Block Hash",
     "blockTransactions": "Block Transactions",
-    "transactionsMerkleRootHash": "Transaction's Merkle Root Hash",
-    "parentBlockHash": "Parent block hash",
-    "rejectedTransactionsMerkleRootHash": "Rejected Transaction's Merkle Root Hash"
+    "parentBlockHash": "Parent block hash"
   },
   "domains": {
     "domains": "Domains",
     "ownedBy": "Owned By",
     "totalAccounts": "Total Accounts",
-    "totalAssets": "Total Assets"
+    "totalAssets": "Total Assets",
+    "domainId": "Domain ID",
+    "domainAssets": "Domain Assets",
+    "domainDoesntHaveAnyAssets": "Domain doesn't have any assets",
+    "domainAccounts": "Domain Accounts",
+    "domainDoesntHaveAnyAccounts": "Domain doesn't have any accounts",
+    "domainTransactions": "Domain Transactions",
+    "domainDoesntHaveAnyTransactions": "Domain doesn't have any transactions"
   }
 }
