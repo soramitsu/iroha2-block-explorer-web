@@ -18,11 +18,13 @@ import {
   Block,
   PeerStatus,
   Transaction,
+  DetailedTransaction,
+  Instruction,
 } from '@/shared/api/schemas';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
 
-async function get<T>(path: string, params?: PaginationParams): Promise<T> {
+async function get<T>(path: string, params?: Record<string, any>): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
 
   if (params) {
@@ -91,4 +93,14 @@ export async function fetchPeerStatus(): Promise<PeerStatus> {
 export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<Transaction>> {
   const res = await get('/transactions', params);
   return Paginated(Transaction).parse(res);
+}
+
+export async function fetchTransaction(hash: string): Promise<DetailedTransaction> {
+  const res = await get(`/transactions/${hash}`);
+  return DetailedTransaction.parse(res);
+}
+
+export async function fetchInstructions(transaction_hash: string): Promise<Paginated<Instruction>> {
+  const res = await get('/instructions', { transaction_hash });
+  return Paginated(Instruction).parse(res);
 }
