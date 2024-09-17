@@ -42,7 +42,7 @@
             />
 
             <div class="transactions-list-page__time">
-              {{ format(item.created_at) }}
+              {{ defaultFormat(item.created_at) }}
             </div>
           </div>
 
@@ -66,7 +66,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import { format } from '@/shared/lib/time';
+import { defaultFormat } from '@/shared/lib/time';
 import { useTable } from '@/shared/lib/table';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';

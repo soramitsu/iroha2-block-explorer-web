@@ -1,3 +1,5 @@
+import { format } from 'date-fns/format';
+
 function getAllElapsedMinutes(dateString: string | Date) {
   const date = new Date(dateString);
   const diff = Date.now() - date.getTime();
@@ -21,7 +23,11 @@ function formatXX(item: number) {
   return item < 10 ? '0' + item : item;
 }
 
-export function format(timestamp: Date | string) {
+export function getUTCFormat(date: Date) {
+  return format(date, `MMM-dd-yyyy hh:mm:ss a 'UTC'`);
+}
+
+export function defaultFormat(timestamp: Date | string) {
   const date = new Date(timestamp);
   const day = formatXX(date.getDate());
   const month = formatXX(date.getMonth() + 1);
