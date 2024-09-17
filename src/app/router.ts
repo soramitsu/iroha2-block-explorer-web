@@ -53,6 +53,11 @@ const routes = [
     component: () => import('@/pages/TransactionsList.vue'),
   },
   {
+    path: '/transactions/:hash',
+    name: 'transaction-details',
+    component: () => import('@/pages/TransactionDetailsPage.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     component: () => import('@/pages/NotFound.vue'),
   },
