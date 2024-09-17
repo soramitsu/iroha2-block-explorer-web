@@ -230,9 +230,9 @@ export const Transaction = z.object({
 export const DetailedTransaction = z.object({
   authority: z.string(),
   hash: z.string(),
-  block_hash: z.string(),
+  block: z.number(),
   created_at: Timestamp,
-  instructions: z.enum(['Instructions', 'Wasm']),
+  executable: z.enum(['Instructions', 'Wasm']),
   status: z.enum(['Committed', 'Rejected']),
   rejection_reason: z.record(z.string(), z.any()).nullable(),
   metadata: Metadata,
@@ -268,3 +268,28 @@ export const PeerStatus = z.object({
 });
 
 export type PeerStatus = z.infer<typeof PeerStatus>;
+
+export const Instruction = z.object({
+  authority: z.string(),
+  created_at: z.string().transform((x) => new Date(x)),
+  kind: z.enum([
+    'Register',
+    'Unregister',
+    'Mint',
+    'Burn',
+    'Transfer',
+    'SetKeyValue',
+    'RemoveKeyValue',
+    'Grant',
+    'Revoke',
+    'ExecuteTrigger',
+    'SetParameter',
+    'Upgrade',
+    'Log',
+    'Custom',
+  ]),
+  // TODO: add payload schemas for every kind
+  payload: z.record(z.string(), z.any()),
+  transaction_hash: z.string(),
+});
+export type Instruction = z.infer<typeof Instruction>;
