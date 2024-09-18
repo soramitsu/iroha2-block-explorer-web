@@ -120,7 +120,7 @@ watch(
             <div class="transaction-details__info-row">
               <DataField
                 :title="$t('transactions.block')"
-                :hash="String(transaction.block)"
+                :value="transaction.block"
                 :link="`/blocks/${transaction.block}`"
               />
 
