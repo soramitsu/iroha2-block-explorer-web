@@ -10,7 +10,7 @@ import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
-import { format } from '@/shared/lib/time';
+import { defaultFormat } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
@@ -130,7 +130,7 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 
               <DataField
                 :title="$t('blocks.createdAt')"
-                :value="format(block.created_at)"
+                :value="defaultFormat(block.created_at)"
                 copy
               />
             </div>
@@ -183,7 +183,9 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
             </div>
 
             <span class="block-details__transactions-row-column">
-              <span class="block-details__transactions-row-column-time row-text">{{ format(item.created_at) }}</span>
+              <span class="block-details__transactions-row-column-time row-text">{{
+                defaultFormat(item.created_at)
+              }}</span>
             </span>
           </div>
         </template>

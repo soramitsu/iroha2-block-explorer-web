@@ -10,7 +10,7 @@ import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { useWindowSize } from '@vueuse/core';
-import { format } from '@/shared/lib/time';
+import { defaultFormat } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Account } from '@/shared/api/schemas';
@@ -241,7 +241,7 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 
                 <span class="account-details__transactions-row-column">
                   <span class="account-details__transactions-row-column-time row-text">{{
-                    format(item.created_at)
+                    defaultFormat(item.created_at)
                   }}</span>
                 </span>
               </div>

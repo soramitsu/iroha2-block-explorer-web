@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const props = withDefaults(
   defineProps<{
     title: string
     value?: string | number | Record<string, any> | null
-    bold?: boolean
     hash?: string
     link?: string
     copy?: boolean
@@ -28,13 +28,16 @@ const props = withDefaults(
       :type="type"
       :class="{ 'row-text': !props.link }"
     />
+    <BaseLink
+      v-else-if="value && link"
+      :to="link"
+    >
+      {{ value }}
+    </BaseLink>
     <span
       v-else
       class="data-field__value"
-      :class="{ 'data-field__value_bold': props.bold }"
-    >{{
-      props.value ?? $t('none')
-    }}</span>
+    >{{ props.value ?? $t('none') }}</span>
   </div>
 </template>
 
@@ -53,18 +56,6 @@ const props = withDefaults(
 
   &__value {
     @include tpg-s3();
-
-    &_bold {
-      @include xs {
-        @include tpg-s1();
-        font-weight: 300;
-      }
-
-      @include md {
-        @include tpg-s1();
-        font-weight: 600;
-      }
-    }
   }
 }
 </style>

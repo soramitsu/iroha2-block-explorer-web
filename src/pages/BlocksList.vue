@@ -33,7 +33,7 @@
           </BaseLink>
 
           <div class="cell">
-            <time class="row-text">{{ format(item.created_at) }}</time>
+            <time class="row-text">{{ defaultFormat(item.created_at) }}</time>
           </div>
 
           <BaseHash
@@ -62,7 +62,7 @@
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.age') }}</span>
-            <time class="row-text">{{ format(item.created_at) }}</time>
+            <time class="row-text">{{ defaultFormat(item.created_at) }}</time>
           </div>
 
           <div class="blocks-list-page__mobile-row">
@@ -90,7 +90,7 @@
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { useTable } from '@/shared/lib/table';
 import * as http from '@/shared/api';
-import { format } from '@/shared/lib/time';
+import { defaultFormat } from '@/shared/lib/time';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';

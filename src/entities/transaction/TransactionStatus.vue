@@ -44,11 +44,9 @@ defineProps<Props>();
 
 .transaction-status {
   position: relative;
-  display: grid;
+  display: flex;
   grid-gap: size(1);
   align-items: center;
-  grid-auto-flow: column;
-  grid-auto-columns: auto;
 
   &:hover .transaction-status__tooltip {
     display: flex;
