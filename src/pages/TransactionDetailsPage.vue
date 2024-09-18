@@ -10,7 +10,7 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import invariant from 'tiny-invariant';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatus } from '@/entities/transaction';
-import { getUTCFormat } from '@/shared/lib/time';
+import { formatUTC } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
 import { useTable } from '@/shared/lib/table';
 import { parseMetadata } from '@/shared/ui/utils/json';
@@ -84,7 +84,7 @@ watch(
                 <span class="h-sm">{{ $t('transactions.timestamp') }}</span>
                 <div class="transaction-details__info-row-time-date row-text">
                   <TimeIcon />
-                  <span>{{ getUTCFormat(transaction.created_at) }}</span>
+                  <span>{{ formatUTC(transaction.created_at) }}</span>
                 </div>
               </div>
             </div>

@@ -23,7 +23,7 @@ function formatXX(item: number) {
   return item < 10 ? '0' + item : item;
 }
 
-export function getUTCFormat(date: Date) {
+export function formatUTC(date: Date) {
   return format(date, `MMM-dd-yyyy hh:mm:ss a 'UTC'`);
 }
 
