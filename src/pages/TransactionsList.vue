@@ -3,23 +3,26 @@
     :title="$t('transactions.transactions')"
     class="transactions-list-page"
   >
-    <div class="content-row">
-      <TransactionStatusFilter
-        v-model="status"
-        class="transactions-list-page__status"
+    <div class="transactions-list-page__filters content-row">
+      <TransactionTypeFilter
+        v-model="transactionType"
+        :adaptive-options="defaultAdaptiveOptions"
+        default-options
       />
+      <TransactionStatusFilter v-model="status" />
     </div>
 
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      v-if="shouldUseTransactions"
+      :loading="transactionsTable.loading.value"
+      :pagination="transactionsTable.pagination"
+      :items="transactionsTable.items.value"
       container-class="transactions-list-page__container"
       reversed
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
+      @next-page="transactionsTable.nextPage()"
+      @prev-page="transactionsTable.prevPage()"
+      @set-page="transactionsTable.setPage($event)"
+      @set-size="transactionsTable.setSize($event)"
     >
       <template #row="{ item }">
         <div class="transactions-list-page__row">
@@ -58,12 +61,51 @@
         </div>
       </template>
     </BaseTable>
+
+    <BaseTable
+      v-else
+      :loading="instructionsTable.loading.value"
+      :pagination="instructionsTable.pagination"
+      :items="instructionsTable.items.value"
+      container-class="transactions-list-page__container"
+      @next-page="instructionsTable.nextPage()"
+      @prev-page="instructionsTable.prevPage()"
+      @set-page="instructionsTable.setPage($event)"
+      @set-size="instructionsTable.setSize($event)"
+    >
+      <template #row="{ item }">
+        <div class="transactions-list-page__row">
+          <TransactionStatus
+            type="tooltip"
+            class="transactions-list-page__icon"
+            :committed="item.transaction_status === 'Committed'"
+          />
+
+          <div class="transactions-list-page__column">
+            <div class="transactions-list-page__label">
+              {{ $t('transactions.transactionID') }}
+            </div>
+
+            <BaseHash
+              :hash="item.transaction_hash"
+              :type="hashType"
+              :link="`/transactions/${item.transaction_hash}`"
+              copy
+            />
+
+            <div class="transactions-list-page__time">
+              {{ defaultFormat(item.created_at) }}
+            </div>
+          </div>
+        </div>
+      </template>
+    </BaseTable>
   </BaseContentBlock>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useWindowSize } from '@vueuse/core';
+import { computed, ref, watch } from 'vue';
+import { reactiveOmit, useWindowSize } from '@vueuse/core';
 import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { defaultFormat } from '@/shared/lib/time';
@@ -72,9 +114,11 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
+import { TransactionTypeFilter } from '@/features/filter-transactions';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 
 const HASH_BREAKPOINT = 1200;
 
@@ -84,26 +128,40 @@ const { width } = useWindowSize();
 
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
 
-const table = useTable(http.fetchTransactions, { reversed: true });
 const { handleUnknownError } = useErrorHandlers();
 
-onMounted(async () => {
+const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
+const instructionsTable = useTable(http.fetchInstructions);
+
+const listState = computed(() => ({
+  status: status.value,
+  kind: transactionType.value,
+}));
+
+const transactionType = ref<ftm.TabDefaultScreen>('All');
+
+const shouldUseTransactions = computed(() => transactionType.value === 'All');
+
+async function fetchTransactions() {
   try {
-    await table.fetch();
+    if (shouldUseTransactions.value) await transactionsTable.fetch(reactiveOmit(listState.value, 'kind'));
+    else
+      await instructionsTable.fetch({
+        ...reactiveOmit(listState.value, 'status'),
+        transaction_status: listState.value.status,
+      });
   } catch (e) {
     handleUnknownError(e);
   }
-});
+}
+
+watch(listState, fetchTransactions, { immediate: true });
 </script>
 
 <style lang="scss">
 @import '@/shared/ui/styles/main';
 
 .transactions-list-page {
-  .content-row {
-    padding: 0 size(4);
-  }
-
   &__row {
     width: 100%;
     display: grid;
@@ -126,8 +184,23 @@ onMounted(async () => {
     }
   }
 
+  &__filters {
+    padding: size(2) size(4);
+    display: flex;
+    flex-direction: column;
+    gap: size(1);
+
+    @include sm {
+      flex-direction: row;
+    }
+  }
+
   &__container {
     display: grid;
+
+    .content-row {
+      padding: 0 size(4);
+    }
   }
 
   &__icon {
