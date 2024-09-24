@@ -38,7 +38,7 @@ const transactionHash = computed(() => {
 
 const transaction = ref<DetailedTransaction | null>(null);
 const isFetchingTransaction = ref(false);
-const instructionsTable = useTable(() => http.fetchInstructions(transactionHash.value));
+const instructionsTable = useTable(() => http.fetchInstructions({ transaction_hash: transactionHash.value }));
 
 watch(
   () => transactionHash.value,
