@@ -1,21 +1,26 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
+import {
+  type filterTransactionsModel as ftm,
+  TransactionStatusFilter,
+  TransactionTypeFilter,
+} from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import { useWindowSize } from '@vueuse/core';
+import { reactiveOmit, useWindowSize } from '@vueuse/core';
 import { defaultFormat } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Account } from '@/shared/api/schemas';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
+import { accountDetailsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -43,10 +48,7 @@ onMounted(async () => {
     account.value = await http.fetchAccount(accountId.value);
 
     if (account.value) {
-      await Promise.all([
-        assetsTable.fetch({ owned_by: accountId.value }),
-        transactionsTable.fetch({ authority: accountId.value }),
-      ]);
+      await Promise.all([assetsTable.fetch({ owned_by: accountId.value.toString() })]);
     }
 
     isEmptyAssets.value = !assetsTable.items.value.length;
@@ -63,6 +65,32 @@ const assetsTable = useTable(http.fetchAssets);
 const transactionStatus = ref<ftm.Status>(null);
 
 const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
+const instructionsTable = useTable(http.fetchInstructions);
+
+const listState = computed(() => ({
+  status: transactionStatus.value,
+  authority: accountId.value.toString(),
+  kind: transactionType.value,
+}));
+
+const transactionType = ref<ftm.TabBlocksScreen>('Transactions');
+
+const shouldUseTransactions = computed(() => transactionType.value === 'Transactions');
+
+async function fetchTransactions() {
+  try {
+    if (shouldUseTransactions.value) await transactionsTable.fetch(reactiveOmit(listState.value, 'kind'));
+    else
+      await instructionsTable.fetch({
+        ...reactiveOmit(listState.value, 'status'),
+        transaction_status: listState.value.status,
+      });
+  } catch (e) {
+    handleUnknownError(e);
+  }
+}
+
+watch(listState, fetchTransactions, { immediate: true });
 </script>
 
 <template>
@@ -194,10 +222,11 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
             v-if="!isEmptyTransactions"
             class="account-details__transactions-filters content-row"
           >
-            <TransactionStatusFilter
-              v-model="transactionStatus"
-              class="account-details__transactions-status"
+            <TransactionTypeFilter
+              v-model="transactionType"
+              :adaptive-options="accountDetailsAdaptiveOptions"
             />
+            <TransactionStatusFilter v-model="transactionStatus" />
           </div>
 
           <span
@@ -207,7 +236,7 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
             $t('accounts.accountDoesntHaveAnyTransactions')
           }}</span>
           <BaseTable
-            v-else
+            v-else-if="shouldUseTransactions"
             :loading="transactionsTable.loading.value"
             :items="transactionsTable.items.value"
             container-class="account-details__transactions-container"
@@ -235,6 +264,47 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
                     :hash="item.hash"
                     :type="hashType"
                     :link="`/transactions/${item.hash}`"
+                    copy
+                  />
+                </div>
+
+                <span class="account-details__transactions-row-column">
+                  <span class="account-details__transactions-row-column-time row-text">{{
+                    defaultFormat(item.created_at)
+                  }}</span>
+                </span>
+              </div>
+            </template>
+          </BaseTable>
+
+          <BaseTable
+            v-else
+            :loading="instructionsTable.loading.value"
+            :items="instructionsTable.items.value"
+            container-class="account-details__transactions-container"
+            :pagination="instructionsTable.pagination"
+            @next-page="instructionsTable.nextPage()"
+            @prev-page="instructionsTable.prevPage()"
+            @set-page="instructionsTable.setPage($event)"
+            @set-size="instructionsTable.setSize($event)"
+          >
+            <template #row="{ item }">
+              <div class="account-details__transactions-row">
+                <TransactionStatus
+                  type="tooltip"
+                  class="account-details__transactions-row-icon"
+                  :committed="item.transaction_status === 'Committed'"
+                />
+
+                <div class="account-details__transactions-row-column">
+                  <div class="account-details__transactions-row-column-label row-text">
+                    {{ $t('transactions.transactionID') }}
+                  </div>
+
+                  <BaseHash
+                    :hash="item.transaction_hash"
+                    :type="hashType"
+                    :link="`/transactions/${item.transaction_hash}`"
                     copy
                   />
                 </div>
@@ -279,6 +349,14 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 
     @include lg {
       width: 46vw;
+    }
+
+    @include xl {
+      width: size(85);
+    }
+
+    @include xxl {
+      width: size(95);
     }
 
     &-information {
@@ -395,13 +473,27 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
       width: 46vw;
     }
 
+    @include xl {
+      width: size(85);
+    }
+
+    @include xxl {
+      width: size(95);
+    }
+
     hr {
       display: none;
     }
 
     &-filters {
-      display: flex;
       padding: size(2) size(4);
+      display: flex;
+      flex-direction: column;
+      gap: size(1);
+
+      @include sm {
+        flex-direction: row;
+      }
     }
 
     &-container {
