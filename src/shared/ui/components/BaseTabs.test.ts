@@ -5,18 +5,18 @@ import type { TabBlocksScreen } from '@/features/filter-transactions/model';
 import { blockOptions } from '@/features/filter-transactions/model';
 import { i18n } from '@/shared/lib/localization';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
-import { adaptiveTransactionTypeOptions } from '@/features/filter-transactions/adaptive-options';
+import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 
 test.each([
   [1700, 6],
-  [1440, 5],
-  [1200, 3],
+  [1440, 6],
+  [1200, 6],
   [960, 6],
-  [640, 3],
-  [480, 5],
-  [365, 2],
+  [640, 4],
+  [480, 4],
+  [365, 3],
 ])('BaseTabs adaptive display correctness', async (windowWidth, expectedTabs) => {
-  const model = ref<TabBlocksScreen>('transactions');
+  const model = ref<TabBlocksScreen>('Transactions');
 
   window.innerWidth = windowWidth;
 
@@ -24,7 +24,7 @@ test.each([
     props: {
       items: blockOptions,
       modelValue: model.value,
-      adaptiveOptions: adaptiveTransactionTypeOptions,
+      adaptiveOptions: defaultAdaptiveOptions,
     },
     global: {
       plugins: [i18n],
