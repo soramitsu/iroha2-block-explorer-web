@@ -4,9 +4,13 @@ import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
+import {
+  type filterTransactionsModel as ftm,
+  TransactionStatusFilter,
+  TransactionTypeFilter,
+} from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { useWindowSize } from '@vueuse/core';
+import { reactiveOmit, useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
@@ -16,6 +20,7 @@ import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-2
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
 import { useTable } from '@/shared/lib/table';
+import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 
 const router = useRouter();
 
@@ -48,10 +53,7 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-      const [, { blocks }] = await Promise.all([
-        transactionsTable.fetch({ block_hash: block.value.hash }),
-        http.fetchPeerStatus(),
-      ]);
+      const { blocks } = await http.fetchPeerStatus();
 
       isNextBlockExists.value = block.value.height < blocks;
       isPreviousBlockExists.value = block.value.height > 1;
@@ -67,11 +69,15 @@ watch(
 function handlePreviousBlockClick() {
   if (!block.value) return;
 
+  resetFilters();
+
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height - 1 } });
 }
 
 function handleNextBlockClick() {
   if (!block.value) return;
+
+  resetFilters();
 
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
@@ -79,6 +85,39 @@ function handleNextBlockClick() {
 const transactionStatus = ref<ftm.Status>(null);
 
 const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
+const instructionsTable = useTable(http.fetchInstructions);
+
+const listState = computed(() => ({
+  status: transactionStatus.value,
+  block: block.value?.height,
+  kind: transactionType.value,
+}));
+
+const transactionType = ref<ftm.TabBlocksScreen>('Transactions');
+
+const shouldUseTransactions = computed(() => transactionType.value === 'Transactions');
+
+async function fetchTransactions() {
+  try {
+    if (!block.value) return;
+
+    if (shouldUseTransactions.value) await transactionsTable.fetch(reactiveOmit(listState.value, 'kind'));
+    else
+      await instructionsTable.fetch({
+        ...reactiveOmit(listState.value, 'status'),
+        transaction_status: listState.value.status,
+      });
+  } catch (e) {
+    handleUnknownError(e);
+  }
+}
+
+watch(listState, fetchTransactions, { immediate: true });
+
+function resetFilters() {
+  transactionType.value = 'Transactions';
+  transactionStatus.value = null;
+}
 </script>
 
 <template>
@@ -126,6 +165,7 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
                 :type="metricsHashType"
                 :link="`/blocks/${block.prev_block_hash}`"
                 copy
+                @click="resetFilters"
               />
 
               <DataField
@@ -142,54 +182,98 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
       :title="$t('blocks.blockTransactions')"
       class="block-details__transactions"
     >
-      <div class="block-details__transactions-filters content-row">
-        <TransactionStatusFilter
-          v-model="transactionStatus"
-          class="block-details__transactions-filters-status"
-        />
-      </div>
+      <template #default>
+        <div class="block-details__transactions-filters content-row">
+          <TransactionTypeFilter
+            v-model="transactionType"
+            :adaptive-options="defaultAdaptiveOptions"
+          />
+          <TransactionStatusFilter v-model="transactionStatus" />
+        </div>
 
-      <BaseTable
-        v-if="block"
-        :loading="isFetchingBlock || transactionsTable.loading.value"
-        :items="transactionsTable.items.value"
-        container-class="block-details__transactions-container"
-        reversed
-        :pagination="transactionsTable.pagination"
-        @next-page="transactionsTable.nextPage()"
-        @prev-page="transactionsTable.prevPage()"
-        @set-page="transactionsTable.setPage($event)"
-        @set-size="transactionsTable.setSize($event)"
-      >
-        <template #row="{ item }">
-          <div class="block-details__transactions-row">
-            <TransactionStatus
-              type="tooltip"
-              class="block-details__transactions-row-icon"
-              :committed="item.status === 'Committed'"
-            />
+        <BaseTable
+          v-if="shouldUseTransactions"
+          :loading="isFetchingBlock || transactionsTable.loading.value"
+          :items="transactionsTable.items.value"
+          container-class="block-details__transactions-container"
+          reversed
+          :pagination="transactionsTable.pagination"
+          @next-page="transactionsTable.nextPage()"
+          @prev-page="transactionsTable.prevPage()"
+          @set-page="transactionsTable.setPage($event)"
+          @set-size="transactionsTable.setSize($event)"
+        >
+          <template #row="{ item }">
+            <div class="block-details__transactions-row">
+              <TransactionStatus
+                type="tooltip"
+                class="block-details__transactions-row-icon"
+                :committed="item.status === 'Committed'"
+              />
 
-            <div class="block-details__transactions-row-column">
-              <div class="block-details__transactions-row-column-label row-text">
-                {{ $t('transactions.transactionID') }}
+              <div class="block-details__transactions-row-column">
+                <div class="block-details__transactions-row-column-label row-text">
+                  {{ $t('transactions.transactionID') }}
+                </div>
+
+                <BaseHash
+                  :hash="item.hash"
+                  :type="transactionHashType"
+                  :link="`/transactions/${item.hash}`"
+                  copy
+                />
               </div>
 
-              <BaseHash
-                :hash="item.hash"
-                :type="transactionHashType"
-                :link="`/transactions/${item.hash}`"
-                copy
-              />
+              <span class="block-details__transactions-row-column">
+                <span class="block-details__transactions-row-column-time row-text">{{
+                  defaultFormat(item.created_at)
+                }}</span>
+              </span>
             </div>
+          </template>
+        </BaseTable>
 
-            <span class="block-details__transactions-row-column">
-              <span class="block-details__transactions-row-column-time row-text">{{
-                defaultFormat(item.created_at)
-              }}</span>
-            </span>
-          </div>
-        </template>
-      </BaseTable>
+        <BaseTable
+          v-else
+          :loading="isFetchingBlock || instructionsTable.loading.value"
+          :items="instructionsTable.items.value"
+          container-class="block-details__transactions-container"
+          :pagination="instructionsTable.pagination"
+          @next-page="instructionsTable.nextPage()"
+          @prev-page="instructionsTable.prevPage()"
+          @set-page="instructionsTable.setPage($event)"
+          @set-size="instructionsTable.setSize($event)"
+        >
+          <template #row="{ item }">
+            <div class="block-details__transactions-row">
+              <TransactionStatus
+                type="tooltip"
+                class="block-details__transactions-row-icon"
+                :committed="item.transaction_status === 'Committed'"
+              />
+
+              <div class="block-details__transactions-row-column">
+                <div class="block-details__transactions-row-column-label row-text">
+                  {{ $t('transactions.transactionID') }}
+                </div>
+
+                <BaseHash
+                  :hash="item.transaction_hash"
+                  :type="transactionHashType"
+                  :link="`/transactions/${item.transaction_hash}`"
+                  copy
+                />
+              </div>
+
+              <span class="block-details__transactions-row-column">
+                <span class="block-details__transactions-row-column-time row-text">{{
+                  defaultFormat(item.created_at)
+                }}</span>
+              </span>
+            </div>
+          </template>
+        </BaseTable>
+      </template>
     </BaseContentBlock>
   </div>
 </template>
@@ -268,8 +352,14 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
   &__transactions {
     &-filters {
       border-top: 0;
-      display: flex;
       padding: size(2) size(4);
+      display: flex;
+      flex-direction: column;
+      gap: size(1);
+
+      @include sm {
+        flex-direction: row;
+      }
     }
 
     &-container {
