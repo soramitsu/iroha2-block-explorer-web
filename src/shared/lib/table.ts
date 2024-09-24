@@ -20,10 +20,19 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { reversed?: boo
     total_items: 10,
   });
 
+  function resetPagination() {
+    isFirstFetch.value = true;
+    isLengthBiggerThanPerPage.value = false;
+    pagination.page = 1;
+  }
+
   async function fetch(params?: Record<string, any>) {
     loading.value = true;
+    if (params) {
+      resetPagination();
+      additionalFetchingParams.value = params;
+    }
 
-    if (params) additionalFetchingParams.value = params;
     const res = await fetchFn({
       ...((!options?.reversed ||
         (options?.reversed && !isFirstFetch.value && pagination.page !== pagination.total_pages)) && {
