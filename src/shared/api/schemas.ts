@@ -31,6 +31,7 @@ const PaginationParams = z
 export type PaginationParams = z.infer<typeof PaginationParams>;
 
 const Metadata = z.record(z.string(), z.any());
+const TransactionStatus = z.enum(['Committed', 'Rejected']);
 
 const Duration = z.object({
   ms: z.number().min(0),
@@ -224,7 +225,7 @@ export const Transaction = z.object({
   block: z.number(),
   created_at: Timestamp,
   executable: z.enum(['Instructions', 'Wasm']),
-  status: z.enum(['Committed', 'Rejected']),
+  status: TransactionStatus,
 });
 
 export const DetailedTransaction = z.object({
@@ -233,7 +234,7 @@ export const DetailedTransaction = z.object({
   block: z.number(),
   created_at: Timestamp,
   executable: z.enum(['Instructions', 'Wasm']),
-  status: z.enum(['Committed', 'Rejected']),
+  status: TransactionStatus,
   rejection_reason: z.record(z.string(), z.any()).nullable(),
   metadata: Metadata,
   nonce: z.number().nullable(),
@@ -269,6 +270,14 @@ export const PeerStatus = z.object({
 
 export type PeerStatus = z.infer<typeof PeerStatus>;
 
+export interface InstructionsSearchParams extends PaginationParams {
+  authority?: string
+  kind?: string
+  transaction_hash?: string
+  transaction_status?: 'Committed' | 'Rejected'
+  block?: number
+}
+
 export const Instruction = z.object({
   authority: z.string(),
   created_at: z.string().transform((x) => new Date(x)),
@@ -291,5 +300,6 @@ export const Instruction = z.object({
   // TODO: add payload schemas for every kind
   payload: z.record(z.string(), z.any()),
   transaction_hash: z.string(),
+  transaction_status: TransactionStatus,
 });
 export type Instruction = z.infer<typeof Instruction>;

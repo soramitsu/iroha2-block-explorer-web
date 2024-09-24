@@ -8,6 +8,7 @@ import type {
   TransactionSearchParams,
   AccountSearchParams,
   AssetDefinitionSearchParams,
+  InstructionsSearchParams,
 } from '@/shared/api/schemas';
 import {
   Account,
@@ -28,7 +29,7 @@ async function get<T>(path: string, params?: Record<string, any>): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
 
   if (params) {
-    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value)));
+    Object.entries(params).forEach(([key, value]) => value && url.searchParams.set(key, String(value)));
   }
 
   const res = await fetch(url);
@@ -100,7 +101,7 @@ export async function fetchTransaction(hash: string): Promise<DetailedTransactio
   return DetailedTransaction.parse(res);
 }
 
-export async function fetchInstructions(transaction_hash: string): Promise<Paginated<Instruction>> {
-  const res = await get('/instructions', { transaction_hash });
+export async function fetchInstructions(params?: InstructionsSearchParams): Promise<Paginated<Instruction>> {
+  const res = await get('/instructions', params);
   return Paginated(Instruction).parse(res);
 }
