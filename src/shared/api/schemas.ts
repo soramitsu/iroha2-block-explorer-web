@@ -32,6 +32,7 @@ export type PaginationParams = z.infer<typeof PaginationParams>;
 
 const Metadata = z.record(z.string(), z.any());
 const TransactionStatus = z.enum(['Committed', 'Rejected']);
+export type TransactionStatus = z.infer<typeof TransactionStatus>;
 
 const Duration = z.object({
   ms: z.number().min(0),
@@ -228,7 +229,7 @@ export const Transaction = z.object({
   status: TransactionStatus,
 });
 
-export const DetailedTransaction = z.object({
+export const DetailedTransaction = Transaction.extend({
   authority: z.string(),
   hash: z.string(),
   block: z.number(),
@@ -274,7 +275,7 @@ export interface InstructionsSearchParams extends PaginationParams {
   authority?: string
   kind?: string
   transaction_hash?: string
-  transaction_status?: 'Committed' | 'Rejected'
+  transaction_status?: TransactionStatus
   block?: number
 }
 

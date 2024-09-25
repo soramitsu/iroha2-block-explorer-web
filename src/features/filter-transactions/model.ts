@@ -1,4 +1,6 @@
-export type Status = 'Committed' | 'Rejected' | null;
+import type { TransactionStatus } from '@/shared/api/schemas';
+
+export type Status = TransactionStatus | null;
 export type TabDefaultScreen = 'All' | 'Transfer' | 'Mint' | 'Burn' | 'Grant' | 'Revoke';
 export type TabBlocksScreen = 'Transactions' | 'Transfer' | 'Mint' | 'Burn' | 'Grant' | 'Revoke';
 export type TabAssetsSort = 'recent' | 'value';
