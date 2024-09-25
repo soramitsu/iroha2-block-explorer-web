@@ -13,7 +13,7 @@ import {
 } from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import { reactiveOmit, useWindowSize } from '@vueuse/core';
+import { useWindowSize } from '@vueuse/core';
 import { defaultFormat } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
@@ -21,6 +21,7 @@ import type { Account } from '@/shared/api/schemas';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import { accountDetailsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { objectOmit } from '@vueuse/shared';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -79,10 +80,10 @@ const shouldUseTransactions = computed(() => transactionType.value === 'Transact
 
 async function fetchTransactions() {
   try {
-    if (shouldUseTransactions.value) await transactionsTable.fetch(reactiveOmit(listState.value, 'kind'));
+    if (shouldUseTransactions.value) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
     else
       await instructionsTable.fetch({
-        ...reactiveOmit(listState.value, 'status'),
+        ...objectOmit(listState.value, ['status']),
         transaction_status: listState.value.status,
       });
   } catch (e) {

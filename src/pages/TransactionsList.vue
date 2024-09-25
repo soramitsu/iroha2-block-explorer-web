@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { reactiveOmit, useWindowSize } from '@vueuse/core';
+import { useWindowSize } from '@vueuse/core';
 import TransactionStatusFilter from '@/features/filter-transactions/TransactionStatusFilter.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import { defaultFormat } from '@/shared/lib/time';
@@ -119,6 +119,7 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { objectOmit } from '@vueuse/shared';
 
 const HASH_BREAKPOINT = 1200;
 
@@ -144,10 +145,10 @@ const shouldUseTransactions = computed(() => transactionType.value === 'All');
 
 async function fetchTransactions() {
   try {
-    if (shouldUseTransactions.value) await transactionsTable.fetch(reactiveOmit(listState.value, 'kind'));
+    if (shouldUseTransactions.value) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
     else
       await instructionsTable.fetch({
-        ...reactiveOmit(listState.value, 'status'),
+        ...objectOmit(listState.value, ['status']),
         transaction_status: listState.value.status,
       });
   } catch (e) {

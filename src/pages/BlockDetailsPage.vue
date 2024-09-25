@@ -10,7 +10,7 @@ import {
   TransactionTypeFilter,
 } from '@/features/filter-transactions';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { reactiveOmit, useWindowSize } from '@vueuse/core';
+import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
@@ -21,6 +21,7 @@ import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
 import { useTable } from '@/shared/lib/table';
 import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { objectOmit } from '@vueuse/shared';
 
 const router = useRouter();
 
@@ -101,10 +102,10 @@ async function fetchTransactions() {
   try {
     if (!block.value) return;
 
-    if (shouldUseTransactions.value) await transactionsTable.fetch(reactiveOmit(listState.value, 'kind'));
+    if (shouldUseTransactions.value) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
     else
       await instructionsTable.fetch({
-        ...reactiveOmit(listState.value, 'status'),
+        ...objectOmit(listState.value, ['status']),
         transaction_status: listState.value.status,
       });
   } catch (e) {
