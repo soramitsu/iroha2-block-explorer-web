@@ -71,12 +71,12 @@ const instructionsTable = useTable(http.fetchInstructions);
 const listState = computed(() => ({
   status: transactionStatus.value,
   authority: accountId.value.toString(),
-  kind: transactionType.value,
+  kind: transactionTab.value,
 }));
 
-const transactionType = ref<ftm.TabBlocksScreen>('Transactions');
+const transactionTab = ref<ftm.TabBlocksScreen>('Transactions');
 
-const shouldUseTransactions = computed(() => transactionType.value === 'Transactions');
+const shouldUseTransactions = computed(() => transactionTab.value === 'Transactions');
 
 async function fetchTransactions() {
   try {
@@ -224,7 +224,7 @@ watch(listState, fetchTransactions, { immediate: true });
             class="account-details__transactions-filters content-row"
           >
             <TransactionTypeFilter
-              v-model="transactionType"
+              v-model="transactionTab"
               :adaptive-options="accountDetailsAdaptiveOptions"
             />
             <TransactionStatusFilter v-model="transactionStatus" />

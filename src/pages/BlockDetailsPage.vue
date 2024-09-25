@@ -91,12 +91,12 @@ const instructionsTable = useTable(http.fetchInstructions);
 const listState = computed(() => ({
   status: transactionStatus.value,
   block: block.value?.height,
-  kind: transactionType.value,
+  kind: transactionTab.value,
 }));
 
-const transactionType = ref<ftm.TabBlocksScreen>('Transactions');
+const transactionTab = ref<ftm.TabBlocksScreen>('Transactions');
 
-const shouldUseTransactions = computed(() => transactionType.value === 'Transactions');
+const shouldUseTransactions = computed(() => transactionTab.value === 'Transactions');
 
 async function fetchTransactions() {
   try {
@@ -116,7 +116,7 @@ async function fetchTransactions() {
 watch(listState, fetchTransactions, { immediate: true });
 
 function resetFilters() {
-  transactionType.value = 'Transactions';
+  transactionTab.value = 'Transactions';
   transactionStatus.value = null;
 }
 </script>
@@ -186,7 +186,7 @@ function resetFilters() {
       <template #default>
         <div class="block-details__transactions-filters content-row">
           <TransactionTypeFilter
-            v-model="transactionType"
+            v-model="transactionTab"
             :adaptive-options="defaultAdaptiveOptions"
           />
           <TransactionStatusFilter v-model="transactionStatus" />

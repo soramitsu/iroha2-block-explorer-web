@@ -5,7 +5,7 @@
   >
     <div class="transactions-list-page__filters content-row">
       <TransactionTypeFilter
-        v-model="transactionType"
+        v-model="transactionTab"
         :adaptive-options="defaultAdaptiveOptions"
         default-options
       />
@@ -136,12 +136,12 @@ const instructionsTable = useTable(http.fetchInstructions);
 
 const listState = computed(() => ({
   status: status.value,
-  kind: transactionType.value,
+  kind: transactionTab.value,
 }));
 
-const transactionType = ref<ftm.TabDefaultScreen>('All');
+const transactionTab = ref<ftm.TabDefaultScreen>('All');
 
-const shouldUseTransactions = computed(() => transactionType.value === 'All');
+const shouldUseTransactions = computed(() => transactionTab.value === 'All');
 
 async function fetchTransactions() {
   try {
