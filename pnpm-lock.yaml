@@ -23,6 +23,9 @@ importers:
       '@vueuse/core':
         specifier: ^9.1.1
         version: 9.1.1(vue@3.3.8(typescript@4.8.2))
+      '@vueuse/shared':
+        specifier: 10.1.2
+        version: 10.1.2(vue@3.3.8(typescript@4.8.2))
       bignumber.js:
         specifier: ^9.1.2
         version: 9.1.2
@@ -681,6 +684,9 @@ packages:
 
   '@vueuse/metadata@9.1.1':
     resolution: {integrity: sha512-XZ2KtSW+85LLHB/IdGILPAtbIVHasPsAW7aqz3BRMzJdAQWRiM/FGa1OKBwLbXtUw/AmjKYFlZJo7eOFIBXRog==}
+
+  '@vueuse/shared@10.1.2':
+    resolution: {integrity: sha512-1uoUTPBlgyscK9v6ScGeVYDDzlPSFXBlxuK7SfrDGyUTBiznb3mNceqhwvZHjtDRELZEN79V5uWPTF1VDV8svA==}
 
   '@vueuse/shared@9.1.1':
     resolution: {integrity: sha512-c+IfcOYmHiHqoEa3ED1Tbpue5GHmoUmTp8PtO4YbczthtY155Rt6DmWhjxMLXBF1Bcidagxljmp/7xtAzEHXLw==}
@@ -2992,6 +2998,13 @@ snapshots:
       - vue
 
   '@vueuse/metadata@9.1.1': {}
+
+  '@vueuse/shared@10.1.2(vue@3.3.8(typescript@4.8.2))':
+    dependencies:
+      vue-demi: 0.14.10(vue@3.3.8(typescript@4.8.2))
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - vue
 
   '@vueuse/shared@9.1.1(vue@3.3.8(typescript@4.8.2))':
     dependencies:
