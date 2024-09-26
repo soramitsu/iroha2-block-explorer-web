@@ -99,7 +99,8 @@
     "block": "Block #{0}",
     "blockHash": "Block Hash",
     "blockTransactions": "Block Transactions",
-    "parentBlockHash": "Parent block hash"
+    "parentBlockHash": "Parent block hash",
+    "totalAndRejectedTransactions": "{0} ({1} rejected)"
   },
   "domains": {
     "domains": "Domains",

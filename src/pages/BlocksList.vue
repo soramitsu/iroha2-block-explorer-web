@@ -45,7 +45,7 @@
           />
 
           <div class="cell row-text">
-            {{ item.transactions_total }}
+            {{ $t('blocks.totalAndRejectedTransactions', [item.transactions_total, item.transactions_rejected]) }}
           </div>
         </div>
       </template>
@@ -78,7 +78,9 @@
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('transactions.transactions') }}</span>
-            <span class="row-text">{{ item.transactions_total }}</span>
+            <span class="row-text">{{
+              $t('blocks.totalAndRejectedTransactions', [item.transactions_total, item.transactions_rejected])
+            }}</span>
           </div>
         </div>
       </template>
