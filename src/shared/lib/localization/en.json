@@ -88,7 +88,8 @@
   "assets": {
     "assets": "Assets",
     "assetMetrics": "Asset metrics",
-    "assetTransactions": "Asset transactions"
+    "assetTransactions": "Asset transactions",
+    "ownedBy": "Owned By"
   },
   "blocks": {
     "age": "Age",
