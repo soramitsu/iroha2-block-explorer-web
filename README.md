@@ -20,16 +20,5 @@ Build artifacts will be located at `dist` dir.
 
 ## Development
 
-### Setting up the `.env` file
-
-You need a file with environment variables to configure Vite for the frontend to properly interact with the backend.
-
-Vite can be configured to proxy the responses.
-
-To interact with the backend, assuming you'll add an API proxy as described below, write:
-
-```
-VITE_API_URL=http://localhost:5173/api/v1
-```
-
-If our `dev` shows the port as 5173.
+Frontend sends API requests to its own base URL (`<base>/api/v1`) by default. When served via Vite, it is automatically
+proxied to `localhost:4000`. Proxy target could be changed in `vite.config.mts`.
