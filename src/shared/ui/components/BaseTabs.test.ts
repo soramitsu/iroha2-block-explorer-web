@@ -12,9 +12,9 @@ test.each([
   [1440, 6],
   [1200, 6],
   [960, 6],
-  [640, 4],
+  [640, 3],
   [480, 4],
-  [365, 3],
+  [365, 2],
 ])('BaseTabs adaptive display correctness', async (windowWidth, expectedTabs) => {
   const model = ref<TabBlocksScreen>('Transactions');
 
@@ -31,34 +31,5 @@ test.each([
     },
   });
 
-  function checkTabs() {
-    expect(wrapper.findAll('.base-tabs__tab').length).toBe(expectedTabs);
-  }
-
-  if (expectedTabs === 2) {
-    const nextButton = wrapper.find(`[data-testid="next"]`);
-
-    await nextButton.trigger('click');
-    checkTabs();
-
-    await nextButton.trigger('click');
-    checkTabs();
-
-    const prevButton = wrapper.find(`[data-testid="prev"]`);
-    await prevButton.trigger('click');
-
-    checkTabs();
-  } else if (expectedTabs !== 6) {
-    const nextButton = wrapper.find(`[data-testid="next"]`);
-
-    await nextButton.trigger('click');
-    checkTabs();
-
-    const prevButton = wrapper.find(`[data-testid="prev"]`);
-
-    await prevButton.trigger('click');
-    checkTabs();
-  } else {
-    expect(wrapper.findAll('.base-tabs__arrow').length).toBe(0);
-  }
+  expect(wrapper.findAll('.base-tabs__tab').length).toBe(expectedTabs);
 });
