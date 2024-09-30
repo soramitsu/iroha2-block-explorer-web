@@ -14,6 +14,10 @@ import { formatUTC } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
 import { useTable } from '@/shared/lib/table';
 import { parseMetadata } from '@/shared/ui/utils/json';
+import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import { instructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { type filterTransactionsModel as ftm, TransactionTypeFilter } from '@/features/filter-transactions';
+import { objectOmit } from '@vueuse/shared';
 
 const router = useRouter();
 
@@ -38,14 +42,14 @@ const transactionHash = computed(() => {
 
 const transaction = ref<DetailedTransaction | null>(null);
 const isFetchingTransaction = ref(false);
-const instructionsTable = useTable(() => http.fetchInstructions({ transaction_hash: transactionHash.value }));
+const instructionsTable = useTable(http.fetchInstructions);
 
 watch(
   () => transactionHash.value,
   async () => {
     try {
       isFetchingTransaction.value = true;
-      const res = await Promise.all([http.fetchTransaction(transactionHash.value), instructionsTable.fetch()]);
+      const res = await Promise.all([http.fetchTransaction(transactionHash.value)]);
       transaction.value = res[0];
     } catch (e) {
       handleUnknownError(e);
@@ -55,6 +59,25 @@ watch(
   },
   { immediate: true }
 );
+
+const transactionTab = ref<ftm.TabInstructions>('All');
+
+const shouldShowAll = computed(() => transactionTab.value === 'All');
+
+const listState = computed(() => ({
+  kind: transactionTab.value,
+  transaction_hash: transactionHash.value,
+}));
+
+async function fetchInstructions() {
+  try {
+    await instructionsTable.fetch(objectOmit(listState.value, shouldShowAll.value ? ['kind'] : []));
+  } catch (e) {
+    handleUnknownError(e);
+  }
+}
+
+watch(listState, fetchInstructions, { immediate: true });
 </script>
 
 <template>
@@ -141,31 +164,69 @@ watch(
       </template>
     </BaseContentBlock>
     <BaseContentBlock
-      v-if="transaction"
       class="transaction-details__transactions"
+      :title="$t('transactions.transactionInstructions')"
     >
       <template #default>
-        <BaseLoading
-          v-if="instructionsTable.loading.value"
-          class="transaction-details__transactions_loading"
-        />
-        <div v-else-if="transaction.executable === 'Instructions'">
-          <BaseContentBlock
-            v-for="(item, i) in instructionsTable.items.value"
-            :key="i"
-            class="transaction-details__transactions-block"
-            :title="item.kind"
-          >
-            <template #default>
-              <span class="transaction-details__transactions-block-data row-text">{{ item.payload }}</span>
-            </template>
-          </BaseContentBlock>
-        </div>
         <div
-          v-else
+          v-if="transaction && transaction.executable === 'Wasm'"
           class="transaction-details__transactions-wasm"
         >
           <span class="row-text">{{ $t('transactions.transactionDoesntContainInstructions') }}</span>
+        </div>
+        <div v-else>
+          <div class="transaction-details__transactions-filters content-row">
+            <TransactionTypeFilter
+              v-model="transactionTab"
+              :adaptive-options="instructionsAdaptiveOptions"
+              instructions
+            />
+          </div>
+          <BaseTable
+            :loading="instructionsTable.loading.value"
+            :pagination="instructionsTable.pagination"
+            :items="instructionsTable.items.value"
+            container-class="transaction-details__transactions-table-container"
+            @next-page="instructionsTable.nextPage()"
+            @prev-page="instructionsTable.prevPage()"
+            @set-page="instructionsTable.setPage($event)"
+            @set-size="instructionsTable.setSize($event)"
+          >
+            <template #header>
+              <div class="transaction-details__transactions-table-row">
+                <span class="h-sm cell">{{ $t('kind') }}</span>
+                <span class="h-sm cell">{{ $t('payload') }}</span>
+              </div>
+            </template>
+
+            <template #row="{ item }">
+              <div class="transaction-details__transactions-table-row">
+                <div class="cell row-text">
+                  {{ item.kind }}
+                </div>
+
+                <div class="cell row-text">
+                  {{ item.payload }}
+                </div>
+              </div>
+            </template>
+
+            <template #mobile-card="{ item }">
+              <div class="transaction-details__transactions-table-mobile-card">
+                <div class="transaction-details__transactions-table-mobile-row">
+                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ 'Kind' }}</span>
+                  <span class="transaction-details__transactions-table-mobile-row-data row-text">{{ item.kind }}</span>
+                </div>
+
+                <div class="transaction-details__transactions-table-mobile-row">
+                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ 'Payload' }}</span>
+                  <span class="transaction-details__transactions-table-mobile-row-data row-text">{{
+                    item.payload
+                  }}</span>
+                </div>
+              </div>
+            </template>
+          </BaseTable>
         </div>
       </template>
     </BaseContentBlock>
@@ -238,37 +299,61 @@ watch(
   }
 
   &__transactions {
-    &_loading {
-      margin-top: size(1);
-      display: flex;
-      justify-content: center;
+    &-filters {
+      padding: 0 size(2) 0 size(4);
     }
-
-    padding: size(4) size(2) 0;
 
     & > hr {
       display: none;
     }
-    & > .base-content-block__header {
-      display: none;
-    }
 
     &-wasm {
-      padding: 0 size(2);
+      padding: 0 size(4);
     }
 
-    &-block {
-      box-shadow: theme-shadow('block-2'), theme-shadow('block-3');
-
-      .base-content-block__body {
-        padding: size(2) size(4);
+    &-table {
+      &-row {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 0.2fr 1fr;
+        justify-content: center;
+        align-items: center;
       }
-      &:not(:first-child) {
-        margin-top: size(2);
+
+      &-mobile-card {
+        padding: size(2) size(3);
       }
 
-      &-data {
-        word-break: break-all;
+      &-mobile-row {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+
+        &-label {
+          display: flex;
+          align-self: flex-start;
+
+          width: size(12);
+          padding: size(1);
+        }
+
+        &-data {
+          width: 80%;
+          word-break: break-all;
+        }
+      }
+
+      &-container {
+        display: grid;
+        grid-template-columns: 1fr;
+
+        @include sm {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        @include lg {
+          grid-template-columns: 1fr;
+        }
       }
     }
   }
