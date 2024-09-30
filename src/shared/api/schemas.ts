@@ -302,5 +302,6 @@ export const Instruction = z.object({
   payload: z.record(z.string(), z.any()),
   transaction_hash: z.string(),
   transaction_status: TransactionStatus,
+  block: z.number(),
 });
 export type Instruction = z.infer<typeof Instruction>;
