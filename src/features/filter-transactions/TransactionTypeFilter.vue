@@ -11,13 +11,14 @@ import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import { computed } from 'vue';
-import { blockOptions, defaultOptions } from './model';
+import { blockOptions, defaultOptions, instructionOptions } from './model';
 import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
-  modelValue: ftm.TabDefaultScreen | ftm.TabBlocksScreen
+  modelValue: ftm.TabDefaultScreen | ftm.TabBlocksScreen | ftm.TabInstructions
   defaultOptions?: boolean
   adaptiveOptions?: AdaptiveOptions
+  instructions?: boolean
 }
 
 type Emits = (e: 'update:modelValue', value: ftm.TabDefaultScreen) => void;
@@ -25,7 +26,11 @@ type Emits = (e: 'update:modelValue', value: ftm.TabDefaultScreen) => void;
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const tabs = computed(() => (props.defaultOptions ? defaultOptions : blockOptions));
+const tabs = computed(() => {
+  if (props.instructions) return instructionOptions;
+
+  return props.defaultOptions ? defaultOptions : blockOptions;
+});
 
 const model = useVModel(props, 'modelValue', emit);
 </script>
