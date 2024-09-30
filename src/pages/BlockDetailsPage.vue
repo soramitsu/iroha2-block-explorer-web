@@ -3,35 +3,23 @@ import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import {
-  type filterTransactionsModel as ftm,
-  TransactionStatusFilter,
-  TransactionTypeFilter,
-} from '@/features/filter-transactions';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { defaultFormat } from '@/shared/lib/time';
-import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
-import { useTable } from '@/shared/lib/table';
-import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
-import { objectOmit } from '@vueuse/shared';
+import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 
 const router = useRouter();
 
 const { handleUnknownError } = useErrorHandlers();
 
-const TRANSACTION_HASH_BREAKPOINT = 1200;
 const METRICS_HASH_BREAKPOINT = 1440;
 const { width } = useWindowSize();
 
-const transactionHashType = computed(() => (width.value < TRANSACTION_HASH_BREAKPOINT ? 'short' : 'full'));
 const metricsHashType = computed(() => (width.value < METRICS_HASH_BREAKPOINT ? 'medium' : 'full'));
 
 const blockHeightOrHash = computed(() => {
@@ -70,54 +58,13 @@ watch(
 function handlePreviousBlockClick() {
   if (!block.value) return;
 
-  resetFilters();
-
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height - 1 } });
 }
 
 function handleNextBlockClick() {
   if (!block.value) return;
 
-  resetFilters();
-
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
-}
-
-const transactionStatus = ref<ftm.Status>(null);
-
-const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
-const instructionsTable = useTable(http.fetchInstructions);
-
-const listState = computed(() => ({
-  status: transactionStatus.value,
-  block: block.value?.height,
-  kind: transactionTab.value,
-}));
-
-const transactionTab = ref<ftm.TabBlocksScreen>('Transactions');
-
-const shouldUseTransactions = computed(() => transactionTab.value === 'Transactions');
-
-async function fetchTransactions() {
-  try {
-    if (!block.value) return;
-
-    if (shouldUseTransactions.value) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
-    else
-      await instructionsTable.fetch({
-        ...objectOmit(listState.value, ['status']),
-        transaction_status: listState.value.status,
-      });
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
-
-watch(listState, fetchTransactions, { immediate: true });
-
-function resetFilters() {
-  transactionTab.value = 'Transactions';
-  transactionStatus.value = null;
 }
 </script>
 
@@ -166,7 +113,6 @@ function resetFilters() {
                 :type="metricsHashType"
                 :link="`/blocks/${block.prev_block_hash}`"
                 copy
-                @click="resetFilters"
               />
 
               <DataField
@@ -174,106 +120,29 @@ function resetFilters() {
                 :value="defaultFormat(block.created_at)"
                 copy
               />
+
+              <DataField
+                :title="$t('blocks.totalTransactions')"
+                :value="block.transactions_total"
+                copy
+              />
+
+              <DataField
+                :title="$t('blocks.rejectedTransactions')"
+                :value="block.transactions_rejected"
+                copy
+              />
             </div>
           </div>
         </div>
       </template>
     </BaseContentBlock>
-    <BaseContentBlock
-      :title="$t('blocks.blockTransactions')"
-      class="block-details__transactions"
-    >
+    <BaseContentBlock :title="$t('blocks.blockTransactions')">
       <template #default>
-        <div class="block-details__transactions-filters content-row">
-          <TransactionTypeFilter
-            v-model="transactionTab"
-            :adaptive-options="defaultAdaptiveOptions"
-          />
-          <TransactionStatusFilter v-model="transactionStatus" />
-        </div>
-
-        <BaseTable
-          v-if="shouldUseTransactions"
-          :loading="isFetchingBlock || transactionsTable.loading.value"
-          :items="transactionsTable.items.value"
-          container-class="block-details__transactions-container"
-          reversed
-          :pagination="transactionsTable.pagination"
-          @next-page="transactionsTable.nextPage()"
-          @prev-page="transactionsTable.prevPage()"
-          @set-page="transactionsTable.setPage($event)"
-          @set-size="transactionsTable.setSize($event)"
-        >
-          <template #row="{ item }">
-            <div class="block-details__transactions-row">
-              <TransactionStatus
-                type="tooltip"
-                class="block-details__transactions-row-icon"
-                :committed="item.status === 'Committed'"
-              />
-
-              <div class="block-details__transactions-row-column">
-                <div class="block-details__transactions-row-column-label row-text">
-                  {{ $t('transactions.transactionID') }}
-                </div>
-
-                <BaseHash
-                  :hash="item.hash"
-                  :type="transactionHashType"
-                  :link="`/transactions/${item.hash}`"
-                  copy
-                />
-              </div>
-
-              <span class="block-details__transactions-row-column">
-                <span class="block-details__transactions-row-column-time row-text">{{
-                  defaultFormat(item.created_at)
-                }}</span>
-              </span>
-            </div>
-          </template>
-        </BaseTable>
-
-        <BaseTable
-          v-else
-          :loading="isFetchingBlock || instructionsTable.loading.value"
-          :items="instructionsTable.items.value"
-          container-class="block-details__transactions-container"
-          :pagination="instructionsTable.pagination"
-          @next-page="instructionsTable.nextPage()"
-          @prev-page="instructionsTable.prevPage()"
-          @set-page="instructionsTable.setPage($event)"
-          @set-size="instructionsTable.setSize($event)"
-        >
-          <template #row="{ item }">
-            <div class="block-details__transactions-row">
-              <TransactionStatus
-                type="tooltip"
-                class="block-details__transactions-row-icon"
-                :committed="item.transaction_status === 'Committed'"
-              />
-
-              <div class="block-details__transactions-row-column">
-                <div class="block-details__transactions-row-column-label row-text">
-                  {{ $t('transactions.transactionID') }}
-                </div>
-
-                <BaseHash
-                  :hash="item.transaction_hash"
-                  :type="transactionHashType"
-                  :link="`/transactions/${item.transaction_hash}`"
-                  copy
-                />
-              </div>
-
-              <span class="block-details__transactions-row-column">
-                <span class="block-details__transactions-row-column-time row-text">{{
-                  defaultFormat(item.created_at)
-                }}</span>
-              </span>
-            </div>
-          </template>
-        </BaseTable>
+        <TransactionsTable
+          v-if="block"
+          :block="block.height"
+        />
       </template>
     </BaseContentBlock>
   </div>
@@ -329,15 +198,8 @@ function resetFilters() {
     }
 
     &-data {
-      display: grid;
       margin-top: size(2);
       padding: 0 size(2) 0 size(4);
-      gap: size(2);
-      grid-template-columns: 1fr;
-
-      @include md {
-        grid-template-columns: 1fr 1fr;
-      }
 
       &-row {
         display: grid;
@@ -346,74 +208,6 @@ function resetFilters() {
 
       .base-link {
         @include tpg-s3;
-      }
-    }
-  }
-
-  &__transactions {
-    &-filters {
-      border-top: 0;
-      padding: size(2) size(4);
-      display: flex;
-      flex-direction: column;
-      gap: size(1);
-
-      @include sm {
-        flex-direction: row;
-      }
-    }
-
-    &-container {
-      display: grid;
-
-      .content-row {
-        padding: 0 size(4);
-        height: 48px;
-        min-height: 0;
-
-        &:last-child {
-          border-bottom: 1px solid theme-color('border-primary');
-        }
-      }
-    }
-
-    &-row {
-      width: 100%;
-      height: 32px;
-      display: grid;
-      grid-gap: size(2);
-      grid-template-columns: 32px 2fr 1fr;
-
-      @include xxs {
-        grid-template-columns: 1fr 1fr;
-        margin: size(2) 0;
-        padding: 0;
-      }
-
-      @include xs {
-        grid-template-columns: 32px 1fr 1fr;
-      }
-
-      @include lg {
-        grid-template-columns: 32px 2fr 1fr;
-      }
-
-      &-column {
-        display: flex;
-        justify-content: left;
-        align-items: center;
-
-        & > div {
-          margin-right: 3vw;
-        }
-      }
-
-      &-icon {
-        display: none;
-
-        @include xs {
-          display: grid;
-        }
       }
     }
   }

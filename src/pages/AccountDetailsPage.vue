@@ -1,35 +1,20 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import {
-  type filterTransactionsModel as ftm,
-  TransactionStatusFilter,
-  TransactionTypeFilter,
-} from '@/features/filter-transactions';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import { useWindowSize } from '@vueuse/core';
-import { defaultFormat } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Account } from '@/shared/api/schemas';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import { accountDetailsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
-import { objectOmit } from '@vueuse/shared';
+import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
-
-const HASH_BREAKPOINT = 1200;
-const { width } = useWindowSize();
-
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medium'));
 
 const accountId = computed(() => {
   const id = router.currentRoute.value.params['id'];
@@ -41,7 +26,6 @@ const account = ref<Account | null>(null);
 const isFetchingAccount = ref(false);
 
 const isEmptyAssets = ref(false);
-const isEmptyTransactions = ref(false);
 
 onMounted(async () => {
   try {
@@ -53,7 +37,6 @@ onMounted(async () => {
     }
 
     isEmptyAssets.value = !assetsTable.items.value.length;
-    isEmptyTransactions.value = !transactionsTable.items.value.length;
   } catch (e) {
     handleUnknownError(e);
   } finally {
@@ -62,36 +45,6 @@ onMounted(async () => {
 });
 
 const assetsTable = useTable(http.fetchAssets);
-
-const transactionStatus = ref<ftm.Status>(null);
-
-const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
-const instructionsTable = useTable(http.fetchInstructions);
-
-const listState = computed(() => ({
-  status: transactionStatus.value,
-  authority: accountId.value.toString(),
-  kind: transactionTab.value,
-}));
-
-const transactionTab = ref<ftm.TabBlocksScreen>('Transactions');
-
-const shouldUseTransactions = computed(() => transactionTab.value === 'Transactions');
-
-async function fetchTransactions() {
-  try {
-    if (shouldUseTransactions.value) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
-    else
-      await instructionsTable.fetch({
-        ...objectOmit(listState.value, ['status']),
-        transaction_status: listState.value.status,
-      });
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
-
-watch(listState, fetchTransactions, { immediate: true });
 </script>
 
 <template>
@@ -215,109 +168,10 @@ watch(listState, fetchTransactions, { immediate: true });
         </template>
       </BaseContentBlock>
     </div>
-
     <div class="account-details__transactions">
       <BaseContentBlock :title="$t('accounts.accountTransactions')">
         <template #default>
-          <div
-            v-if="!isEmptyTransactions"
-            class="account-details__transactions-filters content-row"
-          >
-            <TransactionTypeFilter
-              v-model="transactionTab"
-              :adaptive-options="accountDetailsAdaptiveOptions"
-            />
-            <TransactionStatusFilter v-model="transactionStatus" />
-          </div>
-
-          <span
-            v-if="isEmptyTransactions"
-            class="account-details__transactions_empty row-text"
-          >{{
-            $t('accounts.accountDoesntHaveAnyTransactions')
-          }}</span>
-          <BaseTable
-            v-else-if="shouldUseTransactions"
-            :loading="transactionsTable.loading.value"
-            :items="transactionsTable.items.value"
-            container-class="account-details__transactions-container"
-            reversed
-            :pagination="transactionsTable.pagination"
-            @next-page="transactionsTable.nextPage()"
-            @prev-page="transactionsTable.prevPage()"
-            @set-page="transactionsTable.setPage($event)"
-            @set-size="transactionsTable.setSize($event)"
-          >
-            <template #row="{ item }">
-              <div class="account-details__transactions-row">
-                <TransactionStatus
-                  type="tooltip"
-                  class="account-details__transactions-row-icon"
-                  :committed="item.status === 'Committed'"
-                />
-
-                <div class="account-details__transactions-row-column">
-                  <div class="account-details__transactions-row-column-label row-text">
-                    {{ $t('transactions.transactionID') }}
-                  </div>
-
-                  <BaseHash
-                    :hash="item.hash"
-                    :type="hashType"
-                    :link="`/transactions/${item.hash}`"
-                    copy
-                  />
-                </div>
-
-                <span class="account-details__transactions-row-column">
-                  <span class="account-details__transactions-row-column-time row-text">{{
-                    defaultFormat(item.created_at)
-                  }}</span>
-                </span>
-              </div>
-            </template>
-          </BaseTable>
-
-          <BaseTable
-            v-else
-            :loading="instructionsTable.loading.value"
-            :items="instructionsTable.items.value"
-            container-class="account-details__transactions-container"
-            :pagination="instructionsTable.pagination"
-            @next-page="instructionsTable.nextPage()"
-            @prev-page="instructionsTable.prevPage()"
-            @set-page="instructionsTable.setPage($event)"
-            @set-size="instructionsTable.setSize($event)"
-          >
-            <template #row="{ item }">
-              <div class="account-details__transactions-row">
-                <TransactionStatus
-                  type="tooltip"
-                  class="account-details__transactions-row-icon"
-                  :committed="item.transaction_status === 'Committed'"
-                />
-
-                <div class="account-details__transactions-row-column">
-                  <div class="account-details__transactions-row-column-label row-text">
-                    {{ $t('transactions.transactionID') }}
-                  </div>
-
-                  <BaseHash
-                    :hash="item.transaction_hash"
-                    :type="hashType"
-                    :link="`/transactions/${item.transaction_hash}`"
-                    copy
-                  />
-                </div>
-
-                <span class="account-details__transactions-row-column">
-                  <span class="account-details__transactions-row-column-time row-text">{{
-                    defaultFormat(item.created_at)
-                  }}</span>
-                </span>
-              </div>
-            </template>
-          </BaseTable>
+          <TransactionsTable :authority="accountId" />
         </template>
       </BaseContentBlock>
     </div>
@@ -462,102 +316,22 @@ watch(listState, fetchTransactions, { immediate: true });
   }
 
   &__transactions {
-    .base-content-block__body:has(.account-details__transactions_empty) {
-      padding: size(0) size(4) size(4);
-    }
-
+    margin-bottom: size(2);
     @include xxs {
       width: 90vw;
     }
-
     @include lg {
       width: 46vw;
     }
-
     @include xl {
-      width: size(85);
+      width: size(80);
     }
-
     @include xxl {
       width: size(95);
     }
 
     hr {
       display: none;
-    }
-
-    &-filters {
-      padding: size(2) size(4);
-      display: flex;
-      flex-direction: column;
-      gap: size(1);
-
-      @include sm {
-        flex-direction: row;
-      }
-    }
-
-    &-container {
-      display: grid;
-
-      .content-row {
-        height: 48px;
-        min-height: 0;
-
-        &:last-child {
-          border-bottom: 1px solid theme-color('border-primary');
-        }
-
-        @include xxs {
-          padding: 0 size(2);
-        }
-
-        @include xs {
-          padding: 0 size(4);
-        }
-      }
-    }
-
-    &-row {
-      width: 100%;
-      height: 32px;
-      display: grid;
-      grid-gap: size(1);
-      grid-template-columns: 32px 2fr 1fr;
-
-      @include xxs {
-        grid-template-columns: 1fr 1fr;
-        margin: size(2) 0;
-        padding: 0 size(2);
-      }
-
-      @include xs {
-        grid-template-columns: 32px 1fr 1fr;
-        grid-gap: size(2);
-        padding: 0;
-      }
-
-      @include lg {
-        grid-template-columns: 32px 2fr 1fr;
-      }
-
-      &-column {
-        display: flex;
-        justify-content: left;
-        align-items: center;
-
-        & > div {
-          margin-right: size(1);
-        }
-      }
-
-      &-icon {
-        display: none;
-
-        @include xs {
-          display: grid;
-        }
-      }
     }
   }
 }

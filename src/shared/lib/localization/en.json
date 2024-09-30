@@ -11,6 +11,8 @@
   "cryptos": "Cryptos",
   "name": "Name",
   "type": "Type",
+  "kind": "Kind",
+  "payload": "Payload",
   "value": "Value",
   "mintable": "Mintable",
   "nfts": "NFTs",
@@ -61,6 +63,15 @@
     "grants": "Grants",
     "revokes": "Revokes",
     "transfer": "Transfer",
+    "register": "Register",
+    "unregister": "Unregister",
+    "setKeyValue": "SetKeyValue",
+    "removeKeyValue": "RemoveKeyValue",
+    "executeTrigger": "ExecuteTrigger",
+    "setParameter": "SetParameter",
+    "upgrade": "Upgrade",
+    "log": "Log",
+    "custom": "Custom",
     "block": "Block",
     "transactionDetails": "Transaction details",
     "timestamp": "Timestamp",
@@ -69,7 +80,10 @@
     "nonce": "Nonce",
     "metadata": "Metadata",
     "signature": "Signature",
-    "transactionDoesntContainInstructions": "Transaction doesn't contain any instructions."
+    "transactionDoesntContainInstructions": "Transaction doesn't contain any instructions.",
+    "transactionInstructions": "Transaction instructions",
+    "authority": "Authority",
+    "executable": "Executable"
   },
   "accounts": {
     "address": "Address",
@@ -101,7 +115,9 @@
     "blockHash": "Block Hash",
     "blockTransactions": "Block Transactions",
     "parentBlockHash": "Parent block hash",
-    "totalAndRejectedTransactions": "{0} ({1} rejected)"
+    "totalAndRejectedTransactions": "{0} ({1} rejected)",
+    "totalTransactions": "Total transactions",
+    "rejectedTransactions": "Rejected transactions"
   },
   "domains": {
     "domains": "Domains",
