@@ -206,7 +206,7 @@ watch(listState, fetchInstructions, { immediate: true });
                 </div>
 
                 <div class="cell row-text">
-                  {{ item.payload }}
+                  {{ Object.keys(item.payload)[0] }}
                 </div>
               </div>
             </template>
@@ -214,14 +214,14 @@ watch(listState, fetchInstructions, { immediate: true });
             <template #mobile-card="{ item }">
               <div class="transaction-details__transactions-table-mobile-card">
                 <div class="transaction-details__transactions-table-mobile-row">
-                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ 'Kind' }}</span>
+                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('kind') }}</span>
                   <span class="transaction-details__transactions-table-mobile-row-data row-text">{{ item.kind }}</span>
                 </div>
 
                 <div class="transaction-details__transactions-table-mobile-row">
-                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ 'Payload' }}</span>
+                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('payload') }}</span>
                   <span class="transaction-details__transactions-table-mobile-row-data row-text">{{
-                    item.payload
+                    Object.keys(item.payload)[0]
                   }}</span>
                 </div>
               </div>
