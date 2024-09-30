@@ -195,7 +195,8 @@ watch(listState, fetchInstructions, { immediate: true });
             <template #header>
               <div class="transaction-details__transactions-table-row">
                 <span class="h-sm cell">{{ $t('kind') }}</span>
-                <span class="h-sm cell">{{ $t('payload') }}</span>
+                <span class="h-sm cell">{{ $t('entity') }}</span>
+                <span class="h-sm cell">{{ $t('value') }}</span>
               </div>
             </template>
 
@@ -208,6 +209,10 @@ watch(listState, fetchInstructions, { immediate: true });
                 <div class="cell row-text">
                   {{ Object.keys(item.payload)[0] }}
                 </div>
+
+                <div class="cell row-text">
+                  {{ Object.entries(item.payload)[0][1] }}
+                </div>
               </div>
             </template>
 
@@ -219,9 +224,16 @@ watch(listState, fetchInstructions, { immediate: true });
                 </div>
 
                 <div class="transaction-details__transactions-table-mobile-row">
-                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('payload') }}</span>
+                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('entity') }}</span>
                   <span class="transaction-details__transactions-table-mobile-row-data row-text">{{
                     Object.keys(item.payload)[0]
+                  }}</span>
+                </div>
+
+                <div class="transaction-details__transactions-table-mobile-row">
+                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('value') }}</span>
+                  <span class="transaction-details__transactions-table-mobile-row-data row-text">{{
+                    Object.entries(item.payload)[0][1]
                   }}</span>
                 </div>
               </div>
@@ -315,7 +327,8 @@ watch(listState, fetchInstructions, { immediate: true });
       &-row {
         width: 100%;
         display: grid;
-        grid-template-columns: 0.2fr 1fr;
+        grid-template-columns: 0.2fr 0.2fr 1fr;
+        word-break: break-all;
         justify-content: center;
         align-items: center;
       }
