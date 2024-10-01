@@ -1,8 +1,8 @@
 import type { TransactionStatus } from '@/shared/api/schemas';
 
 export type Status = TransactionStatus | null;
-export type TabDefaultScreen = 'All' | 'Transfer' | 'Mint' | 'Burn' | 'Grant' | 'Revoke';
-export type TabBlocksScreen = 'Transactions' | 'Transfer' | 'Mint' | 'Burn' | 'Grant' | 'Revoke';
+export type TabAccountInstructions = 'Transfer' | 'Mint' | 'Burn' | 'Grant' | 'Revoke';
+export type TabAccountTransactions = 'transactions' | 'instructions';
 export type TabInstructions =
   | 'All'
   | 'Register'
@@ -19,20 +19,18 @@ export type TabInstructions =
   | 'Upgrade'
   | 'Log'
   | 'Custom';
-export type TabAssetsSort = 'recent' | 'value';
 
 export interface TabItem<T = string> {
   i18nKey: string
   value: T
 }
 
-export const sortOptions: TabItem<TabAssetsSort>[] = [
-  { i18nKey: 'sort.mostRecent', value: 'recent' },
-  { i18nKey: 'sort.mostValue', value: 'value' },
+export const ACCOUNT_TRANSACTIONS_OPTIONS: TabItem<TabAccountTransactions>[] = [
+  { i18nKey: 'transactions.transactions', value: 'transactions' },
+  { i18nKey: 'transactions.instructions', value: 'instructions' },
 ];
 
-export const blockOptions: TabItem<TabBlocksScreen>[] = [
-  { i18nKey: 'transactions.transactions', value: 'Transactions' },
+export const ACCOUNT_INSTRUCTIONS_OPTIONS: TabItem<TabAccountInstructions>[] = [
   { i18nKey: 'transactions.transfers', value: 'Transfer' },
   { i18nKey: 'transactions.mints', value: 'Mint' },
   { i18nKey: 'transactions.burns', value: 'Burn' },
@@ -40,16 +38,7 @@ export const blockOptions: TabItem<TabBlocksScreen>[] = [
   { i18nKey: 'transactions.revokes', value: 'Revoke' },
 ];
 
-export const defaultOptions: TabItem<TabDefaultScreen>[] = [
-  { i18nKey: 'transactions.all', value: 'All' },
-  { i18nKey: 'transactions.transfers', value: 'Transfer' },
-  { i18nKey: 'transactions.mints', value: 'Mint' },
-  { i18nKey: 'transactions.burns', value: 'Burn' },
-  { i18nKey: 'transactions.grants', value: 'Grant' },
-  { i18nKey: 'transactions.revokes', value: 'Revoke' },
-];
-
-export const instructionOptions: TabItem<TabInstructions>[] = [
+export const INSTRUCTION_OPTIONS: TabItem<TabInstructions>[] = [
   { i18nKey: 'transactions.all', value: 'All' },
   { i18nKey: 'transactions.register', value: 'Register' },
   { i18nKey: 'transactions.unregister', value: 'Unregister' },
