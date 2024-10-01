@@ -45,7 +45,7 @@ const slots = useSlots();
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 72px;
+    min-height: 72px;
     padding: 0 size(4);
   }
 

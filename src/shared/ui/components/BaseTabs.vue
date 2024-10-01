@@ -76,7 +76,7 @@ function handleArrowPrevClick() {
 const diff = ref(0);
 
 watch(
-  () => width.value,
+  width,
   () => {
     diff.value = applyAdaptiveOptions(width.value, props.adaptiveOptions ?? props.items.length);
     adaptiveIndexEnd.value += diff.value;

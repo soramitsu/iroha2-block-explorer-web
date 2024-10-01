@@ -96,6 +96,7 @@ interface Props {
   containerClass: string
   breakpoint?: string | number
   reversed?: boolean
+  paginationBreakpoint?: number
 }
 
 interface Emits {
@@ -107,12 +108,11 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   breakpoint: 1200,
   pagination: null,
+  paginationBreakpoint: 960,
 });
 const emit = defineEmits<Emits>();
 
 const { width } = useWindowSize();
-
-const PAGINATION_BREAKPOINT = 960;
 
 const items = computed(() => {
   if (props.loading) {
@@ -146,7 +146,7 @@ const segmentInfo = computed(() => {
 const numbers = computed(() => {
   if (!props.pagination) return [];
 
-  const isMobile = width.value < PAGINATION_BREAKPOINT;
+  const isMobile = width.value < props.paginationBreakpoint;
   const max = isMobile ? 6 : 10;
   const side = isMobile ? 4 : 7;
   const offset = isMobile ? 1 : 3;
