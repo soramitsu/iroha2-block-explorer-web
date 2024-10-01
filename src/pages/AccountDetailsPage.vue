@@ -11,7 +11,10 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Account } from '@/shared/api/schemas';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
+import TransactionsList from '@/shared/ui/components/TransactionsList.vue';
+import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
+import type { TabAccountTransactions } from '@/features/filter-transactions/model';
+import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter-transactions/model';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -33,7 +36,7 @@ onMounted(async () => {
     account.value = await http.fetchAccount(accountId.value);
 
     if (account.value) {
-      await Promise.all([assetsTable.fetch({ owned_by: accountId.value.toString() })]);
+      assetsTable.fetch({ owned_by: accountId.value.toString() });
     }
 
     isEmptyAssets.value = !assetsTable.items.value.length;
@@ -45,6 +48,8 @@ onMounted(async () => {
 });
 
 const assetsTable = useTable(http.fetchAssets);
+
+const transactionsTab = ref<TabAccountTransactions>('transactions');
 </script>
 
 <template>
@@ -170,8 +175,17 @@ const assetsTable = useTable(http.fetchAssets);
     </div>
     <div class="account-details__transactions">
       <BaseContentBlock :title="$t('accounts.accountTransactions')">
+        <template #header-action>
+          <BaseTabs
+            v-model="transactionsTab"
+            :items="ACCOUNT_TRANSACTIONS_OPTIONS"
+          />
+        </template>
         <template #default>
-          <TransactionsTable :authority="accountId" />
+          <TransactionsList
+            :filter-by="{ kind: 'authority', id: accountId }"
+            :show-instructions="transactionsTab === 'instructions'"
+          />
         </template>
       </BaseContentBlock>
     </div>
@@ -316,6 +330,21 @@ const assetsTable = useTable(http.fetchAssets);
   }
 
   &__transactions {
+    .base-content-block__header {
+      display: flex;
+
+      @include xxs {
+        flex-direction: column;
+        gap: size(2);
+        padding: size(2) size(4);
+      }
+
+      @include sm {
+        flex-direction: row;
+        gap: 0;
+      }
+    }
+
     margin-bottom: size(2);
     @include xxs {
       width: 90vw;

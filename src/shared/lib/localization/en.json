@@ -45,12 +45,9 @@
     "sec": "{0} sec",
     "ago": "ago"
   },
-  "sort": {
-    "mostRecent": "Most Recent",
-    "mostValue": "Most Value"
-  },
   "transactions": {
     "transactions": "Transactions",
+    "instructions": "Instructions",
     "transactionHash": "Transaction Hash",
     "transactionID": "TxID",
     "committed": "Committed",
