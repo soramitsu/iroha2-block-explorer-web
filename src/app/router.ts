@@ -9,7 +9,7 @@ const routes = [
   {
     path: '/blocks',
     name: 'blocks-list',
-    component: () => import('@/pages/BlocksList.vue'),
+    component: () => import('@/pages/BlocksListPage.vue'),
   },
   {
     path: '/blocks/:heightOrHash',
@@ -20,7 +20,7 @@ const routes = [
   {
     path: '/assets',
     name: 'assets-list',
-    component: () => import('@/pages/AssetsList.vue'),
+    component: () => import('@/pages/AssetsListPage.vue'),
   },
   {
     path: '/assets/:id',
@@ -30,7 +30,7 @@ const routes = [
   {
     path: '/accounts',
     name: 'accounts-list',
-    component: () => import('@/pages/AccountsList.vue'),
+    component: () => import('@/pages/AccountsListPage.vue'),
   },
   {
     path: '/accounts/:id',
@@ -40,7 +40,7 @@ const routes = [
   {
     path: '/domains',
     name: 'domains-list',
-    component: () => import('@/pages/DomainsList.vue'),
+    component: () => import('@/pages/DomainsListPage.vue'),
   },
   {
     path: '/domains/:id',
@@ -50,7 +50,7 @@ const routes = [
   {
     path: '/transactions',
     name: 'transactions-list',
-    component: () => import('@/pages/TransactionsList.vue'),
+    component: () => import('@/pages/TransactionsListPage.vue'),
   },
   {
     path: '/transactions/:hash',
@@ -59,7 +59,7 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    component: () => import('@/pages/NotFound.vue'),
+    component: () => import('@/pages/NotFoundPage.vue'),
   },
 ];
 
