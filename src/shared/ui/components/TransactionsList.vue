@@ -10,7 +10,7 @@ import {
 } from '@/features/filter-transactions';
 import type { AccountId } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { accountDetailsAdaptiveOptions, defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 import { defaultFormat } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
@@ -21,13 +21,10 @@ import { useWindowSize } from '@vueuse/core';
 const { handleUnknownError } = useErrorHandlers();
 const props = withDefaults(
   defineProps<{
-    defaultTabs?: boolean
-    authority?: AccountId | null
-    block?: number
+    showInstructions?: boolean
+    filterBy?: { kind: 'authority', id: AccountId } | { kind: 'block', block: number } | null
   }>(),
-  {
-    defaultTabs: false,
-  }
+  { filterBy: null }
 );
 
 const HASH_BREAKPOINT = 1350;
@@ -35,7 +32,7 @@ const HASH_BREAKPOINT = 1350;
 const { width } = useWindowSize();
 
 const hashType = computed(() => {
-  if (props.authority) return 'short';
+  if (props.filterBy?.kind === 'authority') return 'short';
 
   return width.value < HASH_BREAKPOINT ? 'short' : 'full';
 });
@@ -47,18 +44,17 @@ const instructionsTable = useTable(http.fetchInstructions);
 
 const listState = computed(() => ({
   status: transactionStatus.value,
-  authority: props?.authority?.toString(),
+  authority: props.filterBy?.kind === 'authority' ? props.filterBy.id.toString() : '',
   kind: transactionTab.value,
-  block: props?.block,
+  block: props.filterBy?.kind === 'block' ? props.filterBy.block : '',
+  instructions: props.showInstructions,
 }));
 
-const transactionTab = ref<ftm.TabBlocksScreen | ftm.TabDefaultScreen>(props.defaultTabs ? 'All' : 'Transactions');
-
-const shouldUseTransactions = computed(() => transactionTab.value === (props.defaultTabs ? 'All' : 'Transactions'));
+const transactionTab = ref<ftm.TabAccountInstructions>('Transfer');
 
 async function fetchTransactions() {
   try {
-    if (shouldUseTransactions.value) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
+    if (!props.showInstructions) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
     else
       await instructionsTable.fetch({
         ...objectOmit(listState.value, ['status']),
@@ -69,30 +65,52 @@ async function fetchTransactions() {
   }
 }
 
-watch(listState, fetchTransactions, { immediate: true });
+watch(
+  listState,
+  (value, oldValue) => {
+    if (oldValue && value.instructions !== oldValue?.instructions) {
+      const isChanged = resetFilters();
+
+      if (!isChanged) fetchTransactions();
+    } else fetchTransactions();
+  },
+  { immediate: true }
+);
+
+function resetFilters() {
+  const isFiltersDefault = !transactionStatus.value && transactionTab.value === 'Transfer';
+
+  if (isFiltersDefault) return false;
+
+  transactionStatus.value = null;
+  transactionTab.value = 'Transfer';
+
+  return true;
+}
 </script>
 
 <template>
   <div
     class="transactions-table"
-    :class="{ 'transactions-table_short': props.authority }"
+    :class="{ 'transactions-table_short': props.filterBy?.kind === 'authority' }"
   >
     <div class="transactions-table__filters content-row">
       <TransactionTypeFilter
+        v-if="showInstructions"
         v-model="transactionTab"
-        :adaptive-options="props.authority ? accountDetailsAdaptiveOptions : defaultAdaptiveOptions"
-        :default-options="props.defaultTabs"
+        :adaptive-options="defaultAdaptiveOptions"
       />
       <TransactionStatusFilter v-model="transactionStatus" />
     </div>
 
     <BaseTable
-      v-if="shouldUseTransactions"
+      v-if="!props.showInstructions"
       :loading="transactionsTable.loading.value"
       :pagination="transactionsTable.pagination"
       :items="transactionsTable.items.value"
       container-class="transactions-table__container"
       reversed
+      :pagination-breakpoint="1440"
       @next-page="transactionsTable.nextPage()"
       @prev-page="transactionsTable.prevPage()"
       @set-page="transactionsTable.setPage($event)"
@@ -101,7 +119,7 @@ watch(listState, fetchTransactions, { immediate: true });
       <template #row="{ item }">
         <div
           class="transactions-table__row"
-          :class="{ 'transactions-table__row_short': props.authority }"
+          :class="{ 'transactions-table__row_short': props.filterBy?.kind === 'authority' }"
         >
           <TransactionStatus
             type="tooltip"
@@ -111,7 +129,7 @@ watch(listState, fetchTransactions, { immediate: true });
 
           <div
             class="transactions-table__column"
-            :class="{ 'transactions-table__column_short': props.authority }"
+            :class="{ 'transactions-table__column_short': props.filterBy?.kind === 'authority' }"
           >
             <div class="transactions-table__label">
               {{ $t('transactions.transactionID') }}
@@ -131,7 +149,7 @@ watch(listState, fetchTransactions, { immediate: true });
 
           <div class="transactions-table__columns">
             <div
-              v-if="!props.authority"
+              v-if="props.filterBy?.kind !== 'authority'"
               class="transactions-table__column"
             >
               <div class="transactions-table__label">
@@ -146,7 +164,7 @@ watch(listState, fetchTransactions, { immediate: true });
             </div>
 
             <div
-              v-if="!props.block"
+              v-if="props.filterBy?.kind !== 'block'"
               class="transactions-table__column"
             >
               <div class="transactions-table__label">
@@ -176,26 +194,21 @@ watch(listState, fetchTransactions, { immediate: true });
       :pagination="instructionsTable.pagination"
       :items="instructionsTable.items.value"
       container-class="transactions-table__container"
+      :pagination-breakpoint="1440"
       @next-page="instructionsTable.nextPage()"
       @prev-page="instructionsTable.prevPage()"
       @set-page="instructionsTable.setPage($event)"
       @set-size="instructionsTable.setSize($event)"
     >
       <template #row="{ item }">
-        <div
-          class="transactions-table__row"
-          :class="{ 'transactions-table__row_short': props.authority }"
-        >
+        <div class="transactions-table__row transactions-table__row_short">
           <TransactionStatus
             type="tooltip"
             class="transactions-table__icon"
             :committed="item.transaction_status === 'Committed'"
           />
 
-          <div
-            class="transactions-table__column"
-            :class="{ 'transactions-table__column_short': props.authority }"
-          >
+          <div class="transactions-table__column transactions-table__column_short">
             <div class="transactions-table__label">
               {{ $t('transactions.transactionID') }}
             </div>
@@ -213,25 +226,15 @@ watch(listState, fetchTransactions, { immediate: true });
           </div>
 
           <div class="transactions-table__columns">
-            <div
-              v-if="!props.authority"
-              class="transactions-table__column"
-            >
+            <div class="transactions-table__column">
               <div class="transactions-table__label">
-                {{ $t('transactions.authority') }}
+                {{ $t('entity') }}
               </div>
 
-              <BaseHash
-                :hash="item.authority"
-                type="short"
-                :link="`/accounts/${item.authority}`"
-              />
+              <span class="row-text">{{ Object.entries(item.payload)[0][0] }}</span>
             </div>
 
-            <div
-              v-if="!props.block"
-              class="transactions-table__column"
-            >
+            <div class="transactions-table__column">
               <div class="transactions-table__label">
                 {{ $t('transactions.block') }}
               </div>
