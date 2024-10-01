@@ -23,7 +23,7 @@ import {
   Instruction,
 } from '@/shared/api/schemas';
 
-const BASE_URL = window.location.toString() + 'api/v1';
+const BASE_URL = window.location.origin.toString() + '/api/v1';
 
 async function get<T>(path: string, params?: Record<string, any>): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
