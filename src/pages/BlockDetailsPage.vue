@@ -11,7 +11,7 @@ import { defaultFormat } from '@/shared/lib/time';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
-import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
+import TransactionsList from '@/shared/ui/components/TransactionsList.vue';
 
 const router = useRouter();
 
@@ -139,9 +139,9 @@ function handleNextBlockClick() {
     </BaseContentBlock>
     <BaseContentBlock :title="$t('blocks.blockTransactions')">
       <template #default>
-        <TransactionsTable
+        <TransactionsList
           v-if="block"
-          :block="block.height"
+          :filter-by="{ kind: 'block', block: block.height }"
         />
       </template>
     </BaseContentBlock>
