@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
@@ -16,7 +16,7 @@ import { useTable } from '@/shared/lib/table';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import { instructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
-import { type filterTransactionsModel as ftm, TransactionTypeFilter } from '@/features/filter-transactions';
+import { type filterTransactionsModel as ftm, InstructionTypeFilter } from '@/features/filter-transactions';
 import { objectOmit } from '@vueuse/shared';
 
 const router = useRouter();
@@ -60,18 +60,16 @@ watch(
   { immediate: true }
 );
 
-const transactionTab = ref<ftm.TabInstructions>('All');
+const shouldShowAll = computed(() => listState.kind === 'All');
 
-const shouldShowAll = computed(() => transactionTab.value === 'All');
-
-const listState = computed(() => ({
-  kind: transactionTab.value,
+const listState = reactive({
+  kind: 'All' as ftm.TabInstructions,
   transaction_hash: transactionHash.value,
-}));
+});
 
 async function fetchInstructions() {
   try {
-    await instructionsTable.fetch(objectOmit(listState.value, shouldShowAll.value ? ['kind'] : []));
+    await instructionsTable.fetch(objectOmit(listState, shouldShowAll.value ? ['kind'] : []));
   } catch (e) {
     handleUnknownError(e);
   }
@@ -176,10 +174,9 @@ watch(listState, fetchInstructions, { immediate: true });
         </div>
         <div v-else>
           <div class="transaction-details__transactions-filters content-row">
-            <TransactionTypeFilter
-              v-model="transactionTab"
+            <InstructionTypeFilter
+              v-model="listState.kind"
               :adaptive-options="instructionsAdaptiveOptions"
-              instructions
             />
           </div>
           <BaseTable
