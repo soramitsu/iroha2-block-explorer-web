@@ -25,10 +25,12 @@ const { handleUnknownError } = useErrorHandlers();
 const HASH_BREAKPOINT = 1100;
 const TRANSACTION_HASH_BREAKPOINT = 1200;
 const SIGNATURE_HASH_BREAKPOINT = 1400;
+const INSTRUCTION_HASH_BREAKPOINT = 1440;
 const { width } = useWindowSize();
 
 const transactionHashType = computed(() => (width.value < TRANSACTION_HASH_BREAKPOINT ? 'medium' : 'full'));
 const signatureHashType = computed(() => (width.value < SIGNATURE_HASH_BREAKPOINT ? 'medium' : 'full'));
+const instructionHashType = computed(() => (width.value < INSTRUCTION_HASH_BREAKPOINT ? 'short' : 'full'));
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
 const transactionHash = computed(() => {
@@ -179,6 +181,7 @@ watch(listState, fetchInstructions, { immediate: true });
           <InstructionsTable
             :table="instructionsTable"
             :all-types="!listState.kind"
+            :hash-type="instructionHashType"
           />
         </div>
       </template>

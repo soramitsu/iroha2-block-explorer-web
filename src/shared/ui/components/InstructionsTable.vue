@@ -7,25 +7,15 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import type { Instruction } from '@/shared/api/schemas';
 import type { useTable } from '@/shared/lib/table';
 import { computed } from 'vue';
-import { useWindowSize } from '@vueuse/core';
 
 const props = defineProps<{
   table: ReturnType<typeof useTable<Instruction>>
   accounts?: boolean
   allTypes?: boolean
+  hashType: 'short' | 'full'
 }>();
 
 const table = computed(() => props.table);
-
-const HASH_BREAKPOINT = 1440;
-
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (props.accounts) return 'short';
-
-  return width.value < HASH_BREAKPOINT ? 'short' : 'full';
-});
 </script>
 
 <template>
