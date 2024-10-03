@@ -1,7 +1,7 @@
 <template>
   <BaseTabs
     v-model="model"
-    :items="tabs"
+    :items="INSTRUCTION_OPTIONS"
     :adaptive-options="props.adaptiveOptions"
   />
 </template>
@@ -10,26 +10,18 @@
 import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
-import { computed } from 'vue';
-import { ACCOUNT_INSTRUCTIONS_OPTIONS, INSTRUCTION_OPTIONS } from './model';
+import { INSTRUCTION_OPTIONS } from './model';
 import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
-  modelValue: ftm.TabAccountInstructions | ftm.TabInstructions
+  modelValue: ftm.TabInstructions
   adaptiveOptions?: AdaptiveOptions
-  accounts?: boolean
 }
 
-type Emits = (e: 'update:modelValue', value: ftm.TabAccountInstructions | ftm.TabInstructions) => void;
+type Emits = (e: 'update:modelValue', value: ftm.TabInstructions) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-
-const tabs = computed(() => {
-  if (props.accounts) return ACCOUNT_INSTRUCTIONS_OPTIONS;
-
-  return INSTRUCTION_OPTIONS;
-});
 
 const model = useVModel(props, 'modelValue', emit);
 </script>
