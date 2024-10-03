@@ -1,11 +1,11 @@
-export const defaultAdaptiveOptions = {
-  XXL: 6,
-  XL: 4,
-  LG: 3,
+export const accountInstructionsAdaptiveOptions = {
+  XXL: 4,
+  XL: 3,
+  LG: 2,
   MD: 5,
-  SM: 3,
-  XS: 5,
-  XXS: 3,
+  SM: 2,
+  XS: 3,
+  XXS: 2,
 } as const;
 
 export const instructionsAdaptiveOptions = {
