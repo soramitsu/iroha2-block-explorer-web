@@ -14,10 +14,9 @@ import { formatUTC } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
 import { useTable } from '@/shared/lib/table';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import { instructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 import { type filterTransactionsModel as ftm, InstructionTypeFilter } from '@/features/filter-transactions';
-import { objectOmit } from '@vueuse/shared';
+import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 
 const router = useRouter();
 
@@ -60,16 +59,14 @@ watch(
   { immediate: true }
 );
 
-const shouldShowAll = computed(() => listState.kind === 'All');
-
 const listState = reactive({
-  kind: 'All' as ftm.TabInstructions,
+  kind: '' as ftm.TabInstructions,
   transaction_hash: transactionHash.value,
 });
 
 async function fetchInstructions() {
   try {
-    await instructionsTable.fetch(objectOmit(listState, shouldShowAll.value ? ['kind'] : []));
+    await instructionsTable.fetch(listState);
   } catch (e) {
     handleUnknownError(e);
   }
@@ -179,63 +176,10 @@ watch(listState, fetchInstructions, { immediate: true });
               :adaptive-options="instructionsAdaptiveOptions"
             />
           </div>
-          <BaseTable
-            :loading="instructionsTable.loading.value"
-            :pagination="instructionsTable.pagination"
-            :items="instructionsTable.items.value"
-            container-class="transaction-details__transactions-table-container"
-            @next-page="instructionsTable.nextPage()"
-            @prev-page="instructionsTable.prevPage()"
-            @set-page="instructionsTable.setPage($event)"
-            @set-size="instructionsTable.setSize($event)"
-          >
-            <template #header>
-              <div class="transaction-details__transactions-table-row">
-                <span class="h-sm cell">{{ $t('kind') }}</span>
-                <span class="h-sm cell">{{ $t('entity') }}</span>
-                <span class="h-sm cell">{{ $t('value') }}</span>
-              </div>
-            </template>
-
-            <template #row="{ item }">
-              <div class="transaction-details__transactions-table-row">
-                <div class="cell row-text">
-                  {{ item.kind }}
-                </div>
-
-                <div class="cell row-text">
-                  {{ Object.keys(item.payload)[0] }}
-                </div>
-
-                <div class="cell row-text">
-                  {{ Object.entries(item.payload)[0][1] }}
-                </div>
-              </div>
-            </template>
-
-            <template #mobile-card="{ item }">
-              <div class="transaction-details__transactions-table-mobile-card">
-                <div class="transaction-details__transactions-table-mobile-row">
-                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('kind') }}</span>
-                  <span class="transaction-details__transactions-table-mobile-row-data row-text">{{ item.kind }}</span>
-                </div>
-
-                <div class="transaction-details__transactions-table-mobile-row">
-                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('entity') }}</span>
-                  <span class="transaction-details__transactions-table-mobile-row-data row-text">{{
-                    Object.keys(item.payload)[0]
-                  }}</span>
-                </div>
-
-                <div class="transaction-details__transactions-table-mobile-row">
-                  <span class="h-sm transaction-details__transactions-table-mobile-row-label">{{ $t('value') }}</span>
-                  <span class="transaction-details__transactions-table-mobile-row-data row-text">{{
-                    Object.entries(item.payload)[0][1]
-                  }}</span>
-                </div>
-              </div>
-            </template>
-          </BaseTable>
+          <InstructionsTable
+            :table="instructionsTable"
+            :all-types="!listState.kind"
+          />
         </div>
       </template>
     </BaseContentBlock>
@@ -318,53 +262,6 @@ watch(listState, fetchInstructions, { immediate: true });
 
     &-wasm {
       padding: 0 size(4);
-    }
-
-    &-table {
-      &-row {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 0.2fr 0.2fr 1fr;
-        word-break: break-all;
-        justify-content: center;
-        align-items: center;
-      }
-
-      &-mobile-card {
-        padding: size(2) size(3);
-      }
-
-      &-mobile-row {
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-
-        &-label {
-          display: flex;
-          align-self: flex-start;
-
-          width: size(12);
-          padding: size(1);
-        }
-
-        &-data {
-          width: 80%;
-          word-break: break-all;
-        }
-      }
-
-      &-container {
-        display: grid;
-        grid-template-columns: 1fr;
-
-        @include sm {
-          grid-template-columns: 1fr 1fr;
-        }
-
-        @include lg {
-          grid-template-columns: 1fr;
-        }
-      }
     }
   }
 }

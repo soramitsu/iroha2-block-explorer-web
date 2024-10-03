@@ -10,13 +10,14 @@ import {
 } from '@/features/filter-transactions';
 import type { AccountId } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { accountInstructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 import { defaultFormat } from '@/shared/lib/time';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { useWindowSize } from '@vueuse/core';
+import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 
 const { handleUnknownError } = useErrorHandlers();
 const props = withDefaults(
@@ -43,7 +44,7 @@ const instructionsTable = useTable(http.fetchInstructions);
 const listState = reactive({
   status: null,
   authority: props.filterBy?.kind === 'authority' ? props.filterBy.id.toString() : '',
-  kind: '' as ftm.TabAccountInstructions,
+  kind: '' as ftm.TabInstructions,
   block: props.filterBy?.kind === 'block' ? props.filterBy.block : '',
 });
 
@@ -93,8 +94,7 @@ function resetFilters() {
       <InstructionTypeFilter
         v-if="showInstructions"
         v-model="listState.kind"
-        :adaptive-options="defaultAdaptiveOptions"
-        :accounts="props.filterBy?.kind === 'authority'"
+        :adaptive-options="accountInstructionsAdaptiveOptions"
       />
       <TransactionStatusFilter v-model="listState.status" />
     </div>
@@ -106,27 +106,21 @@ function resetFilters() {
       :items="transactionsTable.items.value"
       container-class="transactions-table__container"
       reversed
-      :pagination-breakpoint="1440"
+      :pagination-breakpoint="1441"
       @next-page="transactionsTable.nextPage()"
       @prev-page="transactionsTable.prevPage()"
       @set-page="transactionsTable.setPage($event)"
       @set-size="transactionsTable.setSize($event)"
     >
       <template #row="{ item }">
-        <div
-          class="transactions-table__row"
-          :class="{ 'transactions-table__row_short': props.filterBy?.kind === 'authority' }"
-        >
+        <div class="transactions-table__row">
           <TransactionStatus
             type="tooltip"
             class="transactions-table__icon"
             :committed="item.status === 'Committed'"
           />
 
-          <div
-            class="transactions-table__column"
-            :class="{ 'transactions-table__column_short': props.filterBy?.kind === 'authority' }"
-          >
+          <div class="transactions-table__column">
             <div class="transactions-table__label">
               {{ $t('transactions.transactionID') }}
             </div>
@@ -161,7 +155,7 @@ function resetFilters() {
 
             <div
               v-if="props.filterBy?.kind !== 'block'"
-              class="transactions-table__column"
+              class="transactions-table__column-block"
             >
               <div class="transactions-table__label">
                 {{ $t('transactions.block') }}
@@ -184,65 +178,12 @@ function resetFilters() {
       </template>
     </BaseTable>
 
-    <BaseTable
+    <InstructionsTable
       v-else
-      :loading="instructionsTable.loading.value"
-      :pagination="instructionsTable.pagination"
-      :items="instructionsTable.items.value"
-      container-class="transactions-table__container"
-      :pagination-breakpoint="1440"
-      @next-page="instructionsTable.nextPage()"
-      @prev-page="instructionsTable.prevPage()"
-      @set-page="instructionsTable.setPage($event)"
-      @set-size="instructionsTable.setSize($event)"
-    >
-      <template #row="{ item }">
-        <div class="transactions-table__row transactions-table__row_short">
-          <TransactionStatus
-            type="tooltip"
-            class="transactions-table__icon"
-            :committed="item.transaction_status === 'Committed'"
-          />
-
-          <div class="transactions-table__column transactions-table__column_short">
-            <div class="transactions-table__label">
-              {{ $t('transactions.transactionID') }}
-            </div>
-
-            <BaseHash
-              :hash="item.transaction_hash"
-              :type="hashType"
-              :link="`/transactions/${item.transaction_hash}`"
-              copy
-            />
-
-            <div class="transactions-table__time">
-              {{ defaultFormat(item.created_at) }}
-            </div>
-          </div>
-
-          <div class="transactions-table__columns">
-            <div class="transactions-table__column">
-              <div class="transactions-table__label">
-                {{ $t('entity') }}
-              </div>
-
-              <span class="row-text">{{ Object.entries(item.payload)[0][0] }}</span>
-            </div>
-
-            <div class="transactions-table__column">
-              <div class="transactions-table__label">
-                {{ $t('transactions.block') }}
-              </div>
-
-              <BaseLink :to="`/blocks/${item.block}`">
-                {{ item.block }}
-              </BaseLink>
-            </div>
-          </div>
-        </div>
-      </template>
-    </BaseTable>
+      :table="instructionsTable"
+      :accounts="props.filterBy?.kind === 'authority'"
+      :all-types="!listState.kind"
+    />
   </div>
 </template>
 
@@ -360,6 +301,13 @@ function resetFilters() {
 
     @include sm {
       grid-gap: size(1);
+    }
+
+    &-block {
+      display: flex;
+      gap: size(1);
+      align-items: center;
+      width: size(10);
     }
   }
 }
