@@ -230,12 +230,6 @@ export const Transaction = z.object({
 });
 
 export const DetailedTransaction = Transaction.extend({
-  authority: z.string(),
-  hash: z.string(),
-  block: z.number(),
-  created_at: Timestamp,
-  executable: z.enum(['Instructions', 'Wasm']),
-  status: TransactionStatus,
   rejection_reason: z.record(z.string(), z.any()).nullable(),
   metadata: Metadata,
   nonce: z.number().nullable(),
