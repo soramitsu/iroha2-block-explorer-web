@@ -1,6 +1,6 @@
 export const defaultAdaptiveOptions = {
-  XXL: 5,
-  XL: 5,
+  XXL: 6,
+  XL: 4,
   LG: 3,
   MD: 5,
   SM: 3,

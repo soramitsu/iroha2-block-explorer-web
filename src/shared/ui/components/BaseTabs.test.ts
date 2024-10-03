@@ -8,8 +8,8 @@ import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import { defaultAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 
 test.each([
-  [1700, 5],
-  [1440, 5],
+  [1700, 6],
+  [1440, 4],
   [1200, 3],
   [960, 5],
   [640, 3],
