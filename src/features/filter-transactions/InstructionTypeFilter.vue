@@ -16,9 +16,8 @@ import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 
 interface Props {
   modelValue: ftm.TabAccountInstructions | ftm.TabInstructions
-  defaultOptions?: boolean
   adaptiveOptions?: AdaptiveOptions
-  instructions?: boolean
+  accounts?: boolean
 }
 
 type Emits = (e: 'update:modelValue', value: ftm.TabAccountInstructions | ftm.TabInstructions) => void;
@@ -27,9 +26,9 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const tabs = computed(() => {
-  if (props.instructions) return INSTRUCTION_OPTIONS;
+  if (props.accounts) return ACCOUNT_INSTRUCTIONS_OPTIONS;
 
-  return ACCOUNT_INSTRUCTIONS_OPTIONS;
+  return INSTRUCTION_OPTIONS;
 });
 
 const model = useVModel(props, 'modelValue', emit);
