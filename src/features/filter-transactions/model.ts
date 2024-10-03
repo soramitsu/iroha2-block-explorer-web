@@ -1,7 +1,7 @@
 import type { TransactionStatus } from '@/shared/api/schemas';
 
 export type Status = TransactionStatus | null;
-export type TabAccountInstructions = 'Transfer' | 'Mint' | 'Burn' | 'Grant' | 'Revoke';
+export type TabAccountInstructions = '' | 'Transfer' | 'Mint' | 'Burn' | 'Grant' | 'Revoke';
 export type TabAccountTransactions = 'transactions' | 'instructions';
 export type TabInstructions =
   | 'All'
@@ -31,6 +31,7 @@ export const ACCOUNT_TRANSACTIONS_OPTIONS: TabItem<TabAccountTransactions>[] = [
 ];
 
 export const ACCOUNT_INSTRUCTIONS_OPTIONS: TabItem<TabAccountInstructions>[] = [
+  { i18nKey: 'transactions.all', value: '' },
   { i18nKey: 'transactions.transfers', value: 'Transfer' },
   { i18nKey: 'transactions.mints', value: 'Mint' },
   { i18nKey: 'transactions.burns', value: 'Burn' },

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { useTable } from '@/shared/lib/table';
 import * as http from '@/shared/api';
 import { objectOmit } from '@vueuse/shared';
 import {
   type filterTransactionsModel as ftm,
+  InstructionTypeFilter,
   TransactionStatusFilter,
-  TransactionTypeFilter,
 } from '@/features/filter-transactions';
 import type { AccountId } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
@@ -37,28 +37,23 @@ const hashType = computed(() => {
   return width.value < HASH_BREAKPOINT ? 'short' : 'full';
 });
 
-const transactionStatus = ref<ftm.Status>(null);
-
 const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 const instructionsTable = useTable(http.fetchInstructions);
 
-const listState = computed(() => ({
-  status: transactionStatus.value,
+const listState = reactive({
+  status: null,
   authority: props.filterBy?.kind === 'authority' ? props.filterBy.id.toString() : '',
-  kind: transactionTab.value,
+  kind: '' as ftm.TabAccountInstructions,
   block: props.filterBy?.kind === 'block' ? props.filterBy.block : '',
-  instructions: props.showInstructions,
-}));
-
-const transactionTab = ref<ftm.TabAccountInstructions>('Transfer');
+});
 
 async function fetchTransactions() {
   try {
-    if (!props.showInstructions) await transactionsTable.fetch(objectOmit(listState.value, ['kind']));
+    if (!props.showInstructions) await transactionsTable.fetch(objectOmit(listState, ['kind']));
     else
       await instructionsTable.fetch({
-        ...objectOmit(listState.value, ['status']),
-        transaction_status: listState.value.status,
+        ...objectOmit(listState, ['status']),
+        transaction_status: listState.status,
       });
   } catch (e) {
     handleUnknownError(e);
@@ -66,9 +61,9 @@ async function fetchTransactions() {
 }
 
 watch(
-  listState,
+  [listState, () => props.showInstructions],
   (value, oldValue) => {
-    if (oldValue && value.instructions !== oldValue?.instructions) {
+    if (oldValue && value[1] !== oldValue[1]) {
       const isChanged = resetFilters();
 
       if (!isChanged) fetchTransactions();
@@ -78,12 +73,12 @@ watch(
 );
 
 function resetFilters() {
-  const isFiltersDefault = !transactionStatus.value && transactionTab.value === 'Transfer';
+  const isFiltersDefault = !listState.status && listState.kind === '';
 
   if (isFiltersDefault) return false;
 
-  transactionStatus.value = null;
-  transactionTab.value = 'Transfer';
+  listState.status = null;
+  listState.kind = '';
 
   return true;
 }
@@ -95,12 +90,13 @@ function resetFilters() {
     :class="{ 'transactions-table_short': props.filterBy?.kind === 'authority' }"
   >
     <div class="transactions-table__filters content-row">
-      <TransactionTypeFilter
+      <InstructionTypeFilter
         v-if="showInstructions"
-        v-model="transactionTab"
+        v-model="listState.kind"
         :adaptive-options="defaultAdaptiveOptions"
+        :accounts="props.filterBy?.kind === 'authority'"
       />
-      <TransactionStatusFilter v-model="transactionStatus" />
+      <TransactionStatusFilter v-model="listState.status" />
     </div>
 
     <BaseTable
