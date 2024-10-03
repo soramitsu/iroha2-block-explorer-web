@@ -11,13 +11,9 @@ import {
 import type { AccountId } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { accountInstructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
-import { defaultFormat } from '@/shared/lib/time';
-import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { useWindowSize } from '@vueuse/core';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
+import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
+import { useWindowSize } from '@vueuse/core';
 
 const { handleUnknownError } = useErrorHandlers();
 const props = withDefaults(
@@ -27,16 +23,6 @@ const props = withDefaults(
   }>(),
   { filterBy: null }
 );
-
-const HASH_BREAKPOINT = 1350;
-
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (props.filterBy?.kind === 'authority') return 'short';
-
-  return width.value < HASH_BREAKPOINT ? 'short' : 'full';
-});
 
 const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 const instructionsTable = useTable(http.fetchInstructions);
@@ -83,6 +69,19 @@ function resetFilters() {
 
   return true;
 }
+
+const INSTRUCTIONS_HASH_BREAKPOINT = 1440;
+const TRANSACTIONS_HASH_BREAKPOINT = 1350;
+
+const { width } = useWindowSize();
+
+const hashType = computed(() => {
+  if (props.filterBy?.kind === 'authority') return 'short';
+
+  const breakpoint = props.showInstructions ? INSTRUCTIONS_HASH_BREAKPOINT : TRANSACTIONS_HASH_BREAKPOINT;
+
+  return width.value < breakpoint ? 'short' : 'full';
+});
 </script>
 
 <template>
@@ -92,97 +91,25 @@ function resetFilters() {
   >
     <div class="transactions-table__filters content-row">
       <InstructionTypeFilter
-        v-if="showInstructions"
+        v-if="props.showInstructions"
         v-model="listState.kind"
         :adaptive-options="accountInstructionsAdaptiveOptions"
       />
       <TransactionStatusFilter v-model="listState.status" />
     </div>
 
-    <BaseTable
+    <TransactionsTable
       v-if="!props.showInstructions"
-      :loading="transactionsTable.loading.value"
-      :pagination="transactionsTable.pagination"
-      :items="transactionsTable.items.value"
-      container-class="transactions-table__container"
-      reversed
-      :pagination-breakpoint="1441"
-      @next-page="transactionsTable.nextPage()"
-      @prev-page="transactionsTable.prevPage()"
-      @set-page="transactionsTable.setPage($event)"
-      @set-size="transactionsTable.setSize($event)"
-    >
-      <template #row="{ item }">
-        <div class="transactions-table__row">
-          <TransactionStatus
-            type="tooltip"
-            class="transactions-table__icon"
-            :committed="item.status === 'Committed'"
-          />
-
-          <div class="transactions-table__column">
-            <div class="transactions-table__label">
-              {{ $t('transactions.transactionID') }}
-            </div>
-
-            <BaseHash
-              :hash="item.hash"
-              :type="hashType"
-              :link="`/transactions/${item.hash}`"
-              copy
-            />
-
-            <div class="transactions-table__time">
-              {{ defaultFormat(item.created_at) }}
-            </div>
-          </div>
-
-          <div class="transactions-table__columns">
-            <div
-              v-if="props.filterBy?.kind !== 'authority'"
-              class="transactions-table__column"
-            >
-              <div class="transactions-table__label">
-                {{ $t('transactions.authority') }}
-              </div>
-
-              <BaseHash
-                :hash="item.authority"
-                type="short"
-                :link="`/accounts/${item.authority}`"
-              />
-            </div>
-
-            <div
-              v-if="props.filterBy?.kind !== 'block'"
-              class="transactions-table__column-block"
-            >
-              <div class="transactions-table__label">
-                {{ $t('transactions.block') }}
-              </div>
-
-              <BaseLink :to="`/blocks/${item.block}`">
-                {{ item.block }}
-              </BaseLink>
-            </div>
-
-            <div class="transactions-table__column">
-              <div class="transactions-table__label">
-                {{ $t('transactions.executable') }}
-              </div>
-
-              <span class="row-text">{{ item.executable }}</span>
-            </div>
-          </div>
-        </div>
-      </template>
-    </BaseTable>
-
+      :table="transactionsTable"
+      :filter-by="props.filterBy"
+      :hash-type="hashType"
+    />
     <InstructionsTable
       v-else
       :table="instructionsTable"
       :accounts="props.filterBy?.kind === 'authority'"
       :all-types="!listState.kind"
+      :hash-type="hashType"
     />
   </div>
 </template>
@@ -213,35 +140,6 @@ function resetFilters() {
     }
   }
 
-  &__row {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 80px;
-    margin: size(1) 0;
-
-    @include xxs {
-      grid-template-columns: 1fr 1fr;
-      margin: size(2) 0;
-      grid-gap: size(2);
-      display: flex;
-      flex-direction: column;
-    }
-
-    @include sm {
-      display: grid;
-      grid-template-columns: 32px 0.8fr 1fr;
-      grid-gap: size(2);
-    }
-
-    @include lg {
-      grid-template-columns: 32px 1.8fr 1fr;
-    }
-
-    @include xl {
-      grid-template-columns: 32px 1.2fr 1fr;
-    }
-  }
-
   &__filters {
     padding: size(2) size(4);
     display: flex;
@@ -250,64 +148,6 @@ function resetFilters() {
 
     @include sm {
       flex-direction: row;
-    }
-  }
-
-  &__container {
-    display: grid;
-    .content-row {
-      padding: 0 size(4);
-    }
-  }
-
-  &__icon {
-    display: none;
-
-    @include sm {
-      display: grid;
-    }
-  }
-
-  &__label {
-    @include tpg-s3;
-    color: theme-color('content-quaternary');
-  }
-
-  &__time {
-    @include tpg-s3;
-    color: theme-color('content-primary');
-    grid-column: 1 / -1;
-  }
-
-  &__columns {
-    display: flex;
-    gap: size(3);
-
-    flex-direction: column;
-    @include md {
-      flex-direction: row;
-    }
-  }
-
-  &__column {
-    display: grid;
-    grid-gap: size(1) size(1);
-    margin-bottom: auto;
-
-    @include xs {
-      grid-template-columns: auto 1fr;
-      margin: auto 0;
-    }
-
-    @include sm {
-      grid-gap: size(1);
-    }
-
-    &-block {
-      display: flex;
-      gap: size(1);
-      align-items: center;
-      width: size(10);
     }
   }
 }
