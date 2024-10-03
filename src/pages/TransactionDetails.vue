@@ -163,14 +163,14 @@ watch(listState, fetchInstructions, { immediate: true });
     </BaseContentBlock>
     <BaseContentBlock
       class="transaction-details__transactions"
-      :title="$t('transactions.transactionInstructions')"
+      :title="$t('transactions.executable')"
     >
       <template #default>
         <div
           v-if="transaction && transaction.executable === 'Wasm'"
           class="transaction-details__transactions-wasm"
         >
-          <span class="row-text">{{ $t('transactions.transactionDoesntContainInstructions') }}</span>
+          <span class="row-text">{{ $t('transactions.transactionContainsWasm') }}</span>
         </div>
         <div v-else>
           <div class="transaction-details__transactions-filters content-row">

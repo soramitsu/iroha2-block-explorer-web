@@ -78,8 +78,7 @@
     "nonce": "Nonce",
     "metadata": "Metadata",
     "signature": "Signature",
-    "transactionDoesntContainInstructions": "Transaction doesn't contain any instructions.",
-    "transactionInstructions": "Transaction instructions",
+    "transactionContainsWasm": "This transaction contains WASM smart contract. We cannot display it here in a meaningful way at the moment.",
     "authority": "Authority",
     "executable": "Executable"
   },
