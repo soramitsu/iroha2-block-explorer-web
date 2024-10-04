@@ -296,7 +296,7 @@ export const Instruction = z.object({
   created_at: z.string().transform((x) => new Date(x)),
   kind: InstructionKind,
   // TODO: add payload schemas for every kind
-  payload: z.record(z.string(), z.any()),
+  payload: z.union([z.record(z.string(), z.any()), z.string()]),
   transaction_hash: z.string(),
   transaction_status: TransactionStatus,
   block: z.number(),

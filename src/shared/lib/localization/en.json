@@ -68,6 +68,7 @@
     "executeTrigger": "ExecuteTrigger",
     "setParameter": "SetParameter",
     "upgrade": "Upgrade",
+    "object": "Object",
     "log": "Log",
     "custom": "Custom",
     "block": "Block",
@@ -81,7 +82,8 @@
     "transactionContainsWasm": "This transaction contains WASM smart contract. We cannot display it here in a meaningful way at the moment.",
     "authority": "Authority",
     "executable": "Executable",
-    "smartContract": "Smart contract"
+    "smartContract": "Smart contract",
+    "displayingIsntSupported": "Displaying isn't supported"
   },
   "accounts": {
     "address": "Address",

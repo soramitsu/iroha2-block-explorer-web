@@ -6,7 +6,9 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import type { Instruction } from '@/shared/api/schemas';
 import type { useTable } from '@/shared/lib/table';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const props = defineProps<{
   table: ReturnType<typeof useTable<Instruction>>
   showValue?: boolean
@@ -14,11 +16,19 @@ const props = defineProps<{
   hashType: 'short' | 'full'
 }>();
 
+function isBase64EncodedWasm(item: Instruction) {
+  return item.kind === 'Upgrade' && typeof item.payload === 'string';
+}
+
 function getInstructionPayloadValue(item: Instruction) {
+  if (isBase64EncodedWasm(item)) return t('transactions.displayingIsntSupported');
+
   return Object.entries(item.payload)[0][1];
 }
 
-function getInstructionPayloadKind(item: Instruction) {
+function getInstructionPayloadEntity(item: Instruction) {
+  if (isBase64EncodedWasm(item)) return t('transactions.object');
+
   return Object.entries(item.payload)[0][0];
 }
 </script>
@@ -81,7 +91,7 @@ function getInstructionPayloadKind(item: Instruction) {
                 {{ $t('entity') }}
               </div>
 
-              <span class="row-text">{{ getInstructionPayloadKind(item) }}</span>
+              <span class="row-text">{{ getInstructionPayloadEntity(item) }}</span>
             </div>
 
             <div class="instructions-table__column">
