@@ -69,15 +69,17 @@ const instructionsTable = useTable(http.fetchInstructions);
 const listState = reactive({
   status: null,
   authority: accountId.value.toString(),
-  kind: '' as ftm.TabInstructions,
+  kind: 'All' as ftm.TabInstructions,
 });
+
+const shouldShowKind = computed(() => listState.kind === 'All');
 
 async function fetchTransactions() {
   try {
     if (!shouldShowInstructions.value) await transactionsTable.fetch(objectOmit(listState, ['kind']));
     else
       await instructionsTable.fetch({
-        ...objectOmit(listState, ['status']),
+        ...objectOmit(listState, shouldShowKind.value ? ['kind', 'status'] : ['status']),
         transaction_status: listState.status,
       });
   } catch (e) {
@@ -98,12 +100,12 @@ watch(
 );
 
 function resetFilters() {
-  const isFiltersDefault = !listState.status && listState.kind === '';
+  const isFiltersDefault = !listState.status && listState.kind === 'All';
 
   if (isFiltersDefault) return false;
 
   listState.status = null;
-  listState.kind = '';
+  listState.kind = 'All';
 
   return true;
 }
@@ -259,8 +261,7 @@ function resetFilters() {
             <InstructionsTable
               v-else
               :table="instructionsTable"
-              accounts
-              :all-types="!listState.kind"
+              :show-kind="shouldShowKind"
               hash-type="short"
             />
           </div>

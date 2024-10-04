@@ -16,7 +16,7 @@ test.each([
   [480, 3],
   [365, 2],
 ])('BaseTabs adaptive display correctness', async (windowWidth, expectedTabs) => {
-  const model = ref<TabInstructions>('');
+  const model = ref<TabInstructions>('All');
 
   window.innerWidth = windowWidth;
 

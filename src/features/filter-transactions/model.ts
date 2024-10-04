@@ -1,23 +1,8 @@
-import type { TransactionStatus } from '@/shared/api/schemas';
+import type { InstructionKind, TransactionStatus } from '@/shared/api/schemas';
 
 export type Status = TransactionStatus | null;
 export type TabAccountTransactions = 'transactions' | 'instructions';
-export type TabInstructions =
-  | ''
-  | 'Register'
-  | 'Unregister'
-  | 'Mint'
-  | 'Burn'
-  | 'Transfer'
-  | 'SetKeyValue'
-  | 'RemoveKeyValue'
-  | 'Grant'
-  | 'Revoke'
-  | 'ExecuteTrigger'
-  | 'SetParameter'
-  | 'Upgrade'
-  | 'Log'
-  | 'Custom';
+export type TabInstructions = 'All' | InstructionKind;
 
 export interface TabItem<T = string> {
   i18nKey: string
@@ -30,7 +15,7 @@ export const ACCOUNT_TRANSACTIONS_OPTIONS: TabItem<TabAccountTransactions>[] = [
 ];
 
 export const INSTRUCTION_OPTIONS: TabItem<TabInstructions>[] = [
-  { i18nKey: 'transactions.all', value: '' },
+  { i18nKey: 'transactions.all', value: 'All' },
   { i18nKey: 'transactions.register', value: 'Register' },
   { i18nKey: 'transactions.unregister', value: 'Unregister' },
   { i18nKey: 'transactions.mints', value: 'Mint' },

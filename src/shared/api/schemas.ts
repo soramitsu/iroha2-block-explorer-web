@@ -273,25 +273,28 @@ export interface InstructionsSearchParams extends PaginationParams {
   block?: number
 }
 
+const InstructionKind = z.enum([
+  'Register',
+  'Unregister',
+  'Mint',
+  'Burn',
+  'Transfer',
+  'SetKeyValue',
+  'RemoveKeyValue',
+  'Grant',
+  'Revoke',
+  'ExecuteTrigger',
+  'SetParameter',
+  'Upgrade',
+  'Log',
+  'Custom',
+]);
+export type InstructionKind = z.infer<typeof InstructionKind>;
+
 export const Instruction = z.object({
   authority: z.string(),
   created_at: z.string().transform((x) => new Date(x)),
-  kind: z.enum([
-    'Register',
-    'Unregister',
-    'Mint',
-    'Burn',
-    'Transfer',
-    'SetKeyValue',
-    'RemoveKeyValue',
-    'Grant',
-    'Revoke',
-    'ExecuteTrigger',
-    'SetParameter',
-    'Upgrade',
-    'Log',
-    'Custom',
-  ]),
+  kind: InstructionKind,
   // TODO: add payload schemas for every kind
   payload: z.record(z.string(), z.any()),
   transaction_hash: z.string(),

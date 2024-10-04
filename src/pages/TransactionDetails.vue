@@ -17,6 +17,7 @@ import { parseMetadata } from '@/shared/ui/utils/json';
 import { instructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
 import { type filterTransactionsModel as ftm, InstructionTypeFilter } from '@/features/filter-transactions';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
+import { objectOmit } from '@vueuse/shared';
 
 const router = useRouter();
 
@@ -46,7 +47,7 @@ const isFetchingTransaction = ref(false);
 const instructionsTable = useTable(http.fetchInstructions);
 
 const listState = reactive({
-  kind: '' as ftm.TabInstructions,
+  kind: 'All' as ftm.TabInstructions,
   transaction_hash: transactionHash.value,
 });
 
@@ -68,9 +69,11 @@ watch(
   { immediate: true }
 );
 
+const shouldShowKind = computed(() => listState.kind === 'All');
+
 async function fetchInstructions() {
   try {
-    await instructionsTable.fetch(listState);
+    await instructionsTable.fetch({ ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []) });
   } catch (e) {
     handleUnknownError(e);
   }
@@ -181,9 +184,10 @@ watch(listState, fetchInstructions, { immediate: true });
             />
           </div>
           <InstructionsTable
+            show-value
             :table="instructionsTable"
-            :all-types="!listState.kind"
             :hash-type="instructionHashType"
+            :show-kind="shouldShowKind"
           />
         </div>
       </template>
