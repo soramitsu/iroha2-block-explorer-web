@@ -5,33 +5,31 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import type { useTable } from '@/shared/lib/table';
-import type { AccountId, Transaction } from '@/shared/api/schemas';
-import { computed } from 'vue';
+import type { Transaction } from '@/shared/api/schemas';
 
 const props = withDefaults(
   defineProps<{
     table: ReturnType<typeof useTable<Transaction>>
-    filterBy?: { kind: 'authority', id: AccountId } | { kind: 'block', block: number } | null
+    showBlock?: boolean
+    showAuthority?: boolean
     hashType: 'short' | 'full'
   }>(),
-  { filterBy: null }
+  { showBlock: false, showAuthority: false }
 );
-
-const table = computed(() => props.table);
 </script>
 
 <template>
   <BaseTable
-    :loading="table.loading.value"
-    :pagination="table.pagination"
-    :items="table.items.value"
+    :loading="props.table.loading.value"
+    :pagination="props.table.pagination"
+    :items="props.table.items.value"
     container-class="transactions-table__container"
     reversed
     :pagination-breakpoint="1441"
-    @next-page="table.nextPage()"
-    @prev-page="table.prevPage()"
-    @set-page="table.setPage($event)"
-    @set-size="table.setSize($event)"
+    @next-page="props.table.nextPage()"
+    @prev-page="props.table.prevPage()"
+    @set-page="props.table.setPage($event)"
+    @set-size="props.table.setSize($event)"
   >
     <template #row="{ item }">
       <div class="transactions-table__row">
@@ -60,7 +58,7 @@ const table = computed(() => props.table);
 
         <div class="transactions-table__columns">
           <div
-            v-if="props.filterBy?.kind !== 'authority'"
+            v-if="props.showAuthority"
             class="transactions-table__column"
           >
             <div class="transactions-table__label">
@@ -75,7 +73,7 @@ const table = computed(() => props.table);
           </div>
 
           <div
-            v-if="props.filterBy?.kind !== 'block'"
+            v-if="props.showBlock"
             class="transactions-table__column-block"
           >
             <div class="transactions-table__label">

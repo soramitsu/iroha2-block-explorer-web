@@ -6,7 +6,6 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import type { Instruction } from '@/shared/api/schemas';
 import type { useTable } from '@/shared/lib/table';
-import { computed } from 'vue';
 
 const props = defineProps<{
   table: ReturnType<typeof useTable<Instruction>>
@@ -14,8 +13,6 @@ const props = defineProps<{
   allTypes?: boolean
   hashType: 'short' | 'full'
 }>();
-
-const table = computed(() => props.table);
 </script>
 
 <template>
@@ -24,15 +21,15 @@ const table = computed(() => props.table);
     :class="{ 'instructions-table_short': props.accounts }"
   >
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      :loading="props.table.loading.value"
+      :pagination="props.table.pagination"
+      :items="props.table.items.value"
       container-class="instructions-table__container"
       :pagination-breakpoint="1441"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
+      @next-page="props.table.nextPage()"
+      @prev-page="props.table.prevPage()"
+      @set-page="props.table.setPage($event)"
+      @set-size="props.table.setSize($event)"
     >
       <template #row="{ item }">
         <div class="instructions-table__row">
