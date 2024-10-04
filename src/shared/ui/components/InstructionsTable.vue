@@ -13,6 +13,14 @@ const props = defineProps<{
   showKind?: boolean
   hashType: 'short' | 'full'
 }>();
+
+function getInstructionPayloadValue(item: Instruction) {
+  return Object.entries(item.payload)[0][1];
+}
+
+function getInstructionPayloadKind(item: Instruction) {
+  return Object.entries(item.payload)[0][0];
+}
 </script>
 
 <template>
@@ -73,7 +81,7 @@ const props = defineProps<{
                 {{ $t('entity') }}
               </div>
 
-              <span class="row-text">{{ Object.entries(item.payload)[0][0] }}</span>
+              <span class="row-text">{{ getInstructionPayloadKind(item) }}</span>
             </div>
 
             <div class="instructions-table__column">
@@ -95,7 +103,7 @@ const props = defineProps<{
               {{ $t('value') }}
             </div>
 
-            <span class="row-text">{{ Object.entries(item.payload)[0][1] }}</span>
+            <span class="row-text">{{ getInstructionPayloadValue(item) }}</span>
           </div>
         </div>
       </template>
