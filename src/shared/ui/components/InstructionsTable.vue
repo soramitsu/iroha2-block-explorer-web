@@ -9,8 +9,8 @@ import type { useTable } from '@/shared/lib/table';
 
 const props = defineProps<{
   table: ReturnType<typeof useTable<Instruction>>
-  accounts?: boolean
-  allTypes?: boolean
+  showValue?: boolean
+  showKind?: boolean
   hashType: 'short' | 'full'
 }>();
 </script>
@@ -18,7 +18,7 @@ const props = defineProps<{
 <template>
   <div
     class="instructions-table"
-    :class="{ 'instructions-table_short': props.accounts }"
+    :class="{ 'instructions-table_short': !props.showValue }"
   >
     <BaseTable
       :loading="props.table.loading.value"
@@ -58,7 +58,7 @@ const props = defineProps<{
 
           <div class="instructions-table__columns">
             <div
-              v-if="props.allTypes"
+              v-if="props.showKind"
               class="instructions-table__column"
             >
               <div class="instructions-table__label">
@@ -88,7 +88,7 @@ const props = defineProps<{
           </div>
 
           <div
-            v-if="!props.accounts"
+            v-if="props.showValue"
             class="instructions-table__column-value"
           >
             <div class="instructions-table__label">
