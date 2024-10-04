@@ -36,8 +36,6 @@ const accountId = computed(() => {
 const account = ref<Account | null>(null);
 const isFetchingAccount = ref(false);
 
-const isEmptyAssets = ref(false);
-
 onMounted(async () => {
   try {
     isFetchingAccount.value = true;
@@ -45,11 +43,9 @@ onMounted(async () => {
 
     listState.authority = accountId.value.toString();
 
-    if (account.value) {
+    if (account.value && account.value.owned_assets) {
       assetsTable.fetch({ owned_by: accountId.value.toString() });
     }
-
-    isEmptyAssets.value = !assetsTable.items.value.length;
   } catch (e) {
     handleUnknownError(e);
   } finally {
@@ -159,7 +155,7 @@ function resetFilters() {
       >
         <template #default>
           <span
-            v-if="isEmptyAssets"
+            v-if="!account?.owned_assets"
             class="account-details__personal-assets_empty row-text"
           >{{
             $t('accounts.accountDoesntHaveAnyAssets')
