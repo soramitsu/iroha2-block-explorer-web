@@ -80,7 +80,8 @@
     "signature": "Signature",
     "transactionContainsWasm": "This transaction contains WASM smart contract. We cannot display it here in a meaningful way at the moment.",
     "authority": "Authority",
-    "executable": "Executable"
+    "executable": "Executable",
+    "smartContract": "Smart contract"
   },
   "accounts": {
     "address": "Address",

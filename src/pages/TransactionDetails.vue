@@ -45,11 +45,18 @@ const transaction = ref<DetailedTransaction | null>(null);
 const isFetchingTransaction = ref(false);
 const instructionsTable = useTable(http.fetchInstructions);
 
+const listState = reactive({
+  kind: '' as ftm.TabInstructions,
+  transaction_hash: transactionHash.value,
+});
+
 watch(
   () => transactionHash.value,
   async () => {
     try {
       isFetchingTransaction.value = true;
+
+      listState.transaction_hash = transactionHash.value;
       const res = await Promise.all([http.fetchTransaction(transactionHash.value)]);
       transaction.value = res[0];
     } catch (e) {
@@ -60,11 +67,6 @@ watch(
   },
   { immediate: true }
 );
-
-const listState = reactive({
-  kind: '' as ftm.TabInstructions,
-  transaction_hash: transactionHash.value,
-});
 
 async function fetchInstructions() {
   try {
@@ -162,7 +164,7 @@ watch(listState, fetchInstructions, { immediate: true });
     </BaseContentBlock>
     <BaseContentBlock
       class="transaction-details__transactions"
-      :title="$t('transactions.executable')"
+      :title="transaction?.executable === 'Wasm' ? $t('transactions.smartContract') : $t('transactions.instructions')"
     >
       <template #default>
         <div
