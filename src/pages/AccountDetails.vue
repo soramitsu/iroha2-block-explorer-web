@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
@@ -11,10 +11,18 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Account } from '@/shared/api/schemas';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import TransactionsList from '@/shared/ui/components/TransactionsList.vue';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import type { TabAccountTransactions } from '@/features/filter-transactions/model';
 import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter-transactions/model';
+import { accountInstructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import {
+  type filterTransactionsModel as ftm,
+  InstructionTypeFilter,
+  TransactionStatusFilter,
+} from '@/features/filter-transactions';
+import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
+import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
+import { objectOmit } from '@vueuse/shared';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -35,6 +43,8 @@ onMounted(async () => {
     isFetchingAccount.value = true;
     account.value = await http.fetchAccount(accountId.value);
 
+    listState.authority = accountId.value.toString();
+
     if (account.value) {
       assetsTable.fetch({ owned_by: accountId.value.toString() });
     }
@@ -50,6 +60,53 @@ onMounted(async () => {
 const assetsTable = useTable(http.fetchAssets);
 
 const transactionsTab = ref<TabAccountTransactions>('transactions');
+
+const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
+
+const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
+const instructionsTable = useTable(http.fetchInstructions);
+
+const listState = reactive({
+  status: null,
+  authority: accountId.value.toString(),
+  kind: '' as ftm.TabInstructions,
+});
+
+async function fetchTransactions() {
+  try {
+    if (!shouldShowInstructions.value) await transactionsTable.fetch(objectOmit(listState, ['kind']));
+    else
+      await instructionsTable.fetch({
+        ...objectOmit(listState, ['status']),
+        transaction_status: listState.status,
+      });
+  } catch (e) {
+    handleUnknownError(e);
+  }
+}
+
+watch(
+  [listState, shouldShowInstructions],
+  (value, oldValue) => {
+    if (oldValue && value[1] !== oldValue[1]) {
+      const isChanged = resetFilters();
+
+      if (!isChanged) fetchTransactions();
+    } else fetchTransactions();
+  },
+  { immediate: true }
+);
+
+function resetFilters() {
+  const isFiltersDefault = !listState.status && listState.kind === '';
+
+  if (isFiltersDefault) return false;
+
+  listState.status = null;
+  listState.kind = '';
+
+  return true;
+}
 </script>
 
 <template>
@@ -182,10 +239,31 @@ const transactionsTab = ref<TabAccountTransactions>('transactions');
           />
         </template>
         <template #default>
-          <TransactionsList
-            :filter-by="{ kind: 'authority', id: accountId }"
-            :show-instructions="transactionsTab === 'instructions'"
-          />
+          <div class="account-details__transactions-table account-details__transactions-table_short">
+            <div class="account-details__transactions-table__filters content-row">
+              <InstructionTypeFilter
+                v-if="shouldShowInstructions"
+                v-model="listState.kind"
+                :adaptive-options="accountInstructionsAdaptiveOptions"
+              />
+              <TransactionStatusFilter v-model="listState.status" />
+            </div>
+
+            <TransactionsTable
+              v-if="!shouldShowInstructions"
+              :table="transactionsTable"
+              :filter-by="{ kind: 'authority', id: accountId }"
+              hash-type="short"
+              show-block
+            />
+            <InstructionsTable
+              v-else
+              :table="instructionsTable"
+              accounts
+              :all-types="!listState.kind"
+              hash-type="short"
+            />
+          </div>
         </template>
       </BaseContentBlock>
     </div>
@@ -361,6 +439,41 @@ const transactionsTab = ref<TabAccountTransactions>('transactions');
 
     hr {
       display: none;
+    }
+
+    &-table {
+      &_short {
+        .content-row {
+          @include xxs {
+            width: 90vw;
+          }
+
+          @include lg {
+            width: 46vw;
+            height: 48px;
+          }
+          @include xl {
+            width: auto;
+          }
+
+          height: auto;
+          min-height: 0;
+        }
+        & > .content-row {
+          height: auto;
+        }
+      }
+
+      &__filters {
+        padding: size(2) size(4);
+        display: flex;
+        flex-direction: column;
+        gap: size(1);
+
+        @include sm {
+          flex-direction: row;
+        }
+      }
     }
   }
 }

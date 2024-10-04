@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
@@ -11,7 +11,9 @@ import { defaultFormat } from '@/shared/lib/time';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
-import TransactionsList from '@/shared/ui/components/TransactionsList.vue';
+import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
+import { TransactionStatusFilter } from '@/features/filter-transactions';
+import { useTable } from '@/shared/lib/table';
 
 const router = useRouter();
 
@@ -35,6 +37,11 @@ const isFetchingBlock = ref(false);
 const isNextBlockExists = ref(false);
 const isPreviousBlockExists = ref(false);
 
+const listState = reactive({
+  status: null,
+  block: block.value?.height,
+});
+
 watch(
   () => blockHeightOrHash.value,
   async () => {
@@ -42,6 +49,7 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
+      listState.block = block.value.height;
       const { blocks } = await http.fetchPeerStatus();
 
       isNextBlockExists.value = block.value.height < blocks;
@@ -66,6 +74,22 @@ function handleNextBlockClick() {
 
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
+
+const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
+
+async function fetchTransactions() {
+  try {
+    await transactionsTable.fetch(listState);
+  } catch (e) {
+    handleUnknownError(e);
+  }
+}
+
+watch(listState, fetchTransactions);
+
+const TRANSACTIONS_HASH_BREAKPOINT = 1350;
+
+const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full'));
 </script>
 
 <template>
@@ -137,12 +161,24 @@ function handleNextBlockClick() {
         </div>
       </template>
     </BaseContentBlock>
-    <BaseContentBlock :title="$t('blocks.blockTransactions')">
+    <BaseContentBlock
+      :title="$t('blocks.blockTransactions')"
+      class="block-details__transactions"
+    >
       <template #default>
-        <TransactionsList
-          v-if="block"
-          :filter-by="{ kind: 'block', block: block.height }"
-        />
+        <div class="block-details__transactions-table">
+          <div class="block-details__transactions-table__filters content-row">
+            <TransactionStatusFilter v-model="listState.status" />
+          </div>
+
+          <TransactionsTable
+            v-if="block"
+            show-authority
+            :table="transactionsTable"
+            :filter-by="{ kind: 'block', block: block.height }"
+            :hash-type="hashType"
+          />
+        </div>
       </template>
     </BaseContentBlock>
   </div>
@@ -208,6 +244,21 @@ function handleNextBlockClick() {
 
       .base-link {
         @include tpg-s3;
+      }
+    }
+  }
+
+  &__transactions {
+    &-table {
+      &__filters {
+        padding: size(2) size(4);
+        display: flex;
+        flex-direction: column;
+        gap: size(1);
+
+        @include sm {
+          flex-direction: row;
+        }
       }
     }
   }
