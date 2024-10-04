@@ -50,7 +50,7 @@ const routes = [
   {
     path: '/transactions',
     name: 'transactions-list',
-    component: () => import('@/pages/PageTransactionsList.vue'),
+    component: () => import('@/pages/TransactionsList.vue'),
   },
   {
     path: '/transactions/:hash',
