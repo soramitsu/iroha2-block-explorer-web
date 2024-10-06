@@ -9,6 +9,7 @@ import type {
   AccountSearchParams,
   AssetDefinitionSearchParams,
   InstructionsSearchParams,
+  DomainSearchParams,
 } from '@/shared/api/schemas';
 import {
   Account,
@@ -66,7 +67,7 @@ export async function fetchAssetDefinition(id: AssetDefinitionId): Promise<Asset
   return AssetDefinition.parse(res);
 }
 
-export async function fetchDomains(params?: PaginationParams): Promise<Paginated<Domain>> {
+export async function fetchDomains(params?: DomainSearchParams): Promise<Paginated<Domain>> {
   const res = await get('/domains', params);
   return Paginated(Domain).parse(res);
 }

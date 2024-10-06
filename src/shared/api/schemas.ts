@@ -204,6 +204,10 @@ export const AssetDefinition = z.object({
 
 export type AssetDefinition = z.infer<typeof AssetDefinition>;
 
+export interface DomainSearchParams extends PaginationParams {
+  owned_by?: AccountId
+}
+
 export const Domain = z.object({
   id: DomainId,
   logo: z.string().nullable(),
