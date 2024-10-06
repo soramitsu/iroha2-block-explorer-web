@@ -23,6 +23,7 @@ import {
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import { objectOmit } from '@vueuse/shared';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -43,8 +44,15 @@ onMounted(async () => {
 
     listState.authority = accountId.value.toString();
 
-    if (account.value && account.value.owned_assets) {
-      assetsTable.fetch({ owned_by: accountId.value.toString() });
+    if (account.value) {
+      const ownedEntities = [];
+
+      if (account.value.owned_assets) ownedEntities.push(assetsTable.fetch({ owned_by: accountId.value.toString() }));
+      if (account.value.owned_domains) ownedEntities.push(domainsTable.fetch({ owned_by: accountId.value.toString() }));
+
+      if (!ownedEntities.length) return;
+
+      await Promise.all(ownedEntities);
     }
   } catch (e) {
     handleUnknownError(e);
@@ -54,6 +62,7 @@ onMounted(async () => {
 });
 
 const assetsTable = useTable(http.fetchAssets);
+const domainsTable = useTable(http.fetchDomains);
 
 const transactionsTab = ref<TabAccountTransactions>('transactions');
 
@@ -151,12 +160,12 @@ function resetFilters() {
 
       <BaseContentBlock
         :title="$t('accounts.accountAssets')"
-        class="account-details__personal-assets"
+        class="account-details__personal-owned"
       >
         <template #default>
           <span
             v-if="!account?.owned_assets"
-            class="account-details__personal-assets_empty row-text"
+            class="account-details__personal-owned_empty row-text"
           >{{
             $t('accounts.accountDoesntHaveAnyAssets')
           }}</span>
@@ -164,7 +173,7 @@ function resetFilters() {
             v-else
             :loading="assetsTable.loading.value"
             :items="assetsTable.items.value"
-            container-class="account-details__personal-assets-list"
+            container-class="account-details__personal-owned-list"
             breakpoint="960"
             :pagination="assetsTable.pagination"
             @next-page="assetsTable.nextPage()"
@@ -173,7 +182,7 @@ function resetFilters() {
             @set-size="assetsTable.setSize($event)"
           >
             <template #header>
-              <div class="account-details__personal-assets-list-row">
+              <div class="account-details__personal-owned-list-row">
                 <span class="h-sm">{{ $t('name') }}</span>
                 <span class="h-sm">{{ $t('type') }}</span>
                 <span class="h-sm">{{ $t('value') }}</span>
@@ -181,16 +190,18 @@ function resetFilters() {
             </template>
 
             <template #row="{ item }">
-              <div class="account-details__personal-assets-list-row">
-                <div class="account-details__personal-assets-list-row-data row-text">
-                  <span>{{ item.id.definition.name }}</span>
+              <div class="account-details__personal-owned-list-row">
+                <div class="account-details__personal-owned-list-row-data row-text">
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
+                    {{ item.id.definition.name }}
+                  </BaseLink>
                 </div>
 
-                <div class="account-details__personal-assets-list-row-data row-text">
+                <div class="account-details__personal-owned-list-row-data row-text">
                   <span>{{ item.value.kind }}</span>
                 </div>
 
-                <div class="account-details__personal-assets-list-row-data row-text">
+                <div class="account-details__personal-owned-list-row-data row-text">
                   <template v-if="item.value.kind === 'Store'">
                     🔑: {{ Object.keys(item.value.metadata).length }}
                   </template>
@@ -202,18 +213,20 @@ function resetFilters() {
             </template>
 
             <template #mobile-card="{ item }">
-              <div class="account-details__personal-assets-mobile-list-row">
-                <div class="account-details__personal-assets-mobile-list-row-data row-text">
+              <div class="account-details__personal-owned-mobile-list-row">
+                <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <span>{{ item.id.definition.name }}</span>
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
+                    {{ item.id.definition.name }}
+                  </BaseLink>
                 </div>
 
-                <div class="account-details__personal-assets-mobile-list-row-data row-text">
+                <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('type') }}</span>
                   <span>{{ item.value.kind }}</span>
                 </div>
 
-                <div class="account-details__personal-assets-mobile-list-row-data row-text">
+                <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('value') }}</span>
                   <template v-if="item.value.kind === 'Store'">
                     🔑: {{ Object.keys(item.value.metadata).length }}
@@ -221,6 +234,79 @@ function resetFilters() {
                   <template v-else>
                     {{ item.value.value }}
                   </template>
+                </div>
+              </div>
+            </template>
+          </BaseTable>
+        </template>
+      </BaseContentBlock>
+
+      <BaseContentBlock
+        :title="$t('accounts.accountDomains')"
+        class="account-details__personal-owned"
+      >
+        <template #default>
+          <span
+            v-if="!account?.owned_domains"
+            class="account-details__personal-owned_empty row-text"
+          >{{
+            $t('accounts.accountDoesntHaveAnyDomains')
+          }}</span>
+          <BaseTable
+            v-else
+            :loading="domainsTable.loading.value"
+            :items="domainsTable.items.value"
+            container-class="account-details__personal-owned-list"
+            breakpoint="960"
+            :pagination="domainsTable.pagination"
+            @next-page="domainsTable.nextPage()"
+            @prev-page="domainsTable.prevPage()"
+            @set-page="domainsTable.setPage($event)"
+            @set-size="domainsTable.setSize($event)"
+          >
+            <template #header>
+              <div class="account-details__personal-owned-list-row">
+                <span class="h-sm">{{ $t('id') }}</span>
+                <span class="h-sm">{{ $t('assets.assets') }}</span>
+                <span class="h-sm">{{ $t('accounts.accounts') }}</span>
+              </div>
+            </template>
+
+            <template #row="{ item }">
+              <div class="account-details__personal-owned-list-row">
+                <div class="account-details__personal-owned-list-row-data row-text">
+                  <BaseLink :to="`/domains/${item.id}`">
+                    {{ item.id }}
+                  </BaseLink>
+                </div>
+
+                <div class="account-details__personal-owned-list-row-data row-text">
+                  <span>{{ item.assets }}</span>
+                </div>
+
+                <div class="account-details__personal-owned-list-row-data row-text">
+                  <span>{{ item.accounts }}</span>
+                </div>
+              </div>
+            </template>
+
+            <template #mobile-card="{ item }">
+              <div class="account-details__personal-owned-mobile-list-row">
+                <div class="account-details__personal-owned-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('id') }}</span>
+                  <BaseLink :to="`/domains/${item.id}`">
+                    {{ item.id }}
+                  </BaseLink>
+                </div>
+
+                <div class="account-details__personal-owned-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('assets.assets') }}</span>
+                  <span>{{ item.assets }}</span>
+                </div>
+
+                <div class="account-details__personal-owned-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('accounts.accounts') }}</span>
+                  <span>{{ item.accounts }}</span>
                 </div>
               </div>
             </template>
@@ -286,6 +372,7 @@ function resetFilters() {
   &__personal {
     display: flex;
     flex-direction: column;
+    gap: size(2);
 
     @include xxs {
       width: 90vw;
@@ -304,8 +391,6 @@ function resetFilters() {
     }
 
     &-information {
-      margin-bottom: size(2);
-
       &_loading {
         margin-top: size(1);
         display: flex;
@@ -323,9 +408,9 @@ function resetFilters() {
       }
     }
 
-    &-assets {
-      &_empty {
-        padding: 0 size(4);
+    &-owned {
+      .base-content-block__body:has(.account-details__personal-owned_empty) {
+        padding: size(0) size(4) size(4);
       }
 
       .content-row {
@@ -337,66 +422,67 @@ function resetFilters() {
       hr {
         display: none;
       }
-    }
 
-    &-assets-list {
-      display: grid;
-      .content-row:last-child {
-        border-bottom: 1px solid theme-color('border-primary');
-      }
-
-      @include xxs {
-        grid-template-columns: 1fr;
-      }
-
-      @include sm {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      @include md {
-        grid-template-columns: 1fr;
-      }
-
-      &-row {
+      &-list {
         display: grid;
 
-        @include md {
-          grid-template-columns: 25vw 25vw 25vw;
+        .content-row:last-child {
+          border-bottom: 1px solid theme-color('border-primary');
         }
 
-        @include lg {
-          grid-template-columns: 12vw 12vw 12vw;
+        @include xxs {
+          grid-template-columns: 1fr;
+        }
+
+        @include sm {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        @include md {
+          grid-template-columns: 1fr;
+        }
+
+        &-row {
+          display: grid;
+
+          @include md {
+            grid-template-columns: 25vw 25vw 25vw;
+          }
+
+          @include lg {
+            grid-template-columns: 12vw 12vw 12vw;
+          }
         }
       }
-    }
 
-    &-assets-mobile-list {
-      &-row {
-        border-bottom: 1px solid theme-color('border-primary');
-        padding: size(2) size(4);
-        @include xxs {
-          width: 100%;
-        }
-        @include sm {
-          width: 45vw;
-        }
-        display: flex;
-        flex-direction: column;
-
-        &-data {
+      &-mobile-list {
+        &-row {
+          border-bottom: 1px solid theme-color('border-primary');
+          padding: size(2) size(4);
+          @include xxs {
+            width: 100%;
+          }
+          @include sm {
+            width: 45vw;
+          }
           display: flex;
-          align-items: center;
-          margin-top: size(2);
+          flex-direction: column;
 
-          span:first-child {
-            @include xxs {
-              width: size(16);
-            }
-            @include xs {
-              width: size(20);
-            }
-            @include sm {
-              width: size(16);
+          &-data {
+            display: flex;
+            align-items: center;
+            margin-top: size(2);
+
+            span:first-child {
+              @include xxs {
+                width: size(16);
+              }
+              @include xs {
+                width: size(20);
+              }
+              @include sm {
+                width: size(16);
+              }
             }
           }
         }
