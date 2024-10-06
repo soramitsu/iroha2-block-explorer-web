@@ -13,6 +13,7 @@ import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import type { Domain } from '@/shared/api/schemas';
 import { DomainId } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -131,7 +132,9 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
             <template #row="{ item }">
               <div class="domain-details__native-assets-list-row">
                 <div class="domain-details__native-assets-list-row-data row-text">
-                  <span>{{ item.id.name }}</span>
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
+                    {{ item.id.name }}
+                  </BaseLink>
                 </div>
 
                 <div class="domain-details__native-assets-list-row-data row-text">
@@ -148,7 +151,9 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
               <div class="domain-details__native-assets-mobile-list-row">
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <span>{{ item.id.name }}</span>
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
+                    {{ item.id.name }}
+                  </BaseLink>
                 </div>
 
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
