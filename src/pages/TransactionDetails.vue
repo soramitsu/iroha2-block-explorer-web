@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
@@ -12,12 +12,8 @@ import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatus } from '@/entities/transaction';
 import { formatUTC } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
-import { useTable } from '@/shared/lib/table';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import { INSTRUCTIONS_ADAPTIVE_OPTIONS } from '@/features/filter-transactions/adaptive-options';
-import { type filterTransactionsModel as ftm, InstructionTypeFilter } from '@/features/filter-transactions';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
-import { objectOmit } from '@vueuse/shared';
 
 const router = useRouter();
 
@@ -44,12 +40,6 @@ const transactionHash = computed(() => {
 
 const transaction = ref<DetailedTransaction | null>(null);
 const isFetchingTransaction = ref(false);
-const instructionsTable = useTable(http.fetchInstructions);
-
-const listState = reactive({
-  kind: 'All' as ftm.TabInstructions,
-  transaction_hash: computed(() => transactionHash.value),
-});
 
 watch(
   () => transactionHash.value,
@@ -57,9 +47,7 @@ watch(
     try {
       isFetchingTransaction.value = true;
 
-      // listState.transaction_hash = transactionHash.value;
-      const res = await Promise.all([http.fetchTransaction(transactionHash.value)]);
-      transaction.value = res[0];
+      transaction.value = await http.fetchTransaction(transactionHash.value);
     } catch (e) {
       handleUnknownError(e);
     } finally {
@@ -68,18 +56,6 @@ watch(
   },
   { immediate: true }
 );
-
-const shouldShowKind = computed(() => listState.kind === 'All');
-
-async function fetchInstructions() {
-  try {
-    await instructionsTable.fetch({ ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []) });
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
-
-watch(listState, fetchInstructions, { immediate: true });
 </script>
 
 <template>
@@ -177,17 +153,10 @@ watch(listState, fetchInstructions, { immediate: true });
           <span class="row-text">{{ $t('transactions.transactionContainsWasm') }}</span>
         </div>
         <div v-else>
-          <div class="transaction-details__transactions-filters content-row">
-            <InstructionTypeFilter
-              v-model="listState.kind"
-              :adaptive-options="INSTRUCTIONS_ADAPTIVE_OPTIONS"
-            />
-          </div>
           <InstructionsTable
             show-value
-            :table="instructionsTable"
             :hash-type="instructionHashType"
-            :show-kind="shouldShowKind"
+            :filter-by="{ kind: 'transaction', value: transactionHash }"
           />
         </div>
       </template>
@@ -261,10 +230,6 @@ watch(listState, fetchInstructions, { immediate: true });
   }
 
   &__transactions {
-    &-filters {
-      padding: 0 size(2) 0 size(4);
-    }
-
     & > hr {
       display: none;
     }

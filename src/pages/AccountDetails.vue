@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
@@ -14,15 +14,8 @@ import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import type { TabAccountTransactions } from '@/features/filter-transactions/model';
 import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter-transactions/model';
-import { ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS } from '@/features/filter-transactions/adaptive-options';
-import {
-  type filterTransactionsModel as ftm,
-  InstructionTypeFilter,
-  TransactionStatusFilter,
-} from '@/features/filter-transactions';
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
-import { objectOmit } from '@vueuse/shared';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const router = useRouter();
@@ -41,8 +34,6 @@ onMounted(async () => {
   try {
     isFetchingAccount.value = true;
     account.value = await http.fetchAccount(accountId.value);
-
-    // listState.authority = accountId.value.toString();
 
     if (account.value) {
       const ownedEntities = [];
@@ -67,53 +58,6 @@ const domainsTable = useTable(http.fetchDomains);
 const transactionsTab = ref<TabAccountTransactions>('transactions');
 
 const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
-
-const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
-const instructionsTable = useTable(http.fetchInstructions);
-
-const listState = reactive({
-  status: null,
-  authority: computed(() => accountId.value.toString()),
-  kind: 'All' as ftm.TabInstructions,
-});
-
-const shouldShowKind = computed(() => listState.kind === 'All');
-
-async function fetchTransactions() {
-  try {
-    if (!shouldShowInstructions.value) await transactionsTable.fetch(objectOmit(listState, ['kind']));
-    else
-      await instructionsTable.fetch({
-        ...objectOmit(listState, shouldShowKind.value ? ['kind', 'status'] : ['status']),
-        transaction_status: listState.status,
-      });
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
-
-watch(
-  [listState, shouldShowInstructions],
-  (value, oldValue) => {
-    if (oldValue && value[1] !== oldValue[1]) {
-      const isChanged = resetFilters();
-
-      if (!isChanged) fetchTransactions();
-    } else fetchTransactions();
-  },
-  { immediate: true }
-);
-
-function resetFilters() {
-  const isFiltersDefault = !listState.status && listState.kind === 'All';
-
-  if (isFiltersDefault) return false;
-
-  listState.status = null;
-  listState.kind = 'All';
-
-  return true;
-}
 </script>
 
 <template>
@@ -324,26 +268,16 @@ function resetFilters() {
         </template>
         <template #default>
           <div class="account-details__transactions-table account-details__transactions-table_short">
-            <div class="account-details__transactions-table__filters content-row">
-              <InstructionTypeFilter
-                v-if="shouldShowInstructions"
-                v-model="listState.kind"
-                :adaptive-options="ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS"
-              />
-              <TransactionStatusFilter v-model="listState.status" />
-            </div>
-
             <TransactionsTable
               v-if="!shouldShowInstructions"
-              :table="transactionsTable"
+              :filter-by="{ kind: 'authority', value: accountId }"
               hash-type="short"
               show-block
             />
             <InstructionsTable
               v-else
-              :table="instructionsTable"
-              :show-kind="shouldShowKind"
               hash-type="short"
+              :filter-by="{ kind: 'authority', value: accountId }"
             />
           </div>
         </template>
@@ -543,17 +477,6 @@ function resetFilters() {
         }
         & > .content-row {
           height: auto;
-        }
-      }
-
-      &__filters {
-        padding: size(2) size(4);
-        display: flex;
-        flex-direction: column;
-        gap: size(1);
-
-        @include sm {
-          flex-direction: row;
         }
       }
     }

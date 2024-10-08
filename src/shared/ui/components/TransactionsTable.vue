@@ -132,28 +132,6 @@ watch(listState, fetchTransactions, { immediate: true });
 @import '@/shared/ui/styles/main';
 
 .transactions-table {
-  &_short {
-    .content-row {
-      @include xxs {
-        width: 90vw;
-      }
-
-      @include lg {
-        width: 46vw;
-        height: 48px;
-      }
-      @include xl {
-        width: auto;
-      }
-
-      height: auto;
-      min-height: 0;
-    }
-    & > .content-row {
-      height: auto;
-    }
-  }
-
   &__row {
     width: 100%;
     display: grid;

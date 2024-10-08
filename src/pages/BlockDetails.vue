@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
@@ -12,8 +12,6 @@ import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-2
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
-import { TransactionStatusFilter } from '@/features/filter-transactions';
-import { useTable } from '@/shared/lib/table';
 
 const router = useRouter();
 
@@ -37,11 +35,6 @@ const isFetchingBlock = ref(false);
 const isNextBlockExists = ref(false);
 const isPreviousBlockExists = ref(false);
 
-const listState = reactive({
-  status: null,
-  block: computed(() => block.value?.height),
-});
-
 watch(
   () => blockHeightOrHash.value,
   async () => {
@@ -49,7 +42,6 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-      // listState.block = block.value.height;
       const { blocks } = await http.fetchPeerStatus();
 
       isNextBlockExists.value = block.value.height < blocks;
@@ -75,21 +67,11 @@ function handleNextBlockClick() {
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
 
-const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
-
-async function fetchTransactions() {
-  try {
-    await transactionsTable.fetch(listState);
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
-
-watch(listState, fetchTransactions);
-
 const TRANSACTIONS_HASH_BREAKPOINT = 1350;
 
-const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full'));
+const hashType = computed(() => {
+  return width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full';
+});
 </script>
 
 <template>
@@ -161,24 +143,14 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
         </div>
       </template>
     </BaseContentBlock>
-    <BaseContentBlock
-      :title="$t('blocks.blockTransactions')"
-      class="block-details__transactions"
-    >
+    <BaseContentBlock :title="$t('blocks.blockTransactions')">
       <template #default>
-        <div class="block-details__transactions-table">
-          <div class="block-details__transactions-table__filters content-row">
-            <TransactionStatusFilter v-model="listState.status" />
-          </div>
-
-          <TransactionsTable
-            v-if="block"
-            show-authority
-            :table="transactionsTable"
-            :filter-by="{ kind: 'block', block: block.height }"
-            :hash-type="hashType"
-          />
-        </div>
+        <TransactionsTable
+          v-if="block"
+          show-authority
+          :filter-by="{ kind: 'block', value: block.height }"
+          :hash-type="hashType"
+        />
       </template>
     </BaseContentBlock>
   </div>
@@ -244,21 +216,6 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
 
       .base-link {
         @include tpg-s3;
-      }
-    }
-  }
-
-  &__transactions {
-    &-table {
-      &__filters {
-        padding: size(2) size(4);
-        display: flex;
-        flex-direction: column;
-        gap: size(1);
-
-        @include sm {
-          flex-direction: row;
-        }
       }
     }
   }
