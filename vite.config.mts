@@ -6,6 +6,9 @@ import svg from 'vite-svg-loader';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define:{
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false
+  },
   server: {
     proxy: {
       '/api/v1': 'http://127.0.0.1:4000',
