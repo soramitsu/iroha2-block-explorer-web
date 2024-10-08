@@ -48,7 +48,7 @@ const instructionsTable = useTable(http.fetchInstructions);
 
 const listState = reactive({
   kind: 'All' as ftm.TabInstructions,
-  transaction_hash: transactionHash.value,
+  transaction_hash: computed(() => transactionHash.value),
 });
 
 watch(
@@ -57,7 +57,7 @@ watch(
     try {
       isFetchingTransaction.value = true;
 
-      listState.transaction_hash = transactionHash.value;
+      // listState.transaction_hash = transactionHash.value;
       const res = await Promise.all([http.fetchTransaction(transactionHash.value)]);
       transaction.value = res[0];
     } catch (e) {

@@ -42,7 +42,7 @@ onMounted(async () => {
     isFetchingAccount.value = true;
     account.value = await http.fetchAccount(accountId.value);
 
-    listState.authority = accountId.value.toString();
+    // listState.authority = accountId.value.toString();
 
     if (account.value) {
       const ownedEntities = [];
@@ -73,7 +73,7 @@ const instructionsTable = useTable(http.fetchInstructions);
 
 const listState = reactive({
   status: null,
-  authority: accountId.value.toString(),
+  authority: computed(() => accountId.value.toString()),
   kind: 'All' as ftm.TabInstructions,
 });
 

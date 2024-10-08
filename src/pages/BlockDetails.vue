@@ -39,7 +39,7 @@ const isPreviousBlockExists = ref(false);
 
 const listState = reactive({
   status: null,
-  block: block.value?.height,
+  block: computed(() => block.value?.height),
 });
 
 watch(
@@ -49,7 +49,7 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-      listState.block = block.value.height;
+      // listState.block = block.value.height;
       const { blocks } = await http.fetchPeerStatus();
 
       isNextBlockExists.value = block.value.height < blocks;
