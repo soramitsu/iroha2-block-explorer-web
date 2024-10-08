@@ -18,7 +18,7 @@ const props = withDefaults(
     showBlock?: boolean
     showAuthority?: boolean
     hashType: 'short' | 'full'
-    filterBy: { kind: 'authority', value: AccountId } | { kind: 'block', value: number } | null
+    filterBy?: { kind: 'authority', value: AccountId } | { kind: 'block', value: number } | null
   }>(),
   { showBlock: false, showAuthority: false, filterBy: null }
 );
