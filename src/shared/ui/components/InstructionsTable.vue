@@ -4,17 +4,31 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import type { Instruction } from '@/shared/api/schemas';
-import type { useTable } from '@/shared/lib/table';
+import type { AccountId, Instruction } from '@/shared/api/schemas';
 import { useI18n } from 'vue-i18n';
+import {
+  type filterTransactionsModel as ftm,
+  InstructionTypeFilter,
+  TransactionStatusFilter,
+} from '@/features/filter-transactions';
+import {
+  ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS,
+  INSTRUCTIONS_ADAPTIVE_OPTIONS,
+} from '@/features/filter-transactions/adaptive-options';
+import { computed, reactive, watch } from 'vue';
+import * as http from '@/shared/api';
+import { objectOmit } from '@vueuse/shared';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { useTable } from '@/shared/lib/table';
 
 const { t } = useI18n();
 const props = defineProps<{
-  table: ReturnType<typeof useTable<Instruction>>
   showValue?: boolean
-  showKind?: boolean
   hashType: 'short' | 'full'
+  filterBy: { kind: 'authority', value: AccountId } | { kind: 'transaction', value: string }
 }>();
+
+const { handleUnknownError } = useErrorHandlers();
 
 function isBase64EncodedWasm(item: Instruction) {
   return item.kind === 'Upgrade';
@@ -31,6 +45,37 @@ function getInstructionPayloadEntity(item: Instruction) {
 
   return Object.entries(item.payload)[0][0];
 }
+
+const instructionsTable = useTable(http.fetchInstructions);
+
+async function fetchInstructions() {
+  try {
+    if (isOnAccountPage.value) {
+      await instructionsTable.fetch({
+        ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []),
+        transaction_status: listState.status,
+      });
+    } else
+      await instructionsTable.fetch({
+        ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []),
+      });
+  } catch (e) {
+    handleUnknownError(e);
+  }
+}
+
+const isOnAccountPage = computed(() => props.filterBy.kind === 'authority');
+
+const listState = reactive({
+  status: null,
+  authority: computed(() => props.filterBy.kind === 'authority' && props.filterBy.value.toString()),
+  transaction_hash: computed(() => props.filterBy.kind === 'transaction' && props.filterBy.value),
+  kind: 'All' as ftm.TabInstructions,
+});
+
+const shouldShowKind = computed(() => listState.kind === 'All');
+
+watch(listState, fetchInstructions, { immediate: true });
 </script>
 
 <template>
@@ -38,16 +83,27 @@ function getInstructionPayloadEntity(item: Instruction) {
     class="instructions-table"
     :class="{ 'instructions-table_short': !props.showValue }"
   >
+    <div class="instructions-table__filters content-row">
+      <InstructionTypeFilter
+        v-model="listState.kind"
+        :adaptive-options="isOnAccountPage ? ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS : INSTRUCTIONS_ADAPTIVE_OPTIONS"
+      />
+      <TransactionStatusFilter
+        v-if="isOnAccountPage"
+        v-model="listState.status"
+      />
+    </div>
+
     <BaseTable
-      :loading="props.table.loading.value"
-      :pagination="props.table.pagination"
-      :items="props.table.items.value"
+      :loading="instructionsTable.loading.value"
+      :pagination="instructionsTable.pagination"
+      :items="instructionsTable.items.value"
       container-class="instructions-table__container"
       :pagination-breakpoint="1441"
-      @next-page="props.table.nextPage()"
-      @prev-page="props.table.prevPage()"
-      @set-page="props.table.setPage($event)"
-      @set-size="props.table.setSize($event)"
+      @next-page="instructionsTable.nextPage()"
+      @prev-page="instructionsTable.prevPage()"
+      @set-page="instructionsTable.setPage($event)"
+      @set-size="instructionsTable.setSize($event)"
     >
       <template #row="{ item }">
         <div class="instructions-table__row">
@@ -76,7 +132,7 @@ function getInstructionPayloadEntity(item: Instruction) {
 
           <div class="instructions-table__columns">
             <div
-              v-if="props.showKind"
+              v-if="shouldShowKind"
               class="instructions-table__column"
             >
               <div class="instructions-table__label">
@@ -144,7 +200,9 @@ function getInstructionPayloadEntity(item: Instruction) {
       min-height: 0;
     }
     & > .content-row {
-      height: auto;
+      @include lg {
+        height: size(6) !important;
+      }
     }
 
     .instructions-table__columns {
@@ -191,6 +249,17 @@ function getInstructionPayloadEntity(item: Instruction) {
 
       height: auto;
       min-height: 0;
+    }
+  }
+
+  &__filters {
+    padding: size(2) size(4);
+    display: flex;
+    flex-direction: column;
+    gap: size(1);
+
+    @include sm {
+      flex-direction: row;
     }
   }
 
@@ -268,7 +337,7 @@ function getInstructionPayloadEntity(item: Instruction) {
       }
 
       @include xl {
-        width: 85vw;
+        width: 75vw;
       }
     }
   }
