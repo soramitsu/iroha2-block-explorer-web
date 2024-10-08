@@ -1,4 +1,4 @@
-export const accountInstructionsAdaptiveOptions = {
+export const ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS = {
   XXL: 4,
   XL: 3,
   LG: 2,
@@ -8,7 +8,7 @@ export const accountInstructionsAdaptiveOptions = {
   XXS: 2,
 } as const;
 
-export const instructionsAdaptiveOptions = {
+export const INSTRUCTIONS_ADAPTIVE_OPTIONS = {
   XXL: 15,
   XL: 15,
   LG: 12,

@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 function isBase64EncodedWasm(item: Instruction) {
-  return item.kind === 'Upgrade' && typeof item.payload === 'string';
+  return item.kind === 'Upgrade';
 }
 
 function getInstructionPayloadValue(item: Instruction) {

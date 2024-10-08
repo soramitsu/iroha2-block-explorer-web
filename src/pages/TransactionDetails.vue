@@ -14,7 +14,7 @@ import { formatUTC } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
 import { useTable } from '@/shared/lib/table';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import { instructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { INSTRUCTIONS_ADAPTIVE_OPTIONS } from '@/features/filter-transactions/adaptive-options';
 import { type filterTransactionsModel as ftm, InstructionTypeFilter } from '@/features/filter-transactions';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import { objectOmit } from '@vueuse/shared';
@@ -180,7 +180,7 @@ watch(listState, fetchInstructions, { immediate: true });
           <div class="transaction-details__transactions-filters content-row">
             <InstructionTypeFilter
               v-model="listState.kind"
-              :adaptive-options="instructionsAdaptiveOptions"
+              :adaptive-options="INSTRUCTIONS_ADAPTIVE_OPTIONS"
             />
           </div>
           <InstructionsTable

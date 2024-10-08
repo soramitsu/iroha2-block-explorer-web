@@ -14,7 +14,7 @@ import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import type { TabAccountTransactions } from '@/features/filter-transactions/model';
 import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter-transactions/model';
-import { accountInstructionsAdaptiveOptions } from '@/features/filter-transactions/adaptive-options';
+import { ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS } from '@/features/filter-transactions/adaptive-options';
 import {
   type filterTransactionsModel as ftm,
   InstructionTypeFilter,
@@ -328,7 +328,7 @@ function resetFilters() {
               <InstructionTypeFilter
                 v-if="shouldShowInstructions"
                 v-model="listState.kind"
-                :adaptive-options="accountInstructionsAdaptiveOptions"
+                :adaptive-options="ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS"
               />
               <TransactionStatusFilter v-model="listState.status" />
             </div>
@@ -336,7 +336,6 @@ function resetFilters() {
             <TransactionsTable
               v-if="!shouldShowInstructions"
               :table="transactionsTable"
-              :filter-by="{ kind: 'authority', id: accountId }"
               hash-type="short"
               show-block
             />
