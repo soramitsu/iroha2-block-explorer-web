@@ -69,9 +69,7 @@ function handleNextBlockClick() {
 
 const TRANSACTIONS_HASH_BREAKPOINT = 1350;
 
-const hashType = computed(() => {
-  return width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full';
-});
+const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full'));
 </script>
 
 <template>
