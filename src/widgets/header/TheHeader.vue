@@ -113,18 +113,14 @@ import { SearchField } from '@/features/search';
     position: absolute;
     top: calc(50% + 20px + size(1));
     z-index: 10;
-    right: size(2);
+    right: size(1);
 
     @include xs {
-      right: size(3);
+      right: size(2);
     }
 
     @include md {
-      right: size(4);
-    }
-
-    @include xl {
-      right: size(1);
+      right: size(3);
     }
   }
 }

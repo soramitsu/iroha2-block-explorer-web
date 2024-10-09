@@ -4,12 +4,12 @@
       <ThemeSwitcher />
       <LangDropdown />
       <MobileMenu />
-
-      <div
-        :id="PORTAL_ID"
-        class="home-page__dropdown"
-      />
     </div>
+
+    <div
+      :id="PORTAL_ID"
+      class="home-page__dropdown"
+    />
 
     <BackgroundLogo class="home-page__background-logo" />
     <LogoIcon class="home-page__logo-icon" />
@@ -54,9 +54,23 @@ import { HomePageInfo } from '@/widgets/home-page-info';
 
   &__dropdown {
     position: absolute;
-    top: calc(50% + 20px + size(1));
     z-index: 10;
-    right: 0;
+    right: size(1);
+    top: calc(3% + 20px + size(1));
+
+    @include xs {
+      top: calc(4% + 20px + size(1));
+      right: size(2);
+    }
+
+    @include md {
+      right: size(3);
+    }
+
+    @include lg {
+      top: calc(5% + 20px + size(1));
+      right: size(4);
+    }
   }
 
   &__buttons {

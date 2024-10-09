@@ -241,6 +241,7 @@ const pageSizeModel = computed({
   }
 
   &__pagination {
+    z-index: 0;
     padding: size(2) size(2) 0 size(2);
     display: grid;
     grid-template-columns: auto;
