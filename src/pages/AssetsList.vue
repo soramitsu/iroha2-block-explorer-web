@@ -17,33 +17,33 @@
         <div class="assets-list-page__row">
           <span class="h-sm cell">{{ $t('name') }}</span>
           <span class="h-sm cell">{{ $t('domain') }}</span>
-          <span class="h-sm cell">{{ $t('total') }}</span>
+          <span class="h-sm cell">{{ $t('mintable') }}</span>
+          <span class="h-sm cell">{{ $t('type') }}</span>
         </div>
       </template>
 
       <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
-            :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`"
+            :to="`/assets/${encodeURIComponent(item.id.toString())}`"
             class="cell"
           >
-            {{ item.id.definition.name }}
+            {{ item.id.name }}
           </BaseLink>
 
           <BaseLink
-            :to="`/domains/${item.id.definition.domain}`"
+            :to="`/domains/${item.id.domain}`"
             class="cell"
           >
-            {{ item.id.definition.domain }}
+            {{ item.id.domain }}
           </BaseLink>
 
           <div class="cell row-text">
-            <template v-if="item.value.kind === 'Store'">
-              🔑: {{ Object.keys(item.value.metadata).length }}
-            </template>
-            <template v-else>
-              {{ item.value.value }}
-            </template>
+            {{ item.mintable }}
+          </div>
+
+          <div class="cell row-text">
+            {{ item.type }}
           </div>
         </div>
       </template>
@@ -53,27 +53,27 @@
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
-              {{ item.id.definition.name }}
+            <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
+              {{ item.id.name }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('domain') }}</span>
 
-            <BaseLink :to="`/domains/${item.id.definition.domain}`">
-              {{ item.id.definition.domain }}
+            <BaseLink :to="`/domains/${item.id.domain}`">
+              {{ item.id.domain }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
-            <span class="h-sm assets-list-page__mobile-label">{{ $t('total') }}</span>
-            <template v-if="item.value.kind === 'Store'">
-              <span class="row-text">🔑: {{ Object.keys(item.value.metadata).length }}</span>
-            </template>
-            <template v-else>
-              <span class="row-text">{{ item.value.value }}</span>
-            </template>
+            <span class="h-sm assets-list-page__mobile-label">{{ $t('mintable') }}</span>
+            <span class="row-text">{{ item.mintable }}</span>
+          </div>
+
+          <div class="assets-list-page__mobile-row">
+            <span class="h-sm assets-list-page__mobile-label">{{ $t('type') }}</span>
+            <span class="row-text">{{ item.type }}</span>
           </div>
         </div>
       </template>
@@ -90,7 +90,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { onMounted } from 'vue';
 
-const table = useTable(http.fetchAssets);
+const table = useTable(http.fetchAssetDefinitions);
 const { handleUnknownError } = useErrorHandlers();
 
 onMounted(async () => {
@@ -109,7 +109,7 @@ onMounted(async () => {
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     justify-content: start;
   }
 

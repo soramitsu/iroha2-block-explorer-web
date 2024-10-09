@@ -9,8 +9,15 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import type { AssetDefinition } from '@/shared/api/schemas';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
+import { useWindowSize } from '@vueuse/core';
 
 const router = useRouter();
+
+const HASH_BREAKPOINT = 1000;
+
+const { width } = useWindowSize();
+
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
 const { handleUnknownError } = useErrorHandlers();
 
@@ -76,6 +83,15 @@ onMounted(async () => {
             <DataField
               :title="$t('metadata')"
               :value="parseMetadata(asset.metadata)"
+            />
+          </div>
+          <div class="asset-details__metrics-data">
+            <DataField
+              :title="$t('assets.ownedBy')"
+              :hash="asset.owned_by.toString()"
+              copy
+              :link="`/accounts/${asset.owned_by}`"
+              :type="hashType"
             />
           </div>
         </div>

@@ -14,7 +14,7 @@ const routes = [
   {
     path: '/blocks/:heightOrHash',
     name: 'blocks-details',
-    component: () => import('@/pages/BlockDetailsPage.vue'),
+    component: () => import('@/pages/BlockDetails.vue'),
   },
 
   {
@@ -25,7 +25,7 @@ const routes = [
   {
     path: '/assets/:id',
     name: 'asset-details',
-    component: () => import('@/pages/AssetDetailsPage.vue'),
+    component: () => import('@/pages/AssetDetails.vue'),
   },
   {
     path: '/accounts',
@@ -35,7 +35,7 @@ const routes = [
   {
     path: '/accounts/:id',
     name: 'account-details',
-    component: () => import('@/pages/AccountDetailsPage.vue'),
+    component: () => import('@/pages/AccountDetails.vue'),
   },
   {
     path: '/domains',
@@ -45,7 +45,7 @@ const routes = [
   {
     path: '/domains/:id',
     name: 'domain-details',
-    component: () => import('@/pages/DomainDetailsPage.vue'),
+    component: () => import('@/pages/DomainDetails.vue'),
   },
   {
     path: '/transactions',
@@ -55,7 +55,7 @@ const routes = [
   {
     path: '/transactions/:hash',
     name: 'transaction-details',
-    component: () => import('@/pages/TransactionDetailsPage.vue'),
+    component: () => import('@/pages/TransactionDetails.vue'),
   },
   {
     path: '/:pathMatch(.*)*',

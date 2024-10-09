@@ -1,9 +1,19 @@
-export const adaptiveTransactionTypeOptions = {
-  XXL: 6,
-  XL: 5,
-  LG: 3,
-  MD: 6,
-  SM: 3,
-  XS: 5,
+export const ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS = {
+  XXL: 4,
+  XL: 3,
+  LG: 2,
+  MD: 5,
+  SM: 2,
+  XS: 3,
+  XXS: 2,
+} as const;
+
+export const INSTRUCTIONS_ADAPTIVE_OPTIONS = {
+  XXL: 15,
+  XL: 15,
+  LG: 12,
+  MD: 10,
+  SM: 5,
+  XS: 3,
   XXS: 2,
 } as const;

@@ -3,29 +3,23 @@ import { useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import { type filterTransactionsModel as ftm, TransactionStatusFilter } from '@/features/filter-transactions';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { defaultFormat } from '@/shared/lib/time';
-import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
-import { useTable } from '@/shared/lib/table';
+import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 
 const router = useRouter();
 
 const { handleUnknownError } = useErrorHandlers();
 
-const TRANSACTION_HASH_BREAKPOINT = 1200;
 const METRICS_HASH_BREAKPOINT = 1440;
 const { width } = useWindowSize();
 
-const transactionHashType = computed(() => (width.value < TRANSACTION_HASH_BREAKPOINT ? 'short' : 'full'));
 const metricsHashType = computed(() => (width.value < METRICS_HASH_BREAKPOINT ? 'medium' : 'full'));
 
 const blockHeightOrHash = computed(() => {
@@ -48,10 +42,7 @@ watch(
       isFetchingBlock.value = true;
       block.value = await http.fetchBlock(blockHeightOrHash.value);
 
-      const [, { blocks }] = await Promise.all([
-        transactionsTable.fetch({ block_hash: block.value.hash }),
-        http.fetchPeerStatus(),
-      ]);
+      const { blocks } = await http.fetchPeerStatus();
 
       isNextBlockExists.value = block.value.height < blocks;
       isPreviousBlockExists.value = block.value.height > 1;
@@ -76,9 +67,9 @@ function handleNextBlockClick() {
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
 
-const transactionStatus = ref<ftm.Status>(null);
+const TRANSACTIONS_HASH_BREAKPOINT = 1350;
 
-const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
+const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full'));
 </script>
 
 <template>
@@ -133,63 +124,32 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
                 :value="defaultFormat(block.created_at)"
                 copy
               />
+
+              <DataField
+                :title="$t('blocks.totalTransactions')"
+                :value="block.transactions_total"
+                copy
+              />
+
+              <DataField
+                :title="$t('blocks.rejectedTransactions')"
+                :value="block.transactions_rejected"
+                copy
+              />
             </div>
           </div>
         </div>
       </template>
     </BaseContentBlock>
-    <BaseContentBlock
-      :title="$t('blocks.blockTransactions')"
-      class="block-details__transactions"
-    >
-      <div class="block-details__transactions-filters content-row">
-        <TransactionStatusFilter
-          v-model="transactionStatus"
-          class="block-details__transactions-filters-status"
+    <BaseContentBlock :title="$t('blocks.blockTransactions')">
+      <template #default>
+        <TransactionsTable
+          v-if="block"
+          show-authority
+          :filter-by="{ kind: 'block', value: block.height }"
+          :hash-type="hashType"
         />
-      </div>
-
-      <BaseTable
-        v-if="block"
-        :loading="isFetchingBlock || transactionsTable.loading.value"
-        :items="transactionsTable.items.value"
-        container-class="block-details__transactions-container"
-        reversed
-        :pagination="transactionsTable.pagination"
-        @next-page="transactionsTable.nextPage()"
-        @prev-page="transactionsTable.prevPage()"
-        @set-page="transactionsTable.setPage($event)"
-        @set-size="transactionsTable.setSize($event)"
-      >
-        <template #row="{ item }">
-          <div class="block-details__transactions-row">
-            <TransactionStatus
-              type="tooltip"
-              class="block-details__transactions-row-icon"
-              :committed="item.status === 'Committed'"
-            />
-
-            <div class="block-details__transactions-row-column">
-              <div class="block-details__transactions-row-column-label row-text">
-                {{ $t('transactions.transactionID') }}
-              </div>
-
-              <BaseHash
-                :hash="item.hash"
-                :type="transactionHashType"
-                :link="`/transactions/${item.hash}`"
-                copy
-              />
-            </div>
-
-            <span class="block-details__transactions-row-column">
-              <span class="block-details__transactions-row-column-time row-text">{{
-                defaultFormat(item.created_at)
-              }}</span>
-            </span>
-          </div>
-        </template>
-      </BaseTable>
+      </template>
     </BaseContentBlock>
   </div>
 </template>
@@ -244,15 +204,8 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
     }
 
     &-data {
-      display: grid;
       margin-top: size(2);
       padding: 0 size(2) 0 size(4);
-      gap: size(2);
-      grid-template-columns: 1fr;
-
-      @include md {
-        grid-template-columns: 1fr 1fr;
-      }
 
       &-row {
         display: grid;
@@ -261,68 +214,6 @@ const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
 
       .base-link {
         @include tpg-s3;
-      }
-    }
-  }
-
-  &__transactions {
-    &-filters {
-      border-top: 0;
-      display: flex;
-      padding: size(2) size(4);
-    }
-
-    &-container {
-      display: grid;
-
-      .content-row {
-        padding: 0 size(4);
-        height: 48px;
-        min-height: 0;
-
-        &:last-child {
-          border-bottom: 1px solid theme-color('border-primary');
-        }
-      }
-    }
-
-    &-row {
-      width: 100%;
-      height: 32px;
-      display: grid;
-      grid-gap: size(2);
-      grid-template-columns: 32px 2fr 1fr;
-
-      @include xxs {
-        grid-template-columns: 1fr 1fr;
-        margin: size(2) 0;
-        padding: 0;
-      }
-
-      @include xs {
-        grid-template-columns: 32px 1fr 1fr;
-      }
-
-      @include lg {
-        grid-template-columns: 32px 2fr 1fr;
-      }
-
-      &-column {
-        display: flex;
-        justify-content: left;
-        align-items: center;
-
-        & > div {
-          margin-right: 3vw;
-        }
-      }
-
-      &-icon {
-        display: none;
-
-        @include xs {
-          display: grid;
-        }
       }
     }
   }

@@ -20,7 +20,7 @@
     </div>
 
     <div
-      v-if="adaptiveOptions && adaptiveIndexEnd !== props.items.length"
+      v-if="adaptiveOptions && adaptiveIndexEnd < props.items.length"
       class="base-tabs__arrow"
       data-testid="next"
       @click="handleArrowNextClick"
@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { useVModel, useWindowSize } from '@vueuse/core';
-import { computed, ref, watchSyncEffect } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { AdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import { applyAdaptiveOptions } from '@/shared/ui/utils/adaptive-options';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
@@ -64,30 +64,25 @@ const adaptiveOptions = computed(() => {
 });
 
 function handleArrowNextClick() {
-  let diff;
-
-  if (adaptiveIndexEnd.value === 2) {
-    diff = 2;
-  } else diff = props.items.length - adaptiveIndexEnd.value;
-
-  adaptiveIndexStart.value += diff;
-  adaptiveIndexEnd.value += diff;
+  adaptiveIndexStart.value += diff.value;
+  adaptiveIndexEnd.value += diff.value;
 }
 
 function handleArrowPrevClick() {
-  let diff;
-
-  if (adaptiveIndexStart.value === 4) {
-    diff = 2;
-  } else diff = adaptiveIndexStart.value;
-
-  adaptiveIndexStart.value -= diff;
-  adaptiveIndexEnd.value -= diff;
+  adaptiveIndexStart.value -= diff.value;
+  adaptiveIndexEnd.value -= diff.value;
 }
 
-watchSyncEffect(() => {
-  adaptiveIndexEnd.value = applyAdaptiveOptions(width.value, props.adaptiveOptions ?? props.items.length);
-});
+const diff = ref(0);
+
+watch(
+  width,
+  () => {
+    diff.value = applyAdaptiveOptions(width.value, props.adaptiveOptions ?? props.items.length);
+    adaptiveIndexEnd.value += diff.value;
+  },
+  { immediate: true }
+);
 
 const model = useVModel(props, 'modelValue', emit);
 </script>

@@ -12,8 +12,8 @@ import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatus } from '@/entities/transaction';
 import { formatUTC } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
-import { useTable } from '@/shared/lib/table';
 import { parseMetadata } from '@/shared/ui/utils/json';
+import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 
 const router = useRouter();
 
@@ -22,10 +22,12 @@ const { handleUnknownError } = useErrorHandlers();
 const HASH_BREAKPOINT = 1100;
 const TRANSACTION_HASH_BREAKPOINT = 1200;
 const SIGNATURE_HASH_BREAKPOINT = 1400;
+const INSTRUCTION_HASH_BREAKPOINT = 1440;
 const { width } = useWindowSize();
 
 const transactionHashType = computed(() => (width.value < TRANSACTION_HASH_BREAKPOINT ? 'medium' : 'full'));
 const signatureHashType = computed(() => (width.value < SIGNATURE_HASH_BREAKPOINT ? 'medium' : 'full'));
+const instructionHashType = computed(() => (width.value < INSTRUCTION_HASH_BREAKPOINT ? 'short' : 'full'));
 const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
 const transactionHash = computed(() => {
@@ -38,15 +40,14 @@ const transactionHash = computed(() => {
 
 const transaction = ref<DetailedTransaction | null>(null);
 const isFetchingTransaction = ref(false);
-const instructionsTable = useTable(() => http.fetchInstructions(transactionHash.value));
 
 watch(
   () => transactionHash.value,
   async () => {
     try {
       isFetchingTransaction.value = true;
-      const res = await Promise.all([http.fetchTransaction(transactionHash.value), instructionsTable.fetch()]);
-      transaction.value = res[0];
+
+      transaction.value = await http.fetchTransaction(transactionHash.value);
     } catch (e) {
       handleUnknownError(e);
     } finally {
@@ -141,31 +142,22 @@ watch(
       </template>
     </BaseContentBlock>
     <BaseContentBlock
-      v-if="transaction"
       class="transaction-details__transactions"
+      :title="transaction?.executable === 'Wasm' ? $t('transactions.smartContract') : $t('transactions.instructions')"
     >
       <template #default>
-        <BaseLoading
-          v-if="instructionsTable.loading.value"
-          class="transaction-details__transactions_loading"
-        />
-        <div v-else-if="transaction.executable === 'Instructions'">
-          <BaseContentBlock
-            v-for="(item, i) in instructionsTable.items.value"
-            :key="i"
-            class="transaction-details__transactions-block"
-            :title="item.kind"
-          >
-            <template #default>
-              <span class="transaction-details__transactions-block-data row-text">{{ item.payload }}</span>
-            </template>
-          </BaseContentBlock>
-        </div>
         <div
-          v-else
+          v-if="transaction && transaction.executable === 'Wasm'"
           class="transaction-details__transactions-wasm"
         >
-          <span class="row-text">{{ $t('transactions.transactionDoesntContainInstructions') }}</span>
+          <span class="row-text">{{ $t('transactions.transactionContainsWasm') }}</span>
+        </div>
+        <div v-else>
+          <InstructionsTable
+            show-value
+            :hash-type="instructionHashType"
+            :filter-by="{ kind: 'transaction', value: transactionHash }"
+          />
         </div>
       </template>
     </BaseContentBlock>
@@ -238,38 +230,12 @@ watch(
   }
 
   &__transactions {
-    &_loading {
-      margin-top: size(1);
-      display: flex;
-      justify-content: center;
-    }
-
-    padding: size(4) size(2) 0;
-
     & > hr {
-      display: none;
-    }
-    & > .base-content-block__header {
       display: none;
     }
 
     &-wasm {
-      padding: 0 size(2);
-    }
-
-    &-block {
-      box-shadow: theme-shadow('block-2'), theme-shadow('block-3');
-
-      .base-content-block__body {
-        padding: size(2) size(4);
-      }
-      &:not(:first-child) {
-        margin-top: size(2);
-      }
-
-      &-data {
-        word-break: break-all;
-      }
+      padding: 0 size(4);
     }
   }
 }

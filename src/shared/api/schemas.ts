@@ -31,6 +31,8 @@ const PaginationParams = z
 export type PaginationParams = z.infer<typeof PaginationParams>;
 
 const Metadata = z.record(z.string(), z.any());
+const TransactionStatus = z.enum(['Committed', 'Rejected']);
+export type TransactionStatus = z.infer<typeof TransactionStatus>;
 
 const Duration = z.object({
   ms: z.number().min(0),
@@ -202,6 +204,10 @@ export const AssetDefinition = z.object({
 
 export type AssetDefinition = z.infer<typeof AssetDefinition>;
 
+export interface DomainSearchParams extends PaginationParams {
+  owned_by?: AccountId
+}
+
 export const Domain = z.object({
   id: DomainId,
   logo: z.string().nullable(),
@@ -224,16 +230,10 @@ export const Transaction = z.object({
   block: z.number(),
   created_at: Timestamp,
   executable: z.enum(['Instructions', 'Wasm']),
-  status: z.enum(['Committed', 'Rejected']),
+  status: TransactionStatus,
 });
 
-export const DetailedTransaction = z.object({
-  authority: z.string(),
-  hash: z.string(),
-  block: z.number(),
-  created_at: Timestamp,
-  executable: z.enum(['Instructions', 'Wasm']),
-  status: z.enum(['Committed', 'Rejected']),
+export const DetailedTransaction = Transaction.extend({
   rejection_reason: z.record(z.string(), z.any()).nullable(),
   metadata: Metadata,
   nonce: z.number().nullable(),
@@ -269,27 +269,40 @@ export const PeerStatus = z.object({
 
 export type PeerStatus = z.infer<typeof PeerStatus>;
 
+export interface InstructionsSearchParams extends PaginationParams {
+  authority?: string
+  kind?: string
+  transaction_hash?: string
+  transaction_status?: TransactionStatus
+  block?: number
+}
+
+const InstructionKind = z.enum([
+  'Register',
+  'Unregister',
+  'Mint',
+  'Burn',
+  'Transfer',
+  'SetKeyValue',
+  'RemoveKeyValue',
+  'Grant',
+  'Revoke',
+  'ExecuteTrigger',
+  'SetParameter',
+  'Upgrade',
+  'Log',
+  'Custom',
+]);
+export type InstructionKind = z.infer<typeof InstructionKind>;
+
 export const Instruction = z.object({
   authority: z.string(),
   created_at: z.string().transform((x) => new Date(x)),
-  kind: z.enum([
-    'Register',
-    'Unregister',
-    'Mint',
-    'Burn',
-    'Transfer',
-    'SetKeyValue',
-    'RemoveKeyValue',
-    'Grant',
-    'Revoke',
-    'ExecuteTrigger',
-    'SetParameter',
-    'Upgrade',
-    'Log',
-    'Custom',
-  ]),
+  kind: InstructionKind,
   // TODO: add payload schemas for every kind
-  payload: z.record(z.string(), z.any()),
+  payload: z.union([z.record(z.string(), z.any()), z.string()]),
   transaction_hash: z.string(),
+  transaction_status: TransactionStatus,
+  block: z.number(),
 });
 export type Instruction = z.infer<typeof Instruction>;

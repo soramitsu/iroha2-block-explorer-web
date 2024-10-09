@@ -9,9 +9,13 @@
   "rowsPerPage": "Rows per page",
   "address": "Address",
   "cryptos": "Cryptos",
+  "id": "ID",
   "name": "Name",
   "type": "Type",
+  "kind": "Kind",
+  "payload": "Payload",
   "value": "Value",
+  "entity": "Entity",
   "mintable": "Mintable",
   "nfts": "NFTs",
   "metadata": "Metadata",
@@ -42,12 +46,9 @@
     "sec": "{0} sec",
     "ago": "ago"
   },
-  "sort": {
-    "mostRecent": "Most Recent",
-    "mostValue": "Most Value"
-  },
   "transactions": {
     "transactions": "Transactions",
+    "instructions": "Instructions",
     "transactionHash": "Transaction Hash",
     "transactionID": "TxID",
     "committed": "Committed",
@@ -61,6 +62,16 @@
     "grants": "Grants",
     "revokes": "Revokes",
     "transfer": "Transfer",
+    "register": "Register",
+    "unregister": "Unregister",
+    "setKeyValue": "SetKeyValue",
+    "removeKeyValue": "RemoveKeyValue",
+    "executeTrigger": "ExecuteTrigger",
+    "setParameter": "SetParameter",
+    "upgrade": "Upgrade",
+    "object": "Object",
+    "log": "Log",
+    "custom": "Custom",
     "block": "Block",
     "transactionDetails": "Transaction details",
     "timestamp": "Timestamp",
@@ -69,18 +80,24 @@
     "nonce": "Nonce",
     "metadata": "Metadata",
     "signature": "Signature",
-    "transactionDoesntContainInstructions": "Transaction doesn't contain any instructions."
+    "transactionContainsWasm": "This transaction contains WASM smart contract. We cannot display it here in a meaningful way at the moment.",
+    "authority": "Authority",
+    "executable": "Executable",
+    "smartContract": "Smart contract",
+    "displayingIsntSupported": "Displaying isn't supported"
   },
   "accounts": {
     "address": "Address",
     "accounts": "Accounts",
     "accountInformation": "Account information",
     "accountAssets": "Account assets",
+    "accountDomains": "Account domains",
     "accountTransactions": "Account transactions",
     "definitionId": "Definition ID",
     "accountId": "Account ID",
     "value": "Value",
     "accountDoesntHaveAnyAssets": "Account doesn't have any assets",
+    "accountDoesntHaveAnyDomains": "Account doesn't have any domains",
     "accountDoesntHaveAnyTransactions": "Account doesn't have any transactions",
     "ownedDomains": "Owned Domains",
     "ownedAssets": "Owned Assets"
@@ -88,7 +105,8 @@
   "assets": {
     "assets": "Assets",
     "assetMetrics": "Asset metrics",
-    "assetTransactions": "Asset transactions"
+    "assetTransactions": "Asset transactions",
+    "ownedBy": "Owned By"
   },
   "blocks": {
     "age": "Age",
@@ -99,7 +117,10 @@
     "block": "Block #{0}",
     "blockHash": "Block Hash",
     "blockTransactions": "Block Transactions",
-    "parentBlockHash": "Parent block hash"
+    "parentBlockHash": "Parent block hash",
+    "totalAndRejectedTransactions": "{0} ({1} rejected)",
+    "totalTransactions": "Total transactions",
+    "rejectedTransactions": "Rejected transactions"
   },
   "domains": {
     "domains": "Domains",
