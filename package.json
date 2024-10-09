@@ -33,7 +33,7 @@
     "@types/node": "^18.7.14",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
-    "@vitejs/plugin-vue": "^3.0.3",
+    "@vitejs/plugin-vue": "^5.0.0",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^8.53.0",
     "eslint-config-alloy": "^5.1.2",
@@ -49,6 +49,6 @@
     "vite-svg-loader": "^3.4.0",
     "vitest": "^2.0.4",
     "vue-eslint-parser": "^9.4.3",
-    "vue-tsc": "1.8.22"
+    "vue-tsc": "^1.8.27"
   }
 }
