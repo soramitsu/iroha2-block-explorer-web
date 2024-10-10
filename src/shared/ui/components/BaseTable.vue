@@ -1,10 +1,22 @@
 <template>
   <div class="base-table">
     <div
-      v-if="$slots.header && width >= props.breakpoint"
+      v-if="$slots.header && width >= props.breakpoint && !isEmpty"
       class="content-row"
     >
       <slot name="header" />
+    </div>
+    <div
+      v-else-if="props.loading"
+      class="content-row content-row_empty"
+    >
+      <BaseLoading />
+    </div>
+    <div
+      v-else-if="isEmpty"
+      class="content-row content-row_empty row-text"
+    >
+      {{ $t('noData') }}
     </div>
 
     <div :class="containerClass">
@@ -32,7 +44,10 @@
           />
         </div>
 
-        <BaseLoading v-else-if="i === Math.floor(items.length / 2)" />
+        <div
+          v-else
+          class="content-row content-row_empty"
+        />
       </template>
     </div>
 
@@ -115,12 +130,14 @@ const emit = defineEmits<Emits>();
 const { width } = useWindowSize();
 
 const items = computed(() => {
-  if (props.loading) {
-    return [null];
+  if (props.loading || !props.items.length) {
+    return Array.from({ length: props.pagination?.per_page ?? 10 }, () => null);
   }
 
   return props.items;
 });
+
+const isEmpty = computed(() => !items.value.some((i) => i));
 
 const segmentInfo = computed(() => {
   if (!props.pagination) return '';
