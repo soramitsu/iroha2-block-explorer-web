@@ -25,3 +25,9 @@ const hashType = computed(() => {
   return width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full';
 });
 </script>
+
+<style lang="scss">
+.transactions-list-page hr {
+  display: none;
+}
+</style>

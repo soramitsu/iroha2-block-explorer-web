@@ -363,10 +363,6 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
       &-list {
         display: grid;
 
-        .content-row:last-child {
-          border-bottom: 1px solid theme-color('border-primary');
-        }
-
         @include xxs {
           grid-template-columns: 1fr;
         }
@@ -394,7 +390,6 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
 
       &-mobile-list {
         &-row {
-          border-bottom: 1px solid theme-color('border-primary');
           padding: size(2) size(4);
           @include xxs {
             width: 100%;

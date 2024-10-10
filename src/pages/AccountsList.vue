@@ -120,5 +120,9 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full
     display: grid;
     grid-template-columns: 1fr;
   }
+
+  hr {
+    display: none;
+  }
 }
 </style>

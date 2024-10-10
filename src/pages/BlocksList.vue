@@ -151,5 +151,9 @@ onMounted(async () => {
       grid-template-columns: 1fr;
     }
   }
+
+  hr {
+    display: none;
+  }
 }
 </style>

@@ -144,5 +144,9 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full
       grid-template-columns: 1fr;
     }
   }
+
+  hr {
+    display: none;
+  }
 }
 </style>

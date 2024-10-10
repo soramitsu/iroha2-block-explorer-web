@@ -305,14 +305,6 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
         }
       }
 
-      .base-table__mobile-card:last-child {
-        border-bottom: 1px solid theme-color('border-primary');
-      }
-
-      .content-row:last-child {
-        border-bottom: 1px solid theme-color('border-primary');
-      }
-
       display: grid;
 
       @include xxs {
@@ -392,9 +384,6 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
 
     .content-row {
       padding: 0 size(4);
-      &:last-child {
-        border-bottom: 1px solid theme-color('border-primary');
-      }
     }
 
     &-row {
@@ -403,9 +392,6 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
 
     &-mobile-card {
       padding: size(2) size(4);
-      &:last-child {
-        border-bottom: 1px solid theme-color('border-primary');
-      }
     }
 
     &-mobile-row {
