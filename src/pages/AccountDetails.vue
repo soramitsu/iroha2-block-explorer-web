@@ -346,6 +346,10 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
         padding: size(0) size(4) size(4);
       }
 
+      .base-table > .content-row {
+        display: flex;
+      }
+
       .content-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -473,7 +477,6 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
           }
 
           height: auto;
-          min-height: 0;
         }
         & > .content-row {
           height: auto;

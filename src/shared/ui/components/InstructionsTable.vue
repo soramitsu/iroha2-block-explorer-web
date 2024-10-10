@@ -197,7 +197,6 @@ watch(listState, fetchInstructions, { immediate: true });
       }
 
       height: auto;
-      min-height: 0;
     }
     & > .content-row {
       @include lg {
@@ -248,7 +247,6 @@ watch(listState, fetchInstructions, { immediate: true });
       padding: 0 size(4);
 
       height: auto;
-      min-height: 0;
     }
   }
 
