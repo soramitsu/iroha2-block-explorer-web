@@ -150,6 +150,7 @@ watch(listState, fetchTransactions, { immediate: true });
       display: grid;
       grid-template-columns: 32px 0.8fr 1fr;
       grid-gap: size(2);
+      align-items: center;
     }
 
     @include lg {
