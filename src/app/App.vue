@@ -72,6 +72,10 @@ hr {
   @include md {
     padding: 0 size(2);
   }
+
+  &_empty {
+    justify-content: center;
+  }
 }
 
 .content-row--with-hover:hover {
