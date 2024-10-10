@@ -252,7 +252,6 @@ export const Block = z.object({
   transactions_hash: z.string(),
   transactions_rejected: z.number(),
   transactions_total: z.number(),
-  consensus_estimation: Duration,
 });
 
 export type Block = z.infer<typeof Block>;
