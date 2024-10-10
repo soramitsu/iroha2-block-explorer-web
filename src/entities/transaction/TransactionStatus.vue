@@ -17,19 +17,17 @@
       <span v-else>{{ $t('transactions.rejected') }}</span>
     </div>
 
-    <div
+    <Tooltip
       v-if="type === 'tooltip'"
-      class="transaction-status__tooltip"
-    >
-      <span v-if="committed">{{ $t('transactions.committedTransaction') }}</span>
-      <span v-else>{{ $t('transactions.rejectedTransaction') }}</span>
-    </div>
+      :message="committed ? $t('transactions.committedTransaction') : $t('transactions.rejectedTransaction')"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import SuccessIcon from '@/shared/ui/icons/success.svg';
 import ErrorIcon from '@/shared/ui/icons/error.svg';
+import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
 
 interface Props {
   committed: boolean
@@ -47,9 +45,14 @@ defineProps<Props>();
   display: flex;
   grid-gap: size(1);
   align-items: center;
+  height: size(4);
 
-  &:hover .transaction-status__tooltip {
+  &:hover .context-tooltip {
     display: flex;
+    left: 0;
+    bottom: size(-5);
+    padding: size(1.5) size(2);
+    align-items: center;
   }
 
   &__icon {
@@ -74,21 +77,6 @@ defineProps<Props>();
       background: theme-color('error-background');
       color: theme-color('error');
     }
-  }
-
-  &__tooltip {
-    display: none;
-    background-color: theme-color('content-primary');
-    color: theme-color('content-on-background-inverted');
-    position: absolute;
-    left: 0;
-    bottom: size(-5);
-    padding: size(1.5) size(2);
-    border-radius: size(0.5);
-    white-space: nowrap;
-    z-index: 1;
-
-    @include tpg-s4;
   }
 
   &__label {
