@@ -33,29 +33,32 @@ export function useTable<T>(fetchFn: TableFetchFn<T>, options?: { reversed?: boo
       additionalFetchingParams.value = params;
     }
 
-    const res = await fetchFn({
-      ...((!options?.reversed ||
-        (options?.reversed && !isFirstFetch.value && pagination.page !== pagination.total_pages)) && {
-        page: pagination.page,
-      }),
-      per_page: pagination.per_page,
-      ...additionalFetchingParams.value,
-    });
+    try {
+      const res = await fetchFn({
+        ...((!options?.reversed ||
+          (options?.reversed && !isFirstFetch.value && pagination.page !== pagination.total_pages)) && {
+          page: pagination.page,
+        }),
+        per_page: pagination.per_page,
+        ...additionalFetchingParams.value,
+      });
 
-    if (isFirstFetch.value) isLengthBiggerThanPerPage.value = res.items.length > res.pagination.per_page;
+      if (isFirstFetch.value) isLengthBiggerThanPerPage.value = res.items.length > res.pagination.per_page;
 
-    items.value = res.items;
-    pagination.page = res.pagination.page;
-    pagination.per_page = res.pagination.per_page;
-    pagination.total_items = res.pagination.total_items;
-    pagination.total_pages = res.pagination.total_pages;
+      items.value = res.items;
+      pagination.page = res.pagination.page;
+      pagination.per_page = res.pagination.per_page;
+      pagination.total_items = res.pagination.total_items;
+      pagination.total_pages = res.pagination.total_pages;
+    } finally {
+      loading.value = false;
+    }
 
     if (options?.reversed && isLengthBiggerThanPerPage.value) {
       pagination.total_pages--;
       pagination.page--;
     }
 
-    loading.value = false;
     isFirstFetch.value = false;
   }
 
