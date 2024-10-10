@@ -1,23 +1,22 @@
 import { format } from 'date-fns/format';
+import { useI18n } from 'vue-i18n';
 
-function getAllElapsedMinutes(dateString: string | Date) {
+export function getTimeAgo(now: number, dateString: string | Date) {
+  const { t } = useI18n();
+
   const date = new Date(dateString);
-  const diff = Date.now() - date.getTime();
+  const diff = now - date.getTime();
 
-  return Math.floor(diff / 1000 / 60);
+  const minutes = Math.floor(diff / 1000 / 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+  const hours = Math.floor(minutes / 60);
+
+  if (hours) {
+    return t('time.hoursAgo', [hours, minutes - hours * 60]);
+  }
+
+  return t('time.minsAgo', [minutes, seconds]);
 }
-
-function getElapsedSeconds(dateString: string | Date) {
-  const date = new Date(dateString);
-  const diff = Date.now() - date.getTime();
-
-  return Math.floor((diff / 1000) % 60);
-}
-
-export const elapsed = {
-  allMinutes: getAllElapsedMinutes,
-  seconds: getElapsedSeconds,
-};
 
 function formatXX(item: number) {
   return item < 10 ? '0' + item : item;

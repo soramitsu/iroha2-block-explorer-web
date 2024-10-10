@@ -38,7 +38,8 @@
           <div class="latest-transactions__info">
             <div class="latest-transactions__time">
               <TimeIcon />
-              <span>{{ $t('time.min', [elapsed.allMinutes(transaction.created_at)]) }} {{ $t('time.ago') }}</span>
+              <span>{{ getTimeAgo(now.getTime(), transaction.created_at) }}</span>
+              <Tooltip :message="defaultFormat(transaction.created_at)" />
             </div>
 
             <BaseHash
@@ -67,11 +68,15 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { elapsed } from '@/shared/lib/time';
+import { defaultFormat, getTimeAgo } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Transaction } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
+import { useNow } from '@vueuse/core';
+import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
+
+const now = useNow({ interval: 1000 });
 
 const status = ref<ftm.Status>(null);
 
@@ -158,6 +163,12 @@ onMounted(async () => {
   }
 
   &__time {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
+    position: relative;
     color: theme-color('content-primary');
     @include tpg-s3;
 
@@ -166,6 +177,11 @@ onMounted(async () => {
       width: 10px;
       height: 10px;
       margin-right: 6px;
+    }
+
+    &:hover .context-tooltip {
+      display: flex;
+      left: size(21);
     }
   }
 

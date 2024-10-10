@@ -4,6 +4,7 @@
     "latestTransactions": "Latest Transactions",
     "latestBlocks": "Latest Blocks"
   },
+  "noData": "No data",
   "viewAll": "view all",
   "domain": "Domain",
   "rowsPerPage": "Rows per page",
@@ -42,9 +43,8 @@
     "searchPlaceholder": "Search Address / Txn Hash / Block / Token"
   },
   "time": {
-    "min": "{0} min",
-    "sec": "{0} sec",
-    "ago": "ago"
+    "hoursAgo": "{0} hours {1} min ago",
+    "minsAgo": "{0} min {1} sec ago"
   },
   "transactions": {
     "transactions": "Transactions",
@@ -98,7 +98,6 @@
     "value": "Value",
     "accountDoesntHaveAnyAssets": "Account doesn't have any assets",
     "accountDoesntHaveAnyDomains": "Account doesn't have any domains",
-    "accountDoesntHaveAnyTransactions": "Account doesn't have any transactions",
     "ownedDomains": "Owned Domains",
     "ownedAssets": "Owned Assets"
   },

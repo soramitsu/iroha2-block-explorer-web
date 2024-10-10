@@ -22,9 +22,8 @@
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
-              {{ $t('time.min', [elapsed.allMinutes(block.created_at)]) }}
-              {{ $t('time.sec', [elapsed.seconds(block.created_at)]) }}
-              {{ $t('time.ago') }}
+              {{ getTimeAgo(now.getTime(), block.created_at) }}
+              <Tooltip :message="defaultFormat(block.created_at)" />
             </div>
 
             <span class="latest-blocks__number">{{ block.transactions_total }} txns</span>
@@ -42,7 +41,7 @@
 <script setup lang="ts">
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import * as http from '@/shared/api';
-import { elapsed } from '@/shared/lib/time';
+import { defaultFormat, getTimeAgo } from '@/shared/lib/time';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
@@ -50,6 +49,10 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Block } from '@/shared/api/schemas';
 import { onMounted, ref, shallowRef } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { useNow } from '@vueuse/core';
+import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
+
+const now = useNow({ interval: 1000 });
 
 const blocks = shallowRef<Block[]>([]);
 const isLoading = ref(false);
@@ -112,17 +115,28 @@ onMounted(async () => {
   }
 
   &__time {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
     display: grid;
     width: size(24);
     grid-gap: size(1);
     grid-auto-flow: column;
     color: theme-color('content-primary');
     @include tpg-s3;
+    position: relative;
 
     &-icon {
       path {
         fill: theme-color('content-quaternary');
       }
+    }
+
+    &:hover .context-tooltip {
+      display: flex;
+      left: size(24);
     }
   }
 
