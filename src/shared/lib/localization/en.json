@@ -97,9 +97,7 @@
     "accountId": "Account ID",
     "value": "Value",
     "accountDoesntHaveAnyAssets": "Account doesn't have any assets",
-    "accountDoesntHaveAnyDomains": "Account doesn't have any domains",
-    "ownedDomains": "Owned Domains",
-    "ownedAssets": "Owned Assets"
+    "accountDoesntHaveAnyDomains": "Account doesn't have any domains"
   },
   "assets": {
     "assets": "Assets",

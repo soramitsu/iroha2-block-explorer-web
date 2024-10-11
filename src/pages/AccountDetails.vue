@@ -84,16 +84,6 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
               />
 
               <DataField
-                :title="$t('accounts.ownedDomains')"
-                :value="account.owned_domains"
-              />
-
-              <DataField
-                :title="$t('accounts.ownedAssets')"
-                :value="account.owned_assets"
-              />
-
-              <DataField
                 :title="$t('metadata')"
                 :value="parseMetadata(account.metadata)"
               />
