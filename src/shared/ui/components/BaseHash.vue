@@ -51,6 +51,16 @@ async function copy() {
 
 type Content = { t: 'plain', value: string } | { t: 'two-line', first: string, second: string };
 
+function shortenHash(str: string, n: number) {
+  const [authority, domain] = str.split('@');
+
+  const shortenAuthority = authority.slice(0, n) + '...' + authority.slice(-n);
+
+  if (!domain) return shortenAuthority;
+
+  return shortenAuthority + '@' + domain;
+}
+
 const content = computed<Content>(() => {
   switch (props.type) {
     case 'full': {
@@ -62,22 +72,22 @@ const content = computed<Content>(() => {
     case 'short': {
       return {
         t: 'plain',
-        value: props.hash.slice(0, 4) + '...' + props.hash.slice(-4),
+        value: shortenHash(props.hash, 4),
       };
     }
     case 'medium': {
       return {
         t: 'plain',
-        value: props.hash.slice(0, 10) + '...' + props.hash.slice(-10),
+        value: shortenHash(props.hash, 10),
       };
     }
     case 'two-line': {
-      const center = Math.ceil(props.hash.length / 2);
+      const [authority, domain] = shortenHash(props.hash, 4).split('@');
 
       return {
         t: 'two-line',
-        first: props.hash.slice(0, center),
-        second: props.hash.slice(-center + (props.hash.length % 2)),
+        first: authority,
+        second: domain ? `@${domain}` : '',
       };
     }
     default: {
