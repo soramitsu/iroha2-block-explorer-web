@@ -56,11 +56,11 @@ import { HomePageInfo } from '@/widgets/home-page-info';
     position: absolute;
     z-index: 10;
     right: size(1);
-    top: calc(3% + 20px + size(1));
+    top: calc(2% + size(1));
 
     @include xs {
-      top: calc(4% + 20px + size(1));
       right: size(2);
+      top: calc(2% + size(2));
     }
 
     @include md {
@@ -68,7 +68,7 @@ import { HomePageInfo } from '@/widgets/home-page-info';
     }
 
     @include lg {
-      top: calc(5% + 20px + size(1));
+      top: calc(3% + size(2));
       right: size(4);
     }
   }
