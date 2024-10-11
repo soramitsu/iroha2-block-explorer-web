@@ -26,11 +26,11 @@
 <script setup lang="ts">
 import HeaderLogo from './HeaderLogo.vue';
 import { NavigationMenu } from '@/features/navigation';
-import { PORTAL_ID } from '@/shared/config';
 import { MobileMenu } from '@/features/mobile-menu';
 import { LangDropdown } from '@/features/switch-lang';
 import { ThemeSwitcher } from '@/features/switch-theme';
 import { SearchField } from '@/features/search';
+import { PORTAL_ID } from '@/shared/ui/consts';
 </script>
 
 <style lang="scss">

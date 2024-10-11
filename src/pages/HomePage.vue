@@ -38,9 +38,9 @@ import { LatestTransactions } from '@/widgets/latest-transactions';
 import { ThemeSwitcher } from '@/features/switch-theme';
 import { LangDropdown } from '@/features/switch-lang';
 import { MobileMenu } from '@/features/mobile-menu';
-import { PORTAL_ID } from '@/shared/config';
 import { NavigationMenu } from '@/features/navigation';
 import { HomePageInfo } from '@/widgets/home-page-info';
+import { PORTAL_ID } from '@/shared/ui/consts';
 </script>
 
 <style lang="scss">
@@ -74,7 +74,6 @@ import { HomePageInfo } from '@/widgets/home-page-info';
   }
 
   &__buttons {
-    position: absolute;
     top: size(1);
     right: size(1);
 
