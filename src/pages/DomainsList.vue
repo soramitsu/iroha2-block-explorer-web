@@ -87,6 +87,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const table = useTable(http.fetchDomains);
 
@@ -103,7 +104,15 @@ onMounted(async () => {
 const HASH_BREAKPOINT = 1350;
 const { width } = useWindowSize();
 
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
+const hashType = computed(() => {
+  if (width.value > HASH_BREAKPOINT) return 'full';
+
+  if (width.value > SM_WINDOW_SIZE && width.value < MD_WINDOW_SIZE) return 'medium';
+
+  if (width.value > XS_WINDOW_SIZE) return 'short';
+
+  return 'two-line';
+});
 </script>
 
 <style lang="scss">
@@ -129,14 +138,13 @@ const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full
     text-align: left;
     width: size(12);
     padding: size(1);
-    margin-right: size(3);
   }
 
   &__container {
     display: grid;
     grid-template-columns: 1fr;
 
-    @include sm {
+    @include md {
       grid-template-columns: 1fr 1fr;
     }
 

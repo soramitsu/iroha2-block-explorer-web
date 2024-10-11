@@ -10,6 +10,7 @@ import type { AssetDefinition } from '@/shared/api/schemas';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import { useWindowSize } from '@vueuse/core';
+import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const router = useRouter();
 
@@ -17,7 +18,13 @@ const HASH_BREAKPOINT = 1000;
 
 const { width } = useWindowSize();
 
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
+const hashType = computed(() => {
+  if (width.value > HASH_BREAKPOINT) return 'full';
+
+  if (width.value > XS_WINDOW_SIZE) return 'medium';
+
+  return 'short';
+});
 
 const { handleUnknownError } = useErrorHandlers();
 

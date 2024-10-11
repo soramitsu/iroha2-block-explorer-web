@@ -119,7 +119,7 @@ onMounted(async () => {
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 130px 220px 640px auto;
+    grid-template-columns: 130px 200px 640px 150px;
     justify-content: start;
   }
 

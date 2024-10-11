@@ -72,6 +72,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const table = useTable(http.fetchAccounts);
 const { handleUnknownError } = useErrorHandlers();
@@ -87,7 +88,15 @@ onMounted(async () => {
 const HASH_BREAKPOINT = 1300;
 const { width } = useWindowSize();
 
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'full'));
+const hashType = computed(() => {
+  if (width.value > HASH_BREAKPOINT) return 'full';
+
+  if (width.value > SM_WINDOW_SIZE) return 'medium';
+
+  if (width.value > XS_WINDOW_SIZE) return 'short';
+
+  return 'two-line';
+});
 </script>
 
 <style lang="scss">

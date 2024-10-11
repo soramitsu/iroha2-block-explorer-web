@@ -30,7 +30,7 @@
 
           <BaseHash
             :hash="transaction.hash"
-            type="medium"
+            :type="hashType"
             :link="`/transactions/${transaction.hash}`"
             copy
           />
@@ -44,7 +44,7 @@
 
             <BaseHash
               :hash="transaction.authority"
-              type="medium"
+              :type="hashType"
               :link="`/accounts/${transaction.authority}`"
               class="latest-transactions__account"
             />
@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, shallowRef } from 'vue';
+import { computed, onMounted, ref, shallowRef } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
@@ -73,8 +73,9 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Transaction } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
-import { useNow } from '@vueuse/core';
+import { useNow, useWindowSize } from '@vueuse/core';
 import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
+import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const now = useNow({ interval: 1000 });
 
@@ -97,6 +98,20 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+});
+
+const HASH_BREAKPOINT = 1300;
+
+const { width } = useWindowSize();
+
+const hashType = computed(() => {
+  if (width.value > HASH_BREAKPOINT) return 'medium';
+
+  if (width.value > LG_WINDOW_SIZE) return 'short';
+
+  if (width.value > XS_WINDOW_SIZE) return 'medium';
+
+  return 'short';
 });
 </script>
 

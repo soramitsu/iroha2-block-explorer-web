@@ -14,6 +14,7 @@ import type { Domain } from '@/shared/api/schemas';
 import { DomainId } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -21,7 +22,21 @@ const { handleUnknownError } = useErrorHandlers();
 const HASH_BREAKPOINT = 960;
 const { width } = useWindowSize();
 
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'short' : 'medium'));
+const accountHashType = computed(() => {
+  if (width.value > MD_WINDOW_SIZE && width.value < LG_WINDOW_SIZE) return 'full';
+
+  if (width.value > XS_WINDOW_SIZE) return 'medium';
+
+  return 'short';
+});
+
+const domainAccountsHashType = computed(() => {
+  if (width.value > HASH_BREAKPOINT) return 'medium';
+
+  if (width.value > XS_WINDOW_SIZE) return 'short';
+
+  return 'two-line';
+});
 
 const domainId = computed(() => {
   const id = router.currentRoute.value.params['id'];
@@ -86,7 +101,7 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
                 :hash="domain.owned_by.toString()"
                 copy
                 :link="`/accounts/${domain.owned_by}`"
-                type="medium"
+                :type="accountHashType"
               />
 
               <DataField
@@ -204,7 +219,7 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
                 <BaseHash
                   :hash="item.id.toString()"
                   :link="`/accounts/${item.id}`"
-                  :type="hashType"
+                  :type="domainAccountsHashType"
                   copy
                 />
               </div>
@@ -213,11 +228,11 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
             <template #mobile-card="{ item }">
               <div class="domain-details__accounts-mobile-card">
                 <div class="domain-details__accounts-mobile-row">
-                  <span class="h-sm domain-details__accounts-mobile-label">{{ $t('accounts.address') }}</span>
+                  <span class="h-sm domain-details__accounts-mobile-label">{{ $t('accounts.accountId') }}</span>
                   <BaseHash
                     :hash="item.id.toString()"
                     :link="`/accounts/${item.id}`"
-                    :type="hashType"
+                    :type="domainAccountsHashType"
                     copy
                   />
                 </div>

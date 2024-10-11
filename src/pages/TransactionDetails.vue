@@ -14,21 +14,26 @@ import { formatUTC } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
+import { LG_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const router = useRouter();
 
 const { handleUnknownError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 1100;
-const TRANSACTION_HASH_BREAKPOINT = 1200;
 const SIGNATURE_HASH_BREAKPOINT = 1400;
-const INSTRUCTION_HASH_BREAKPOINT = 1440;
 const { width } = useWindowSize();
 
-const transactionHashType = computed(() => (width.value < TRANSACTION_HASH_BREAKPOINT ? 'medium' : 'full'));
+const transactionHashType = computed(() => (width.value < LG_WINDOW_SIZE ? 'medium' : 'full'));
 const signatureHashType = computed(() => (width.value < SIGNATURE_HASH_BREAKPOINT ? 'medium' : 'full'));
-const instructionHashType = computed(() => (width.value < INSTRUCTION_HASH_BREAKPOINT ? 'short' : 'full'));
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
+const instructionHashType = computed(() => (width.value < XL_WINDOW_SIZE ? 'short' : 'full'));
+const accountIdHashType = computed(() => {
+  if (width.value > HASH_BREAKPOINT) return 'full';
+
+  if (width.value > XS_WINDOW_SIZE) return 'medium';
+
+  return 'short';
+});
 
 const transactionHash = computed(() => {
   const hash = router.currentRoute.value.params['hash'];
@@ -108,7 +113,7 @@ watch(
               <DataField
                 :title="$t('accounts.accountId')"
                 :hash="transaction.authority"
-                :type="hashType"
+                :type="accountIdHashType"
                 :link="`/accounts/${transaction.authority}`"
                 copy
               />

@@ -17,6 +17,8 @@ import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter-transactions/mod
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { useWindowSize } from '@vueuse/core';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -58,6 +60,14 @@ const domainsTable = useTable(http.fetchDomains);
 const transactionsTab = ref<TabAccountTransactions>('transactions');
 
 const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
+
+const { width } = useWindowSize();
+
+const hashType = computed(() => {
+  if (width.value > XS_WINDOW_SIZE) return 'medium';
+
+  return 'short';
+});
 </script>
 
 <template>
@@ -80,7 +90,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
                 :title="$t('accounts.accountId')"
                 :hash="accountId.toString()"
                 copy
-                type="medium"
+                :type="hashType"
               />
 
               <DataField
