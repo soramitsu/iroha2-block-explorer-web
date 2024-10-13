@@ -130,11 +130,11 @@ const emit = defineEmits<Emits>();
 const { width } = useWindowSize();
 
 const items = computed(() => {
-  if (props.loading || !props.items.length) {
-    return Array.from({ length: props.pagination?.per_page ?? 10 }, () => null);
-  }
+  if (!props.loading) return props.items;
 
-  return props.items;
+  if (!props.items.length) return [];
+
+  return Array.from({ length: props.pagination?.per_page ?? 10 }, () => null);
 });
 
 const isEmpty = computed(() => !items.value.some((i) => i));
