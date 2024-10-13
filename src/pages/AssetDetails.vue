@@ -52,7 +52,7 @@ onMounted(async () => {
 <template>
   <div class="asset-details">
     <BaseContentBlock
-      :title="$t('assets.assetMetrics')"
+      :title="$t('assets.asset', [assetDefinitionId.name])"
       class="asset-details__metrics"
     >
       <template #default>
@@ -65,9 +65,20 @@ onMounted(async () => {
         <div v-else-if="asset">
           <div class="asset-details__metrics-data">
             <DataField
-              :title="$t('name')"
-              :value="assetDefinitionId.name"
+              :title="$t('domain')"
+              :hash="assetDefinitionId.domain"
+              :link="`/domains/${assetDefinitionId.domain}`"
             />
+            <DataField
+              :title="$t('assets.assets')"
+              :value="asset.assets"
+            />
+            <DataField
+              :title="$t('metadata')"
+              :value="parseMetadata(asset.metadata)"
+            />
+          </div>
+          <div class="asset-details__metrics-data">
             <DataField
               :title="$t('type')"
               :value="asset.type"
@@ -75,21 +86,6 @@ onMounted(async () => {
             <DataField
               :title="$t('mintable')"
               :value="asset.mintable"
-            />
-          </div>
-          <div class="asset-details__metrics-data">
-            <DataField
-              :title="$t('assets.assets')"
-              :value="asset.assets"
-            />
-            <DataField
-              :title="$t('domain')"
-              :hash="assetDefinitionId.domain"
-              :link="`/domains/${assetDefinitionId.domain}`"
-            />
-            <DataField
-              :title="$t('metadata')"
-              :value="parseMetadata(asset.metadata)"
             />
           </div>
           <div class="asset-details__metrics-data">

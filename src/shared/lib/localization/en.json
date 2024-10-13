@@ -101,7 +101,7 @@
   },
   "assets": {
     "assets": "Assets",
-    "assetMetrics": "Asset metrics",
+    "asset": "Asset {0}",
     "assetTransactions": "Asset transactions",
     "ownedBy": "Owned By"
   },
