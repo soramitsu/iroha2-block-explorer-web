@@ -4,7 +4,10 @@
     class="latest-blocks"
   >
     <template #header-action>
-      <BaseButton line>
+      <BaseButton
+        line
+        to="/blocks"
+      >
         {{ $t('viewAll') }}
       </BaseButton>
     </template>

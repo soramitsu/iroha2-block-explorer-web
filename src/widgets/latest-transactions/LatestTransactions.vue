@@ -4,7 +4,10 @@
     class="latest-transactions"
   >
     <template #header-action>
-      <BaseButton line>
+      <BaseButton
+        line
+        to="/transactions"
+      >
         {{ $t('viewAll') }}
       </BaseButton>
     </template>
