@@ -175,6 +175,7 @@ export type Account = z.infer<typeof Account>;
 
 export interface AssetSearchParams extends PaginationParams {
   owned_by?: AccountId
+  definition?: AssetDefinitionId
 }
 
 export const Asset = z.object({
