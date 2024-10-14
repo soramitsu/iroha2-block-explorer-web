@@ -160,7 +160,7 @@ const hashType = computed(() => {
 
   &__info {
     display: grid;
-    grid-gap: size(0.5) size(2);
+    grid-gap: size(0.5) size(1);
 
     @include md {
       grid-template-columns: auto auto;
@@ -199,7 +199,7 @@ const hashType = computed(() => {
 
     &:hover .context-tooltip {
       display: flex;
-      left: size(21);
+      left: size(22);
     }
   }
 
