@@ -41,7 +41,7 @@
           <div class="latest-transactions__info">
             <div class="latest-transactions__time">
               <TimeIcon />
-              <span>{{ getTimeAgo(now.getTime(), transaction.created_at) }}</span>
+              <TimeStamp v-bind="getTimeAgo(transaction.created_at)" />
               <Tooltip :message="defaultFormat(transaction.created_at)" />
             </div>
 
@@ -71,17 +71,19 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { defaultFormat, getTimeAgo } from '@/shared/lib/time';
+import { defaultFormat } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Transaction } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
-import { useNow, useWindowSize } from '@vueuse/core';
+import { useWindowSize } from '@vueuse/core';
 import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { objectOmit } from '@vueuse/shared';
+import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
+import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
-const now = useNow({ interval: 1000 });
+const { getTimeAgo } = useTimeAgo();
 
 const emit = defineEmits<{
   loaded: [number]

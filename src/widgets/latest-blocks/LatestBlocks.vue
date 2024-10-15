@@ -25,7 +25,7 @@
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
-              {{ getTimeAgo(now.getTime(), block.created_at) }}
+              <TimeStamp v-bind="getTimeAgo(block.created_at)" />
               <Tooltip :message="defaultFormat(block.created_at)" />
             </div>
 
@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import * as http from '@/shared/api';
-import { defaultFormat, getTimeAgo } from '@/shared/lib/time';
+import { defaultFormat } from '@/shared/lib/time';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
@@ -52,10 +52,11 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Block } from '@/shared/api/schemas';
 import { onMounted, ref, shallowRef } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { useNow } from '@vueuse/core';
 import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
+import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
+import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
-const now = useNow({ interval: 1000 });
+const { getTimeAgo } = useTimeAgo();
 
 const emit = defineEmits<{
   loaded: [number]
