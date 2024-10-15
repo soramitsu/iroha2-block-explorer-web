@@ -10,10 +10,12 @@ test.each([
   expect(formatUTC(input)).toBe(expected);
 });
 
+const NOW = Date.now()
+
 test.each([
-  [new Date(Date.now() - 11000), '0 min 11 sec ago'],
-  [new Date(Date.now() - 3599000), '59 min 59 sec ago'],
-  [new Date(Date.now() - 4000000), '1 hours 6 min ago'],
+  [new Date(NOW - 11000), '0 min 11 sec ago'],
+  [new Date(NOW - 3599000), '59 min 59 sec ago'],
+  [new Date(NOW - 4000000), '1 hours 6 min ago'],
 ])('Correct time difference display', (date, expected) => {
   const Timestamp = {
     template: `
