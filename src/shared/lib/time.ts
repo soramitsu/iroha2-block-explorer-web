@@ -1,9 +1,6 @@
 import { format } from 'date-fns/format';
-import { useI18n } from 'vue-i18n';
 
-export function getTimeAgo(now: number, dateString: string | Date) {
-  const { t } = useI18n();
-
+export function countTimeDifference(now: number, dateString: string | Date) {
   const date = new Date(dateString);
   const diff = now - date.getTime();
 
@@ -11,11 +8,11 @@ export function getTimeAgo(now: number, dateString: string | Date) {
   const seconds = Math.floor((diff / 1000) % 60);
   const hours = Math.floor(minutes / 60);
 
-  if (hours) {
-    return t('time.hoursAgo', [hours, minutes - hours * 60]);
-  }
-
-  return t('time.minsAgo', [minutes, seconds]);
+  return {
+    hours,
+    minutes,
+    seconds,
+  };
 }
 
 function formatXX(item: number) {
