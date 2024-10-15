@@ -48,7 +48,7 @@ onMounted(async () => {
     asset.value = await http.fetchAssetDefinition(assetDefinitionId.value);
 
     if (asset.value.assets) {
-      assetsTable.fetch({ definition: asset.value.id.toString() });
+      await assetsTable.fetch({ definition: asset.value.id.toString() });
     }
   } catch (e) {
     handleUnknownError(e);

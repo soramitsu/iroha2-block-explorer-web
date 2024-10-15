@@ -15,7 +15,7 @@
     <CopyIcon
       v-if="props.copy"
       class="base-hash__copy"
-      @click="copy"
+      @click="copyHash"
     />
   </div>
 </template>
@@ -40,7 +40,7 @@ const clipboard = useClipboard();
 const notifications = useNotifications();
 const { t } = useI18n({ useScope: 'global' });
 
-async function copy() {
+async function copyHash() {
   if (clipboard.isSupported) {
     await clipboard.copy(props.hash);
     notifications.success(t('clipboard.success'));
