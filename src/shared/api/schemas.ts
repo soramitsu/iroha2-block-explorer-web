@@ -223,6 +223,7 @@ export type Domain = z.infer<typeof Domain>;
 export interface TransactionSearchParams extends PaginationParams {
   authority?: AccountId
   block?: number
+  status?: TransactionStatus
 }
 
 export const Transaction = z.object({

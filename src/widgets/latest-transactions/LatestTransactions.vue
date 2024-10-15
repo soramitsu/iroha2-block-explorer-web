@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
@@ -79,6 +79,7 @@ import * as http from '@/shared/api';
 import { useNow, useWindowSize } from '@vueuse/core';
 import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { objectOmit } from '@vueuse/shared';
 
 const now = useNow({ interval: 1000 });
 
@@ -89,19 +90,25 @@ const isLoading = ref(false);
 
 const { handleUnknownError } = useErrorHandlers();
 
-onMounted(async () => {
-  try {
-    isLoading.value = true;
+watch(
+  status,
+  async () => {
+    try {
+      isLoading.value = true;
 
-    const { items } = await http.fetchTransactions({ per_page: 5 });
+      const params = { per_page: 5, status: status.value };
 
-    transactions.value = items;
-  } catch (error) {
-    handleUnknownError(error);
-  } finally {
-    isLoading.value = false;
-  }
-});
+      const { items } = await http.fetchTransactions(objectOmit(params, status.value ? [] : ['status']));
+
+      transactions.value = items;
+    } catch (error) {
+      handleUnknownError(error);
+    } finally {
+      isLoading.value = false;
+    }
+  },
+  { immediate: true }
+);
 
 const HASH_BREAKPOINT = 1300;
 
