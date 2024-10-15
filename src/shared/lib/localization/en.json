@@ -30,12 +30,11 @@
     "error": "Impossible copy to clipboard"
   },
   "homePage": {
-    "domains": "Number of domains",
-    "accounts": "Active Accounts",
-    "assets": "Total number of assets",
-    "averageBlockTime": "Average Block Time",
-    "validators": "Validators",
-    "nodes": "Nodes",
+    "totalAccounts": "Total accounts",
+    "totalAssets": "Total assets",
+    "totalDomains": "Total domains",
+    "totalBlocks": "Total blocks",
+    "totalTransactions": "Total transactions",
     "title": {
       "firstLine": "Hyperleger Iroha",
       "secondLine": "Blockchain Explorer"

@@ -83,6 +83,10 @@ import { objectOmit } from '@vueuse/shared';
 
 const now = useNow({ interval: 1000 });
 
+const emit = defineEmits<{
+  loaded: [number]
+}>();
+
 const status = ref<ftm.Status>(null);
 
 const transactions = shallowRef<Transaction[]>([]);
@@ -98,9 +102,10 @@ watch(
 
       const params = { per_page: 5, status: status.value };
 
-      const { items } = await http.fetchTransactions(objectOmit(params, status.value ? [] : ['status']));
+      const res = await http.fetchTransactions(objectOmit(params, status.value ? [] : ['status']));
 
-      transactions.value = items;
+      transactions.value = res.items;
+      emit('loaded', res.pagination.total_items);
     } catch (error) {
       handleUnknownError(error);
     } finally {

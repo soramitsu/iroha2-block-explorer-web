@@ -57,6 +57,10 @@ import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
 
 const now = useNow({ interval: 1000 });
 
+const emit = defineEmits<{
+  loaded: [number]
+}>();
+
 const blocks = shallowRef<Block[]>([]);
 const isLoading = ref(false);
 
@@ -66,9 +70,10 @@ onMounted(async () => {
   try {
     isLoading.value = true;
 
-    const { items } = await http.fetchBlocks();
+    const res = await http.fetchBlocks();
 
-    blocks.value = items;
+    blocks.value = res.items;
+    emit('loaded', res.pagination.total_items);
   } catch (error) {
     handleUnknownError(error);
   } finally {
