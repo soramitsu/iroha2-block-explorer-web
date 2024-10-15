@@ -4,7 +4,7 @@
     class="transactions-list-page"
   >
     <TransactionsTable
-      :hash-type="hashType"
+      :hashType
       show-block
       show-authority
     />

@@ -1,7 +1,7 @@
 <template>
   <BaseRadioGroup
     v-model="model"
-    :items="items"
+    :items
   />
 </template>
 

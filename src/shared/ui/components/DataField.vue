@@ -25,10 +25,10 @@ const props = withDefaults(
     <span class="data-field__title h-sm">{{ title }}</span>
     <BaseHash
       v-if="hash"
-      :hash="hash"
-      :link="link"
-      :copy="copy"
-      :type="type"
+      :hash
+      :link
+      :copy
+      :type
       :class="{ 'row-text': !props.link }"
     />
     <BaseLink

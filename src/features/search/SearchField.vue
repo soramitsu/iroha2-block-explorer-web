@@ -7,7 +7,7 @@
     <SearchIcon class="search-field__icon" />
 
     <input
-      :id="id"
+      :id
       v-model="request"
       type="search"
       :placeholder="props.placeholder"
