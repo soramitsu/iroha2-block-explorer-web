@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import VueJsonPretty from 'vue-json-pretty';
+import BaseJson from '@/shared/ui/components/BaseJson.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -37,14 +37,9 @@ const props = withDefaults(
     >
       {{ value }}
     </BaseLink>
-    <vue-json-pretty
+    <BaseJson
       v-else-if="value && metadata"
-      :height="Math.min(8, Object.keys(value).length + 2) * 20"
-      class="row-text"
-      :data="value"
-      :deep="3"
-      virtual
-      collapsed-on-click-brackets
+      :value="value as Record<string, any>"
     />
     <span
       v-else
@@ -55,19 +50,6 @@ const props = withDefaults(
 
 <style lang="scss">
 @import '@/shared/ui/styles/main';
-@import 'vue-json-pretty/lib/styles.css';
-
-.vjs-tree-node:hover {
-  background: none;
-}
-
-.vjs-tree-brackets:hover {
-  color: theme-color('primary-hover');
-}
-
-.vjs-value {
-  color: theme-color('primary');
-}
 
 .data-field {
   color: theme-color('content-primary');
