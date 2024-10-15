@@ -30,7 +30,7 @@
         >
           <slot
             name="row"
-            :item="item"
+            :item
           />
         </div>
 
@@ -40,7 +40,7 @@
         >
           <slot
             name="mobile-card"
-            :item="item"
+            :item
           />
         </div>
 
@@ -109,7 +109,7 @@ interface Props {
   pagination?: Pagination | null
   items: T[]
   containerClass: string
-  breakpoint?: string | number
+  breakpoint?: number
   reversed?: boolean
   paginationBreakpoint?: number
 }
