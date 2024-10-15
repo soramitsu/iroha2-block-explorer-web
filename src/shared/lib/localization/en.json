@@ -103,7 +103,9 @@
     "assets": "Assets",
     "asset": "Asset {0}",
     "assetTransactions": "Asset transactions",
-    "ownedBy": "Owned By"
+    "ownedBy": "Owned By",
+    "assetInstances": "Asset instances",
+    "assetDoesntContainAnyInstances": "Asset doesn't contain any instances"
   },
   "blocks": {
     "age": "Age",
