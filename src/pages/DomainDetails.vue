@@ -107,6 +107,7 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
               <DataField
                 :title="$t('metadata')"
                 :value="parseMetadata(domain.metadata)"
+                metadata
               />
             </div>
           </div>

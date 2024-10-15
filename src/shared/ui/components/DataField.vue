@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import VueJsonPretty from 'vue-json-pretty';
 
 const props = withDefaults(
   defineProps<{
@@ -10,9 +11,11 @@ const props = withDefaults(
     link?: string
     copy?: boolean
     type?: 'full' | 'medium' | 'short' | 'two-line'
+    metadata?: boolean
   }>(),
   {
     type: 'full',
+    metadata: false,
   }
 );
 </script>
@@ -34,6 +37,15 @@ const props = withDefaults(
     >
       {{ value }}
     </BaseLink>
+    <vue-json-pretty
+      v-else-if="value && metadata"
+      :height="Math.min(8, Object.keys(value).length + 2) * 20"
+      class="row-text"
+      :data="value"
+      :deep="3"
+      virtual
+      collapsed-on-click-brackets
+    />
     <span
       v-else
       class="data-field__value"
@@ -41,8 +53,21 @@ const props = withDefaults(
   </div>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss">
 @import '@/shared/ui/styles/main';
+@import 'vue-json-pretty/lib/styles.css';
+
+.vjs-tree-node:hover {
+  background: none;
+}
+
+.vjs-tree-brackets:hover {
+  color: theme-color('primary-hover');
+}
+
+.vjs-value {
+  color: theme-color('primary');
+}
 
 .data-field {
   color: theme-color('content-primary');

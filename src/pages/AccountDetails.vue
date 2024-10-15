@@ -95,6 +95,7 @@ const hashType = computed(() => {
 
               <DataField
                 :title="$t('metadata')"
+                metadata
                 :value="parseMetadata(account.metadata)"
               />
             </div>
