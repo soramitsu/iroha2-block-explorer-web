@@ -4,11 +4,27 @@ import VueJsonPretty from 'vue-json-pretty';
 const props = defineProps<{
   value: Record<string, any>
 }>();
+
+function countProperties(obj: Record<string, any>) {
+  let count = 0;
+
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      count++;
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        count += countProperties(obj[key]);
+        count++;
+      }
+    }
+  }
+
+  return count;
+}
 </script>
 
 <template>
   <vue-json-pretty
-    :height="Math.min(8, Object.keys(props.value).length + 2) * 20"
+    :height="Math.min(8, countProperties(props.value) + 2) * 20"
     class="row-text"
     :data="props.value"
     :deep="3"
