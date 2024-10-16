@@ -139,7 +139,7 @@ onMounted(async () => {
 
     &:hover .context-tooltip {
       display: flex;
-      left: size(24);
+      left: size(20);
     }
   }
 
