@@ -1,25 +1,30 @@
-import { useNow } from '@vueuse/core';
 import { countTimeDifference } from '@/shared/lib/time';
+import { reactive, ref, watch } from 'vue';
+import { useIntervalFn } from '@vueuse/shared';
 
-export function useTimeAgo() {
-  const now = useNow({ interval: 1000 });
+export type TimeAgo = { precision: 'seconds', value: number } | { precision: 'minutes', value: number };
 
-  function getTimeAgo(date: Date) {
-    const { hours, minutes, seconds } = countTimeDifference(now.value.getTime(), date);
+export function useTimeAgo(date: Date) {
+  const now = ref(Date.now());
+  const result = reactive<TimeAgo>({ precision: 'seconds', value: 0 });
 
-    if (hours)
-      return {
-        i18nKey: 'time.hoursAgo',
-        firstValue: hours,
-        secondValue: minutes - hours * 60,
-      };
+  const interval = ref(1000);
+  useIntervalFn(() => {
+    now.value = Date.now();
+  }, interval);
 
-    return {
-      i18nKey: 'time.minsAgo',
-      firstValue: minutes,
-      secondValue: seconds,
-    };
-  }
+  watch(
+    now,
+    () => {
+      const { precision, value } = countTimeDifference(now.value, date);
 
-  return { getTimeAgo };
+      if (precision === 'minutes') interval.value = 1000 * 60;
+
+      if (precision !== result.precision) result.precision = precision;
+      if (value !== result.value) result.value = value;
+    },
+    { immediate: true }
+  );
+
+  return result;
 }
