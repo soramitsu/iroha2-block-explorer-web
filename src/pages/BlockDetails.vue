@@ -150,7 +150,7 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
           v-if="block"
           show-authority
           :filter-by="{ kind: 'block', value: block.height }"
-          :hashType
+          :hash-type
         />
       </template>
     </BaseContentBlock>
