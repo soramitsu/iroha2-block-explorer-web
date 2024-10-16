@@ -41,7 +41,7 @@
           <div class="latest-transactions__info">
             <div class="latest-transactions__time">
               <TimeIcon />
-              <TimeStamp v-bind="getTimeAgo(transaction.created_at)" />
+              <TimeAgo :value="transaction.created_at" />
               <Tooltip :message="defaultFormat(transaction.created_at)" />
             </div>
 
@@ -80,10 +80,7 @@ import { useWindowSize } from '@vueuse/core';
 import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { objectOmit } from '@vueuse/shared';
-import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
-import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
-
-const { getTimeAgo } = useTimeAgo();
+import TimeAgo from '@/shared/ui/components/TimeAgo.vue';
 
 const emit = defineEmits<{
   loaded: [number]

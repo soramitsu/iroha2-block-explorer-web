@@ -2,8 +2,7 @@ import { expect, test } from 'vitest';
 import { formatUTC } from '@/shared/lib/time';
 import { mount } from '@vue/test-utils';
 import { i18n } from '@/shared/lib/localization';
-import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
-import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
+import TimeAgo from '@/shared/ui/components/TimeAgo.vue';
 
 test.each([
   [new Date('2024-09-11T07:22:47.157Z'), 'Sep-11-2024 10:22:47 AM UTC'],
@@ -15,20 +14,19 @@ test.each([
 const NOW = Date.now();
 
 test.each([
-  [new Date(NOW - 11000), '0 min 11 sec ago'],
-  [new Date(NOW - 3599000), '59 min 59 sec ago'],
-  [new Date(NOW - 4000000), '1 hours 6 min ago'],
+  [new Date(NOW - 1000), '1 sec ago'],
+  [new Date(NOW - 10000), '10 secs ago'],
+  [new Date(NOW - 60000), '1 min ago'],
+  [new Date(NOW - 180000), '3 mins ago'],
 ])('Correct time difference display', (date, expected) => {
-  const { getTimeAgo } = useTimeAgo();
-
-  const wrapper = mount(TimeStamp, {
+  const wrapper = mount(TimeAgo, {
     props: {
-      ...getTimeAgo(date),
+      value: date,
     },
     global: {
       plugins: [i18n],
     },
   });
 
-  expect(wrapper.find('.timestamp').text()).toBe(expected);
+  expect(wrapper.find('.time-ago').text()).toBe(expected);
 });

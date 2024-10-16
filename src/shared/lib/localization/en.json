@@ -42,8 +42,10 @@
     "searchPlaceholder": "Search Address / Txn Hash / Block / Token"
   },
   "time": {
-    "hoursAgo": "{0} hours {1} min ago",
-    "minsAgo": "{0} min {1} sec ago"
+    "secAgo": "{0} sec ago",
+    "secsAgo": "{0} secs ago",
+    "minAgo": "{0} min ago",
+    "minsAgo": "{0} mins ago"
   },
   "transactions": {
     "transactions": "Transactions",

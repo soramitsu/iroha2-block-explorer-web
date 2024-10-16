@@ -25,7 +25,7 @@
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
-              <TimeStamp v-bind="getTimeAgo(block.created_at)" />
+              <TimeAgo :value="block.created_at" />
               <Tooltip :message="defaultFormat(block.created_at)" />
             </div>
 
@@ -53,10 +53,7 @@ import type { Block } from '@/shared/api/schemas';
 import { onMounted, ref, shallowRef } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
-import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
-import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
-
-const { getTimeAgo } = useTimeAgo();
+import TimeAgo from '@/shared/ui/components/TimeAgo.vue';
 
 const emit = defineEmits<{
   loaded: [number]
