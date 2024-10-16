@@ -53,9 +53,6 @@ function choose(value: string) {
     border-radius: size(2);
     background: theme-color('background');
     cursor: pointer;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
     transition: all 300ms ease-in-out;
     color: theme-color('content-quaternary');
