@@ -193,8 +193,8 @@ const hashType = computed(() => {
     user-select: none;
     cursor: default;
     position: relative;
-    color: theme-color('content-primary');
-    @include tpg-s3;
+    display: flex;
+    align-items: center;
 
     svg {
       fill: theme-color('content-quaternary');

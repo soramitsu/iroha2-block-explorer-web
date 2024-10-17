@@ -43,7 +43,6 @@
 <script setup lang="ts">
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import * as http from '@/shared/api';
-import { defaultFormat } from '@/shared/lib/time';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
@@ -121,12 +120,10 @@ onMounted(async () => {
   &__time {
     user-select: none;
     cursor: default;
-    display: grid;
+    display: flex;
+    justify-content: center;
     width: size(24);
-    grid-gap: size(1);
-    grid-auto-flow: column;
-    color: theme-color('content-primary');
-    @include tpg-s3;
+    gap: size(2);
     position: relative;
 
     &-icon {
