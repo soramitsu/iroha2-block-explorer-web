@@ -32,8 +32,11 @@
             {{ item.height }}
           </BaseLink>
 
-          <div class="cell">
-            <time class="row-text">{{ defaultFormat(item.created_at) }}</time>
+          <div class="blocks-list-page__row-time cell">
+            <TimeStamp
+              :value="item.created_at"
+              inverted
+            />
           </div>
 
           <BaseHash
@@ -62,7 +65,11 @@
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.age') }}</span>
-            <time class="row-text">{{ defaultFormat(item.created_at) }}</time>
+            <TimeStamp
+              class="blocks-list-page__mobile-row-time"
+              :value="item.created_at"
+              inverted
+            />
           </div>
 
           <div class="blocks-list-page__mobile-row">
@@ -92,12 +99,12 @@
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { useTable } from '@/shared/lib/table';
 import * as http from '@/shared/api';
-import { defaultFormat } from '@/shared/lib/time';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { onMounted } from 'vue';
+import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
 const table = useTable(http.fetchBlocks, { reversed: true });
 
@@ -121,6 +128,16 @@ onMounted(async () => {
     display: grid;
     grid-template-columns: 130px 200px 640px 150px;
     justify-content: start;
+
+    &-time {
+      position: relative;
+
+      &:hover .context-tooltip {
+        display: flex;
+        bottom: size(3);
+        left: size(4);
+      }
+    }
   }
 
   &__mobile-card {
@@ -130,6 +147,15 @@ onMounted(async () => {
   &__mobile-row {
     display: flex;
     align-items: center;
+
+    &-time {
+      position: relative;
+
+      &:hover .context-tooltip {
+        display: flex;
+        left: size(17);
+      }
+    }
   }
 
   &__mobile-label {
