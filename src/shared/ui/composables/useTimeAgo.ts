@@ -20,8 +20,8 @@ export function useTimeAgo(date: Date) {
 
       if (precision === 'minutes') interval.value = 1000 * 60;
 
-      if (precision !== result.precision) result.precision = precision;
-      if (value !== result.value) result.value = value;
+      result.precision = precision;
+      result.value = value;
     },
     { immediate: true }
   );
