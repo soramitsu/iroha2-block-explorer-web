@@ -25,8 +25,7 @@
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
-              <TimeAgo :value="block.created_at" />
-              <Tooltip :message="defaultFormat(block.created_at)" />
+              <TimeStamp :value="block.created_at" />
             </div>
 
             <span class="latest-blocks__number">{{ block.transactions_total }} txns</span>
@@ -52,8 +51,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Block } from '@/shared/api/schemas';
 import { onMounted, ref, shallowRef } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
-import TimeAgo from '@/shared/ui/components/TimeAgo.vue';
+import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
 const emit = defineEmits<{
   loaded: [number]

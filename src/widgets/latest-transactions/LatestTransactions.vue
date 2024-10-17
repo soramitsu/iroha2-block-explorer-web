@@ -41,8 +41,7 @@
           <div class="latest-transactions__info">
             <div class="latest-transactions__time">
               <TimeIcon />
-              <TimeAgo :value="transaction.created_at" />
-              <Tooltip :message="defaultFormat(transaction.created_at)" />
+              <TimeStamp :value="transaction.created_at" />
             </div>
 
             <BaseHash
@@ -77,10 +76,9 @@ import type { Transaction } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
 import { useWindowSize } from '@vueuse/core';
-import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { objectOmit } from '@vueuse/shared';
-import TimeAgo from '@/shared/ui/components/TimeAgo.vue';
+import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
 const emit = defineEmits<{
   loaded: [number]
