@@ -6,12 +6,25 @@ export function countTimeDifference(now: number, dateString: string | Date): Tim
   const diff = now - date.getTime();
 
   const minutes = Math.floor(diff / 1000 / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
 
-  if (minutes < 1)
+  if (days) {
+    return {
+      precision: 'days',
+      value: days,
+    };
+  } else if (hours) {
+    return {
+      precision: 'hours',
+      value: hours,
+    };
+  } else if (minutes < 1) {
     return {
       precision: 'seconds',
       value: Math.floor((diff / 1000) % 60),
     };
+  }
 
   return {
     precision: 'minutes',
