@@ -103,6 +103,7 @@ import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
 import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 import type { Pagination } from '@/shared/api/schemas';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
   loading: boolean
@@ -127,6 +128,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits<Emits>();
 
+const { t } = useI18n();
 const { width } = useWindowSize();
 
 const items = computed(() => {
@@ -140,26 +142,27 @@ const items = computed(() => {
 const isEmpty = computed(() => !items.value.some((i) => i));
 
 const segmentInfo = computed(() => {
-  if (!props.pagination) return '';
+  if (!props.pagination || !props.items.length) return t('table.pageOf', [0, 0, 0]);
 
   const p = props.pagination;
 
   if (props.reversed) {
-    if (p.per_page > props.items.length) return `${props.items.length}—1 of ${p.total_items}`;
+    if (p.per_page > props.items.length) return t('table.pageOf', [props.items.length, 1, p.total_items]);
 
     const start = (p.page - 1) * p.per_page + props.items.length;
 
     const end = start - props.items.length + 1;
 
-    return `${start}—${end} of ${p.total_items}`;
+    return t('table.pageOf', [start, end, p.total_items]);
   }
 
   const start = (p.page - 1) * p.per_page + 1;
   const end = p.page * p.per_page;
 
-  return `${start}—${end > p.total_items ? p.total_items : end} of ${p.total_items}`;
+  return t('table.pageOf', [start, end > p.total_items ? p.total_items : end, p.total_items]);
 });
 
+// FIXME: create pagination component, write unit tests
 const numbers = computed(() => {
   if (!props.pagination) return [];
 

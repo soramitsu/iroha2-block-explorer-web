@@ -7,7 +7,10 @@
   "noData": "No data",
   "viewAll": "view all",
   "domain": "Domain",
-  "rowsPerPage": "Rows per page",
+  "table": {
+    "rowsPerPage": "Rows per page",
+    "pageOf": "{0}-{1} of {2}"
+  },
   "address": "Address",
   "cryptos": "Cryptos",
   "id": "ID",
