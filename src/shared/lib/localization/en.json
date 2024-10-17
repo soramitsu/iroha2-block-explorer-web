@@ -45,7 +45,11 @@
     "secAgo": "{0} sec ago",
     "secsAgo": "{0} secs ago",
     "minAgo": "{0} min ago",
-    "minsAgo": "{0} mins ago"
+    "minsAgo": "{0} mins ago",
+    "hourAgo": "{0} hour ago",
+    "hoursAgo": "{0} hours ago",
+    "dayAgo": "{0} day ago",
+    "daysAgo": "{0} days ago"
   },
   "transactions": {
     "transactions": "Transactions",
