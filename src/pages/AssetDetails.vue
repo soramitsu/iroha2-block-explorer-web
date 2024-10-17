@@ -10,10 +10,11 @@ import type { AssetDefinition } from '@/shared/api/schemas';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import { useWindowSize } from '@vueuse/core';
-import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useTable } from '@/shared/lib/table';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
 
 const router = useRouter();
 
@@ -27,6 +28,18 @@ const hashType = computed(() => {
   if (width.value > XS_WINDOW_SIZE) return 'medium';
 
   return 'short';
+});
+
+const accountIdType = computed(() => {
+  if (width.value > LG_WINDOW_SIZE) return 'medium';
+
+  if (width.value > MD_WINDOW_SIZE) return 'short';
+
+  if (width.value > SM_WINDOW_SIZE) return 'medium';
+
+  if (width.value > XS_WINDOW_SIZE) return 'short';
+
+  return 'two-line';
 });
 
 const { handleUnknownError } = useErrorHandlers();
@@ -121,7 +134,7 @@ onMounted(async () => {
           :loading="assetsTable.loading.value"
           :items="assetsTable.items.value"
           container-class="asset-details__assets-table-list"
-          :breakpoint="960"
+          :breakpoint="1200"
           :pagination="assetsTable.pagination"
           @next-page="assetsTable.nextPage()"
           @prev-page="assetsTable.prevPage()"
@@ -131,6 +144,8 @@ onMounted(async () => {
           <template #header>
             <div class="asset-details__assets-table-list-row">
               <span class="h-sm">{{ $t('name') }}</span>
+              <span class="h-sm">{{ $t('domain') }}</span>
+              <span class="h-sm">{{ $t('accountId') }}</span>
               <span class="h-sm">{{ $t('type') }}</span>
               <span class="h-sm">{{ $t('value') }}</span>
             </div>
@@ -142,6 +157,21 @@ onMounted(async () => {
                 <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
                   {{ item.id.definition.name }}
                 </BaseLink>
+              </div>
+
+              <div class="asset-details__assets-table-list-row-data row-text">
+                <BaseLink :to="`/domains/${item.id.definition.domain}`">
+                  {{ item.id.definition.domain }}
+                </BaseLink>
+              </div>
+
+              <div class="asset-details__assets-table-list-row-data row-text">
+                <BaseHash
+                  :type="accountIdType"
+                  :hash="item.id.account.toString()"
+                  :link="`/accounts/${item.id.account.toString()}`"
+                  copy
+                />
               </div>
 
               <div class="asset-details__assets-table-list-row-data row-text">
@@ -166,6 +196,23 @@ onMounted(async () => {
                 <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
                   {{ item.id.definition.name }}
                 </BaseLink>
+              </div>
+
+              <div class="asset-details__assets-table-mobile-list-row-data row-text">
+                <span class="h-sm">{{ $t('domain') }}</span>
+                <BaseLink :to="`/domains/${item.id.definition.domain}`">
+                  {{ item.id.definition.domain }}
+                </BaseLink>
+              </div>
+
+              <div class="asset-details__assets-table-mobile-list-row-data row-text">
+                <span class="h-sm">{{ $t('accountId') }}</span>
+                <BaseHash
+                  :type="accountIdType"
+                  :hash="item.id.account.toString()"
+                  :link="`/accounts/${item.id.account.toString()}`"
+                  copy
+                />
               </div>
 
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
@@ -260,19 +307,23 @@ onMounted(async () => {
         grid-template-columns: 1fr;
       }
 
-      @include sm {
+      @include md {
         grid-template-columns: 1fr 1fr;
       }
 
-      @include md {
+      @include lg {
         grid-template-columns: 1fr;
       }
 
       &-row {
         display: grid;
 
-        @include md {
-          grid-template-columns: 25vw 25vw 25vw;
+        @include lg {
+          grid-template-columns: 15vw 15vw 32vw 15vw 10vw;
+        }
+
+        @include xl {
+          grid-template-columns: 10vw 15vw 30vw 10vw 10vw;
         }
       }
     }
@@ -296,13 +347,13 @@ onMounted(async () => {
 
           span:first-child {
             @include xxs {
-              width: size(16);
+              width: size(14);
             }
             @include xs {
-              width: size(20);
+              width: size(16);
             }
             @include sm {
-              width: size(16);
+              width: size(14);
             }
           }
         }
