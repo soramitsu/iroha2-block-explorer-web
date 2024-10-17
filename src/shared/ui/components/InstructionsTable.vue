@@ -20,6 +20,7 @@ import * as http from '@/shared/api';
 import { objectOmit } from '@vueuse/shared';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { useTable } from '@/shared/lib/table';
+import BaseJson from '@/shared/ui/components/BaseJson.vue';
 
 const { t } = useI18n();
 const props = defineProps<{
@@ -35,8 +36,6 @@ function isBase64EncodedWasm(item: Instruction) {
 }
 
 function getInstructionPayloadValue(item: Instruction) {
-  if (isBase64EncodedWasm(item)) return t('transactions.displayingIsntSupported');
-
   return Object.entries(item.payload)[0][1];
 }
 
@@ -169,7 +168,14 @@ watch(listState, fetchInstructions, { immediate: true });
               {{ $t('value') }}
             </div>
 
-            <span class="row-text">{{ getInstructionPayloadValue(item) }}</span>
+            <BaseJson
+              v-if="!isBase64EncodedWasm(item)"
+              :value="getInstructionPayloadValue(item)"
+            />
+            <span
+              v-else
+              class="row-text"
+            >{{ $t('transactions.displayingIsntSupported') }}</span>
           </div>
         </div>
       </template>
@@ -324,11 +330,15 @@ watch(listState, fetchInstructions, { immediate: true });
       }
 
       @include xxs {
-        width: 70vw;
+        width: 75vw;
       }
 
       @include sm {
-        width: 75vw;
+        width: 82vw;
+      }
+
+      @include md {
+        width: 85vw;
       }
 
       @include lg {
