@@ -1,5 +1,5 @@
 import { countTimeDifference } from '@/shared/lib/time';
-import type { MaybeRefOrGetter} from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import { toValue } from 'vue';
 import { reactive, ref, watch } from 'vue';
 import { useIntervalFn } from '@vueuse/shared';
