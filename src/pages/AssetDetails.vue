@@ -10,7 +10,7 @@ import type { AssetDefinition } from '@/shared/api/schemas';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import { useWindowSize } from '@vueuse/core';
-import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useTable } from '@/shared/lib/table';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
@@ -97,7 +97,7 @@ onMounted(async () => {
           <div class="asset-details__information-data">
             <DataField
               :title="$t('domain')"
-              :hash="assetDefinitionId.domain"
+              :value="assetDefinitionId.domain"
               :link="`/domains/${assetDefinitionId.domain}`"
             />
             <DataField
@@ -273,10 +273,6 @@ onMounted(async () => {
 
       @include sm {
         grid-template-columns: 1fr 1fr 1fr 1fr;
-      }
-
-      .base-link {
-        @include tpg-s3;
       }
     }
   }
