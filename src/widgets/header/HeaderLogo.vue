@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import IrohaLogo from '@/shared/ui/icons/iroha-logo.png';
+import IrohaLogo from '@/assets/iroha-logo.png';
 </script>
 
 <template>
