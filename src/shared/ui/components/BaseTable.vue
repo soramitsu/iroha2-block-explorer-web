@@ -63,7 +63,7 @@
         <BaseDropdown
           v-model="pageSizeModel"
           :items="sizeOptions"
-          :field-label="$t('rowsPerPage')"
+          :field-label="$t('table.rowsPerPage')"
           width="175px"
         />
       </div>
