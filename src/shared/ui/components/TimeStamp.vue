@@ -2,7 +2,7 @@
 import { defaultFormat } from '@/shared/lib/time';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
-import { computed } from 'vue';
+import { computed, toRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const res = useTimeAgo(props.value);
+const res = useTimeAgo(toRef(props, 'value'));
 
 const i18nKey = computed(() => {
   if (res.precision === 'days') {
