@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="target"
     class="base-dropdown-window"
     :data-size="size"
   >
@@ -24,10 +25,11 @@
 </template>
 
 <script setup lang="ts">
-import { useVModel } from '@vueuse/core';
+import { onClickOutside, useVModel } from '@vueuse/core';
+import { ref } from 'vue';
 
 interface Props {
-  modelValue?: string
+  modelValue: string
   size: 'md' | 'lg'
   items?: {
     label: string
@@ -39,6 +41,12 @@ type Emits = (event: 'update:modelValue', value: string) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const target = ref(null);
+
+onClickOutside(target, () => {
+  emit('update:modelValue', model.value);
+});
 
 const model = useVModel(props, 'modelValue', emit);
 </script>

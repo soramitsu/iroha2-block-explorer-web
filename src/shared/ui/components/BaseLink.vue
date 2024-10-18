@@ -1,6 +1,6 @@
 <template>
   <router-link
-    :to="to"
+    :to
     class="base-link"
     :data-monospace="monospace || null"
   >

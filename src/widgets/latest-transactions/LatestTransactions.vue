@@ -4,7 +4,10 @@
     class="latest-transactions"
   >
     <template #header-action>
-      <BaseButton line>
+      <BaseButton
+        line
+        to="/transactions"
+      >
         {{ $t('viewAll') }}
       </BaseButton>
     </template>
@@ -30,7 +33,7 @@
 
           <BaseHash
             :hash="transaction.hash"
-            type="medium"
+            :type="hashType"
             :link="`/transactions/${transaction.hash}`"
             copy
           />
@@ -38,12 +41,12 @@
           <div class="latest-transactions__info">
             <div class="latest-transactions__time">
               <TimeIcon />
-              <span>{{ $t('time.min', [elapsed.allMinutes(transaction.created_at)]) }} {{ $t('time.ago') }}</span>
+              <TimeStamp :value="transaction.created_at" />
             </div>
 
             <BaseHash
               :hash="transaction.authority"
-              type="medium"
+              :type="hashType"
               :link="`/accounts/${transaction.authority}`"
               class="latest-transactions__account"
             />
@@ -59,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
@@ -67,11 +70,19 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { elapsed } from '@/shared/lib/time';
+import { defaultFormat } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { Transaction } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
+import { useWindowSize } from '@vueuse/core';
+import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { objectOmit } from '@vueuse/shared';
+import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
+
+const emit = defineEmits<{
+  loaded: [number]
+}>();
 
 const status = ref<ftm.Status>(null);
 
@@ -80,18 +91,39 @@ const isLoading = ref(false);
 
 const { handleUnknownError } = useErrorHandlers();
 
-onMounted(async () => {
-  try {
-    isLoading.value = true;
+watch(
+  status,
+  async () => {
+    try {
+      isLoading.value = true;
 
-    const { items } = await http.fetchTransactions({ per_page: 5 });
+      const params = { per_page: 5, status: status.value };
 
-    transactions.value = items;
-  } catch (error) {
-    handleUnknownError(error);
-  } finally {
-    isLoading.value = false;
-  }
+      const res = await http.fetchTransactions(objectOmit(params, status.value ? [] : ['status']));
+
+      transactions.value = res.items;
+      emit('loaded', res.pagination.total_items);
+    } catch (error) {
+      handleUnknownError(error);
+    } finally {
+      isLoading.value = false;
+    }
+  },
+  { immediate: true }
+);
+
+const HASH_BREAKPOINT = 1300;
+
+const { width } = useWindowSize();
+
+const hashType = computed(() => {
+  if (width.value > HASH_BREAKPOINT) return 'medium';
+
+  if (width.value > LG_WINDOW_SIZE) return 'short';
+
+  if (width.value > XS_WINDOW_SIZE) return 'medium';
+
+  return 'short';
 });
 </script>
 
@@ -137,7 +169,7 @@ onMounted(async () => {
 
   &__info {
     display: grid;
-    grid-gap: size(0.5) size(2);
+    grid-gap: size(0.5) size(4);
 
     @include md {
       grid-template-columns: auto auto;
@@ -158,14 +190,22 @@ onMounted(async () => {
   }
 
   &__time {
-    color: theme-color('content-primary');
-    @include tpg-s3;
+    user-select: none;
+    cursor: default;
+    position: relative;
+    display: flex;
+    align-items: center;
 
     svg {
       fill: theme-color('content-quaternary');
       width: 10px;
       height: 10px;
       margin-right: 6px;
+    }
+
+    &:hover .context-tooltip {
+      display: flex;
+      left: size(14);
     }
   }
 

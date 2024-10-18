@@ -4,13 +4,18 @@
     "latestTransactions": "Latest Transactions",
     "latestBlocks": "Latest Blocks"
   },
+  "noData": "No data",
   "viewAll": "view all",
   "domain": "Domain",
-  "rowsPerPage": "Rows per page",
+  "table": {
+    "rowsPerPage": "Rows per page",
+    "pageOf": "{0}-{1} of {2}"
+  },
   "address": "Address",
   "cryptos": "Cryptos",
   "id": "ID",
   "name": "Name",
+  "accountId": "AccountId",
   "type": "Type",
   "kind": "Kind",
   "payload": "Payload",
@@ -29,12 +34,11 @@
     "error": "Impossible copy to clipboard"
   },
   "homePage": {
-    "domains": "Number of domains",
-    "accounts": "Active Accounts",
-    "assets": "Total number of assets",
-    "averageBlockTime": "Average Block Time",
-    "validators": "Validators",
-    "nodes": "Nodes",
+    "totalAccounts": "Total accounts",
+    "totalAssets": "Total assets",
+    "totalDomains": "Total domains",
+    "totalBlocks": "Total blocks",
+    "totalTransactions": "Total transactions",
     "title": {
       "firstLine": "Hyperleger Iroha",
       "secondLine": "Blockchain Explorer"
@@ -42,9 +46,14 @@
     "searchPlaceholder": "Search Address / Txn Hash / Block / Token"
   },
   "time": {
-    "min": "{0} min",
-    "sec": "{0} sec",
-    "ago": "ago"
+    "secAgo": "{0} sec ago",
+    "secsAgo": "{0} secs ago",
+    "minAgo": "{0} min ago",
+    "minsAgo": "{0} mins ago",
+    "hourAgo": "{0} hour ago",
+    "hoursAgo": "{0} hours ago",
+    "dayAgo": "{0} day ago",
+    "daysAgo": "{0} days ago"
   },
   "transactions": {
     "transactions": "Transactions",
@@ -97,16 +106,15 @@
     "accountId": "Account ID",
     "value": "Value",
     "accountDoesntHaveAnyAssets": "Account doesn't have any assets",
-    "accountDoesntHaveAnyDomains": "Account doesn't have any domains",
-    "accountDoesntHaveAnyTransactions": "Account doesn't have any transactions",
-    "ownedDomains": "Owned Domains",
-    "ownedAssets": "Owned Assets"
+    "accountDoesntHaveAnyDomains": "Account doesn't have any domains"
   },
   "assets": {
     "assets": "Assets",
-    "assetMetrics": "Asset metrics",
+    "asset": "Asset {0}",
     "assetTransactions": "Asset transactions",
-    "ownedBy": "Owned By"
+    "ownedBy": "Owned By",
+    "assetInstances": "Asset instances",
+    "assetDoesntContainAnyInstances": "Asset doesn't contain any instances"
   },
   "blocks": {
     "age": "Age",

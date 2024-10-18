@@ -17,6 +17,8 @@ import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter-transactions/mod
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { useWindowSize } from '@vueuse/core';
 
 const router = useRouter();
 const { handleUnknownError } = useErrorHandlers();
@@ -58,6 +60,14 @@ const domainsTable = useTable(http.fetchDomains);
 const transactionsTab = ref<TabAccountTransactions>('transactions');
 
 const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
+
+const { width } = useWindowSize();
+
+const hashType = computed(() => {
+  if (width.value > XS_WINDOW_SIZE) return 'medium';
+
+  return 'short';
+});
 </script>
 
 <template>
@@ -80,21 +90,12 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
                 :title="$t('accounts.accountId')"
                 :hash="accountId.toString()"
                 copy
-                type="medium"
-              />
-
-              <DataField
-                :title="$t('accounts.ownedDomains')"
-                :value="account.owned_domains"
-              />
-
-              <DataField
-                :title="$t('accounts.ownedAssets')"
-                :value="account.owned_assets"
+                :type="hashType"
               />
 
               <DataField
                 :title="$t('metadata')"
+                metadata
                 :value="parseMetadata(account.metadata)"
               />
             </div>
@@ -118,7 +119,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
             :loading="assetsTable.loading.value"
             :items="assetsTable.items.value"
             container-class="account-details__personal-owned-list"
-            breakpoint="960"
+            :breakpoint="960"
             :pagination="assetsTable.pagination"
             @next-page="assetsTable.nextPage()"
             @prev-page="assetsTable.prevPage()"
@@ -201,7 +202,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
             :loading="domainsTable.loading.value"
             :items="domainsTable.items.value"
             container-class="account-details__personal-owned-list"
-            breakpoint="960"
+            :breakpoint="960"
             :pagination="domainsTable.pagination"
             @next-page="domainsTable.nextPage()"
             @prev-page="domainsTable.prevPage()"
@@ -346,6 +347,10 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
         padding: size(0) size(4) size(4);
       }
 
+      .base-table > .content-row {
+        display: flex;
+      }
+
       .content-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -358,10 +363,6 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
 
       &-list {
         display: grid;
-
-        .content-row:last-child {
-          border-bottom: 1px solid theme-color('border-primary');
-        }
 
         @include xxs {
           grid-template-columns: 1fr;
@@ -390,7 +391,6 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
 
       &-mobile-list {
         &-row {
-          border-bottom: 1px solid theme-color('border-primary');
           padding: size(2) size(4);
           @include xxs {
             width: 100%;
@@ -473,7 +473,6 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
           }
 
           height: auto;
-          min-height: 0;
         }
         & > .content-row {
           height: auto;

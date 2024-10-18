@@ -175,6 +175,7 @@ export type Account = z.infer<typeof Account>;
 
 export interface AssetSearchParams extends PaginationParams {
   owned_by?: AccountId
+  definition?: AssetDefinitionId
 }
 
 export const Asset = z.object({
@@ -222,6 +223,7 @@ export type Domain = z.infer<typeof Domain>;
 export interface TransactionSearchParams extends PaginationParams {
   authority?: AccountId
   block?: number
+  status?: TransactionStatus
 }
 
 export const Transaction = z.object({
@@ -252,7 +254,6 @@ export const Block = z.object({
   transactions_hash: z.string(),
   transactions_rejected: z.number(),
   transactions_total: z.number(),
-  consensus_estimation: Duration,
 });
 
 export type Block = z.infer<typeof Block>;

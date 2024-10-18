@@ -10,16 +10,48 @@
 
     <div class="home-page-info__grid">
       <div
-        v-for="(item, i) in info"
+        v-for="(item, i) in firstSection"
         :key="i"
         class="home-page-info__item"
       >
-        <span class="home-page-info__value">
+        <span
+          v-if="item.value"
+          class="home-page-info__item-value"
+        >
           {{ item.value }}
         </span>
 
-        <span class="home-page-info__label">
-          {{ item.label }}
+        <BaseLoading
+          v-else
+          class="home-page-info__item-loading"
+        />
+
+        <span class="home-page-info__item-label">
+          {{ $t(item.i18nKey) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="home-page-info__grid">
+      <div
+        v-for="(item, i) in secondSection"
+        :key="i"
+        class="home-page-info__item"
+      >
+        <span
+          v-if="item.value"
+          class="home-page-info__item-value"
+        >
+          {{ item.value }}
+        </span>
+
+        <BaseLoading
+          v-else
+          class="home-page-info__item-loading"
+        />
+
+        <span class="home-page-info__item-label">
+          {{ $t(item.i18nKey) }}
         </span>
       </div>
     </div>
@@ -27,20 +59,60 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
 import { SearchField } from '@/features/search';
+import { computed, onMounted, shallowRef } from 'vue';
+import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import * as http from '@/shared/api';
+import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 
-const { t } = useI18n({ useScope: 'global' });
+const props = withDefaults(
+  defineProps<{
+    blocks: number
+    transactions: number
+  }>(),
+  {
+    blocks: 0,
+    transactions: 0,
+  }
+);
 
-// TODO: Research what stats should be displayed due to different layouts
-const info = [
-  { value: '5.599s', label: t('homePage.averageBlockTime') },
-  { value: '654', label: t('homePage.validators') },
-  { value: '68', label: t('homePage.nodes') },
-  { value: '12,658', label: t('homePage.accounts') },
-  { value: '12345', label: t('homePage.domains') },
-  { value: '12,658', label: t('homePage.assets') },
-];
+interface InfoItem {
+  value: number
+  i18nKey: string
+}
+
+const firstSection = shallowRef<InfoItem[]>([
+  { value: 0, i18nKey: 'homePage.totalAccounts' },
+  { value: 0, i18nKey: 'homePage.totalAssets' },
+  { value: 0, i18nKey: 'homePage.totalDomains' },
+]);
+
+const secondSection = computed(() => {
+  return [
+    { value: props.blocks, i18nKey: 'homePage.totalBlocks' },
+    { value: props.transactions, i18nKey: 'homePage.totalTransactions' },
+  ];
+});
+
+const { handleUnknownError } = useErrorHandlers();
+
+onMounted(async () => {
+  try {
+    const [assets, accounts, domains] = await Promise.all([
+      http.fetchAssets(),
+      http.fetchAccounts(),
+      http.fetchDomains(),
+    ]).then((res) => res.map((item) => item.pagination.total_items));
+
+    firstSection.value = [
+      { value: accounts, i18nKey: 'homePage.totalAccounts' },
+      { value: assets, i18nKey: 'homePage.totalAssets' },
+      { value: domains, i18nKey: 'homePage.totalDomains' },
+    ];
+  } catch (e) {
+    handleUnknownError(e);
+  }
+});
 </script>
 
 <style lang="scss">
@@ -90,64 +162,64 @@ const info = [
   }
 
   &__grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: fit-content(100%) fit-content(100%);
-    grid-gap: size(2) 0;
+    display: flex;
+    justify-content: center;
     width: 100%;
-    padding: size(2) size(1);
+    padding: size(2) 0 size(1) 0;
+    gap: size(4);
 
     @include xs {
-      grid-gap: size(3) 0;
+      gap: size(8);
     }
 
     @include sm {
-      grid-template-columns: repeat(3, 1fr);
-      padding: size(3) 0;
+      gap: size(12);
     }
 
     @include md {
-      grid-template-columns: repeat(3, 1fr);
       width: $home-content-width-tablet;
-      padding: size(5) 0;
+      padding: size(2) 0;
     }
 
     @include lg {
       width: $home-content-width;
-      padding: size(7) size(12) size(7) size(12);
-      grid-gap: size(5) 0;
     }
   }
 
   &__item {
-    display: grid;
-    justify-items: center;
-  }
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 
-  &__value {
-    @include tpg-h3;
-    color: theme-color('content-on-surface-variant');
-
-    @include xs {
-      @include tpg-h1;
+    &-loading {
+      margin-bottom: size(1);
     }
 
-    @include md {
-      @include tpg-d2;
+    &-value {
+      @include tpg-h3;
+      color: theme-color('content-on-surface-variant');
+
+      @include xs {
+        @include tpg-h1;
+      }
+
+      @include md {
+        @include tpg-d2;
+      }
+
+      @include lg {
+        @include tpg-d1;
+      }
     }
 
-    @include lg {
-      @include tpg-d1;
-    }
-  }
+    &-label {
+      @include tpg-s5;
+      color: theme-color('content-quaternary');
+      text-align: center;
 
-  &__label {
-    @include tpg-s5;
-    color: theme-color('content-quaternary');
-    text-align: center;
-
-    @include xs {
-      @include tpg-s4;
+      @include xs {
+        @include tpg-s4;
+      }
     }
   }
 }

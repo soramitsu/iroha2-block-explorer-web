@@ -1,23 +1,36 @@
 import { format } from 'date-fns/format';
+import type { TimeAgo } from '@/shared/ui/composables/useTimeAgo';
 
-function getAllElapsedMinutes(dateString: string | Date) {
+export function countTimeDifference(now: number, dateString: string | Date): TimeAgo {
   const date = new Date(dateString);
-  const diff = Date.now() - date.getTime();
+  const diff = now - date.getTime();
 
-  return Math.floor(diff / 1000 / 60);
+  const minutes = Math.floor(diff / 1000 / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days) {
+    return {
+      precision: 'days',
+      value: days,
+    };
+  } else if (hours) {
+    return {
+      precision: 'hours',
+      value: hours,
+    };
+  } else if (minutes < 1) {
+    return {
+      precision: 'seconds',
+      value: Math.floor((diff / 1000) % 60),
+    };
+  }
+
+  return {
+    precision: 'minutes',
+    value: minutes,
+  };
 }
-
-function getElapsedSeconds(dateString: string | Date) {
-  const date = new Date(dateString);
-  const diff = Date.now() - date.getTime();
-
-  return Math.floor((diff / 1000) % 60);
-}
-
-export const elapsed = {
-  allMinutes: getAllElapsedMinutes,
-  seconds: getElapsedSeconds,
-};
 
 function formatXX(item: number) {
   return item < 10 ? '0' + item : item;

@@ -29,8 +29,9 @@ import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import { useLangDropdown } from '@/shared/ui/composables/header-portal';
 import BaseDropdownWindow from '@/shared/ui/components/BaseDropdownWindow.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
-import { langOptions, PORTAL_ID } from '@/shared/config';
+import { langOptions } from '@/shared/config';
 import { useApplicationLanguage } from '@/shared/ui/composables/useApplicationLanguage';
+import { PORTAL_ID } from '@/shared/ui/consts';
 
 const dropdown = useLangDropdown();
 

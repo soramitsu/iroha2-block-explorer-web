@@ -141,13 +141,16 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
         </div>
       </template>
     </BaseContentBlock>
-    <BaseContentBlock :title="$t('blocks.blockTransactions')">
+    <BaseContentBlock
+      :title="$t('blocks.blockTransactions')"
+      class="block-details__transactions"
+    >
       <template #default>
         <TransactionsTable
           v-if="block"
           show-authority
           :filter-by="{ kind: 'block', value: block.height }"
-          :hash-type="hashType"
+          :hash-type
         />
       </template>
     </BaseContentBlock>
@@ -216,6 +219,10 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
         @include tpg-s3;
       }
     }
+  }
+
+  &__transactions hr {
+    display: none;
   }
 }
 </style>

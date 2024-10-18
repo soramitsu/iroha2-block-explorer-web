@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="target"
     class="base-dropdown"
     :style="`width: ${props.width}`"
   >
@@ -37,6 +38,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import ArrowIcon from '@/shared/ui/icons/dropdown-icon.svg';
+import { onClickOutside } from '@vueuse/core';
 
 interface DropdownItem {
   label: string
@@ -51,6 +53,12 @@ interface Props {
 }
 
 type Emits = (e: 'update:modelValue', value: string | number) => void;
+
+const target = ref(null);
+
+onClickOutside(target, () => {
+  isOpen.value = false;
+});
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();

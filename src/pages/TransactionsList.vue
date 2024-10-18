@@ -4,7 +4,7 @@
     class="transactions-list-page"
   >
     <TransactionsTable
-      :hash-type="hashType"
+      :hash-type
       show-block
       show-authority
     />
@@ -16,12 +16,15 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-
-const TRANSACTIONS_HASH_BREAKPOINT = 1350;
+import { XL_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const { width } = useWindowSize();
 
-const hashType = computed(() => {
-  return width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full';
-});
+const hashType = computed(() => (width.value < XL_WINDOW_SIZE ? 'short' : 'full'));
 </script>
+
+<style lang="scss">
+.transactions-list-page hr {
+  display: none;
+}
+</style>

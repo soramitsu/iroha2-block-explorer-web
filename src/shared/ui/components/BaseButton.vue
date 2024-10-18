@@ -1,7 +1,7 @@
 <template>
   <RouterLink
     v-if="to"
-    :to="to"
+    :to
     class="base-button"
     :data-type="type"
     :data-pressed="pressed || null"

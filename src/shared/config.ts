@@ -14,5 +14,3 @@ export const langOptions = [
   { label: 'RU - Русский', value: 'ru' },
   { label: 'JP - 日本', value: 'jp' },
 ];
-
-export const PORTAL_ID = 'header-dropdown-portal';

@@ -4,12 +4,12 @@
       <ThemeSwitcher />
       <LangDropdown />
       <MobileMenu />
-
-      <div
-        :id="PORTAL_ID"
-        class="home-page__dropdown"
-      />
     </div>
+
+    <div
+      :id="PORTAL_ID"
+      class="home-page__dropdown"
+    />
 
     <BackgroundLogo class="home-page__background-logo" />
     <LogoIcon class="home-page__logo-icon" />
@@ -21,11 +21,14 @@
     </h1>
 
     <NavigationMenu class="home-page__menu" />
-    <HomePageInfo />
+    <HomePageInfo
+      :blocks
+      :transactions
+    />
 
     <div class="home-page__blocks">
-      <LatestBlocks />
-      <LatestTransactions />
+      <LatestBlocks @loaded="blocks = $event" />
+      <LatestTransactions @loaded="transactions = $event" />
     </div>
   </div>
 </template>
@@ -38,9 +41,13 @@ import { LatestTransactions } from '@/widgets/latest-transactions';
 import { ThemeSwitcher } from '@/features/switch-theme';
 import { LangDropdown } from '@/features/switch-lang';
 import { MobileMenu } from '@/features/mobile-menu';
-import { PORTAL_ID } from '@/shared/config';
 import { NavigationMenu } from '@/features/navigation';
 import { HomePageInfo } from '@/widgets/home-page-info';
+import { PORTAL_ID } from '@/shared/ui/consts';
+import { ref } from 'vue';
+
+const transactions = ref(0);
+const blocks = ref(0);
 </script>
 
 <style lang="scss">
@@ -54,13 +61,26 @@ import { HomePageInfo } from '@/widgets/home-page-info';
 
   &__dropdown {
     position: absolute;
-    top: calc(50% + 20px + size(1));
     z-index: 10;
-    right: 0;
+    right: size(1);
+    top: calc(2% + size(1));
+
+    @include xs {
+      right: size(2);
+      top: calc(2% + size(2));
+    }
+
+    @include md {
+      right: size(3);
+    }
+
+    @include lg {
+      top: calc(3% + size(2));
+      right: size(4);
+    }
   }
 
   &__buttons {
-    position: absolute;
     top: size(1);
     right: size(1);
 

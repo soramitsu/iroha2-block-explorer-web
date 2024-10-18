@@ -1,10 +1,22 @@
 <template>
   <div class="base-table">
     <div
-      v-if="$slots.header && width >= props.breakpoint"
+      v-if="$slots.header && width >= props.breakpoint && !isEmpty"
       class="content-row"
     >
       <slot name="header" />
+    </div>
+    <div
+      v-else-if="props.loading"
+      class="content-row content-row_empty"
+    >
+      <BaseLoading />
+    </div>
+    <div
+      v-else-if="isEmpty"
+      class="content-row content-row_empty row-text"
+    >
+      {{ $t('noData') }}
     </div>
 
     <div :class="containerClass">
@@ -18,7 +30,7 @@
         >
           <slot
             name="row"
-            :item="item"
+            :item
           />
         </div>
 
@@ -28,11 +40,14 @@
         >
           <slot
             name="mobile-card"
-            :item="item"
+            :item
           />
         </div>
 
-        <BaseLoading v-else-if="i === Math.floor(items.length / 2)" />
+        <div
+          v-else
+          class="content-row content-row_empty"
+        />
       </template>
     </div>
 
@@ -48,7 +63,7 @@
         <BaseDropdown
           v-model="pageSizeModel"
           :items="sizeOptions"
-          :field-label="$t('rowsPerPage')"
+          :field-label="$t('table.rowsPerPage')"
           width="175px"
         />
       </div>
@@ -88,13 +103,14 @@ import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
 import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 import type { Pagination } from '@/shared/api/schemas';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
   loading: boolean
   pagination?: Pagination | null
   items: T[]
   containerClass: string
-  breakpoint?: string | number
+  breakpoint?: number
   reversed?: boolean
   paginationBreakpoint?: number
 }
@@ -112,37 +128,41 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits<Emits>();
 
+const { t } = useI18n();
 const { width } = useWindowSize();
 
 const items = computed(() => {
-  if (props.loading) {
-    return [null];
-  }
+  if (!props.loading) return props.items;
 
-  return props.items;
+  if (!props.items.length) return [];
+
+  return Array.from({ length: props.pagination?.per_page ?? 10 }, () => null);
 });
 
+const isEmpty = computed(() => !items.value.some((i) => i));
+
 const segmentInfo = computed(() => {
-  if (!props.pagination) return '';
+  if (!props.pagination || !props.items.length) return t('table.pageOf', [0, 0, 0]);
 
   const p = props.pagination;
 
   if (props.reversed) {
-    if (p.per_page > props.items.length) return `${props.items.length}—1 of ${p.total_items}`;
+    if (p.per_page > props.items.length) return t('table.pageOf', [props.items.length, 1, p.total_items]);
 
     const start = (p.page - 1) * p.per_page + props.items.length;
 
     const end = start - props.items.length + 1;
 
-    return `${start}—${end} of ${p.total_items}`;
+    return t('table.pageOf', [start, end, p.total_items]);
   }
 
   const start = (p.page - 1) * p.per_page + 1;
   const end = p.page * p.per_page;
 
-  return `${start}—${end > p.total_items ? p.total_items : end} of ${p.total_items}`;
+  return t('table.pageOf', [start, end > p.total_items ? p.total_items : end, p.total_items]);
 });
 
+// FIXME: create pagination component, write unit tests
 const numbers = computed(() => {
   if (!props.pagination) return [];
 
@@ -241,6 +261,7 @@ const pageSizeModel = computed({
   }
 
   &__pagination {
+    z-index: 0;
     padding: size(2) size(2) 0 size(2);
     display: grid;
     grid-template-columns: auto;

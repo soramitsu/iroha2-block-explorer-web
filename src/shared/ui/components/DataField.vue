@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import BaseJson from '@/shared/ui/components/BaseJson.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -10,9 +11,11 @@ const props = withDefaults(
     link?: string
     copy?: boolean
     type?: 'full' | 'medium' | 'short' | 'two-line'
+    metadata?: boolean
   }>(),
   {
     type: 'full',
+    metadata: false,
   }
 );
 </script>
@@ -22,10 +25,10 @@ const props = withDefaults(
     <span class="data-field__title h-sm">{{ title }}</span>
     <BaseHash
       v-if="hash"
-      :hash="hash"
-      :link="link"
-      :copy="copy"
-      :type="type"
+      :hash
+      :link
+      :copy
+      :type
       :class="{ 'row-text': !props.link }"
     />
     <BaseLink
@@ -34,6 +37,10 @@ const props = withDefaults(
     >
       {{ value }}
     </BaseLink>
+    <BaseJson
+      v-else-if="value && metadata"
+      :value="value as Record<string, any>"
+    />
     <span
       v-else
       class="data-field__value"
@@ -41,7 +48,7 @@ const props = withDefaults(
   </div>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss">
 @import '@/shared/ui/styles/main';
 
 .data-field {
