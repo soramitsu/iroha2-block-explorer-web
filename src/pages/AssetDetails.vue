@@ -119,7 +119,7 @@ onMounted(async () => {
     </BaseContentBlock>
 
     <BaseContentBlock
-      :title="$t('assets.assetInstances')"
+      :title="$t('assets.assetHolders')"
       class="asset-details__assets-table"
     >
       <template #default>
