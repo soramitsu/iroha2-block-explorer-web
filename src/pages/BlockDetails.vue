@@ -17,7 +17,7 @@ const router = useRouter();
 
 const { handleUnknownError } = useErrorHandlers();
 
-const METRICS_HASH_BREAKPOINT = 1440;
+const METRICS_HASH_BREAKPOINT = 800;
 const { width } = useWindowSize();
 
 const metricsHashType = computed(() => (width.value < METRICS_HASH_BREAKPOINT ? 'medium' : 'full'));
@@ -135,6 +135,12 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
                 :title="$t('blocks.rejectedTransactions')"
                 :value="block.transactions_rejected"
                 copy
+              />
+
+              <DataField
+                :title="$t('blocks.merkleRootHash')"
+                :hash="block.transactions_hash"
+                :type="metricsHashType"
               />
             </div>
           </div>

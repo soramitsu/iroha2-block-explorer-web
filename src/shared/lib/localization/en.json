@@ -128,7 +128,8 @@
     "parentBlockHash": "Parent block hash",
     "totalAndRejectedTransactions": "{0} ({1} rejected)",
     "totalTransactions": "Total transactions",
-    "rejectedTransactions": "Rejected transactions"
+    "rejectedTransactions": "Rejected transactions",
+    "merkleRootHash": "Transaction's Merkle Root Hash"
   },
   "domains": {
     "domains": "Domains",
