@@ -10,11 +10,12 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import invariant from 'tiny-invariant';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatus } from '@/entities/transaction';
-import { formatUTC } from '@/shared/lib/time';
+import { getLocalTime, getUTCTime } from '@/shared/lib/time';
 import type { DetailedTransaction } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import { LG_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
 
 const router = useRouter();
 
@@ -90,7 +91,8 @@ watch(
                 <span class="h-sm">{{ $t('transactions.timestamp') }}</span>
                 <div class="transaction-details__info-row-time-date row-text">
                   <TimeIcon />
-                  <span>{{ formatUTC(transaction.created_at) }}</span>
+                  <span>{{ getLocalTime(transaction.created_at) }}</span>
+                  <ContextTooltip :message="getUTCTime(transaction.created_at)" />
                 </div>
               </div>
             </div>
@@ -216,6 +218,27 @@ watch(
         gap: size(1);
 
         &-date {
+          position: relative;
+
+          &:hover .context-tooltip {
+            display: flex;
+
+            @include sm {
+              top: size(-1);
+              left: size(32);
+            }
+
+            @include lg {
+              top: size(-4.5);
+              left: size(4);
+            }
+
+            @include xl {
+              top: size(-1);
+              left: size(32);
+            }
+          }
+
           gap: size(1);
           display: flex;
 

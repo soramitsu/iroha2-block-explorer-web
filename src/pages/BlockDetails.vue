@@ -7,7 +7,7 @@ import { useWindowSize } from '@vueuse/core';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
-import { defaultFormat } from '@/shared/lib/time';
+import { getLocalTime, getUTCTime } from '@/shared/lib/time';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
 import type { Block } from '@/shared/api/schemas';
@@ -120,9 +120,11 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
               />
 
               <DataField
+                class="block-details__metrics-data-row-date"
                 :title="$t('blocks.createdAt')"
-                :value="defaultFormat(block.created_at)"
+                :value="getLocalTime(block.created_at)"
                 copy
+                :tooltip="getUTCTime(block.created_at)"
               />
 
               <DataField
@@ -219,6 +221,10 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
       &-row {
         display: grid;
         gap: size(2);
+
+        &-date .context-tooltip {
+          left: size(29);
+        }
       }
 
       .base-link {
