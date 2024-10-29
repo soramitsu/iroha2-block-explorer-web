@@ -1,5 +1,6 @@
 import { format } from 'date-fns/format';
 import type { TimeAgo } from '@/shared/ui/composables/useTimeAgo';
+import { toZonedTime } from 'date-fns-tz';
 
 export function countTimeDifference(now: number, dateString: string | Date): TimeAgo {
   const date = new Date(dateString);
@@ -32,21 +33,29 @@ export function countTimeDifference(now: number, dateString: string | Date): Tim
   };
 }
 
-function formatXX(item: number) {
-  return item < 10 ? '0' + item : item;
+export function getGMTOffset(date: Date) {
+  const offset = date.getTimezoneOffset() / 60;
+
+  if (offset <= 0) {
+    return 'GMT+' + -offset;
+  }
+
+  return 'GMT-' + offset;
 }
 
-export function formatUTC(date: Date) {
-  return format(date, `MMM-dd-yyyy hh:mm:ss a 'UTC'`);
+export function getLocalTime(date: Date) {
+  const localDate = format(date, 'dd.MM.yyyy hh:mm:ss a ');
+  const offset = getGMTOffset(date);
+
+  return localDate + offset;
 }
 
-export function defaultFormat(timestamp: Date | string) {
-  const date = new Date(timestamp);
-  const day = formatXX(date.getDate());
-  const month = formatXX(date.getMonth() + 1);
-  const year = date.getFullYear();
-  const hours = formatXX(date.getHours());
-  const minutes = formatXX(date.getMinutes());
+export function getUTCTime(date: Date) {
+  const utcDate = format(toZonedTime(date, 'UTC'), 'dd.MM.yyyy hh:mm:ss a ');
 
-  return `${day}.${month}.${year} ${hours}:${minutes}`;
+  return utcDate + 'UTC';
+}
+
+export function defaultFormat(date: Date) {
+  return format(date, 'dd.MM.yyyy hh:mm:ss');
 }
