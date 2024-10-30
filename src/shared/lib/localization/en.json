@@ -39,6 +39,7 @@
     "totalDomains": "Total domains",
     "totalBlocks": "Total blocks",
     "totalTransactions": "Total transactions",
+    "totalNodes": "Total nodes",
     "title": {
       "firstLine": "Hyperleger Iroha",
       "secondLine": "Blockchain Explorer"

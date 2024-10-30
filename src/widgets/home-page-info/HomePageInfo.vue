@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { SearchField } from '@/features/search';
-import { computed, onMounted, shallowRef } from 'vue';
+import { computed, onMounted, ref, shallowRef } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
@@ -91,23 +91,29 @@ const secondSection = computed(() => {
   return [
     { value: props.blocks, i18nKey: 'homePage.totalBlocks' },
     { value: props.transactions, i18nKey: 'homePage.totalTransactions' },
+    { value: nodesAmount.value, i18nKey: 'homePage.totalNodes' },
   ];
 });
+
+const nodesAmount = ref(0);
 
 const { handleUnknownError } = useErrorHandlers();
 
 onMounted(async () => {
   try {
-    const [assets, accounts, domains] = await Promise.all([
+    const [assets, accounts, domains, { peers }] = await Promise.all([
       http.fetchAssets(),
       http.fetchAccounts(),
       http.fetchDomains(),
-    ]).then((res) => res.map((item) => item.pagination.total_items));
+      http.fetchPeerStatus(),
+    ]);
+
+    nodesAmount.value = peers + 1;
 
     firstSection.value = [
-      { value: accounts, i18nKey: 'homePage.totalAccounts' },
-      { value: assets, i18nKey: 'homePage.totalAssets' },
-      { value: domains, i18nKey: 'homePage.totalDomains' },
+      { value: accounts.pagination.total_items, i18nKey: 'homePage.totalAccounts' },
+      { value: assets.pagination.total_items, i18nKey: 'homePage.totalAssets' },
+      { value: domains.pagination.total_items, i18nKey: 'homePage.totalDomains' },
     ];
   } catch (e) {
     handleUnknownError(e);
