@@ -4,8 +4,6 @@ import { mount } from '@vue/test-utils';
 import { i18n } from '@/shared/lib/localization';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
-// Those tests are written for GMT+3 timezone.
-// In other timezones they won't pass
 test.each([
   [new Date('2024-09-11T07:22:47.157Z'), '11.09.2024 10:22:47 AM GMT+3'],
   [new Date(1730233940352), '29.10.2024 11:32:20 PM GMT+3'],

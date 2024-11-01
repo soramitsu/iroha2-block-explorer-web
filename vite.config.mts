@@ -13,6 +13,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    globalSetup: 'test-globals.ts',
   },
   build: {
     target: 'esnext',
