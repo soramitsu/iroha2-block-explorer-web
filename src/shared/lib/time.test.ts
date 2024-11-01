@@ -1,14 +1,21 @@
 import { expect, test } from 'vitest';
-import { formatUTC } from '@/shared/lib/time';
+import { getLocalTime, getUTCTime } from '@/shared/lib/time';
 import { mount } from '@vue/test-utils';
 import { i18n } from '@/shared/lib/localization';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
 test.each([
-  [new Date('2024-09-11T07:22:47.157Z'), 'Sep-11-2024 10:22:47 AM UTC'],
-  [new Date(1726641137724), 'Sep-18-2024 09:32:17 AM UTC'],
-])('format %f to %s', (input, expected) => {
-  expect(formatUTC(input)).toBe(expected);
+  [new Date(1730446858833), '01.11.2024 08:40:58 AM GMT+1'],
+  [new Date(1730233940352), '29.10.2024 09:32:20 PM GMT+1'],
+])('format %s to local time %s', (input, expected) => {
+  expect(getLocalTime(input)).toBe(expected);
+});
+
+test.each([
+  [new Date('2024-09-11T07:22:47.157Z'), '11.09.2024 07:22:47 AM UTC'],
+  [new Date(1730233940352), '29.10.2024 08:32:20 PM UTC'],
+])('format %s to UTC time %s', (input, expected) => {
+  expect(getUTCTime(input)).toBe(expected);
 });
 
 const NOW = Date.now();

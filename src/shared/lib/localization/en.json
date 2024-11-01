@@ -39,6 +39,7 @@
     "totalDomains": "Total domains",
     "totalBlocks": "Total blocks",
     "totalTransactions": "Total transactions",
+    "totalNodes": "Total nodes",
     "title": {
       "firstLine": "Hyperleger Iroha",
       "secondLine": "Blockchain Explorer"
@@ -113,7 +114,7 @@
     "asset": "Asset {0}",
     "assetTransactions": "Asset transactions",
     "ownedBy": "Owned By",
-    "assetInstances": "Asset instances",
+    "assetHolders": "Asset holders",
     "assetDoesntContainAnyInstances": "Asset doesn't contain any instances"
   },
   "blocks": {
@@ -128,7 +129,8 @@
     "parentBlockHash": "Parent block hash",
     "totalAndRejectedTransactions": "{0} ({1} rejected)",
     "totalTransactions": "Total transactions",
-    "rejectedTransactions": "Rejected transactions"
+    "rejectedTransactions": "Rejected transactions",
+    "merkleRootHash": "Transaction's Merkle Root Hash"
   },
   "domains": {
     "domains": "Domains",
