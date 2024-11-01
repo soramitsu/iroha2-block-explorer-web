@@ -5,8 +5,8 @@ import { i18n } from '@/shared/lib/localization';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 
 test.each([
-  [new Date('2024-09-11T07:22:47.157Z'), '11.09.2024 10:22:47 AM GMT+3'],
-  [new Date(1730233940352), '29.10.2024 11:32:20 PM GMT+3'],
+  [new Date(1730446858833), '01.11.2024 08:40:58 AM GMT+1'],
+  [new Date(1730233940352), '29.10.2024 09:32:20 PM GMT+1'],
 ])('format %s to local time %s', (input, expected) => {
   expect(getLocalTime(input)).toBe(expected);
 });
