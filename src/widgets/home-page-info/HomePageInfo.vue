@@ -14,17 +14,17 @@
         :key="i"
         class="home-page-info__item"
       >
+        <BaseLoading
+          v-if="isLoading"
+          class="home-page-info__item-loading"
+        />
+
         <span
-          v-if="item.value"
+          v-else
           class="home-page-info__item-value"
         >
           {{ item.value }}
         </span>
-
-        <BaseLoading
-          v-else
-          class="home-page-info__item-loading"
-        />
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -38,17 +38,17 @@
         :key="i"
         class="home-page-info__item"
       >
+        <BaseLoading
+          v-if="isLoading"
+          class="home-page-info__item-loading"
+        />
+
         <span
-          v-if="item.value"
+          v-else
           class="home-page-info__item-value"
         >
           {{ item.value }}
         </span>
-
-        <BaseLoading
-          v-else
-          class="home-page-info__item-loading"
-        />
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -99,8 +99,12 @@ const nodesAmount = ref(0);
 
 const { handleUnknownError } = useErrorHandlers();
 
+const isLoading = ref(false);
+
 onMounted(async () => {
   try {
+    isLoading.value = true;
+
     const [assets, accounts, domains, { peers }] = await Promise.all([
       http.fetchAssets(),
       http.fetchAccounts(),
@@ -117,6 +121,8 @@ onMounted(async () => {
     ];
   } catch (e) {
     handleUnknownError(e);
+  } finally {
+    isLoading.value = false;
   }
 });
 </script>
