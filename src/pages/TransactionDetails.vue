@@ -1,25 +1,23 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import invariant from 'tiny-invariant';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatus } from '@/entities/transaction';
 import { getLocalTime, getUTCTime } from '@/shared/lib/time';
-import type { DetailedTransaction } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import { LG_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
 const router = useRouter();
-
-const { handleUnknownError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 1100;
 const SIGNATURE_HASH_BREAKPOINT = 1400;
@@ -44,24 +42,24 @@ const transactionHash = computed(() => {
   return hash;
 });
 
-const transaction = ref<DetailedTransaction | null>(null);
-const isFetchingTransaction = ref(false);
-
-watch(
-  () => transactionHash.value,
-  async () => {
-    try {
-      isFetchingTransaction.value = true;
-
-      transaction.value = await http.fetchTransaction(transactionHash.value);
-    } catch (e) {
-      handleUnknownError(e);
-    } finally {
-      isFetchingTransaction.value = false;
-    }
+const transactionScope = useParamScope(
+  () => {
+    return {
+      key: transactionHash.value,
+      payload: transactionHash.value,
+    };
   },
-  { immediate: true }
+  ({ payload }) => handleParamScope(payload, http.fetchTransaction)
 );
+
+const isTransactionLoading = computed(() => transactionScope.value.expose.isLoading);
+const transaction = computed(() => {
+  const res = transactionScope.value?.expose.data;
+
+  if (!res) return null;
+
+  return res;
+});
 </script>
 
 <template>
@@ -72,7 +70,7 @@ watch(
     >
       <template #default>
         <div
-          v-if="isFetchingTransaction"
+          v-if="isTransactionLoading"
           class="transaction-details__info_loading"
         >
           <BaseLoading />

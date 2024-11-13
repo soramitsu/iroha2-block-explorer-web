@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
-import type { AssetDefinition } from '@/shared/api/schemas';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import { useWindowSize } from '@vueuse/core';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
-import { useTable } from '@/shared/lib/table';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
 const router = useRouter();
 
@@ -31,18 +30,16 @@ const hashType = computed(() => {
 });
 
 const accountIdType = computed(() => {
-  if (width.value > LG_WINDOW_SIZE) return 'medium';
+  if (width.value >= LG_WINDOW_SIZE) return 'medium';
 
-  if (width.value > MD_WINDOW_SIZE) return 'short';
+  if (width.value >= MD_WINDOW_SIZE) return 'short';
 
-  if (width.value > SM_WINDOW_SIZE) return 'medium';
+  if (width.value >= SM_WINDOW_SIZE) return 'medium';
 
-  if (width.value > XS_WINDOW_SIZE) return 'short';
+  if (width.value >= XS_WINDOW_SIZE) return 'short';
 
   return 'two-line';
 });
-
-const { handleUnknownError } = useErrorHandlers();
 
 const assetDefinitionId = computed(() => {
   const id = router.currentRoute.value.params['id'];
@@ -50,25 +47,50 @@ const assetDefinitionId = computed(() => {
   return AssetDefinitionIdSchema.parse(id);
 });
 
-const asset = ref<AssetDefinition | null>(null);
-const isFetchingAsset = ref(false);
+const assetScope = useParamScope(
+  () => {
+    return {
+      key: assetDefinitionId.value.toString(),
+      payload: assetDefinitionId.value,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchAssetDefinition)
+);
 
-const assetsTable = useTable(http.fetchAssets);
+const isAssetLoading = computed(() => assetScope.value.expose.isLoading);
+const asset = computed(() => {
+  const res = assetScope.value?.expose.data;
 
-onMounted(async () => {
-  try {
-    isFetchingAsset.value = true;
-    asset.value = await http.fetchAssetDefinition(assetDefinitionId.value);
+  if (!res) return null;
 
-    if (asset.value.assets) {
-      await assetsTable.fetch({ definition: asset.value.id.toString() });
-    }
-  } catch (e) {
-    handleUnknownError(e);
-  } finally {
-    isFetchingAsset.value = false;
-  }
+  return res;
 });
+
+const listState = reactive({
+  page: 1,
+  per_page: 10,
+});
+
+watch(
+  () => [listState.per_page],
+  () => {
+    listState.page = 1;
+  }
+);
+
+const assetsListScope = useParamScope(
+  () => {
+    return {
+      key: asset.value?.assets ? Object.values(listState).join('-') : '',
+      payload: listState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchAssets)
+);
+
+const isLoadingAssets = computed(() => assetsListScope.value?.expose.isLoading);
+const totalAssets = computed(() => assetsListScope.value?.expose.data?.pagination?.total_items ?? 0);
+const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 </script>
 
 <template>
@@ -79,7 +101,7 @@ onMounted(async () => {
     >
       <template #default>
         <div
-          v-if="isFetchingAsset"
+          v-if="isAssetLoading"
           class="asset-details__information_loading"
         >
           <BaseLoading />
@@ -131,15 +153,13 @@ onMounted(async () => {
         }}</span>
         <BaseTable
           v-else
-          :loading="assetsTable.loading.value"
-          :items="assetsTable.items.value"
+          v-model:page="listState.page"
+          v-model:page-size="listState.per_page"
+          :loading="isLoadingAssets"
+          :total="totalAssets"
+          :items="assets"
           container-class="asset-details__assets-table-list"
           :breakpoint="1200"
-          :pagination="assetsTable.pagination"
-          @next-page="assetsTable.nextPage()"
-          @prev-page="assetsTable.prevPage()"
-          @set-page="assetsTable.setPage($event)"
-          @set-size="assetsTable.setSize($event)"
         >
           <template #header>
             <div class="asset-details__assets-table-list-row">
@@ -324,6 +344,15 @@ onMounted(async () => {
       }
     }
 
+    .base-table__mobile-card {
+      @include xxs {
+        border-right: none;
+      }
+      @include md {
+        border: 1px solid theme-color('border-primary');
+      }
+    }
+
     &-mobile-list {
       &-row {
         padding: size(2) size(4);
@@ -331,6 +360,9 @@ onMounted(async () => {
           width: 100%;
         }
         @include sm {
+          width: 90vw;
+        }
+        @include md {
           width: 45vw;
         }
         display: flex;
