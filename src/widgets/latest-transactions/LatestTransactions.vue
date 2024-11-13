@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
@@ -70,15 +70,13 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { defaultFormat } from '@/shared/lib/time';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { Transaction } from '@/shared/api/schemas';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import * as http from '@/shared/api';
 import { useWindowSize } from '@vueuse/core';
 import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
-import { objectOmit } from '@vueuse/shared';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
 const emit = defineEmits<{
   loaded: [number]
@@ -86,31 +84,28 @@ const emit = defineEmits<{
 
 const status = ref<ftm.Status>(null);
 
-const transactions = shallowRef<Transaction[]>([]);
-const isLoading = ref(false);
+const listState = reactive({
+  per_page: 5,
+  status: status.value ? status.value : undefined,
+});
 
-const { handleUnknownError } = useErrorHandlers();
-
-watch(
-  status,
-  async () => {
-    try {
-      isLoading.value = true;
-
-      const params = { per_page: 5, status: status.value };
-
-      const res = await http.fetchTransactions(objectOmit(params, status.value ? [] : ['status']));
-
-      transactions.value = res.items;
-      emit('loaded', res.pagination.total_items);
-    } catch (error) {
-      handleUnknownError(error);
-    } finally {
-      isLoading.value = false;
-    }
+const scope = useParamScope(
+  () => {
+    return {
+      key: Object.values(listState).join('-'),
+      payload: listState,
+    };
   },
-  { immediate: true }
+  ({ payload }) => handleParamScope(payload, http.fetchTransactions)
 );
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const transactions = computed(() => scope.value?.expose.data?.items ?? []);
+const total = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
+
+watch(total, () => {
+  emit('loaded', total.value);
+});
 
 const HASH_BREAKPOINT = 1300;
 
