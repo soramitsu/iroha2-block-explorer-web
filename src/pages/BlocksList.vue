@@ -4,15 +4,14 @@
     class="blocks-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isLoading"
+      :total="payloadPagination?.total_items"
+      :payload-pagination
+      :items="blocks"
       container-class="blocks-list-page__container"
       reversed
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="blocks-list-page__row">
@@ -97,26 +96,40 @@
 
 <script setup lang="ts">
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { useTable } from '@/shared/lib/table';
 import * as http from '@/shared/api';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { onMounted } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
-const table = useTable(http.fetchBlocks, { reversed: true });
-
-const { handleUnknownError } = useErrorHandlers();
-
-onMounted(async () => {
-  try {
-    await table.fetch();
-  } catch (e) {
-    handleUnknownError(e);
-  }
+const listState = reactive({
+  page: 0,
+  per_page: 10,
 });
+
+watch(
+  () => [listState.per_page],
+  () => {
+    listState.page = 0;
+  }
+);
+
+const scope = useParamScope(
+  () => {
+    return {
+      key: Object.values(listState).join('-'),
+      payload: listState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchBlocks)
+);
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const payloadPagination = computed(() => scope.value?.expose.data?.pagination);
+const blocks = computed(() => scope.value?.expose.data?.items ?? []);
 </script>
 
 <style lang="scss">

@@ -4,14 +4,12 @@
     class="domains-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isLoading"
+      :total="totalDomains"
+      :items="domains"
       container-class="domains-list-page__container"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="domains-list-page__row">
@@ -79,27 +77,15 @@
 
 <script setup lang="ts">
 import * as http from '@/shared/api';
-import { useTable } from '@/shared/lib/table';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
-import { computed, onMounted } from 'vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { computed, reactive, watch } from 'vue';
 import { MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
-
-const table = useTable(http.fetchDomains);
-
-const { handleUnknownError } = useErrorHandlers();
-
-onMounted(async () => {
-  try {
-    await table.fetch();
-  } catch (e) {
-    handleUnknownError(e);
-  }
-});
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
 const HASH_BREAKPOINT = 1350;
 const { width } = useWindowSize();
@@ -113,6 +99,32 @@ const hashType = computed(() => {
 
   return 'two-line';
 });
+
+const listState = reactive({
+  page: 1,
+  per_page: 10,
+});
+
+watch(
+  () => [listState.per_page],
+  () => {
+    listState.page = 1;
+  }
+);
+
+const scope = useParamScope(
+  () => {
+    return {
+      key: Object.values(listState).join('-'),
+      payload: listState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchDomains)
+);
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const totalDomains = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
+const domains = computed(() => scope.value?.expose.data?.items ?? []);
 </script>
 
 <style lang="scss">
