@@ -6,12 +6,11 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import type { AccountId } from '@/shared/api/schemas';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
+import type { Reactive } from 'vue';
 import { computed, reactive, watch } from 'vue';
-import { useTable } from '@/shared/lib/table';
 import * as http from '@/shared/api';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-
-const { handleUnknownError } = useErrorHandlers();
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
 const props = withDefaults(
   defineProps<{
@@ -23,23 +22,41 @@ const props = withDefaults(
   { showBlock: false, showAuthority: false, filterBy: null }
 );
 
-const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
-
 const listState = reactive({
   status: null,
-  authority: computed(() => props.filterBy?.kind === 'authority' && props.filterBy?.value.toString()),
-  block: computed(() => props.filterBy?.kind === 'block' && props.filterBy?.value),
+  authority: computed(() => (props.filterBy?.kind === 'authority' ? props.filterBy.value : undefined)),
+  block: computed(() => (props.filterBy?.kind === 'block' ? props.filterBy?.value : 0)),
+  page: 0,
+  per_page: 10,
 });
 
-async function fetchTransactions() {
-  try {
-    await transactionsTable.fetch(listState);
-  } catch (e) {
-    handleUnknownError(e);
-  }
+async function fetchTransactions(params: Reactive<typeof listState>) {
+  return await http.fetchTransactions({
+    ...params,
+    status: params.status ?? undefined,
+  });
 }
 
-watch(listState, fetchTransactions, { immediate: true });
+watch(
+  () => [listState.per_page, listState.status],
+  () => {
+    listState.page = 0;
+  }
+);
+
+const scope = useParamScope(
+  () => {
+    return {
+      key: Object.values(listState).join('-'),
+      payload: listState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, fetchTransactions)
+);
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const transactions = computed(() => scope.value?.expose.data?.items ?? []);
+const payloadPagination = computed(() => scope.value.expose.data?.pagination);
 </script>
 
 <template>
@@ -49,16 +66,15 @@ watch(listState, fetchTransactions, { immediate: true });
     </div>
 
     <BaseTable
-      :loading="transactionsTable.loading.value"
-      :pagination="transactionsTable.pagination"
-      :items="transactionsTable.items.value"
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isLoading"
+      :items="transactions"
+      :total="payloadPagination?.total_items"
+      :payload-pagination
       container-class="transactions-table__container"
       reversed
       :pagination-breakpoint="1441"
-      @next-page="transactionsTable.nextPage()"
-      @prev-page="transactionsTable.prevPage()"
-      @set-page="transactionsTable.setPage($event)"
-      @set-size="transactionsTable.setSize($event)"
     >
       <template #row="{ item }">
         <div class="transactions-table__row">
