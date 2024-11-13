@@ -67,7 +67,7 @@ const blocks = ref(0);
 
     @include xs {
       right: size(2);
-      top: calc(2% + size(2));
+      top: calc(2% + size(3));
     }
 
     @include md {
@@ -75,7 +75,7 @@ const blocks = ref(0);
     }
 
     @include lg {
-      top: calc(3% + size(2));
+      top: calc(3% + size(3.5));
       right: size(4);
     }
   }
