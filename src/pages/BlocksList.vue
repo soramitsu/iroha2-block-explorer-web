@@ -41,7 +41,7 @@
           <BaseHash
             :hash="item.hash"
             :link="`/blocks/${item.hash}`"
-            type="full"
+            :type="hashType"
             copy
             class="cell"
           />
@@ -104,6 +104,12 @@ import { computed, reactive, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { useWindowSize } from '@vueuse/core';
+
+const { width } = useWindowSize();
+
+const HASH_BREAKPOINT = 1440;
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
 const listState = reactive({
   page: 0,
@@ -139,7 +145,12 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 130px 200px 640px 150px;
+    @include lg {
+      grid-template-columns: 130px 225px 300px 150px;
+    }
+    @include xl {
+      grid-template-columns: 130px 230px 640px 150px;
+    }
     justify-content: start;
 
     &-time {
