@@ -1,6 +1,6 @@
 {
   "name": "iroha2-block-explorer-web",
-  "packageManager": "pnpm@9.12.1",
+  "packageManager": "pnpm@8.11.0",
   "private": true,
   "scripts": {
     "dev": "vite",
