@@ -77,7 +77,7 @@ export async function fetchDomain(id: DomainId): Promise<Domain> {
   return Domain.parse(res);
 }
 
-export async function fetchBlocks(params?: PaginationParams): Promise<Paginated<Block>> {
+export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<Paginated<Block>> {
   const res = await get('/blocks', params);
   return Paginated(Block).parse(res);
 }
