@@ -73,7 +73,7 @@ function handleNextBlockClick() {
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
 
-const TRANSACTIONS_HASH_BREAKPOINT = 1350;
+const TRANSACTIONS_HASH_BREAKPOINT = 1440;
 
 const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full'));
 </script>
