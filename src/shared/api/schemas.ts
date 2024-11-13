@@ -21,12 +21,10 @@ export interface Paginated<T> {
   items: T[]
 }
 
-const PaginationParams = z
-  .object({
-    page: z.number(),
-    per_page: z.number(),
-  })
-  .partial();
+const PaginationParams = z.object({
+  page: z.number(),
+  per_page: z.number(),
+});
 
 export type PaginationParams = z.infer<typeof PaginationParams>;
 
@@ -220,7 +218,7 @@ export const Domain = z.object({
 
 export type Domain = z.infer<typeof Domain>;
 
-export interface TransactionSearchParams extends PaginationParams {
+export interface TransactionSearchParams extends Partial<PaginationParams> {
   authority?: AccountId
   block?: number
   status?: TransactionStatus
