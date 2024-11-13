@@ -51,84 +51,44 @@
       </template>
     </div>
 
-    <div
-      v-if="props.pagination"
-      class="base-table__pagination"
-    >
-      <div class="base-table__pagination-item">
-        <div class="base-table__segment-info">
-          {{ segmentInfo }}
-        </div>
-
-        <BaseDropdown
-          v-model="pageSizeModel"
-          :items="sizeOptions"
-          :field-label="$t('table.rowsPerPage')"
-          width="175px"
-        />
-      </div>
-
-      <div class="base-table__pagination-item">
-        <div class="base-table__numbers">
-          <span
-            v-for="(item, i) in numbers"
-            :key="i"
-            class="base-table__number"
-            :data-active="item === props.pagination.page || null"
-            @click="Number.isInteger(item) ? emit('setPage', Number(item)) : null"
-          >
-            {{ item }}
-          </span>
-        </div>
-
-        <div class="base-table__arrows">
-          <ArrowIcon
-            class="base-table"
-            @click="emit('prevPage')"
-          />
-          <ArrowIcon
-            class="base-table"
-            @click="emit('nextPage')"
-          />
-        </div>
-      </div>
-    </div>
+    <BasePagination
+      v-if="!props.disablePagination"
+      v-model:page="page"
+      v-model:page-size="pageSize"
+      :total-items="props.total"
+      :reversed="props.reversed"
+      :items="props.items.length"
+      :payload-pagination
+    />
   </div>
 </template>
 
 <script setup lang="ts" generic="T">
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import BaseLoading from './BaseLoading.vue';
-import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
+import BasePagination from '@/shared/ui/components/BasePagination.vue';
 import type { Pagination } from '@/shared/api/schemas';
-import { useI18n } from 'vue-i18n';
 
 interface Props {
   loading: boolean
-  pagination?: Pagination | null
+  total?: number
+  payloadPagination?: Pagination
+  disablePagination?: boolean
   items: T[]
   containerClass: string
   breakpoint?: number
   reversed?: boolean
-  paginationBreakpoint?: number
 }
 
-interface Emits {
-  (e: 'nextPage'): void
-  (e: 'prevPage'): void
-  (e: 'setPage', value: number): void
-  (e: 'setSize', value: number): void
-}
 const props = withDefaults(defineProps<Props>(), {
   breakpoint: 1200,
-  pagination: null,
-  paginationBreakpoint: 960,
+  disablePagination: false,
 });
-const emit = defineEmits<Emits>();
 
-const { t } = useI18n();
+const page = defineModel<number>('page', { default: 1 });
+const pageSize = defineModel<number>('pageSize', { default: 10 });
+
 const { width } = useWindowSize();
 
 const items = computed(() => {
@@ -136,107 +96,10 @@ const items = computed(() => {
 
   if (!props.items.length) return [];
 
-  return Array.from({ length: props.pagination?.per_page ?? 10 }, () => null);
+  return Array.from({ length: pageSize.value }, () => null);
 });
 
 const isEmpty = computed(() => !items.value.some((i) => i));
-
-const segmentInfo = computed(() => {
-  if (!props.pagination || !props.items.length) return t('table.pageOf', [0, 0, 0]);
-
-  const p = props.pagination;
-
-  if (props.reversed) {
-    if (p.per_page > props.items.length) return t('table.pageOf', [props.items.length, 1, p.total_items]);
-
-    const start = (p.page - 1) * p.per_page + props.items.length;
-
-    const end = start - props.items.length + 1;
-
-    return t('table.pageOf', [start, end, p.total_items]);
-  }
-
-  const start = (p.page - 1) * p.per_page + 1;
-  const end = p.page * p.per_page;
-
-  return t('table.pageOf', [start, end > p.total_items ? p.total_items : end, p.total_items]);
-});
-
-// FIXME: create pagination component, write unit tests
-const numbers = computed(() => {
-  if (!props.pagination) return [];
-
-  const isMobile = width.value < props.paginationBreakpoint;
-  const max = isMobile ? 6 : 10;
-  const side = isMobile ? 4 : 7;
-  const offset = isMobile ? 1 : 3;
-
-  const p = props.pagination;
-
-  if (p.total_pages < max) {
-    const numbers = new Array(p.total_pages).fill(0).map((_, i) => i + 1);
-
-    return props.reversed ? numbers.reverse() : numbers;
-  }
-
-  if (p.page < side) {
-    const numbersArray = Array(side)
-      .fill(0)
-      .map<string | number>((_, i) => i + 1);
-
-    return props.reversed
-      ? [p.total_pages, '. . .'].concat(numbersArray.reverse())
-      : numbersArray.concat(['. . .', p.total_pages]);
-  }
-
-  if (p.page > p.total_pages - side + 1) {
-    if (props.reversed)
-      return Array(side)
-        .fill(p.total_pages)
-        .map<string | number>((_, i) => _ - i)
-        .concat(['. . .', 1]);
-
-    return [1, '. . .'].concat(
-      Array(side)
-        .fill(0)
-        .map((_, i) => p.total_pages - i)
-        .reverse()
-    );
-  }
-
-  const start = Math.max(p.page - offset, 1);
-  const end = Math.min(p.page + offset, p.total_pages);
-
-  const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
-
-  return props.reversed
-    ? [p.total_pages, '. . .', ...middleNumbers.reverse(), '. . .', 1]
-    : [1, '. . .', ...middleNumbers, '. . .', p.total_pages];
-});
-
-const sizeOptions = [
-  {
-    label: '10',
-    value: 10,
-  },
-  {
-    label: '20',
-    value: 20,
-  },
-  {
-    label: '50',
-    value: 50,
-  },
-  {
-    label: '100',
-    value: 100,
-  },
-];
-
-const pageSizeModel = computed({
-  get: () => props.pagination?.per_page ?? 0,
-  set: (v) => emit('setSize', v),
-});
 </script>
 
 <style lang="scss">
@@ -257,84 +120,6 @@ const pageSizeModel = computed({
 
     @include lg {
       border-right: none;
-    }
-  }
-
-  &__pagination {
-    z-index: 0;
-    padding: size(2) size(2) 0 size(2);
-    display: grid;
-    grid-template-columns: auto;
-    align-items: center;
-    justify-items: center;
-    grid-gap: size(2);
-    align-self: end;
-    border-top: 1px solid theme-color('border-primary');
-
-    @include sm {
-      grid-template-columns: auto auto;
-      justify-content: space-between;
-      padding: size(3) size(4) 0 size(4);
-    }
-  }
-
-  &__pagination-item {
-    display: flex;
-    align-items: center;
-  }
-
-  &__segment-info {
-    @include tpg-s4;
-    color: theme-color('content-quaternary');
-    margin-right: size(1);
-    user-select: none;
-
-    @include sm {
-      margin-right: size(3);
-    }
-  }
-
-  &__arrows {
-    display: grid;
-    grid-template-columns: size(3) size(3);
-    grid-gap: size(1);
-
-    & > svg {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: size(3);
-      width: size(3);
-      padding: 4px;
-      color: theme-color('content-primary');
-      cursor: pointer;
-
-      &:first-child {
-        transform: rotateY(180deg);
-      }
-    }
-  }
-
-  &__numbers {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    user-select: none;
-  }
-
-  &__number {
-    @include tpg-s5-bold;
-    color: theme-color('content-primary');
-    padding: 0 size(0.75);
-    margin-right: size(0.25);
-    cursor: pointer;
-
-    @include xs {
-      padding: 0 size(1);
-    }
-
-    &[data-active] {
-      color: theme-color('primary');
     }
   }
 }
