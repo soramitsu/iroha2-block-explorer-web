@@ -16,7 +16,7 @@ const props = withDefaults(
   defineProps<{
     showBlock?: boolean
     showAuthority?: boolean
-    hashType: 'short' | 'full'
+    hashType: 'short' | 'medium' | 'full'
     filterBy?: { kind: 'authority', value: AccountId } | { kind: 'block', value: number } | null
   }>(),
   { showBlock: false, showAuthority: false, filterBy: null }
@@ -84,7 +84,7 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
             :committed="item.status === 'Committed'"
           />
 
-          <div class="transactions-table__column">
+          <div class="transactions-table__column transactions-table__column-hash">
             <div class="transactions-table__label">
               {{ $t('transactions.transactionID') }}
             </div>
@@ -104,7 +104,7 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
           <div class="transactions-table__columns">
             <div
               v-if="props.showAuthority"
-              class="transactions-table__column"
+              class="transactions-table__column transactions-table__column-authority"
             >
               <div class="transactions-table__label">
                 {{ $t('transactions.authority') }}
@@ -169,12 +169,16 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
       align-items: center;
     }
 
+    @include md {
+      grid-template-columns: 32px 0.3fr 1fr;
+    }
+
     @include lg {
-      grid-template-columns: 32px 1.8fr 1fr;
+      grid-template-columns: 32px 0.5fr 1fr;
     }
 
     @include xl {
-      grid-template-columns: 32px 1.2fr 1fr;
+      grid-template-columns: 32px 0.9fr 1fr;
     }
   }
 
@@ -217,7 +221,7 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
 
   &__columns {
     display: flex;
-    gap: size(3);
+    gap: size(2);
 
     flex-direction: column;
     @include md {
@@ -239,11 +243,36 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
       grid-gap: size(1);
     }
 
+    &-hash {
+      @include sm {
+        width: 30vw;
+      }
+      @include md {
+        width: 19vw;
+      }
+      @include lg {
+        width: 25vw;
+      }
+      @include xl {
+        width: size(82);
+      }
+    }
+
+    &-authority {
+      width: size(36);
+    }
+
     &-block {
       display: flex;
       gap: size(1);
       align-items: center;
-      width: size(10);
+
+      @include xxs {
+        width: size(16);
+      }
+      @include md {
+        width: size(14);
+      }
     }
   }
 }

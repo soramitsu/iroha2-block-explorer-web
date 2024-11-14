@@ -350,7 +350,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
     }
 
     @include lg {
-      width: 46vw;
+      width: 45vw;
     }
 
     @include xl {
@@ -481,7 +481,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
       width: 90vw;
     }
     @include lg {
-      width: 46vw;
+      width: 48vw;
     }
     @include xl {
       width: size(80);
@@ -513,6 +513,35 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
         }
         & > .content-row {
           height: auto;
+        }
+
+        .transactions-table__columns {
+          @include sm {
+            flex-direction: column;
+          }
+          @include md {
+            flex-direction: row;
+          }
+          @include lg {
+            flex-direction: column;
+          }
+        }
+
+        .transactions-table__column {
+          &-hash {
+            @include sm {
+              width: 30vw;
+            }
+            @include md {
+              width: 19vw;
+            }
+            @include lg {
+              width: size(24);
+            }
+          }
+          &-block {
+            width: size(16);
+          }
         }
       }
     }
