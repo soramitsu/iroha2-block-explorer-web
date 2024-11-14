@@ -79,31 +79,45 @@ const numbers = computed(() => {
   const side = isMobile ? 4 : 7;
   const offset = isMobile ? 1 : 3;
 
-  if (totalPages.value < max) {
-    const numbersArray = new Array(totalPages.value).fill(0).map((_, i) => i + 1);
-    return props.reversed ? numbersArray.reverse() : numbersArray;
-  }
+  if (props.reversed) {
+    if (totalPages.value < max) {
+      return new Array(totalPages.value)
+        .fill(0)
+        .map((_, i) => i + 1)
+        .reverse();
+    } else if (activePage.value < side) {
+      const numbersArray = Array(side)
+        .fill(0)
+        .map<string | number>((_, i) => i + 1);
 
-  if ((props.reversed && activePage.value < side) || (!props.reversed && page.value < side)) {
-    const numbersArray = Array(side)
-      .fill(0)
-      .map<string | number>((_, i) => i + 1);
-
-    return props.reversed
-      ? [totalPages.value, '. . .'].concat(numbersArray.reverse())
-      : numbersArray.concat(['. . .', totalPages.value]);
-  }
-
-  if (
-    (props.reversed && activePage.value > totalPages.value - side + 1) ||
-    (!props.reversed && page.value > totalPages.value - side + 1)
-  ) {
-    if (props.reversed) {
+      return [totalPages.value, '. . .'].concat(numbersArray.reverse());
+    } else if (activePage.value > totalPages.value - side + 1) {
       return Array(side)
         .fill(totalPages.value)
         .map<string | number>((_, i) => _ - i)
         .concat(['. . .', 1]);
+    } else {
+      const start = Math.max(page.value - offset, 1);
+      const end = Math.min(page.value + offset, totalPages.value);
+
+      const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
+
+      return [totalPages.value, '. . .', ...middleNumbers.reverse(), '. . .', 1];
     }
+  }
+
+  if (totalPages.value < max) {
+    return new Array(totalPages.value).fill(0).map((_, i) => i + 1);
+  }
+
+  if (page.value < side) {
+    return Array(side)
+      .fill(0)
+      .map<string | number>((_, i) => i + 1)
+      .concat(['. . .', totalPages.value]);
+  }
+
+  if (page.value > totalPages.value - side + 1) {
     return [1, '. . .'].concat(
       Array(side)
         .fill(0)
@@ -117,9 +131,7 @@ const numbers = computed(() => {
 
   const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
 
-  return props.reversed
-    ? [totalPages.value, '. . .', ...middleNumbers.reverse(), '. . .', 1]
-    : [1, '. . .', ...middleNumbers, '. . .', totalPages.value];
+  return [1, '. . .', ...middleNumbers, '. . .', totalPages.value];
 });
 
 const sizeOptions = [
