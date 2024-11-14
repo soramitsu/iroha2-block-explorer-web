@@ -50,12 +50,12 @@ export function getLocalTime(date: Date) {
   return localDate + offset;
 }
 
-export function getUTCTime(date: Date) {
-  const utcDate = format(toZonedTime(date, 'UTC'), 'dd.MM.yyyy hh:mm:ss a ');
-
-  return utcDate + 'UTC';
+export function defaultFormat(date: Date) {
+  return format(date, 'dd.MM.yyyy hh:mm:ss a');
 }
 
-export function defaultFormat(date: Date) {
-  return format(date, 'dd.MM.yyyy hh:mm:ss');
+export function getUTCTime(date: Date) {
+  const utcDate = defaultFormat(toZonedTime(date, 'UTC'));
+
+  return utcDate + ' UTC';
 }
