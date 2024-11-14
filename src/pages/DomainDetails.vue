@@ -1,23 +1,21 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
-import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import type { Domain } from '@/shared/api/schemas';
 import { DomainId } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
 const router = useRouter();
-const { handleUnknownError } = useErrorHandlers();
 
 const HASH_BREAKPOINT = 960;
 const { width } = useWindowSize();
@@ -44,35 +42,76 @@ const domainId = computed(() => {
   return DomainId.parse(id);
 });
 
-const domain = ref<Domain | null>(null);
-const isFetchingDomain = ref(false);
+const domainScope = useParamScope(
+  () => {
+    return {
+      key: domainId.value,
+      payload: domainId.value,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchDomain)
+);
 
-const isEmptyAssets = ref(false);
-const isEmptyAccounts = ref(false);
+const isDomainLoading = computed(() => domainScope.value.expose.isLoading);
+const domain = computed(() => {
+  const res = domainScope.value?.expose.data;
 
-onMounted(async () => {
-  try {
-    isFetchingDomain.value = true;
-    domain.value = await http.fetchDomain(domainId.value);
+  if (!res) return null;
 
-    if (domain.value) {
-      await Promise.all([
-        assetsTable.fetch({ domain: domainId.value }),
-        accountsTable.fetch({ domain: domainId.value }),
-      ]);
-    }
+  return res;
+});
+const domainAssets = computed(() => domain.value?.assets ?? 0);
+const domainAccounts = computed(() => domain.value?.accounts ?? 0);
 
-    isEmptyAssets.value = !assetsTable.items.value.length;
-    isEmptyAccounts.value = !accountsTable.items.value.length;
-  } catch (e) {
-    handleUnknownError(e);
-  } finally {
-    isFetchingDomain.value = false;
-  }
+const assetsListState = reactive({
+  page: 1,
+  per_page: 10,
 });
 
-const accountsTable = useTable(http.fetchAccounts);
-const assetsTable = useTable(http.fetchAssetDefinitions);
+watch(
+  () => [assetsListState.per_page],
+  () => {
+    assetsListState.page = 1;
+  }
+);
+
+const assetsListScope = useParamScope(
+  () => {
+    return {
+      key: domainAssets.value ? Object.values(assetsListState).join('-') : '',
+      payload: assetsListState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchAssetDefinitions)
+);
+
+const isAssetsListLoading = computed(() => assetsListScope.value?.expose.isLoading);
+const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
+
+const accountsListState = reactive({
+  page: 1,
+  per_page: 10,
+});
+
+watch(
+  () => [accountsListState.per_page],
+  () => {
+    accountsListState.page = 1;
+  }
+);
+
+const accountsListScope = useParamScope(
+  () => {
+    return {
+      key: domainAccounts.value ? Object.values(assetsListState).join('-') : '',
+      payload: accountsListState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchAccounts)
+);
+
+const isAccountsListLoading = computed(() => accountsListScope.value?.expose.isLoading);
+const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
 </script>
 
 <template>
@@ -84,7 +123,7 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
       >
         <template #default>
           <div
-            v-if="isFetchingDomain"
+            v-if="isDomainLoading"
             class="domain-details__native-information_loading"
           >
             <BaseLoading />
@@ -120,22 +159,20 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
       >
         <template #default>
           <span
-            v-if="isEmptyAssets"
+            v-if="!domainAssets"
             class="domain-details__native-assets_empty row-text"
           >
             {{ $t('domains.domainDoesntHaveAnyAssets') }}
           </span>
           <BaseTable
             v-else
-            :loading="assetsTable.loading.value"
-            :items="assetsTable.items.value"
-            :pagination="assetsTable.pagination"
+            v-model:page="assetsListState.page"
+            v-model:page-size="assetsListState.per_page"
+            :loading="isAssetsListLoading"
+            :total="domainAssets"
+            :items="assets"
             container-class="domain-details__native-assets-list"
             :breakpoint="960"
-            @next-page="assetsTable.nextPage()"
-            @prev-page="assetsTable.prevPage()"
-            @set-page="assetsTable.setPage($event)"
-            @set-size="assetsTable.setSize($event)"
           >
             <template #header>
               <div class="domain-details__native-assets-list-row">
@@ -192,22 +229,20 @@ const assetsTable = useTable(http.fetchAssetDefinitions);
       <BaseContentBlock :title="$t('domains.domainAccounts')">
         <template #default>
           <span
-            v-if="isEmptyAccounts"
+            v-if="!domainAccounts"
             class="domain-details__accounts_empty row-text"
           >
             {{ $t('domains.domainDoesntHaveAnyAccounts') }}
           </span>
           <BaseTable
             v-else
-            :loading="accountsTable.loading.value"
-            :items="accountsTable.items.value"
-            :pagination="accountsTable.pagination"
+            v-model:page="accountsListState.page"
+            v-model:page-size="accountsListState.per_page"
+            :loading="isAccountsListLoading"
+            :total="domainAccounts"
+            :items="accounts"
             container-class="domain-details__accounts-container"
             :breakpoint="960"
-            @next-page="accountsTable.nextPage()"
-            @prev-page="accountsTable.prevPage()"
-            @set-page="accountsTable.setPage($event)"
-            @set-size="accountsTable.setSize($event)"
           >
             <template #header>
               <div class="domain-details__accounts-row">

@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
-import { useTable } from '@/shared/lib/table';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import type { Account } from '@/shared/api/schemas';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
@@ -19,48 +16,10 @@ import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useWindowSize } from '@vueuse/core';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { handleParamScope } from '@/shared/api/handle-param-scope';
 
 const router = useRouter();
-const { handleUnknownError } = useErrorHandlers();
-
-const accountId = computed(() => {
-  const id = router.currentRoute.value.params['id'];
-
-  return AccountIdSchema.parse(id);
-});
-
-const account = ref<Account | null>(null);
-const isFetchingAccount = ref(false);
-
-onMounted(async () => {
-  try {
-    isFetchingAccount.value = true;
-    account.value = await http.fetchAccount(accountId.value);
-
-    if (account.value) {
-      const ownedEntities = [];
-
-      if (account.value.owned_assets) ownedEntities.push(assetsTable.fetch({ owned_by: accountId.value.toString() }));
-      if (account.value.owned_domains) ownedEntities.push(domainsTable.fetch({ owned_by: accountId.value.toString() }));
-
-      if (!ownedEntities.length) return;
-
-      await Promise.all(ownedEntities);
-    }
-  } catch (e) {
-    handleUnknownError(e);
-  } finally {
-    isFetchingAccount.value = false;
-  }
-});
-
-const assetsTable = useTable(http.fetchAssets);
-const domainsTable = useTable(http.fetchDomains);
-
-const transactionsTab = ref<TabAccountTransactions>('transactions');
-
-const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
-
 const { width } = useWindowSize();
 
 const hashType = computed(() => {
@@ -68,6 +27,88 @@ const hashType = computed(() => {
 
   return 'short';
 });
+
+const accountId = computed(() => {
+  const id = router.currentRoute.value.params['id'];
+
+  return AccountIdSchema.parse(id);
+});
+
+const accountScope = useParamScope(
+  () => {
+    return {
+      key: accountId.value.toString(),
+      payload: accountId.value,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchAccount)
+);
+
+const isAccountLoading = computed(() => accountScope.value.expose.isLoading);
+const account = computed(() => {
+  const res = accountScope.value?.expose.data;
+
+  if (!res) return null;
+
+  return res;
+});
+
+const domainsListState = reactive({
+  page: 1,
+  per_page: 10,
+  owned_by: computed(() => accountId.value),
+});
+
+watch(
+  () => [domainsListState.per_page],
+  () => {
+    domainsListState.page = 1;
+  }
+);
+
+const domainsScope = useParamScope(
+  () => {
+    return {
+      key: account.value?.owned_domains ? Object.values(domainsListState).join('-') : '',
+      payload: domainsListState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchDomains)
+);
+
+const isDomainsLoading = computed(() => domainsScope.value?.expose?.isLoading);
+const totalDomains = computed(() => domainsScope.value?.expose?.data?.pagination?.total_items ?? 0);
+const domains = computed(() => domainsScope.value?.expose?.data?.items ?? []);
+
+const assetsListState = reactive({
+  page: 1,
+  per_page: 10,
+  owned_by: computed(() => accountId.value),
+});
+
+watch(
+  () => [assetsListState.per_page],
+  () => {
+    assetsListState.page = 1;
+  }
+);
+
+const assetsScope = useParamScope(
+  () => {
+    return {
+      key: account.value?.owned_assets ? Object.values(assetsListState).join('-') : '',
+      payload: assetsListState,
+    };
+  },
+  ({ payload }) => handleParamScope(payload, http.fetchAssets)
+);
+
+const isAssetsLoading = computed(() => assetsScope.value?.expose.isLoading);
+const totalAssets = computed(() => assetsScope.value?.expose.data?.pagination?.total_items ?? 0);
+const assets = computed(() => assetsScope.value?.expose.data?.items ?? []);
+
+const transactionsTab = ref<TabAccountTransactions>('transactions');
+const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
 </script>
 
 <template>
@@ -79,7 +120,7 @@ const hashType = computed(() => {
       >
         <template #default>
           <div
-            v-if="isFetchingAccount"
+            v-if="isAccountLoading"
             class="account-details__personal-information_loading"
           >
             <BaseLoading />
@@ -116,15 +157,13 @@ const hashType = computed(() => {
           }}</span>
           <BaseTable
             v-else
-            :loading="assetsTable.loading.value"
-            :items="assetsTable.items.value"
+            v-model:page="assetsListState.page"
+            v-model:page-size="assetsListState.per_page"
+            :loading="isAssetsLoading"
+            :total="totalAssets"
+            :items="assets"
             container-class="account-details__personal-owned-list"
             :breakpoint="960"
-            :pagination="assetsTable.pagination"
-            @next-page="assetsTable.nextPage()"
-            @prev-page="assetsTable.prevPage()"
-            @set-page="assetsTable.setPage($event)"
-            @set-size="assetsTable.setSize($event)"
           >
             <template #header>
               <div class="account-details__personal-owned-list-row">
@@ -199,15 +238,13 @@ const hashType = computed(() => {
           }}</span>
           <BaseTable
             v-else
-            :loading="domainsTable.loading.value"
-            :items="domainsTable.items.value"
+            v-model:page="domainsListState.page"
+            v-model:page-size="domainsListState.per_page"
+            :loading="isDomainsLoading"
+            :total="totalDomains"
+            :items="domains"
             container-class="account-details__personal-owned-list"
             :breakpoint="960"
-            :pagination="domainsTable.pagination"
-            @next-page="domainsTable.nextPage()"
-            @prev-page="domainsTable.prevPage()"
-            @set-page="domainsTable.setPage($event)"
-            @set-size="domainsTable.setSize($event)"
           >
             <template #header>
               <div class="account-details__personal-owned-list-row">
