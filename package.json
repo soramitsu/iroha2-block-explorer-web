@@ -17,6 +17,7 @@
     "@iroha2/data-model": "^2.0.2",
     "@ngneat/falso": "^6.1.0",
     "@soramitsu-ui/icons": "^0.1.0",
+    "@vue-kakuyaku/core": "^0.4.3",
     "@vueuse/core": "^9.1.1",
     "@vueuse/shared": "10.1.2",
     "bignumber.js": "^9.1.2",
