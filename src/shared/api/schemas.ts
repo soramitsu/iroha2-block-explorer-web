@@ -1,18 +1,18 @@
 import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 
-const Paginaion = z.object({
+const Pagination = z.object({
   page: z.number(),
   per_page: z.number(),
   total_pages: z.number(),
   total_items: z.number(),
 });
 
-export type Pagination = z.infer<typeof Paginaion>;
+export type Pagination = z.infer<typeof Pagination>;
 
 export const Paginated = <T extends z.ZodType>(item: T) =>
   z.object({
-    pagination: Paginaion,
+    pagination: Pagination,
     items: item.array(),
   });
 
