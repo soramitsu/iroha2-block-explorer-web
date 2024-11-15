@@ -14,7 +14,7 @@
 
     <template #default>
       <div class="latest-transactions__filters">
-        <TransactionStatusFilter v-model="status" />
+        <TransactionStatusFilter v-model="listState.status" />
       </div>
 
       <hr>
@@ -62,9 +62,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, type Reactive, reactive, watch } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
-import type { filterTransactionsModel as ftm } from '@/features/filter-transactions';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
@@ -82,12 +81,17 @@ const emit = defineEmits<{
   loaded: [number]
 }>();
 
-const status = ref<ftm.Status>(null);
-
 const listState = reactive({
   per_page: 5,
-  status: status.value ? status.value : undefined,
+  status: null,
 });
+
+async function fetchTransactions(params: Reactive<typeof listState>) {
+  return await http.fetchTransactions({
+    ...params,
+    status: params.status ?? undefined,
+  });
+}
 
 const scope = useParamScope(
   () => {
@@ -96,16 +100,20 @@ const scope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchTransactions)
+  ({ payload }) => handleParamScope(payload, fetchTransactions)
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const transactions = computed(() => scope.value?.expose.data?.items ?? []);
 const total = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
 
-watch(total, () => {
-  emit('loaded', total.value);
-});
+watch(
+  total,
+  () => {
+    emit('loaded', total.value);
+  },
+  { once: true }
+);
 
 const HASH_BREAKPOINT = 1300;
 
