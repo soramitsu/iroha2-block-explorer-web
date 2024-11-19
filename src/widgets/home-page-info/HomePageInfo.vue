@@ -60,10 +60,10 @@
 
 <script setup lang="ts">
 import { SearchField } from '@/features/search';
-import { computed, onMounted, ref, shallowRef } from 'vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { computed } from 'vue';
 import * as http from '@/shared/api';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const props = withDefaults(
   defineProps<{
@@ -76,55 +76,39 @@ const props = withDefaults(
   }
 );
 
-interface InfoItem {
-  value: number
-  i18nKey: string
-}
-
-const firstSection = shallowRef<InfoItem[]>([
-  { value: 0, i18nKey: 'homePage.totalAccounts' },
-  { value: 0, i18nKey: 'homePage.totalAssets' },
-  { value: 0, i18nKey: 'homePage.totalDomains' },
-]);
+const firstSection = computed(() => {
+  return [
+    { value: setup.data?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
+    { value: setup.data?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
+    { value: setup.data?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
+  ];
+});
 
 const secondSection = computed(() => {
   return [
     { value: props.blocks, i18nKey: 'homePage.totalBlocks' },
     { value: props.transactions, i18nKey: 'homePage.totalTransactions' },
-    { value: nodesAmount.value, i18nKey: 'homePage.totalNodes' },
+    { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
-const nodesAmount = ref(0);
+const setup = setupAsyncData(async () => {
+  const [assets, accounts, domains, { peers }] = await Promise.all([
+    http.fetchAssets(),
+    http.fetchAccounts(),
+    http.fetchDomains(),
+    http.fetchPeerStatus(),
+  ]);
 
-const { handleUnknownError } = useErrorHandlers();
-
-const isLoading = ref(false);
-
-onMounted(async () => {
-  try {
-    isLoading.value = true;
-
-    const [assets, accounts, domains, { peers }] = await Promise.all([
-      http.fetchAssets(),
-      http.fetchAccounts(),
-      http.fetchDomains(),
-      http.fetchPeerStatus(),
-    ]);
-
-    nodesAmount.value = peers + 1;
-
-    firstSection.value = [
-      { value: accounts.pagination.total_items, i18nKey: 'homePage.totalAccounts' },
-      { value: assets.pagination.total_items, i18nKey: 'homePage.totalAssets' },
-      { value: domains.pagination.total_items, i18nKey: 'homePage.totalDomains' },
-    ];
-  } catch (e) {
-    handleUnknownError(e);
-  } finally {
-    isLoading.value = false;
-  }
+  return {
+    assets: assets.pagination.total_items,
+    accounts: accounts.pagination.total_items,
+    domains: domains.pagination.total_items,
+    nodes: peers + 1,
+  };
 });
+
+const isLoading = computed(() => setup.isLoading);
 </script>
 
 <style lang="scss">
