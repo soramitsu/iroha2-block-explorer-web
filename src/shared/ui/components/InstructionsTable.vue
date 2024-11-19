@@ -4,7 +4,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import type { AccountId, Instruction } from '@/shared/api/schemas';
+import type { AccountId, Instruction, InstructionsSearchParams } from '@/shared/api/schemas';
 import { useI18n } from 'vue-i18n';
 import {
   type filterTransactionsModel as ftm,
@@ -56,17 +56,18 @@ const listState = reactive({
   per_page: 10,
 });
 
-async function fetchInstructions(params: Reactive<typeof listState>) {
+const searchParams = computed<InstructionsSearchParams>(() => {
   if (isOnAccountPage.value) {
-    return await http.fetchInstructions({
-      ...objectOmit(params, shouldShowKind.value ? ['kind'] : []),
-      transaction_status: params.transaction_status ?? undefined,
-    });
-  } else
-    return await http.fetchInstructions({
-      ...objectOmit(params, shouldShowKind.value ? ['kind', 'transaction_status'] : ['transaction_status']),
-    });
-}
+    return {
+      ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []),
+      transaction_status: listState.transaction_status ?? undefined,
+    };
+  }
+
+  return {
+    ...objectOmit(listState, shouldShowKind.value ? ['kind', 'transaction_status'] : ['transaction_status']),
+  };
+});
 
 watch([() => listState.kind, () => listState.transaction_status, () => listState.per_page], () => {
   listState.page = 1;
@@ -76,10 +77,10 @@ const scope = useParamScope(
   () => {
     return {
       key: Object.values(listState).join('-'),
-      payload: listState,
+      payload: searchParams.value,
     };
   },
-  ({ payload }) => setupAsyncData(() => fetchInstructions(payload))
+  ({ payload }) => setupAsyncData(() => http.fetchInstructions(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
