@@ -15,7 +15,7 @@ import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import { LG_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const router = useRouter();
 
@@ -49,7 +49,7 @@ const transactionScope = useParamScope(
       payload: transactionHash.value,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchTransaction)
+  ({ payload }) => setupAsyncData(() => http.fetchTransaction(payload))
 );
 
 const isTransactionLoading = computed(() => transactionScope.value.expose.isLoading);

@@ -50,7 +50,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { computed, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const emit = defineEmits<{
   loaded: [number]
@@ -65,7 +65,7 @@ const scope = useParamScope(
       },
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchBlocks)
+  ({ payload }) => setupAsyncData(() => http.fetchBlocks(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);

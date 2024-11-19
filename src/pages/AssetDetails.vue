@@ -13,7 +13,7 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const router = useRouter();
 
@@ -54,7 +54,7 @@ const assetScope = useParamScope(
       payload: assetDefinitionId.value,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchAssetDefinition)
+  ({ payload }) => setupAsyncData(() => http.fetchAssetDefinition(payload))
 );
 
 const isAssetLoading = computed(() => assetScope.value.expose.isLoading);
@@ -71,12 +71,9 @@ const listState = reactive({
   per_page: 10,
 });
 
-watch(
-  () => [listState.per_page],
-  () => {
-    listState.page = 1;
-  }
-);
+watch([() => listState.per_page], () => {
+  listState.page = 1;
+});
 
 const assetsListScope = useParamScope(
   () => {
@@ -85,7 +82,7 @@ const assetsListScope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchAssets)
+  ({ payload }) => setupAsyncData(() => http.fetchAssets(payload))
 );
 
 const isLoadingAssets = computed(() => assetsListScope.value?.expose.isLoading);

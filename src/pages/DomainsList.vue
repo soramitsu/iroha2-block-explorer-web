@@ -85,7 +85,7 @@ import { useWindowSize } from '@vueuse/core';
 import { computed, reactive, watch } from 'vue';
 import { MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const HASH_BREAKPOINT = 1350;
 const { width } = useWindowSize();
@@ -105,12 +105,9 @@ const listState = reactive({
   per_page: 10,
 });
 
-watch(
-  () => [listState.per_page],
-  () => {
-    listState.page = 1;
-  }
-);
+watch([() => listState.per_page], () => {
+  listState.page = 1;
+});
 
 const scope = useParamScope(
   () => {
@@ -119,7 +116,7 @@ const scope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchDomains)
+  ({ payload }) => setupAsyncData(() => http.fetchDomains(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);

@@ -17,7 +17,7 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useWindowSize } from '@vueuse/core';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const router = useRouter();
 const { width } = useWindowSize();
@@ -41,7 +41,7 @@ const accountScope = useParamScope(
       payload: accountId.value,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchAccount)
+  ({ payload }) => setupAsyncData(() => http.fetchAccount(payload))
 );
 
 const isAccountLoading = computed(() => accountScope.value.expose.isLoading);
@@ -59,12 +59,9 @@ const domainsListState = reactive({
   owned_by: computed(() => accountId.value),
 });
 
-watch(
-  () => [domainsListState.per_page],
-  () => {
-    domainsListState.page = 1;
-  }
-);
+watch([() => domainsListState.per_page], () => {
+  domainsListState.page = 1;
+});
 
 const domainsScope = useParamScope(
   () => {
@@ -73,7 +70,7 @@ const domainsScope = useParamScope(
       payload: domainsListState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchDomains)
+  ({ payload }) => setupAsyncData(() => http.fetchDomains(payload))
 );
 
 const isDomainsLoading = computed(() => domainsScope.value?.expose?.isLoading);
@@ -86,12 +83,9 @@ const assetsListState = reactive({
   owned_by: computed(() => accountId.value),
 });
 
-watch(
-  () => [assetsListState.per_page],
-  () => {
-    assetsListState.page = 1;
-  }
-);
+watch([() => assetsListState.per_page], () => {
+  assetsListState.page = 1;
+});
 
 const assetsScope = useParamScope(
   () => {
@@ -100,7 +94,7 @@ const assetsScope = useParamScope(
       payload: assetsListState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchAssets)
+  ({ payload }) => setupAsyncData(() => http.fetchAssets(payload))
 );
 
 const isAssetsLoading = computed(() => assetsScope.value?.expose.isLoading);

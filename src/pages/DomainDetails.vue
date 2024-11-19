@@ -13,7 +13,7 @@ import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const router = useRouter();
 
@@ -49,7 +49,7 @@ const domainScope = useParamScope(
       payload: domainId.value,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchDomain)
+  ({ payload }) => setupAsyncData(() => http.fetchDomain(payload))
 );
 
 const isDomainLoading = computed(() => domainScope.value.expose.isLoading);
@@ -68,12 +68,9 @@ const assetsListState = reactive({
   per_page: 10,
 });
 
-watch(
-  () => [assetsListState.per_page],
-  () => {
-    assetsListState.page = 1;
-  }
-);
+watch([() => assetsListState.per_page], () => {
+  assetsListState.page = 1;
+});
 
 const assetsListScope = useParamScope(
   () => {
@@ -82,7 +79,7 @@ const assetsListScope = useParamScope(
       payload: assetsListState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchAssetDefinitions)
+  ({ payload }) => setupAsyncData(() => http.fetchAssetDefinitions(payload))
 );
 
 const isAssetsListLoading = computed(() => assetsListScope.value?.expose.isLoading);
@@ -93,12 +90,9 @@ const accountsListState = reactive({
   per_page: 10,
 });
 
-watch(
-  () => [accountsListState.per_page],
-  () => {
-    accountsListState.page = 1;
-  }
-);
+watch([() => accountsListState.per_page], () => {
+  accountsListState.page = 1;
+});
 
 const accountsListScope = useParamScope(
   () => {
@@ -107,7 +101,7 @@ const accountsListScope = useParamScope(
       payload: accountsListState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchAccounts)
+  ({ payload }) => setupAsyncData(() => http.fetchAccounts(payload))
 );
 
 const isAccountsListLoading = computed(() => accountsListScope.value?.expose.isLoading);

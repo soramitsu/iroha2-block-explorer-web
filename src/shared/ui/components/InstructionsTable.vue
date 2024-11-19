@@ -21,7 +21,7 @@ import * as http from '@/shared/api';
 import { objectOmit } from '@vueuse/shared';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const { t } = useI18n();
 const props = defineProps<{
@@ -68,12 +68,9 @@ async function fetchInstructions(params: Reactive<typeof listState>) {
     });
 }
 
-watch(
-  () => [listState.kind, listState.transaction_status, listState.per_page],
-  () => {
-    listState.page = 1;
-  }
-);
+watch([() => listState.kind, () => listState.transaction_status, () => listState.per_page], () => {
+  listState.page = 1;
+});
 
 const scope = useParamScope(
   () => {
@@ -82,7 +79,7 @@ const scope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) => handleParamScope(payload, fetchInstructions)
+  ({ payload }) => setupAsyncData(() => fetchInstructions(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);

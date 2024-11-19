@@ -86,19 +86,16 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { computed, reactive, watch } from 'vue';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const listState = reactive({
   page: 1,
   per_page: 10,
 });
 
-watch(
-  () => [listState.per_page],
-  () => {
-    listState.page = 1;
-  }
-);
+watch([() => listState.per_page], () => {
+  listState.page = 1;
+});
 
 const scope = useParamScope(
   () => {
@@ -107,7 +104,7 @@ const scope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchAssetDefinitions)
+  ({ payload }) => setupAsyncData(() => http.fetchAssetDefinitions(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);

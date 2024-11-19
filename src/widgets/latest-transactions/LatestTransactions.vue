@@ -75,7 +75,7 @@ import { useWindowSize } from '@vueuse/core';
 import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const emit = defineEmits<{
   loaded: [number]
@@ -100,7 +100,7 @@ const scope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) => handleParamScope(payload, fetchTransactions)
+  ({ payload }) => setupAsyncData(() => fetchTransactions(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);

@@ -6,11 +6,10 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import type { AccountId } from '@/shared/api/schemas';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
-import type { Reactive } from 'vue';
 import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const props = withDefaults(
   defineProps<{
@@ -37,12 +36,9 @@ async function fetchTransactions(params: Reactive<typeof listState>) {
   });
 }
 
-watch(
-  () => [listState.per_page, listState.status],
-  () => {
-    listState.page = 0;
-  }
-);
+watch([() => listState.per_page, () => listState.status], () => {
+  listState.page = 0;
+});
 
 const scope = useParamScope(
   () => {
@@ -51,7 +47,7 @@ const scope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) => handleParamScope(payload, fetchTransactions)
+  ({ payload }) => setupAsyncData(() => fetchTransactions(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);

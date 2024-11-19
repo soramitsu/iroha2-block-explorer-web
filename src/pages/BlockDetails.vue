@@ -11,7 +11,7 @@ import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-2
 import invariant from 'tiny-invariant';
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
-import { handleParamScope } from '@/shared/api/handle-param-scope';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const router = useRouter();
 
@@ -35,7 +35,7 @@ const blockScope = useParamScope(
       payload: blockHeightOrHash.value,
     };
   },
-  ({ payload }) => handleParamScope(payload, http.fetchBlock)
+  ({ payload }) => setupAsyncData(() => http.fetchBlock(payload))
 );
 
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
@@ -47,15 +47,7 @@ const block = computed(() => {
   return res;
 });
 
-const peerScope = useParamScope(
-  () => {
-    return {
-      key: blockHeightOrHash.value,
-      payload: {},
-    };
-  },
-  ({ payload }) => handleParamScope(payload, http.fetchPeerStatus)
-);
+const peerScope = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchPeerStatus));
 
 const totalBlocks = computed(() => peerScope.value.expose.data?.blocks ?? 0);
 const isNextBlockExists = computed(() => block.value && block.value.height < totalBlocks.value);
