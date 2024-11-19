@@ -78,7 +78,7 @@ watch([() => listState.per_page], () => {
 const assetsListScope = useParamScope(
   () => {
     return {
-      key: asset.value?.assets ? Object.values(listState).join('-') : '',
+      key: asset.value?.assets ? JSON.stringify(listState) : '',
       payload: listState,
     };
   },

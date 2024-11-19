@@ -100,7 +100,7 @@ watch([() => listState.per_page], () => {
 const scope = useParamScope(
   () => {
     return {
-      key: Object.values(listState).join('-'),
+      key: JSON.stringify(listState),
       payload: listState,
     };
   },

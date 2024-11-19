@@ -66,7 +66,7 @@ watch([() => domainsListState.per_page], () => {
 const domainsScope = useParamScope(
   () => {
     return {
-      key: account.value?.owned_domains ? Object.values(domainsListState).join('-') : '',
+      key: account.value?.owned_domains ? JSON.stringify(domainsListState) : '',
       payload: domainsListState,
     };
   },
@@ -90,7 +90,7 @@ watch([() => assetsListState.per_page], () => {
 const assetsScope = useParamScope(
   () => {
     return {
-      key: account.value?.owned_assets ? Object.values(assetsListState).join('-') : '',
+      key: account.value?.owned_assets ? JSON.stringify(assetsListState) : '',
       payload: assetsListState,
     };
   },
