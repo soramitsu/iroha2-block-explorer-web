@@ -65,17 +65,6 @@ import * as http from '@/shared/api';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
-const props = withDefaults(
-  defineProps<{
-    blocks: number
-    transactions: number
-  }>(),
-  {
-    blocks: 0,
-    transactions: 0,
-  }
-);
-
 const firstSection = computed(() => {
   return [
     { value: setup.data?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
@@ -86,14 +75,14 @@ const firstSection = computed(() => {
 
 const secondSection = computed(() => {
   return [
-    { value: props.blocks, i18nKey: 'homePage.totalBlocks' },
-    { value: props.transactions, i18nKey: 'homePage.totalTransactions' },
+    { value: setup.data?.blocks ?? 0, i18nKey: 'homePage.totalBlocks' },
+    { value: setup.data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
     { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
 const setup = setupAsyncData(async () => {
-  const [assets, accounts, domains, { peers }] = await Promise.all([
+  const [assets, accounts, domains, { peers, blocks, txs_accepted, txs_rejected }] = await Promise.all([
     http.fetchAssets(),
     http.fetchAccounts(),
     http.fetchDomains(),
@@ -105,6 +94,8 @@ const setup = setupAsyncData(async () => {
     accounts: accounts.pagination.total_items,
     domains: domains.pagination.total_items,
     nodes: peers + 1,
+    transactions: txs_accepted + txs_rejected,
+    blocks,
   };
 });
 

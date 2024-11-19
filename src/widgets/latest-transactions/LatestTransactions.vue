@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type Reactive, reactive, watch } from 'vue';
+import { computed, type Reactive, reactive } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -76,10 +76,6 @@ import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
-
-const emit = defineEmits<{
-  loaded: [number]
-}>();
 
 const listState = reactive({
   per_page: 5,
@@ -105,15 +101,6 @@ const scope = useParamScope(
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const transactions = computed(() => scope.value?.expose.data?.items ?? []);
-const total = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
-
-watch(
-  total,
-  () => {
-    emit('loaded', total.value);
-  },
-  { once: true }
-);
 
 const HASH_BREAKPOINT = 1300;
 

@@ -47,23 +47,14 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
-
-const emit = defineEmits<{
-  loaded: [number]
-}>();
 
 const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
 
 const isLoading = computed(() => setup.isLoading);
 const blocks = computed(() => setup.data?.items ?? []);
-const total = computed(() => setup.data?.pagination.total_items ?? 0);
-
-watch(total, () => {
-  emit('loaded', total.value);
-});
 </script>
 
 <style lang="scss">

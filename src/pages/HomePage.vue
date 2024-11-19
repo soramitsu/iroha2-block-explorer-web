@@ -21,14 +21,11 @@
     </h1>
 
     <NavigationMenu class="home-page__menu" />
-    <HomePageInfo
-      :blocks
-      :transactions
-    />
+    <HomePageInfo />
 
     <div class="home-page__blocks">
-      <LatestBlocks @loaded="blocks = $event" />
-      <LatestTransactions @loaded="transactions = $event" />
+      <LatestBlocks />
+      <LatestTransactions />
     </div>
   </div>
 </template>
@@ -44,10 +41,6 @@ import { MobileMenu } from '@/features/mobile-menu';
 import { NavigationMenu } from '@/features/navigation';
 import { HomePageInfo } from '@/widgets/home-page-info';
 import { PORTAL_ID } from '@/shared/ui/consts';
-import { ref } from 'vue';
-
-const transactions = ref(0);
-const blocks = ref(0);
 </script>
 
 <style lang="scss">
