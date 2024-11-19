@@ -76,7 +76,7 @@ watch([() => listState.kind, () => listState.transaction_status, () => listState
 const scope = useParamScope(
   () => {
     return {
-      key: Object.values(listState).join('-'),
+      key: JSON.stringify(searchParams.value),
       payload: searchParams.value,
     };
   },

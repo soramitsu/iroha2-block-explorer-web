@@ -43,7 +43,7 @@ watch([() => listState.per_page, () => listState.status], () => {
 const scope = useParamScope(
   () => {
     return {
-      key: Object.values(listState).join('-'),
+      key: JSON.stringify(searchParams.value),
       payload: searchParams.value,
     };
   },
