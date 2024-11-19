@@ -1,11 +1,9 @@
-import type { Reactive } from 'vue';
 import { computed, reactive } from 'vue';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import { useErrorRetry, useTask, wheneverRejected } from '@vue-kakuyaku/core';
 
-export function handleParamScope<T, K>(
-  payload: Reactive<T>,
-  fn: (query: Reactive<T>) => Promise<K>,
+export function setupAsyncData<K>(
+  fn: () => Promise<K>,
   options?: {
     interval?: number
     immediate?: boolean
@@ -13,7 +11,7 @@ export function handleParamScope<T, K>(
 ) {
   const { handleUnknownError } = useErrorHandlers();
 
-  const { state, run } = useTask(() => fn(payload), { immediate: options?.immediate ?? true });
+  const { state, run } = useTask(() => fn(), { immediate: options?.immediate ?? true });
 
   useErrorRetry(state, run, { interval: options?.interval ?? 5000 });
 
@@ -23,12 +21,6 @@ export function handleParamScope<T, K>(
 
   return reactive({
     isLoading: computed(() => state.pending),
-    data: computed<K | null>(() => {
-      const res = state.fulfilled?.value;
-
-      if (!res) return null;
-
-      return res;
-    }),
+    data: computed<K | undefined>(() => state.fulfilled?.value),
   });
 }
