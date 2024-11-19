@@ -49,28 +49,17 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { computed, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
-import { useTask } from '@vue-kakuyaku/core';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
-const { handleUnknownError } = useErrorHandlers();
 const emit = defineEmits<{
   loaded: [number]
 }>();
 
-const { state } = useTask(
-  async () => {
-    try {
-      return await http.fetchBlocks({ per_page: 10 });
-    } catch (e) {
-      handleUnknownError(e);
-    }
-  },
-  { immediate: true }
-);
+const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
 
-const isLoading = computed(() => state.pending);
-const blocks = computed(() => state.fulfilled?.value?.items ?? []);
-const total = computed(() => state.fulfilled?.value?.pagination.total_items ?? 0);
+const isLoading = computed(() => setup.isLoading);
+const blocks = computed(() => setup.data?.items ?? []);
+const total = computed(() => setup.data?.pagination.total_items ?? 0);
 
 watch(total, () => {
   emit('loaded', total.value);
