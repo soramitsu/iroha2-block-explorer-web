@@ -3,10 +3,9 @@ import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import BaseDropdown from '@/shared/ui/components/BaseDropdown.vue';
 import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-import { useI18n } from 'vue-i18n';
 import type { Pagination } from '@/shared/api/schemas';
+import { usePagination } from '@/shared/ui/composables/usePagination';
 
-const { t } = useI18n();
 const { width } = useWindowSize();
 
 const props = withDefaults(
@@ -51,88 +50,23 @@ const activePage = computed(() => {
   return props.payloadPagination.page;
 });
 
-const segmentInfo = computed(() => {
-  if (!props.totalItems) return t('table.pageOf', [0, 0, 0]);
+const page = defineModel<number>('page', { default: 1 });
+const pageSize = defineModel<number>('pageSize', { default: 10 });
 
-  const start = (page.value - 1) * pageSize.value + 1;
-  const end = page.value * pageSize.value;
+const isMobile = computed(() => width.value < props.paginationBreakpoint);
 
-  if (props.reversed && activePage.value) {
-    if (pageSize.value > props.totalItems) return t('table.pageOf', [props.totalItems, 1, props.totalItems]);
+const paginationParams = computed(() => ({
+  reversed: props.reversed,
+  items: props.items,
+  totalItems: props.totalItems,
+  totalPages: totalPages.value,
+  page: page.value,
+  pageSize: pageSize.value,
+  activePage: activePage.value,
+  isMobile: isMobile.value,
+}));
 
-    const start = (activePage.value - 1) * pageSize.value + props.items;
-
-    const end = start - props.items + 1;
-
-    return t('table.pageOf', [start, end, props.totalItems]);
-  }
-
-  return t('table.pageOf', [start, end > props.totalItems ? props.totalItems : end, props.totalItems]);
-});
-
-// FIXME: write unit tests
-const numbers = computed(() => {
-  if (!props.totalItems) return [];
-
-  const isMobile = width.value < props.paginationBreakpoint;
-  const max = isMobile ? 6 : 10;
-  const side = isMobile ? 4 : 7;
-  const offset = isMobile ? 1 : 3;
-
-  if (props.reversed) {
-    if (totalPages.value < max) {
-      return new Array(totalPages.value)
-        .fill(0)
-        .map((_, i) => i + 1)
-        .reverse();
-    } else if (activePage.value < side) {
-      const numbersArray = Array(side)
-        .fill(0)
-        .map<string | number>((_, i) => i + 1);
-
-      return [totalPages.value, '. . .'].concat(numbersArray.reverse());
-    } else if (activePage.value > totalPages.value - side + 1) {
-      return Array(side)
-        .fill(totalPages.value)
-        .map<string | number>((_, i) => _ - i)
-        .concat(['. . .', 1]);
-    } else {
-      const start = Math.max(page.value - offset, 1);
-      const end = Math.min(page.value + offset, totalPages.value);
-
-      const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
-
-      return [totalPages.value, '. . .', ...middleNumbers.reverse(), '. . .', 1];
-    }
-  }
-
-  if (totalPages.value < max) {
-    return new Array(totalPages.value).fill(0).map((_, i) => i + 1);
-  }
-
-  if (page.value < side) {
-    return Array(side)
-      .fill(0)
-      .map<string | number>((_, i) => i + 1)
-      .concat(['. . .', totalPages.value]);
-  }
-
-  if (page.value > totalPages.value - side + 1) {
-    return [1, '. . .'].concat(
-      Array(side)
-        .fill(0)
-        .map((_, i) => totalPages.value - i)
-        .reverse()
-    );
-  }
-
-  const start = Math.max(page.value - offset, 1);
-  const end = Math.min(page.value + offset, totalPages.value);
-
-  const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
-
-  return [1, '. . .', ...middleNumbers, '. . .', totalPages.value];
-});
+const { segmentInfo, numbers } = usePagination(paginationParams);
 
 const sizeOptions = [
   {
@@ -152,9 +86,6 @@ const sizeOptions = [
     value: 100,
   },
 ];
-
-const page = defineModel<number>('page', { default: 1 });
-const pageSize = defineModel<number>('pageSize', { default: 10 });
 
 function nextPage() {
   if (props.reversed && activePage.value > 1) page.value = activePage.value - 1;
