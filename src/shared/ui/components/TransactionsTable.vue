@@ -4,7 +4,7 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import type { AccountId } from '@/shared/api/schemas';
+import type { AccountId, TransactionSearchParams } from '@/shared/api/schemas';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
 import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
@@ -29,12 +29,12 @@ const listState = reactive({
   per_page: 10,
 });
 
-async function fetchTransactions(params: Reactive<typeof listState>) {
-  return await http.fetchTransactions({
-    ...params,
-    status: params.status ?? undefined,
-  });
-}
+const searchParams = computed<TransactionSearchParams>(() => {
+  return {
+    ...listState,
+    status: listState.status ?? undefined,
+  };
+});
 
 watch([() => listState.per_page, () => listState.status], () => {
   listState.page = 0;
@@ -44,10 +44,10 @@ const scope = useParamScope(
   () => {
     return {
       key: Object.values(listState).join('-'),
-      payload: listState,
+      payload: searchParams.value,
     };
   },
-  ({ payload }) => setupAsyncData(() => fetchTransactions(payload))
+  ({ payload }) => setupAsyncData(() => http.fetchTransactions(payload))
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
