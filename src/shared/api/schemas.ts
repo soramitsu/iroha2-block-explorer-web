@@ -21,12 +21,10 @@ export interface Paginated<T> {
   items: T[]
 }
 
-const PaginationParams = z.object({
-  page: z.number(),
-  per_page: z.number(),
-});
-
-export type PaginationParams = z.infer<typeof PaginationParams>;
+export interface PaginationParams {
+  page: number
+  per_page: number
+}
 
 const Metadata = z.record(z.string(), z.any());
 const TransactionStatus = z.enum(['Committed', 'Rejected']);
