@@ -15,7 +15,6 @@ import {
   ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS,
   INSTRUCTIONS_ADAPTIVE_OPTIONS,
 } from '@/features/filter-transactions/adaptive-options';
-import type { Reactive } from 'vue';
 import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import { objectOmit } from '@vueuse/shared';

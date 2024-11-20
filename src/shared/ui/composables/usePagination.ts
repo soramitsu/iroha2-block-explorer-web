@@ -52,13 +52,13 @@ export function usePagination(
         return new Array(params.value.totalPages)
           .fill(0)
           .map((_, i) => i + 1)
-          .reverse();
+          .toReversed();
       } else if (params.value.activePage < side) {
         const numbersArray = Array(side)
           .fill(0)
           .map<string | number>((_, i) => i + 1);
 
-        return [params.value.totalPages, '. . .'].concat(numbersArray.reverse());
+        return [params.value.totalPages, '. . .'].concat(numbersArray.toReversed());
       } else if (params.value.activePage > params.value.totalPages - side + 1) {
         return Array(side)
           .fill(params.value.totalPages)
@@ -70,7 +70,7 @@ export function usePagination(
 
         const middleNumbers = new Array(end - start + 1).fill(0).map((_, i) => i + start);
 
-        return [params.value.totalPages, '. . .', ...middleNumbers.reverse(), '. . .', 1];
+        return [params.value.totalPages, '. . .', ...middleNumbers.toReversed(), '. . .', 1];
       }
     }
 
@@ -90,7 +90,7 @@ export function usePagination(
         Array(side)
           .fill(0)
           .map((_, i) => params.value.totalPages - i)
-          .reverse()
+          .toReversed()
       );
     }
 
