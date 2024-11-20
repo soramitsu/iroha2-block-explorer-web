@@ -147,11 +147,11 @@ function isPageActive(item: string | number) {
         class="base-pagination__arrows"
       >
         <ArrowIcon
-          class="base-table"
+          data-testid="prev"
           @click="prevPage"
         />
         <ArrowIcon
-          class="base-table"
+          data-testid="next"
           @click="nextPage"
         />
       </div>
