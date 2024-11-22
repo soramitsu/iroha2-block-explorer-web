@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import type { Pagination } from '@/shared/api/schemas';
 import { usePagination } from '@/shared/ui/composables/usePagination';
+import { useI18n } from 'vue-i18n';
 
 const { width } = useWindowSize();
 
@@ -55,19 +56,22 @@ const pageSize = defineModel<number>('pageSize', { default: 10 });
 
 const isMobile = computed(() => width.value < props.paginationBreakpoint);
 
-const paginationParams = computed(() => ({
+const { t } = useI18n();
+
+const { displayRange, numbers } = usePagination({
+  items: computed(() => props.items),
   reversed: props.reversed,
-  items: props.items,
-  totalItems: props.totalItems,
-  totalPages: totalPages.value,
-  page: page.value,
-  pageSize: pageSize.value,
-  activePage: activePage.value,
-  isMobile: isMobile.value,
-}));
+  totalItems: computed(() => props.totalItems),
+  totalPages,
+  page,
+  pageSize,
+  activePage,
+  isMobile,
+});
 
-const { segmentInfo, numbers } = usePagination(paginationParams);
-
+const segmentInfo = computed(() => {
+  return t('table.pageOf', [displayRange.value.start, displayRange.value.end, displayRange.value.total]);
+});
 const sizeOptions = [
   {
     label: '10',
