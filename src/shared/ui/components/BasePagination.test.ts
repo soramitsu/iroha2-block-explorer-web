@@ -2,6 +2,212 @@ import { expect, test } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { i18n } from '@/shared/lib/localization';
 import BasePagination from '@/shared/ui/components/BasePagination.vue';
+import { computeDisplayRange, computeNumbers } from '@/shared/ui/composables/usePagination';
+
+test.each([
+  [
+    {
+      reversed: true,
+      items: 19,
+      totalItems: 29,
+      page: 0,
+      pageSize: 10,
+      activePage: 2,
+    },
+    {
+      start: 29,
+      end: 11,
+      total: 29,
+    },
+  ],
+  [
+    {
+      reversed: true,
+      items: 10,
+      totalItems: 30,
+      page: 0,
+      pageSize: 10,
+      activePage: 3,
+    },
+    {
+      start: 30,
+      end: 21,
+      total: 30,
+    },
+  ],
+  [
+    {
+      reversed: false,
+      items: 2,
+      totalItems: 32,
+      page: 4,
+      pageSize: 10,
+      activePage: 4,
+    },
+    {
+      start: 31,
+      end: 32,
+      total: 32,
+    },
+  ],
+  [
+    {
+      reversed: false,
+      items: 40,
+      totalItems: 40,
+      page: 4,
+      pageSize: 10,
+      activePage: 4,
+    },
+    {
+      start: 31,
+      end: 40,
+      total: 40,
+    },
+  ],
+])('Items range computation correctness', ({ items, page, pageSize, activePage, reversed, totalItems }, expected) => {
+  expect(computeDisplayRange({ items, reversed, totalItems, page, pageSize, activePage })).toStrictEqual(expected);
+});
+
+test.each([
+  [
+    {
+      reversed: true,
+      totalItems: 159,
+      totalPages: 15,
+      page: 0,
+      activePage: 15,
+      isMobile: false,
+    },
+    [15, 14, 13, 12, 11, 10, 9, '. . .', 1],
+  ],
+  [
+    {
+      reversed: true,
+      totalItems: 189,
+      totalPages: 18,
+      page: 7,
+      activePage: 7,
+      isMobile: false,
+    },
+    [18, '. . .', 10, 9, 8, 7, 6, 5, 4, '. . .', 1],
+  ],
+  [
+    {
+      reversed: true,
+      totalItems: 189,
+      totalPages: 18,
+      page: 3,
+      activePage: 3,
+      isMobile: false,
+    },
+    [18, '. . .', 7, 6, 5, 4, 3, 2, 1],
+  ],
+  [
+    {
+      reversed: true,
+      totalItems: 159,
+      totalPages: 15,
+      page: 0,
+      activePage: 15,
+      isMobile: true,
+    },
+    [15, 14, 13, 12, '. . .', 1],
+  ],
+  [
+    {
+      reversed: true,
+      totalItems: 189,
+      totalPages: 18,
+      page: 7,
+      activePage: 7,
+      isMobile: true,
+    },
+    [18, '. . .', 8, 7, 6, '. . .', 1],
+  ],
+  [
+    {
+      reversed: true,
+      totalItems: 189,
+      totalPages: 18,
+      page: 3,
+      activePage: 3,
+      isMobile: true,
+    },
+    [18, '. . .', 4, 3, 2, 1],
+  ],
+  [
+    {
+      reversed: false,
+      totalItems: 159,
+      totalPages: 16,
+      page: 0,
+      activePage: 16,
+      isMobile: false,
+    },
+    [1, 2, 3, 4, 5, 6, 7, '. . .', 16],
+  ],
+  [
+    {
+      reversed: false,
+      totalItems: 189,
+      totalPages: 19,
+      page: 7,
+      activePage: 7,
+      isMobile: false,
+    },
+    [1, '. . .', 4, 5, 6, 7, 8, 9, 10, '. . .', 19],
+  ],
+  [
+    {
+      reversed: false,
+      totalItems: 189,
+      totalPages: 19,
+      page: 17,
+      activePage: 17,
+      isMobile: false,
+    },
+    [1, '. . .', 13, 14, 15, 16, 17, 18, 19],
+  ],
+  [
+    {
+      reversed: false,
+      totalItems: 159,
+      totalPages: 16,
+      page: 0,
+      activePage: 16,
+      isMobile: true,
+    },
+    [1, 2, 3, 4, '. . .', 16],
+  ],
+  [
+    {
+      reversed: false,
+      totalItems: 189,
+      totalPages: 19,
+      page: 7,
+      activePage: 7,
+      isMobile: true,
+    },
+    [1, '. . .', 6, 7, 8, '. . .', 19],
+  ],
+  [
+    {
+      reversed: false,
+      totalItems: 189,
+      totalPages: 19,
+      page: 17,
+      activePage: 17,
+      isMobile: true,
+    },
+    [1, '. . .', 16, 17, 18, 19],
+  ],
+])(
+  'Numbers list computation correctness',
+  ({ isMobile, page, totalPages, activePage, reversed, totalItems }, expected) => {
+    expect(computeNumbers({ isMobile, totalPages, reversed, totalItems, page, activePage })).toStrictEqual(expected);
+  }
+);
 
 test.each([
   [
