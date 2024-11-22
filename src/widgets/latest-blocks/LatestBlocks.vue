@@ -51,10 +51,9 @@ import { computed } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
-const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
+const { isLoading, data } = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
 
-const isLoading = computed(() => setup.isLoading);
-const blocks = computed(() => setup.data?.items ?? []);
+const blocks = computed(() => data?.items ?? []);
 </script>
 
 <style lang="scss">
