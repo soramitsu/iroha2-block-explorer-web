@@ -404,8 +404,12 @@ test.each([
       return wrapper.findAll('.base-pagination__item-numbers-number').map((i) => i.text());
     }
 
-    expect(getSegmentInfo()).toBe(expected.segmentInfo);
-    expect(getActivePage()).toBe(expected.activePage);
-    expect(getPagesList()).toStrictEqual(expected.numbers);
+    const res = {
+      segmentInfo: getSegmentInfo(),
+      activePage: getActivePage(),
+      numbers: getPagesList(),
+    };
+
+    expect(res).toStrictEqual(expected);
   }
 );
