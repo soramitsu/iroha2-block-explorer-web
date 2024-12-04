@@ -28,24 +28,10 @@ const blockHeightOrHash = computed(() => {
   return Number(heightOrHash) || heightOrHash;
 });
 
-const blockScope = useParamScope(
-  () => {
-    return {
-      key: blockHeightOrHash.value,
-      payload: blockHeightOrHash.value,
-    };
-  },
-  ({ payload }) => setupAsyncData(() => http.fetchBlock(payload))
-);
+const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(() => http.fetchBlock(value)));
 
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
-const block = computed(() => {
-  const res = blockScope.value?.expose.data;
-
-  if (!res) return null;
-
-  return res;
-});
+const block = computed(() => blockScope.value?.expose.data);
 
 const peerScope = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchPeerStatus));
 

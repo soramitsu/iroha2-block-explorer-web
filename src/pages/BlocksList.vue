@@ -116,9 +116,12 @@ const listState = reactive({
   per_page: 10,
 });
 
-watch([() => listState.per_page], () => {
-  listState.page = 0;
-});
+watch(
+  () => listState.per_page,
+  () => {
+    listState.page = 0;
+  }
+);
 
 const scope = useParamScope(
   () => {

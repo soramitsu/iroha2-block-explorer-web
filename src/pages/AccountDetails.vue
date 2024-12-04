@@ -45,13 +45,7 @@ const accountScope = useParamScope(
 );
 
 const isAccountLoading = computed(() => accountScope.value.expose.isLoading);
-const account = computed(() => {
-  const res = accountScope.value?.expose.data;
-
-  if (!res) return null;
-
-  return res;
-});
+const account = computed(() => accountScope.value?.expose.data);
 
 const domainsListState = reactive({
   page: 1,
@@ -59,21 +53,26 @@ const domainsListState = reactive({
   owned_by: computed(() => accountId.value),
 });
 
-watch([() => domainsListState.per_page], () => {
-  domainsListState.page = 1;
-});
+watch(
+  () => domainsListState.per_page,
+  () => {
+    domainsListState.page = 1;
+  }
+);
 
 const domainsScope = useParamScope(
   () => {
+    if (!account.value?.owned_domains) return null;
+
     return {
-      key: account.value?.owned_domains ? JSON.stringify(domainsListState) : '',
+      key: JSON.stringify(domainsListState),
       payload: domainsListState,
     };
   },
   ({ payload }) => setupAsyncData(() => http.fetchDomains(payload))
 );
 
-const isDomainsLoading = computed(() => domainsScope.value?.expose?.isLoading);
+const isDomainsLoading = computed(() => !!domainsScope.value?.expose.isLoading);
 const totalDomains = computed(() => domainsScope.value?.expose?.data?.pagination?.total_items ?? 0);
 const domains = computed(() => domainsScope.value?.expose?.data?.items ?? []);
 
@@ -83,21 +82,26 @@ const assetsListState = reactive({
   owned_by: computed(() => accountId.value),
 });
 
-watch([() => assetsListState.per_page], () => {
-  assetsListState.page = 1;
-});
+watch(
+  () => assetsListState.per_page,
+  () => {
+    assetsListState.page = 1;
+  }
+);
 
 const assetsScope = useParamScope(
   () => {
+    if (!account.value?.owned_assets) return null;
+
     return {
-      key: account.value?.owned_assets ? JSON.stringify(assetsListState) : '',
+      key: JSON.stringify(assetsListState),
       payload: assetsListState,
     };
   },
   ({ payload }) => setupAsyncData(() => http.fetchAssets(payload))
 );
 
-const isAssetsLoading = computed(() => assetsScope.value?.expose.isLoading);
+const isAssetsLoading = computed(() => !!assetsScope.value?.expose.isLoading);
 const totalAssets = computed(() => assetsScope.value?.expose.data?.pagination?.total_items ?? 0);
 const assets = computed(() => assetsScope.value?.expose.data?.items ?? []);
 

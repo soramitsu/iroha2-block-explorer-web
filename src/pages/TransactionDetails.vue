@@ -42,24 +42,10 @@ const transactionHash = computed(() => {
   return hash;
 });
 
-const transactionScope = useParamScope(
-  () => {
-    return {
-      key: transactionHash.value,
-      payload: transactionHash.value,
-    };
-  },
-  ({ payload }) => setupAsyncData(() => http.fetchTransaction(payload))
-);
+const transactionScope = useParamScope(transactionHash, (value) => setupAsyncData(() => http.fetchTransaction(value)));
 
 const isTransactionLoading = computed(() => transactionScope.value.expose.isLoading);
-const transaction = computed(() => {
-  const res = transactionScope.value?.expose.data;
-
-  if (!res) return null;
-
-  return res;
-});
+const transaction = computed(() => transactionScope.value?.expose.data);
 </script>
 
 <template>

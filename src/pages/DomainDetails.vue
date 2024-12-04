@@ -42,24 +42,10 @@ const domainId = computed(() => {
   return DomainId.parse(id);
 });
 
-const domainScope = useParamScope(
-  () => {
-    return {
-      key: domainId.value,
-      payload: domainId.value,
-    };
-  },
-  ({ payload }) => setupAsyncData(() => http.fetchDomain(payload))
-);
+const domainScope = useParamScope(domainId, (value) => setupAsyncData(() => http.fetchDomain(value)));
 
 const isDomainLoading = computed(() => domainScope.value.expose.isLoading);
-const domain = computed(() => {
-  const res = domainScope.value?.expose.data;
-
-  if (!res) return null;
-
-  return res;
-});
+const domain = computed(() => domainScope.value?.expose.data);
 const domainAssets = computed(() => domain.value?.assets ?? 0);
 const domainAccounts = computed(() => domain.value?.accounts ?? 0);
 
@@ -68,21 +54,26 @@ const assetsListState = reactive({
   per_page: 10,
 });
 
-watch([() => assetsListState.per_page], () => {
-  assetsListState.page = 1;
-});
+watch(
+  () => assetsListState.per_page,
+  () => {
+    assetsListState.page = 1;
+  }
+);
 
 const assetsListScope = useParamScope(
   () => {
+    if (!domainAssets.value) return null;
+
     return {
-      key: domainAssets.value ? JSON.stringify(assetsListState) : '',
+      key: JSON.stringify(assetsListState),
       payload: assetsListState,
     };
   },
   ({ payload }) => setupAsyncData(() => http.fetchAssetDefinitions(payload))
 );
 
-const isAssetsListLoading = computed(() => assetsListScope.value?.expose.isLoading);
+const isAssetsListLoading = computed(() => !!assetsListScope.value?.expose.isLoading);
 const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 
 const accountsListState = reactive({
@@ -90,21 +81,26 @@ const accountsListState = reactive({
   per_page: 10,
 });
 
-watch([() => accountsListState.per_page], () => {
-  accountsListState.page = 1;
-});
+watch(
+  () => accountsListState.per_page,
+  () => {
+    accountsListState.page = 1;
+  }
+);
 
 const accountsListScope = useParamScope(
   () => {
+    if (!domainAccounts.value) return null;
+
     return {
-      key: domainAccounts.value ? JSON.stringify(assetsListState) : '',
+      key: JSON.stringify(accountsListState),
       payload: accountsListState,
     };
   },
   ({ payload }) => setupAsyncData(() => http.fetchAccounts(payload))
 );
 
-const isAccountsListLoading = computed(() => accountsListScope.value?.expose.isLoading);
+const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.isLoading);
 const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
 </script>
 

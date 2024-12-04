@@ -58,34 +58,33 @@ const assetScope = useParamScope(
 );
 
 const isAssetLoading = computed(() => assetScope.value.expose.isLoading);
-const asset = computed(() => {
-  const res = assetScope.value?.expose.data;
-
-  if (!res) return null;
-
-  return res;
-});
+const asset = computed(() => assetScope.value?.expose.data);
 
 const listState = reactive({
   page: 1,
   per_page: 10,
 });
 
-watch([() => listState.per_page], () => {
-  listState.page = 1;
-});
+watch(
+  () => listState.per_page,
+  () => {
+    listState.page = 1;
+  }
+);
 
 const assetsListScope = useParamScope(
   () => {
+    if (!asset.value?.assets) return null;
+
     return {
-      key: asset.value?.assets ? JSON.stringify(listState) : '',
+      key: JSON.stringify(listState),
       payload: listState,
     };
   },
   ({ payload }) => setupAsyncData(() => http.fetchAssets(payload))
 );
 
-const isLoadingAssets = computed(() => assetsListScope.value?.expose.isLoading);
+const isLoadingAssets = computed(() => !!assetsListScope.value?.expose.isLoading);
 const totalAssets = computed(() => assetsListScope.value?.expose.data?.pagination?.total_items ?? 0);
 const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 </script>
