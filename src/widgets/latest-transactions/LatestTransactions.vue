@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type Reactive, reactive } from 'vue';
+import { computed, reactive } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -82,7 +82,7 @@ const listState = reactive({
   status: null,
 });
 
-async function fetchTransactions(params: Reactive<typeof listState>) {
+async function fetchTransactions(params: typeof listState) {
   return await http.fetchTransactions({
     ...params,
     status: params.status ?? undefined,
