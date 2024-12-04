@@ -67,21 +67,21 @@ import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const firstSection = computed(() => {
   return [
-    { value: data?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
-    { value: data?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
-    { value: data?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
+    { value: setup.data?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
+    { value: setup.data?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
+    { value: setup.data?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
   ];
 });
 
 const secondSection = computed(() => {
   return [
-    { value: data?.blocks ?? 0, i18nKey: 'homePage.totalBlocks' },
-    { value: data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
-    { value: data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
+    { value: setup.data?.blocks ?? 0, i18nKey: 'homePage.totalBlocks' },
+    { value: setup.data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
+    { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
-const { isLoading, data } = setupAsyncData(async () => {
+const setup = setupAsyncData(async () => {
   const [assets, accounts, domains, { peers, blocks, txs_accepted, txs_rejected }] = await Promise.all([
     http.fetchAssets(),
     http.fetchAccounts(),
@@ -98,6 +98,8 @@ const { isLoading, data } = setupAsyncData(async () => {
     blocks,
   };
 });
+
+const isLoading = computed(() => setup.isLoading);
 </script>
 
 <style lang="scss">
