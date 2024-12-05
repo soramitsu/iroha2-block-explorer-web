@@ -14,17 +14,17 @@
         :key="i"
         class="home-page-info__item"
       >
+        <BaseLoading
+          v-if="isLoading"
+          class="home-page-info__item-loading"
+        />
+
         <span
-          v-if="item.value"
+          v-else
           class="home-page-info__item-value"
         >
           {{ item.value }}
         </span>
-
-        <BaseLoading
-          v-else
-          class="home-page-info__item-loading"
-        />
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -38,17 +38,17 @@
         :key="i"
         class="home-page-info__item"
       >
+        <BaseLoading
+          v-if="isLoading"
+          class="home-page-info__item-loading"
+        />
+
         <span
-          v-if="item.value"
+          v-else
           class="home-page-info__item-value"
         >
           {{ item.value }}
         </span>
-
-        <BaseLoading
-          v-else
-          class="home-page-info__item-loading"
-        />
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -60,65 +60,46 @@
 
 <script setup lang="ts">
 import { SearchField } from '@/features/search';
-import { computed, onMounted, ref, shallowRef } from 'vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { computed } from 'vue';
 import * as http from '@/shared/api';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
-const props = withDefaults(
-  defineProps<{
-    blocks: number
-    transactions: number
-  }>(),
-  {
-    blocks: 0,
-    transactions: 0,
-  }
-);
-
-interface InfoItem {
-  value: number
-  i18nKey: string
-}
-
-const firstSection = shallowRef<InfoItem[]>([
-  { value: 0, i18nKey: 'homePage.totalAccounts' },
-  { value: 0, i18nKey: 'homePage.totalAssets' },
-  { value: 0, i18nKey: 'homePage.totalDomains' },
-]);
-
-const secondSection = computed(() => {
+const firstSection = computed(() => {
   return [
-    { value: props.blocks, i18nKey: 'homePage.totalBlocks' },
-    { value: props.transactions, i18nKey: 'homePage.totalTransactions' },
-    { value: nodesAmount.value, i18nKey: 'homePage.totalNodes' },
+    { value: setup.data?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
+    { value: setup.data?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
+    { value: setup.data?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
   ];
 });
 
-const nodesAmount = ref(0);
-
-const { handleUnknownError } = useErrorHandlers();
-
-onMounted(async () => {
-  try {
-    const [assets, accounts, domains, { peers }] = await Promise.all([
-      http.fetchAssets(),
-      http.fetchAccounts(),
-      http.fetchDomains(),
-      http.fetchPeerStatus(),
-    ]);
-
-    nodesAmount.value = peers + 1;
-
-    firstSection.value = [
-      { value: accounts.pagination.total_items, i18nKey: 'homePage.totalAccounts' },
-      { value: assets.pagination.total_items, i18nKey: 'homePage.totalAssets' },
-      { value: domains.pagination.total_items, i18nKey: 'homePage.totalDomains' },
-    ];
-  } catch (e) {
-    handleUnknownError(e);
-  }
+const secondSection = computed(() => {
+  return [
+    { value: setup.data?.blocks ?? 0, i18nKey: 'homePage.totalBlocks' },
+    { value: setup.data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
+    { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
+  ];
 });
+
+const setup = setupAsyncData(async () => {
+  const [assets, accounts, domains, { peers, blocks, txs_accepted, txs_rejected }] = await Promise.all([
+    http.fetchAssets(),
+    http.fetchAccounts(),
+    http.fetchDomains(),
+    http.fetchPeerStatus(),
+  ]);
+
+  return {
+    assets: assets.pagination.total_items,
+    accounts: accounts.pagination.total_items,
+    domains: domains.pagination.total_items,
+    nodes: peers + 1,
+    transactions: txs_accepted + txs_rejected,
+    blocks,
+  };
+});
+
+const isLoading = computed(() => setup.isLoading);
 </script>
 
 <style lang="scss">

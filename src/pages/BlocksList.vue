@@ -4,15 +4,14 @@
     class="blocks-list-page"
   >
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isLoading"
+      :total="payloadPagination?.total_items"
+      :payload-pagination
+      :items="blocks"
       container-class="blocks-list-page__container"
       reversed
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="blocks-list-page__row">
@@ -42,7 +41,7 @@
           <BaseHash
             :hash="item.hash"
             :link="`/blocks/${item.hash}`"
-            type="full"
+            :type="hashType"
             copy
             class="cell"
           />
@@ -97,26 +96,46 @@
 
 <script setup lang="ts">
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { useTable } from '@/shared/lib/table';
 import * as http from '@/shared/api';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { onMounted } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useWindowSize } from '@vueuse/core';
 
-const table = useTable(http.fetchBlocks, { reversed: true });
+const { width } = useWindowSize();
 
-const { handleUnknownError } = useErrorHandlers();
+const HASH_BREAKPOINT = 1440;
+const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
 
-onMounted(async () => {
-  try {
-    await table.fetch();
-  } catch (e) {
-    handleUnknownError(e);
-  }
+const listState = reactive({
+  page: 0,
+  per_page: 10,
 });
+
+watch(
+  () => listState.per_page,
+  () => {
+    listState.page = 0;
+  }
+);
+
+const scope = useParamScope(
+  () => {
+    return {
+      key: JSON.stringify(listState),
+      payload: listState,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchBlocks(payload))
+);
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const payloadPagination = computed(() => scope.value?.expose.data?.pagination);
+const blocks = computed(() => scope.value?.expose.data?.items ?? []);
 </script>
 
 <style lang="scss">
@@ -126,7 +145,12 @@ onMounted(async () => {
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 130px 200px 640px 150px;
+    @include lg {
+      grid-template-columns: 130px 225px 300px 150px;
+    }
+    @include xl {
+      grid-template-columns: 130px 230px 640px 150px;
+    }
     justify-content: start;
 
     &-time {

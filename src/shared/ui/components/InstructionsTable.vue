@@ -4,7 +4,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import type { AccountId, Instruction } from '@/shared/api/schemas';
+import type { AccountId, Instruction, InstructionsSearchParams } from '@/shared/api/schemas';
 import { useI18n } from 'vue-i18n';
 import {
   type filterTransactionsModel as ftm,
@@ -18,9 +18,9 @@ import {
 import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import { objectOmit } from '@vueuse/shared';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-import { useTable } from '@/shared/lib/table';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const { t } = useI18n();
 const props = defineProps<{
@@ -28,8 +28,6 @@ const props = defineProps<{
   hashType: 'short' | 'full'
   filterBy: { kind: 'authority', value: AccountId } | { kind: 'transaction', value: string }
 }>();
-
-const { handleUnknownError } = useErrorHandlers();
 
 function isBase64EncodedWasm(item: Instruction) {
   return item.kind === 'Upgrade';
@@ -45,36 +43,48 @@ function getInstructionPayloadEntity(item: Instruction) {
   return Object.entries(item.payload)[0][0];
 }
 
-const instructionsTable = useTable(http.fetchInstructions);
-
-async function fetchInstructions() {
-  try {
-    if (isOnAccountPage.value) {
-      await instructionsTable.fetch({
-        ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []),
-        transaction_status: listState.status,
-      });
-    } else
-      await instructionsTable.fetch({
-        ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []),
-      });
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
-
 const isOnAccountPage = computed(() => props.filterBy.kind === 'authority');
-
-const listState = reactive({
-  status: null,
-  authority: computed(() => props.filterBy.kind === 'authority' && props.filterBy.value.toString()),
-  transaction_hash: computed(() => props.filterBy.kind === 'transaction' && props.filterBy.value),
-  kind: 'All' as ftm.TabInstructions,
-});
-
 const shouldShowKind = computed(() => listState.kind === 'All');
 
-watch(listState, fetchInstructions, { immediate: true });
+const listState = reactive({
+  transaction_status: null,
+  authority: computed(() => (props.filterBy.kind === 'authority' ? props.filterBy.value.toString() : '')),
+  transaction_hash: computed(() => (props.filterBy.kind === 'transaction' ? props.filterBy.value : '')),
+  kind: 'All' as ftm.TabInstructions,
+  page: 1,
+  per_page: 10,
+});
+
+const searchParams = computed<InstructionsSearchParams>(() => {
+  if (isOnAccountPage.value) {
+    return {
+      ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []),
+      transaction_status: listState.transaction_status ?? undefined,
+    };
+  }
+
+  return {
+    ...objectOmit(listState, shouldShowKind.value ? ['kind', 'transaction_status'] : ['transaction_status']),
+  };
+});
+
+watch([() => listState.kind, () => listState.transaction_status, () => listState.per_page], () => {
+  listState.page = 1;
+});
+
+const scope = useParamScope(
+  () => {
+    return {
+      key: JSON.stringify(searchParams.value),
+      payload: searchParams.value,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchInstructions(payload))
+);
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const totalItems = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
+const items = computed(() => scope.value?.expose.data?.items ?? []);
 </script>
 
 <template>
@@ -89,20 +99,18 @@ watch(listState, fetchInstructions, { immediate: true });
       />
       <TransactionStatusFilter
         v-if="isOnAccountPage"
-        v-model="listState.status"
+        v-model="listState.transaction_status"
       />
     </div>
 
     <BaseTable
-      :loading="instructionsTable.loading.value"
-      :pagination="instructionsTable.pagination"
-      :items="instructionsTable.items.value"
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isLoading"
+      :total="totalItems"
+      :items
       container-class="instructions-table__container"
       :pagination-breakpoint="1441"
-      @next-page="instructionsTable.nextPage()"
-      @prev-page="instructionsTable.prevPage()"
-      @set-page="instructionsTable.setPage($event)"
-      @set-size="instructionsTable.setSize($event)"
     >
       <template #row="{ item }">
         <div class="instructions-table__row">

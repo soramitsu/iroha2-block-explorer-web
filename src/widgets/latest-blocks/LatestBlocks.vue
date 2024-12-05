@@ -47,34 +47,14 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { Block } from '@/shared/api/schemas';
-import { onMounted, ref, shallowRef } from 'vue';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { computed } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
-const emit = defineEmits<{
-  loaded: [number]
-}>();
+const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
 
-const blocks = shallowRef<Block[]>([]);
-const isLoading = ref(false);
-
-const { handleUnknownError } = useErrorHandlers();
-
-onMounted(async () => {
-  try {
-    isLoading.value = true;
-
-    const res = await http.fetchBlocks();
-
-    blocks.value = res.items;
-    emit('loaded', res.pagination.total_items);
-  } catch (error) {
-    handleUnknownError(error);
-  } finally {
-    isLoading.value = false;
-  }
-});
+const isLoading = computed(() => setup.isLoading);
+const blocks = computed(() => setup.data?.items ?? []);
 </script>
 
 <style lang="scss">

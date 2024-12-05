@@ -4,42 +4,55 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import type { AccountId } from '@/shared/api/schemas';
+import type { AccountId, TransactionSearchParams } from '@/shared/api/schemas';
 import { TransactionStatusFilter } from '@/features/filter-transactions';
 import { computed, reactive, watch } from 'vue';
-import { useTable } from '@/shared/lib/table';
 import * as http from '@/shared/api';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
-
-const { handleUnknownError } = useErrorHandlers();
+import { useParamScope } from '@vue-kakuyaku/core';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const props = withDefaults(
   defineProps<{
     showBlock?: boolean
     showAuthority?: boolean
-    hashType: 'short' | 'full'
+    hashType: 'short' | 'medium' | 'full'
     filterBy?: { kind: 'authority', value: AccountId } | { kind: 'block', value: number } | null
   }>(),
   { showBlock: false, showAuthority: false, filterBy: null }
 );
 
-const transactionsTable = useTable(http.fetchTransactions, { reversed: true });
-
 const listState = reactive({
   status: null,
-  authority: computed(() => props.filterBy?.kind === 'authority' && props.filterBy?.value.toString()),
-  block: computed(() => props.filterBy?.kind === 'block' && props.filterBy?.value),
+  authority: computed(() => (props.filterBy?.kind === 'authority' ? props.filterBy.value : undefined)),
+  block: computed(() => (props.filterBy?.kind === 'block' ? props.filterBy?.value : 0)),
+  page: 0,
+  per_page: 10,
 });
 
-async function fetchTransactions() {
-  try {
-    await transactionsTable.fetch(listState);
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
+const searchParams = computed<TransactionSearchParams>(() => {
+  return {
+    ...listState,
+    status: listState.status ?? undefined,
+  };
+});
 
-watch(listState, fetchTransactions, { immediate: true });
+watch([() => listState.per_page, () => listState.status], () => {
+  listState.page = 0;
+});
+
+const scope = useParamScope(
+  () => {
+    return {
+      key: JSON.stringify(searchParams.value),
+      payload: searchParams.value,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchTransactions(payload))
+);
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const transactions = computed(() => scope.value?.expose.data?.items ?? []);
+const payloadPagination = computed(() => scope.value.expose.data?.pagination);
 </script>
 
 <template>
@@ -49,16 +62,15 @@ watch(listState, fetchTransactions, { immediate: true });
     </div>
 
     <BaseTable
-      :loading="transactionsTable.loading.value"
-      :pagination="transactionsTable.pagination"
-      :items="transactionsTable.items.value"
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isLoading"
+      :items="transactions"
+      :total="payloadPagination?.total_items"
+      :payload-pagination
       container-class="transactions-table__container"
       reversed
       :pagination-breakpoint="1441"
-      @next-page="transactionsTable.nextPage()"
-      @prev-page="transactionsTable.prevPage()"
-      @set-page="transactionsTable.setPage($event)"
-      @set-size="transactionsTable.setSize($event)"
     >
       <template #row="{ item }">
         <div class="transactions-table__row">
@@ -68,7 +80,7 @@ watch(listState, fetchTransactions, { immediate: true });
             :committed="item.status === 'Committed'"
           />
 
-          <div class="transactions-table__column">
+          <div class="transactions-table__column transactions-table__column-hash">
             <div class="transactions-table__label">
               {{ $t('transactions.transactionID') }}
             </div>
@@ -88,7 +100,7 @@ watch(listState, fetchTransactions, { immediate: true });
           <div class="transactions-table__columns">
             <div
               v-if="props.showAuthority"
-              class="transactions-table__column"
+              class="transactions-table__column transactions-table__column-authority"
             >
               <div class="transactions-table__label">
                 {{ $t('transactions.authority') }}
@@ -153,12 +165,16 @@ watch(listState, fetchTransactions, { immediate: true });
       align-items: center;
     }
 
+    @include md {
+      grid-template-columns: 32px 0.3fr 1fr;
+    }
+
     @include lg {
-      grid-template-columns: 32px 1.8fr 1fr;
+      grid-template-columns: 32px 0.5fr 1fr;
     }
 
     @include xl {
-      grid-template-columns: 32px 1.2fr 1fr;
+      grid-template-columns: 32px 0.9fr 1fr;
     }
   }
 
@@ -201,7 +217,7 @@ watch(listState, fetchTransactions, { immediate: true });
 
   &__columns {
     display: flex;
-    gap: size(3);
+    gap: size(2);
 
     flex-direction: column;
     @include md {
@@ -223,11 +239,36 @@ watch(listState, fetchTransactions, { immediate: true });
       grid-gap: size(1);
     }
 
+    &-hash {
+      @include sm {
+        width: 30vw;
+      }
+      @include md {
+        width: 19vw;
+      }
+      @include lg {
+        width: 25vw;
+      }
+      @include xl {
+        width: size(82);
+      }
+    }
+
+    &-authority {
+      width: size(36);
+    }
+
     &-block {
       display: flex;
       gap: size(1);
       align-items: center;
-      width: size(10);
+
+      @include xxs {
+        width: size(16);
+      }
+      @include md {
+        width: size(14);
+      }
     }
   }
 }

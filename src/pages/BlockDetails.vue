@@ -1,21 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { getLocalTime, getUTCTime } from '@/shared/lib/time';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
 import invariant from 'tiny-invariant';
-import type { Block } from '@/shared/api/schemas';
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const router = useRouter();
-
-const { handleUnknownError } = useErrorHandlers();
 
 const METRICS_HASH_BREAKPOINT = 800;
 const { width } = useWindowSize();
@@ -30,30 +28,16 @@ const blockHeightOrHash = computed(() => {
   return Number(heightOrHash) || heightOrHash;
 });
 
-const block = ref<Block | null>(null);
-const isFetchingBlock = ref(false);
-const isNextBlockExists = ref(false);
-const isPreviousBlockExists = ref(false);
+const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(() => http.fetchBlock(value)));
 
-watch(
-  () => blockHeightOrHash.value,
-  async () => {
-    try {
-      isFetchingBlock.value = true;
-      block.value = await http.fetchBlock(blockHeightOrHash.value);
+const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
+const block = computed(() => blockScope.value?.expose.data);
 
-      const { blocks } = await http.fetchPeerStatus();
+const peerScope = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchPeerStatus));
 
-      isNextBlockExists.value = block.value.height < blocks;
-      isPreviousBlockExists.value = block.value.height > 1;
-    } catch (e) {
-      handleUnknownError(e);
-    } finally {
-      isFetchingBlock.value = false;
-    }
-  },
-  { immediate: true }
-);
+const totalBlocks = computed(() => peerScope.value.expose.data?.blocks ?? 0);
+const isNextBlockExists = computed(() => block.value && block.value.height < totalBlocks.value);
+const isPreviousBlockExists = computed(() => block.value && block.value.height > 1);
 
 function handlePreviousBlockClick() {
   if (!block.value) return;
@@ -67,7 +51,7 @@ function handleNextBlockClick() {
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
 
-const TRANSACTIONS_HASH_BREAKPOINT = 1350;
+const TRANSACTIONS_HASH_BREAKPOINT = 1440;
 
 const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full'));
 </script>
@@ -77,7 +61,7 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
     <BaseContentBlock class="block-details__metrics">
       <template #header>
         <div
-          v-if="!isFetchingBlock"
+          v-if="!isBlockLoading"
           class="block-details__metrics-header"
         >
           <ArrowIcon
@@ -95,7 +79,7 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
       </template>
       <template #default>
         <div
-          v-if="isFetchingBlock"
+          v-if="isBlockLoading"
           class="block-details__metrics_loading"
         >
           <BaseLoading />

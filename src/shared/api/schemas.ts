@@ -1,18 +1,18 @@
 import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 
-const Paginaion = z.object({
+const Pagination = z.object({
   page: z.number(),
   per_page: z.number(),
   total_pages: z.number(),
   total_items: z.number(),
 });
 
-export type Pagination = z.infer<typeof Paginaion>;
+export type Pagination = z.infer<typeof Pagination>;
 
 export const Paginated = <T extends z.ZodType>(item: T) =>
   z.object({
-    pagination: Paginaion,
+    pagination: Pagination,
     items: item.array(),
   });
 
@@ -21,14 +21,10 @@ export interface Paginated<T> {
   items: T[]
 }
 
-const PaginationParams = z
-  .object({
-    page: z.number(),
-    per_page: z.number(),
-  })
-  .partial();
-
-export type PaginationParams = z.infer<typeof PaginationParams>;
+export interface PaginationParams {
+  page: number
+  per_page: number
+}
 
 const Metadata = z.record(z.string(), z.any());
 const TransactionStatus = z.enum(['Committed', 'Rejected']);
@@ -220,7 +216,7 @@ export const Domain = z.object({
 
 export type Domain = z.infer<typeof Domain>;
 
-export interface TransactionSearchParams extends PaginationParams {
+export interface TransactionSearchParams extends Partial<PaginationParams> {
   authority?: AccountId
   block?: number
   status?: TransactionStatus

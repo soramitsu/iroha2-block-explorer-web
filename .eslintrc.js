@@ -1,5 +1,8 @@
 module.exports = {
   root: true,
+  plugins: [
+    '@stylistic/ts'
+  ],
   extends: ['alloy', 'alloy/typescript', 'plugin:vue/vue3-recommended'],
   parser: 'vue-eslint-parser',
   parserOptions: {
@@ -25,7 +28,7 @@ module.exports = {
     '@typescript-eslint/no-parameter-properties': ['off'],
     '@typescript-eslint/unified-signatures': ['off'],
     'vue/v-bind-style': ['error', 'shorthand', { 'sameNameShorthand': 'always' }],
-    '@typescript-eslint/member-delimiter-style': [
+    '@stylistic/ts/member-delimiter-style': [
       'warn',
       {
         multiline: {
