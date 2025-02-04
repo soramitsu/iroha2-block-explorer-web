@@ -132,9 +132,12 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
               copy
             />
 
-            <div class="instructions-table__time">
+            <time
+              class="instructions-table__time"
+              :datetime="item.created_at.toISOString()"
+            >
               {{ defaultFormat(item.created_at) }}
-            </div>
+            </time>
           </div>
 
           <div class="instructions-table__columns">

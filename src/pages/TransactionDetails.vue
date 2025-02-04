@@ -75,7 +75,9 @@ const transaction = computed(() => transactionScope.value?.expose.data);
                 <span class="h-sm">{{ $t('transactions.timestamp') }}</span>
                 <div class="transaction-details__info-row-time-date row-text">
                   <TimeIcon />
-                  <span>{{ getLocalTime(transaction.created_at) }}</span>
+                  <time :datetime="transaction.created_at.toISOString()">{{
+                    getLocalTime(transaction.created_at)
+                  }}</time>
                   <ContextTooltip :message="getUTCTime(transaction.created_at)" />
                 </div>
               </div>

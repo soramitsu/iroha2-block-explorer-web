@@ -92,9 +92,12 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
               copy
             />
 
-            <div class="transactions-table__time">
+            <time
+              :datetime="item.created_at.toISOString()"
+              class="transactions-table__time"
+            >
               {{ defaultFormat(item.created_at) }}
-            </div>
+            </time>
           </div>
 
           <div class="transactions-table__columns">
