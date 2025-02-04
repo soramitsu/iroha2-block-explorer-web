@@ -3,6 +3,7 @@
     v-if="to"
     :to
     class="base-button"
+    active-class="base-button_active"
     :data-type="type"
     :data-pressed="pressed || null"
     :data-rounded="rounded || null"
@@ -65,6 +66,11 @@ const type = computed(() => {
   background: transparent;
 
   @include tpg-ch1;
+
+  &_active {
+    background: theme-color('background');
+    @include shadow-elevated-active;
+  }
 
   &:hover {
     color: theme-color('content-primary');
