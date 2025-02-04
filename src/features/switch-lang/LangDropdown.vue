@@ -2,6 +2,7 @@
   <BaseButton
     class="lang-dropdown__button"
     bordered
+    aria-label="lang dropdown"
     :pressed="dropdown.isOpen.value"
     role="combobox"
     aria-autocomplete="list"

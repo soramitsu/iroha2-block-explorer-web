@@ -1,10 +1,14 @@
 <template>
-  <div class="base-radio-group">
+  <div
+    class="base-radio-group"
+    role="radiogroup"
+  >
     <div
       v-for="(item, i) in props.items"
       :key="i"
       class="base-radio-group__item"
       :data-active="item.value === props.modelValue || null"
+      :aria-checked="item.value === props.modelValue"
       role="radio"
       tabindex="0"
       @click="choose(item.value)"
