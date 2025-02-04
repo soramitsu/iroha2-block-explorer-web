@@ -164,9 +164,9 @@ const shouldShowNextArrow = computed(() => {
           v-for="(item, i) in numbers"
           :key="i"
           class="base-pagination__item-numbers-number"
-          :class="{ 'base-pagination__item-numbers-number_disabled': isPageActive(item) }"
           :data-active="isPageActive(item)"
           role="button"
+          :aria-pressed="!!isPageActive(item)"
           tabindex="0"
           @click="Number.isInteger(item) && setPage(Number(item))"
           @keydown.enter.space="Number.isInteger(item) && setPage(Number(item))"
@@ -240,9 +240,6 @@ const shouldShowNextArrow = computed(() => {
 
         &[data-active] {
           color: theme-color('primary');
-        }
-
-        &_disabled {
           cursor: default;
         }
       }

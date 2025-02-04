@@ -6,25 +6,27 @@
   >
     <slot name="top" />
 
-    <div
+    <ul
       v-if="items?.length"
+      id="window_listbox"
       class="base-dropdown-window__list"
       role="listbox"
     >
-      <div
+      <li
         v-for="(item, i) in items"
         :key="i"
         :data-active="model === item.value || null"
         :data-size="size"
         class="base-dropdown-window__item"
         role="option"
+        :aria-selected="model === item.value || false"
         tabindex="0"
         @click="model = item.value"
         @keydown.enter.space="model = item.value"
       >
         {{ item.label }}
-      </div>
-    </div>
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -76,16 +78,21 @@ const model = useVModel(props, 'modelValue', emit);
   }
 
   &__list {
+    padding: 0;
     margin: size(1) 0;
   }
 
   &__item {
+    list-style: none;
     user-select: none;
     cursor: pointer;
 
-    &:hover,
+    &:hover {
+      background: theme-color('background-hover');
+    }
     &[data-active] {
       background: theme-color('background-hover');
+      cursor: default;
     }
 
     &[data-size='md'] {

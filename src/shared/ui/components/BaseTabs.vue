@@ -18,6 +18,7 @@
       class="base-tabs__tab"
       :class="{ 'base-tabs__tab--active': item.value === model }"
       role="tab"
+      :aria-selected="item.value === model"
       tabIndex="0"
       @click="model = item.value"
       @keydown.enter.space="model = item.value"

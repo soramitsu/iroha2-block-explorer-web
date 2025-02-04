@@ -8,6 +8,10 @@
       <div
         class="base-dropdown__field"
         role="combobox"
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
+        :aria-expanded="isOpen"
+        aria-controls="popup_listbox"
         tabindex="0"
         @click="isOpen = !isOpen"
         @keydown.enter.space="isOpen = !isOpen"
@@ -21,23 +25,26 @@
         />
       </div>
 
-      <div
+      <ul
         v-if="isOpen"
+        id="popup_listbox"
         class="base-dropdown__list"
         role="listbox"
       >
-        <div
+        <li
           v-for="(item, i) in items"
           :key="i"
           role="option"
           tabindex="0"
+          :aria-selected="props.modelValue === item.value || false"
+          :data-active="props.modelValue === item.value || null"
           class="base-dropdown__item"
           @click="choose(item.value)"
           @keydown.enter.space="choose(item.value)"
         >
           {{ item.label }}
-        </div>
-      </div>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
@@ -112,7 +119,7 @@ function choose(value: string | number) {
   }
 
   &__list {
-    padding-bottom: size(1);
+    padding: 0 0 size(1) 0;
   }
 
   &__value {
@@ -122,9 +129,15 @@ function choose(value: string | number) {
 
   &__item {
     padding: size(0.5) size(2);
+    list-style: none;
 
     &:hover {
       background: theme-color('background-hover');
+    }
+
+    &[data-active] {
+      background: theme-color('background-hover');
+      cursor: default;
     }
   }
 }
