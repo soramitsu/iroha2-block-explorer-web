@@ -113,6 +113,27 @@ function isPageActive(item: string | number) {
 
   return null;
 }
+
+const shouldShowDropdown = computed(() => {
+  if (props.reversed && props.totalItems > 19) return true;
+  else if (!props.reversed && props.totalItems > 10) return true;
+
+  return false;
+});
+
+const shouldShowPrevArrow = computed(() => {
+  if (props.reversed && activePage.value === numbers.value.length) return false;
+  else if (!props.reversed && page.value === 1) return false;
+
+  return true;
+});
+
+const shouldShowNextArrow = computed(() => {
+  if (props.reversed && activePage.value === 1) return false;
+  else if (!props.reversed && page.value === numbers.value.length) return false;
+
+  return true;
+});
 </script>
 
 <template>
@@ -126,6 +147,7 @@ function isPageActive(item: string | number) {
       </div>
 
       <BaseDropdown
+        v-if="shouldShowDropdown"
         v-model="pageSize"
         :items="sizeOptions"
         :field-label="$t('table.rowsPerPage')"
@@ -133,12 +155,16 @@ function isPageActive(item: string | number) {
       />
     </div>
 
-    <div class="base-pagination__item">
+    <div
+      v-if="numbers.length > 1"
+      class="base-pagination__item"
+    >
       <div class="base-pagination__item-numbers">
         <span
           v-for="(item, i) in numbers"
           :key="i"
           class="base-pagination__item-numbers-number"
+          :class="{ 'base-pagination__item-numbers-number_disabled': isPageActive(item) }"
           :data-active="isPageActive(item)"
           role="button"
           tabindex="0"
@@ -149,11 +175,9 @@ function isPageActive(item: string | number) {
         </span>
       </div>
 
-      <div
-        v-if="props.totalItems"
-        class="base-pagination__arrows"
-      >
+      <div class="base-pagination__arrows">
         <ArrowIcon
+          v-if="shouldShowPrevArrow"
           data-testid="prev"
           role="button"
           tabindex="0"
@@ -161,6 +185,7 @@ function isPageActive(item: string | number) {
           @keydown.enter.space="prevPage"
         />
         <ArrowIcon
+          v-if="shouldShowNextArrow"
           data-testid="next"
           role="button"
           tabindex="0"
@@ -216,6 +241,10 @@ function isPageActive(item: string | number) {
         &[data-active] {
           color: theme-color('primary');
         }
+
+        &_disabled {
+          cursor: default;
+        }
       }
     }
   }
@@ -232,9 +261,7 @@ function isPageActive(item: string | number) {
   }
 
   &__arrows {
-    display: grid;
-    grid-template-columns: size(3) size(3);
-    grid-gap: size(1);
+    display: flex;
 
     & > svg {
       display: flex;
@@ -246,7 +273,7 @@ function isPageActive(item: string | number) {
       color: theme-color('content-primary');
       cursor: pointer;
 
-      &:first-child {
+      &[data-testid='prev'] {
         transform: rotateY(180deg);
       }
     }

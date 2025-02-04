@@ -326,8 +326,8 @@ test.each([
     },
     {
       segmentInfo: '27-1 of 27',
-      numbers: ['1'],
-      activePage: '1',
+      numbers: [],
+      activePage: '',
     },
   ],
   [
@@ -397,7 +397,10 @@ test.each([
     }
 
     function getActivePage() {
-      return wrapper.find('[data-active]').text();
+      const activePage = wrapper.find('[data-active]');
+      if (!activePage.exists()) return '';
+
+      return activePage.text();
     }
 
     function getPagesList() {
