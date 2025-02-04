@@ -2,9 +2,12 @@
   <div class="base-tabs">
     <div
       v-if="adaptiveOptions && adaptiveIndexStart !== 0"
+      role="button"
+      tabIndex="0"
       class="base-tabs__arrow"
       data-testid="prev"
       @click="handleArrowPrevClick"
+      @keydown.enter.space="handleArrowPrevClick"
     >
       <ArrowIcon />
     </div>
@@ -14,7 +17,10 @@
       :key="i"
       class="base-tabs__tab"
       :class="{ 'base-tabs__tab--active': item.value === model }"
+      role="tab"
+      tabIndex="0"
       @click="model = item.value"
+      @keydown.enter.space="model = item.value"
     >
       {{ item.label }}
     </div>
@@ -23,7 +29,10 @@
       v-if="adaptiveOptions && adaptiveIndexEnd < props.items.length"
       class="base-tabs__arrow"
       data-testid="next"
+      role="button"
+      tabIndex="0"
       @click="handleArrowNextClick"
+      @keydown.enter.space="handleArrowNextClick"
     >
       <ArrowIcon />
     </div>

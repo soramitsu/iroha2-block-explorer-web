@@ -66,14 +66,20 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
         >
           <ArrowIcon
             v-if="isPreviousBlockExists"
+            role="button"
+            tabindex="0"
             data-testid="prevBlock"
             @click="handlePreviousBlockClick"
+            @keydown.enter.space="handlePreviousBlockClick"
           />
           {{ $t('blocks.block', [block?.height]) }}
           <ArrowIcon
             v-if="isNextBlockExists"
+            role="button"
+            tabindex="0"
             data-testid="nextBlock"
             @click="handleNextBlockClick"
+            @keydown.enter.space="handleNextBlockClick"
           />
         </div>
       </template>

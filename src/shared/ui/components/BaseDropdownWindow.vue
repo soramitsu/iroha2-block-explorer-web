@@ -9,6 +9,7 @@
     <div
       v-if="items?.length"
       class="base-dropdown-window__list"
+      role="listbox"
     >
       <div
         v-for="(item, i) in items"
@@ -16,7 +17,10 @@
         :data-active="model === item.value || null"
         :data-size="size"
         class="base-dropdown-window__item"
+        role="option"
+        tabindex="0"
         @click="model = item.value"
+        @keydown.enter.space="model = item.value"
       >
         {{ item.label }}
       </div>

@@ -5,7 +5,10 @@
       :key="i"
       class="base-radio-group__item"
       :data-active="item.value === props.modelValue || null"
+      role="radio"
+      tabindex="0"
       @click="choose(item.value)"
+      @keydown.enter.space="choose(item.value)"
     >
       {{ item.label }}
     </div>

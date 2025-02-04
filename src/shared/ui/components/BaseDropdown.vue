@@ -7,7 +7,10 @@
     <div class="base-dropdown__container">
       <div
         class="base-dropdown__field"
+        role="combobox"
+        tabindex="0"
         @click="isOpen = !isOpen"
+        @keydown.enter.space="isOpen = !isOpen"
       >
         <span class="base-dropdown__label">{{ fieldLabel }}&nbsp;</span>
         <span class="base-dropdown__value">{{ valueLabel }}</span>
@@ -21,12 +24,16 @@
       <div
         v-if="isOpen"
         class="base-dropdown__list"
+        role="listbox"
       >
         <div
           v-for="(item, i) in items"
           :key="i"
+          role="option"
+          tabindex="0"
           class="base-dropdown__item"
           @click="choose(item.value)"
+          @keydown.enter.space="choose(item.value)"
         >
           {{ item.label }}
         </div>
@@ -86,7 +93,6 @@ function choose(value: string | number) {
     color: theme-color('content-quaternary');
     fill: theme-color('content-quaternary');
     border-radius: size(2);
-    overflow: hidden;
     user-select: none;
     cursor: pointer;
 

@@ -3,6 +3,7 @@
     class="lang-dropdown__button"
     bordered
     :pressed="dropdown.isOpen.value"
+    role="combobox"
     @click="dropdown.toggle"
   >
     <LangIcon class="lang-dropdown__lang-icon" />

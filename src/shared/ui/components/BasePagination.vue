@@ -140,7 +140,10 @@ function isPageActive(item: string | number) {
           :key="i"
           class="base-pagination__item-numbers-number"
           :data-active="isPageActive(item)"
+          role="button"
+          tabindex="0"
           @click="Number.isInteger(item) && setPage(Number(item))"
+          @keydown.enter.space="Number.isInteger(item) && setPage(Number(item))"
         >
           {{ item }}
         </span>
@@ -152,11 +155,17 @@ function isPageActive(item: string | number) {
       >
         <ArrowIcon
           data-testid="prev"
+          role="button"
+          tabindex="0"
           @click="prevPage"
+          @keydown.enter.space="prevPage"
         />
         <ArrowIcon
           data-testid="next"
+          role="button"
+          tabindex="0"
           @click="nextPage"
+          @keydown.enter.space="nextPage"
         />
       </div>
     </div>
