@@ -70,6 +70,7 @@ const type = computed(() => {
   &_active {
     background: theme-color('background');
     @include shadow-elevated-active;
+    cursor: default;
   }
 
   &:hover {
