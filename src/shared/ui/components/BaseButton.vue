@@ -62,7 +62,7 @@ const type = computed(() => {
   transition:
     color 300ms ease-in-out,
     box-shadow 300ms ease-in-out;
-  color: theme-color('content-tertiary');
+  color: theme-color('content-secondary-bright');
   background: transparent;
 
   @include tpg-ch1;

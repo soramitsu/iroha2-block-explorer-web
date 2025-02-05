@@ -62,7 +62,7 @@ function choose(value: string) {
     cursor: pointer;
     user-select: none;
     transition: all 300ms ease-in-out;
-    color: theme-color('content-quaternary');
+    color: theme-color('content-secondary-bright');
     @include shadow-input;
     @include tpg-s4;
 
