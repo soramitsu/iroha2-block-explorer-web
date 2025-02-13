@@ -2,6 +2,7 @@
   <BaseButton
     :pressed="isDark"
     class="app-theme-switcher"
+    aria-label="theme switcher"
     bordered
     rounded
     @click="toggleTheme"

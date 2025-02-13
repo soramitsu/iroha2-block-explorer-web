@@ -3,6 +3,7 @@
     v-if="to"
     :to
     class="base-button"
+    active-class="base-button_active"
     :data-type="type"
     :data-pressed="pressed || null"
     :data-rounded="rounded || null"
@@ -61,10 +62,16 @@ const type = computed(() => {
   transition:
     color 300ms ease-in-out,
     box-shadow 300ms ease-in-out;
-  color: theme-color('content-tertiary');
+  color: theme-color('content-secondary-bright');
   background: transparent;
 
   @include tpg-ch1;
+
+  &_active {
+    background: theme-color('background');
+    @include shadow-elevated-active;
+    cursor: default;
+  }
 
   &:hover {
     color: theme-color('content-primary');

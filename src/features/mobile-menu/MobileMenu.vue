@@ -2,6 +2,7 @@
   <BaseButton
     :pressed="dropdown.isOpen.value"
     class="mobile-menu"
+    aria-label="mobile menu"
     bordered
     rounded
     @click="dropdown.toggle"

@@ -43,7 +43,12 @@ const timeAgo = computed(() => t(i18nKey.value, [res.value]));
 
 <template>
   <div>
-    <span class="time-ago row-text">{{ props.inverted ? dateTime : timeAgo }}</span>
+    <time
+      class="time-ago row-text"
+      :datetime="props.value.toISOString()"
+    >{{
+      props.inverted ? dateTime : timeAgo
+    }}</time>
     <ContextTooltip :message="props.inverted ? timeAgo : dateTime" />
   </div>
 </template>

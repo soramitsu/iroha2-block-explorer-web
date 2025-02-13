@@ -2,7 +2,13 @@
   <BaseButton
     class="lang-dropdown__button"
     bordered
+    aria-label="lang dropdown"
     :pressed="dropdown.isOpen.value"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-haspopup="listbox"
+    :aria-expanded="dropdown.isOpen.value"
+    aria-controls="window_listbox"
     @click="dropdown.toggle"
   >
     <LangIcon class="lang-dropdown__lang-icon" />

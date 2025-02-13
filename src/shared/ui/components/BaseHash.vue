@@ -14,8 +14,11 @@
 
     <CopyIcon
       v-if="props.copy"
+      role="button"
+      tabindex="0"
       class="base-hash__copy"
       @click="copyHash"
+      @keydown.enter.space="copyHash"
     />
   </div>
 </template>

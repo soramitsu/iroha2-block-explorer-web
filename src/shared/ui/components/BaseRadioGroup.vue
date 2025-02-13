@@ -1,11 +1,18 @@
 <template>
-  <div class="base-radio-group">
+  <div
+    class="base-radio-group"
+    role="radiogroup"
+  >
     <div
       v-for="(item, i) in props.items"
       :key="i"
       class="base-radio-group__item"
       :data-active="item.value === props.modelValue || null"
+      :aria-checked="item.value === props.modelValue"
+      role="radio"
+      tabindex="0"
       @click="choose(item.value)"
+      @keydown.enter.space="choose(item.value)"
     >
       {{ item.label }}
     </div>
@@ -55,7 +62,7 @@ function choose(value: string) {
     cursor: pointer;
     user-select: none;
     transition: all 300ms ease-in-out;
-    color: theme-color('content-quaternary');
+    color: theme-color('content-secondary-bright');
     @include shadow-input;
     @include tpg-s4;
 
