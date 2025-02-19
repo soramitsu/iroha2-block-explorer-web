@@ -15,9 +15,9 @@
     <LogoIcon class="home-page__logo-icon" />
 
     <h1 class="home-page__title">
-      <span class="nowrap">{{ $t('homePage.title.firstLine') }}</span>
+      <strong class="nowrap">{{ $t('homePage.title.firstLine') }}</strong>
       {{ ' ' }}
-      <span class="nowrap">{{ $t('homePage.title.secondLine') }}</span>
+      <strong class="nowrap">{{ $t('homePage.title.secondLine') }}</strong>
     </h1>
 
     <NavigationMenu class="home-page__menu" />
