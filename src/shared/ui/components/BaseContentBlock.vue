@@ -20,14 +20,12 @@
 </template>
 
 <script setup lang="ts">
-import { useSlots } from 'vue';
-
 interface Props {
   title?: string
 }
 
 const props = defineProps<Props>();
-const slots = useSlots();
+const slots = defineSlots();
 </script>
 
 <style lang="scss">

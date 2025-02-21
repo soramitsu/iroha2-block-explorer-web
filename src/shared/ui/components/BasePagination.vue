@@ -114,26 +114,15 @@ function isPageActive(item: string | number) {
   return null;
 }
 
-const shouldShowDropdown = computed(() => {
-  if (props.reversed && props.totalItems > 19) return true;
-  else if (!props.reversed && props.totalItems > 10) return true;
-
-  return false;
-});
-
-const shouldShowPrevArrow = computed(() => {
-  if (props.reversed && activePage.value === numbers.value.length) return false;
-  else if (!props.reversed && page.value === 1) return false;
-
-  return true;
-});
-
-const shouldShowNextArrow = computed(() => {
-  if (props.reversed && activePage.value === 1) return false;
-  else if (!props.reversed && page.value === numbers.value.length) return false;
-
-  return true;
-});
+const shouldShowDropdown = computed(
+  () => (props.reversed && props.totalItems > 19) || (!props.reversed && props.totalItems > 10)
+);
+const shouldShowPrevArrow = computed(
+  () => (props.reversed && activePage.value === numbers.value.length) || (!props.reversed && page.value === 1)
+);
+const shouldShowNextArrow = computed(
+  () => (props.reversed && activePage.value === 1) || (!props.reversed && page.value === numbers.value.length)
+);
 </script>
 
 <template>

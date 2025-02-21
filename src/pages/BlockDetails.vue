@@ -72,7 +72,7 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
             @click="handlePreviousBlockClick"
             @keydown.enter.space="handlePreviousBlockClick"
           />
-          {{ $t('blocks.block', [block?.height]) }}
+          <span class="block-details__metrics-header-block">{{ $t('blocks.block', [block?.height]) }}</span>
           <ArrowIcon
             v-if="isNextBlockExists"
             role="button"
@@ -195,6 +195,11 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
 
       [data-testid='nextBlock'] {
         transform: scaleX(-1);
+      }
+
+      &-block {
+        user-select: none;
+        cursor: default;
       }
     }
 
