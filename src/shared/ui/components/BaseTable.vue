@@ -27,6 +27,8 @@
         <div
           v-if="item && (width >= props.breakpoint || !$slots['mobile-card'])"
           class="content-row content-row--with-hover"
+          :style="{ cursor: hasClickRowHandler ? 'pointer' : 'default' }"
+          @click="emit('click:row', item)"
         >
           <slot
             name="row"
@@ -64,7 +66,7 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import { computed } from 'vue';
+import { computed, getCurrentInstance } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import BaseLoading from './BaseLoading.vue';
 import BasePagination from '@/shared/ui/components/BasePagination.vue';
@@ -80,6 +82,13 @@ interface Props {
   breakpoint?: number
   reversed?: boolean
 }
+
+const emit = defineEmits<{
+  'click:row': [data: T]
+}>();
+
+const instance = getCurrentInstance();
+const hasClickRowHandler = computed(() => !!instance?.vnode?.props?.['onClick:row']);
 
 const props = withDefaults(defineProps<Props>(), {
   breakpoint: 1200,
