@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import path from 'path';
 import vue from '@vitejs/plugin-vue';
 import svg from 'vite-svg-loader';
+import wasm from "vite-plugin-wasm";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -30,6 +31,7 @@ export default defineConfig({
         plugins: [{ name: 'removeViewBox', active: false }],
       },
     }),
+      wasm()
   ],
   resolve: {
     alias: {

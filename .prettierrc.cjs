@@ -1,4 +1,4 @@
-// .prettierrc.js
+// .prettierrc.cjs
 module.exports = {
   // max 120 characters per line
   printWidth: 120,

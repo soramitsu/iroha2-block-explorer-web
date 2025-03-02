@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@iroha/core':
+        specifier: npm:@jsr/iroha__core@^0.2.1
+        version: '@jsr/iroha__core@0.2.1'
       '@iroha2/crypto-target-web':
         specifier: ^0.4.0
         version: 0.4.0
@@ -117,6 +120,9 @@ importers:
       vite:
         specifier: 5.2.6
         version: 5.2.6(@types/node@18.19.76)(sass@1.85.1)
+      vite-plugin-wasm:
+        specifier: ^3.4.1
+        version: 3.4.1(vite@5.2.6(@types/node@18.19.76)(sass@1.85.1))
       vite-svg-loader:
         specifier: ^3.4.0
         version: 3.6.0
@@ -384,6 +390,18 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.0':
     resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
 
+  '@jsr/iroha__core@0.2.1':
+    resolution: {integrity: sha512-XczgReaoLGyNx8vX2jI6NZ5jRqhvdyBAFQickDqs23lK9LbeJzNs02NqhxuDa+1rj8PaAeFRLkpz743CfFTOyw==, tarball: https://npm.jsr.io/~/11/@jsr/iroha__core/0.2.1.tgz}
+
+  '@jsr/std__assert@1.0.11':
+    resolution: {integrity: sha512-sNXyi9EQA4f/9F3gI1t+Dz+LnvPwCC3JDUqn9YfWl7IK7RRipiHOkDpV8Vq3LL/ZDZF8Tcr36zVhuEOrRs8i+g==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/1.0.11.tgz}
+
+  '@jsr/std__encoding@1.0.7':
+    resolution: {integrity: sha512-eySTZkCAHjiKGgOMvhUyTL4aT22svaCO0eO6CAbz48kRECMtRGEfe3KWXkVy4fhlZ/4OTw/RQLrTYyEqpGQp/Q==, tarball: https://npm.jsr.io/~/11/@jsr/std__encoding/1.0.7.tgz}
+
+  '@jsr/std__internal@1.0.5':
+    resolution: {integrity: sha512-W2aN7UypJJ6EkfyXt5hBeIijBb8CmZk0jdjCzhOROr0SrXsXZ/V/9Qu1N0NxumFauPDAJz9NcP1mmZ9ZVSXwpQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.5.tgz}
+
   '@messageformat/core@3.4.0':
     resolution: {integrity: sha512-NgCFubFFIdMWJGN5WuQhHCNmzk7QgiVfrViFxcS99j7F5dDS5EP6raR54I+2ydhe4+5/XTn/YIEppFaqqVWHsw==}
 
@@ -602,11 +620,18 @@ packages:
     resolution: {integrity: sha512-feiLqQYopj3VXOCFa7xvRexFB8Ik7NJd8L9wGoPzeux+83cnwMjBPQu2TdcKDcchOMtXZ6RyFfF3MNuun75Shg==}
     engines: {node: '>=14.5.0'}
 
+  '@scale-codec/core@2.0.1':
+    resolution: {integrity: sha512-3Ei7Gf3wNDrP5l7W/dEF9Q7Py1ttdNTFulzNNdFrqBw8v1khyC7SZIcYpsbAJ5uo/PDIhhK4FKOrK467I0vv4Q==}
+    engines: {node: '>=14.5.0'}
+
   '@scale-codec/definition-runtime@2.2.2':
     resolution: {integrity: sha512-dZ/0T5LynQRqGMU+XMmM68Hom+mvvI3xMxz09ZBgJEmTQrXkdnvpu5l8mFVWrzBNqjNCi+d6qZ2UMQFAk1NfVg==}
 
   '@scale-codec/enum@1.1.1':
     resolution: {integrity: sha512-GTB5LPcqjZOoWSPn90q97yMUZP6PD1Y3Lk+WnvvqkW1nOgz9vXEqTchm+eYtV23tTeh594Dg5plElA/mVHEUfQ==}
+
+  '@scale-codec/enum@2.1.1':
+    resolution: {integrity: sha512-n5mTWxc4wbeIBn+HlIXjeU7PtzUAY1hqX3Y+BTd5OOCds83+DA/qB+bikKCDZ+NjDHBMZo1667vXudxjMTIW3g==}
 
   '@scale-codec/util@1.1.2':
     resolution: {integrity: sha512-Aali9gWoI1vOUUwk2H1FktstiInl6x5rjrPd3Am/b1WJV603NEI9QcJ7UGM7Eh42UjLD9e6H7E1ZF0yFnlRUUQ==}
@@ -2477,6 +2502,11 @@ packages:
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
 
+  vite-plugin-wasm@3.4.1:
+    resolution: {integrity: sha512-ja3nSo2UCkVeitltJGkS3pfQHAanHv/DqGatdI39ja6McgABlpsZ5hVgl6wuR8Qx5etY3T5qgDQhOWzc5RReZA==}
+    peerDependencies:
+      vite: ^2 || ^3 || ^4 || ^5 || ^6
+
   vite-svg-loader@3.6.0:
     resolution: {integrity: sha512-bZJffcgCREW57kNkgMhuNqeDznWXyQwJ3wKrRhHLMMzwDnP5jr3vXW3cqsmquRR7VTP5mLdKj1/zzPPooGUuPw==}
 
@@ -2883,6 +2913,21 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.0': {}
 
+  '@jsr/iroha__core@0.2.1':
+    dependencies:
+      '@jsr/std__assert': 1.0.11
+      '@jsr/std__encoding': 1.0.7
+      '@scale-codec/core': 2.0.1
+      type-fest: 4.35.0
+
+  '@jsr/std__assert@1.0.11':
+    dependencies:
+      '@jsr/std__internal': 1.0.5
+
+  '@jsr/std__encoding@1.0.7': {}
+
+  '@jsr/std__internal@1.0.5': {}
+
   '@messageformat/core@3.4.0':
     dependencies:
       '@messageformat/date-skeleton': 1.1.0
@@ -3049,6 +3094,11 @@ snapshots:
       '@scale-codec/enum': 1.1.1
       '@scale-codec/util': 1.1.2
 
+  '@scale-codec/core@2.0.1':
+    dependencies:
+      '@scale-codec/enum': 2.1.1
+      '@scale-codec/util': 1.1.2
+
   '@scale-codec/definition-runtime@2.2.2':
     dependencies:
       '@scale-codec/core': 1.1.1
@@ -3057,6 +3107,8 @@ snapshots:
       type-fest: 2.19.0
 
   '@scale-codec/enum@1.1.1': {}
+
+  '@scale-codec/enum@2.1.1': {}
 
   '@scale-codec/util@1.1.2': {}
 
@@ -5175,6 +5227,10 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+
+  vite-plugin-wasm@3.4.1(vite@5.2.6(@types/node@18.19.76)(sass@1.85.1)):
+    dependencies:
+      vite: 5.2.6(@types/node@18.19.76)(sass@1.85.1)
 
   vite-svg-loader@3.6.0:
     dependencies:
