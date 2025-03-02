@@ -118,10 +118,10 @@ const shouldShowDropdown = computed(
   () => (props.reversed && props.totalItems > 19) || (!props.reversed && props.totalItems > 10)
 );
 const shouldShowPrevArrow = computed(
-  () => (props.reversed && activePage.value === numbers.value.length) || (!props.reversed && page.value === 1)
+  () => (props.reversed && activePage.value !== numbers.value.length) || (!props.reversed && page.value !== 1)
 );
 const shouldShowNextArrow = computed(
-  () => (props.reversed && activePage.value === 1) || (!props.reversed && page.value === numbers.value.length)
+  () => (props.reversed && activePage.value !== 1) || (!props.reversed && page.value !== numbers.value.length)
 );
 </script>
 
