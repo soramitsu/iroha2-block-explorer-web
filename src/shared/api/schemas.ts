@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import BigNumber from 'bignumber.js';
+import { AssetDefinitionId, AccountId, AssetId } from '@iroha/core/data-model';
 
 const Pagination = z.object({
   page: z.number(),
@@ -35,128 +36,14 @@ const Duration = z.object({
 });
 const Timestamp = z.string().transform((ctx) => new Date(ctx));
 
-export const DomainId = z.string().brand('DomainId');
-export type DomainId = z.infer<typeof DomainId>;
+export const AccountIdSchema = z.string().transform(AccountId.parse);
 
-export class AccountId {
-  public readonly signatory: string;
-  public readonly domain: DomainId;
-  public constructor(signatory: string, domain: DomainId) {
-    this.signatory = signatory;
-    this.domain = domain;
-  }
+export const AssetDefinitionIdSchema = z.string().transform(AssetDefinitionId.parse);
 
-  public toString() {
-    return this.signatory + '@' + this.domain;
-  }
-
-  public toJSON() {
-    return this.toString();
-  }
-}
-
-export const AccountIdSchema = z.string().transform((val, ctx) => {
-  const accountParts = val.split('@');
-  if (accountParts.length !== 2) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.invalid_literal,
-      message: 'Invalid accountId format',
-      expected: 'signatory@account_domain format',
-      received: val,
-    });
-  }
-
-  const [account, account_domain] = accountParts;
-
-  return new AccountId(account, account_domain as DomainId);
-});
-
-export class AssetDefinitionId {
-  public readonly name: string;
-  public readonly domain: DomainId;
-
-  public constructor(name: string, domain: DomainId) {
-    this.name = name;
-    this.domain = domain;
-  }
-
-  public toString() {
-    return this.name + '#' + this.domain;
-  }
-}
-
-export const AssetDefinitionIdSchema = z.string().transform((val, ctx) => {
-  const assetDefinitionParts = val.split('#');
-
-  if (assetDefinitionParts.length !== 2) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.invalid_literal,
-      message: 'Invalid assetDefinitionId format',
-      expected: 'asset#asset_domain format',
-      received: val,
-    });
-  }
-
-  const [asset, asset_domain] = assetDefinitionParts;
-
-  return new AssetDefinitionId(asset, asset_domain as DomainId);
-});
-
-export class AssetId {
-  public readonly account: AccountId;
-  public readonly definition: AssetDefinitionId;
-
-  public constructor(account: AccountId, definition: AssetDefinitionId) {
-    this.account = new AccountId(account.signatory, account.domain);
-    this.definition = new AssetDefinitionId(definition.name, definition.domain ? definition.domain : account.domain);
-  }
-
-  public toString() {
-    if (this.account.domain === this.definition.domain) {
-      return this.definition.name + '##' + this.account.toString();
-    }
-
-    return this.definition.toString() + '#' + this.account.toString();
-  }
-
-  public toJSON() {
-    return this.toString();
-  }
-}
-
-export const AssetIdSchema = z.string().transform((val, ctx) => {
-  const assetIdParts = val.split('#');
-  if (assetIdParts.length !== 3) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.invalid_literal,
-      message: 'Invalid assetId format',
-      expected: 'asset#asset_domain#signatory@account_domain or asset##signatory@domain format',
-      received: val,
-    });
-  }
-
-  const [asset, asset_domain, account] = assetIdParts;
-
-  const accountParts = account.split('@');
-  if (accountParts.length !== 2) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.invalid_literal,
-      message: 'Invalid account format',
-      expected: 'signatory@account_domain format',
-      received: account,
-    });
-  }
-
-  const [signatory, account_domain] = accountParts;
-
-  return new AssetId(
-    new AccountId(signatory, account_domain as DomainId),
-    new AssetDefinitionId(asset, asset_domain as DomainId)
-  );
-});
+export const AssetIdSchema = z.string().transform(AssetId.parse);
 
 export interface AccountSearchParams extends PaginationParams {
-  domain?: DomainId
+  domain?: string
   with_asset?: AssetDefinitionId
 }
 
@@ -185,7 +72,7 @@ export const Asset = z.object({
 export type Asset = z.infer<typeof Asset>;
 
 export interface AssetDefinitionSearchParams extends PaginationParams {
-  domain?: DomainId
+  domain?: string
   owned_by?: AccountId
 }
 
@@ -206,7 +93,7 @@ export interface DomainSearchParams extends PaginationParams {
 }
 
 export const Domain = z.object({
-  id: DomainId,
+  id: z.string(),
   logo: z.string().nullable(),
   metadata: Metadata,
   owned_by: AccountIdSchema,

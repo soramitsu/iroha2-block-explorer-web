@@ -1,16 +1,13 @@
 import type {
   PaginationParams,
-  AccountId,
   AssetSearchParams,
-  AssetId,
-  AssetDefinitionId,
-  DomainId,
   TransactionSearchParams,
   AccountSearchParams,
   AssetDefinitionSearchParams,
   InstructionsSearchParams,
   DomainSearchParams,
 } from '@/shared/api/schemas';
+import type { AccountId, AssetDefinitionId, AssetId } from '@iroha/core/data-model';
 import {
   Account,
   Paginated,
@@ -72,7 +69,7 @@ export async function fetchDomains(params?: DomainSearchParams): Promise<Paginat
   return Paginated(Domain).parse(res);
 }
 
-export async function fetchDomain(id: DomainId): Promise<Domain> {
+export async function fetchDomain(id: string): Promise<Domain> {
   const res = await get(`/domains/${id}`);
   return Domain.parse(res);
 }
