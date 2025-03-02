@@ -55,6 +55,7 @@ const domainAccounts = computed(() => domain.value?.accounts ?? 0);
 const assetsListState = reactive({
   page: 1,
   per_page: 10,
+  domain: domainId.value,
 });
 
 watch(
@@ -82,6 +83,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 const accountsListState = reactive({
   page: 1,
   per_page: 10,
+  domain: domainId.value,
 });
 
 watch(
