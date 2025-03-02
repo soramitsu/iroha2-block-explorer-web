@@ -72,7 +72,7 @@ import { computed, reactive, watch } from 'vue';
 import { SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
-import type { AccountId } from '@/shared/api/schemas';
+import type { AccountId } from '@iroha/core/data-model';
 import { useRouter } from 'vue-router';
 
 const HASH_BREAKPOINT = 1300;

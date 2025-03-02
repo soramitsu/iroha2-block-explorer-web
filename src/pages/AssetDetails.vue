@@ -92,7 +92,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 <template>
   <div class="asset-details">
     <BaseContentBlock
-      :title="$t('assets.asset', [assetDefinitionId.name])"
+      :title="$t('assets.asset', [assetDefinitionId.name.value])"
       class="asset-details__information"
     >
       <template #default>
@@ -115,8 +115,8 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
           <div class="asset-details__information-data">
             <DataField
               :title="$t('domain')"
-              :value="assetDefinitionId.domain"
-              :link="`/domains/${assetDefinitionId.domain}`"
+              :value="assetDefinitionId.domain.value"
+              :link="`/domains/${assetDefinitionId.domain.value}`"
             />
             <DataField
               :title="$t('type')"
@@ -171,13 +171,13 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
             <div class="asset-details__assets-table-list-row">
               <div class="asset-details__assets-table-list-row-data row-text">
                 <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
-                  {{ item.id.definition.name }}
+                  {{ item.id.definition.name.value }}
                 </BaseLink>
               </div>
 
               <div class="asset-details__assets-table-list-row-data row-text">
-                <BaseLink :to="`/domains/${item.id.definition.domain}`">
-                  {{ item.id.definition.domain }}
+                <BaseLink :to="`/domains/${item.id.definition.domain.value}`">
+                  {{ item.id.definition.domain.value }}
                 </BaseLink>
               </div>
 
@@ -210,14 +210,14 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
                 <span class="h-sm">{{ $t('name') }}</span>
                 <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
-                  {{ item.id.definition.name }}
+                  {{ item.id.definition.name.value }}
                 </BaseLink>
               </div>
 
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
                 <span class="h-sm">{{ $t('domain') }}</span>
-                <BaseLink :to="`/domains/${item.id.definition.domain}`">
-                  {{ item.id.definition.domain }}
+                <BaseLink :to="`/domains/${item.id.definition.domain.value}`">
+                  {{ item.id.definition.domain.value }}
                 </BaseLink>
               </div>
 

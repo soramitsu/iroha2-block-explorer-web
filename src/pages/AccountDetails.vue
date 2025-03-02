@@ -6,7 +6,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { AssetId } from '@/shared/api/schemas';
+import type { AssetId } from '@iroha/core/data-model';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
@@ -184,7 +184,7 @@ function handleDomainRowClick(id: string) {
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
                 <div class="account-details__personal-owned-list-row-data">
-                  <span class="row-text">{{ item.id.definition.name }}</span>
+                  <span class="row-text">{{ item.id.definition.name.value }}</span>
                 </div>
 
                 <div class="account-details__personal-owned-list-row-data">
@@ -207,7 +207,7 @@ function handleDomainRowClick(id: string) {
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
                   <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
-                    {{ item.id.definition.name }}
+                    {{ item.id.definition.name.value }}
                   </BaseLink>
                 </div>
 

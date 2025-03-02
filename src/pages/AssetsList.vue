@@ -26,14 +26,14 @@
             :to="`/assets/${encodeURIComponent(item.id.toString())}`"
             class="cell"
           >
-            {{ item.id.name }}
+            {{ item.id.name.value }}
           </BaseLink>
 
           <BaseLink
-            :to="`/domains/${item.id.domain}`"
+            :to="`/domains/${item.id.domain.value}`"
             class="cell"
           >
-            {{ item.id.domain }}
+            {{ item.id.domain.value }}
           </BaseLink>
 
           <div class="cell row-text">
@@ -52,15 +52,15 @@
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
             <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
-              {{ item.id.name }}
+              {{ item.id.name.value }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('domain') }}</span>
 
-            <BaseLink :to="`/domains/${item.id.domain}`">
-              {{ item.id.domain }}
+            <BaseLink :to="`/domains/${item.id.domain.value}`">
+              {{ item.id.domain.value }}
             </BaseLink>
           </div>
 
