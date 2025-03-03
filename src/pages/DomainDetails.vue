@@ -176,6 +176,7 @@ function handleAccountRowClick(id: AccountId) {
             :items="assets"
             container-class="domain-details__native-assets-list"
             :breakpoint="960"
+            row-pointer
             @click:row="(asset) => handleAssetRowClick(asset.id)"
           >
             <template #header>
@@ -245,6 +246,7 @@ function handleAccountRowClick(id: AccountId) {
             :items="accounts"
             container-class="domain-details__accounts-container"
             :breakpoint="960"
+            row-pointer
             @click:row="(account) => handleAccountRowClick(account.id)"
           >
             <template #header>

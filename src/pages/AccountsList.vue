@@ -10,6 +10,7 @@
       :total="totalAccounts"
       :items="accounts"
       container-class="accounts-list-page__container"
+      row-pointer
       @click:row="(account) => handleRowClick(account.id)"
     >
       <template #header>
