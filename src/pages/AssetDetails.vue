@@ -63,6 +63,7 @@ const asset = computed(() => assetScope.value?.expose.data);
 const listState = reactive({
   page: 1,
   per_page: 10,
+  definition: computed(() => assetDefinitionId.value),
 });
 
 watch(
