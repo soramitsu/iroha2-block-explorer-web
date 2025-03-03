@@ -8,12 +8,13 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { DomainId } from '@/shared/api/schemas';
+import type { AccountId, AssetDefinitionId } from '@iroha/core/data-model';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import invariant from 'tiny-invariant';
 
 const router = useRouter();
 
@@ -39,7 +40,9 @@ const domainAccountsHashType = computed(() => {
 const domainId = computed(() => {
   const id = router.currentRoute.value.params['id'];
 
-  return DomainId.parse(id);
+  invariant(typeof id === 'string', 'Expected string');
+
+  return id;
 });
 
 const domainScope = useParamScope(domainId, (value) => setupAsyncData(() => http.fetchDomain(value)));
@@ -52,6 +55,7 @@ const domainAccounts = computed(() => domain.value?.accounts ?? 0);
 const assetsListState = reactive({
   page: 1,
   per_page: 10,
+  domain: domainId.value,
 });
 
 watch(
@@ -79,6 +83,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 const accountsListState = reactive({
   page: 1,
   per_page: 10,
+  domain: domainId.value,
 });
 
 watch(
@@ -102,6 +107,14 @@ const accountsListScope = useParamScope(
 
 const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.isLoading);
 const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
+
+function handleAssetRowClick(id: AssetDefinitionId) {
+  router.push(`/assets/${encodeURIComponent(id.toString())}`);
+}
+
+function handleAccountRowClick(id: AccountId) {
+  router.push(`/accounts/${id}`);
+}
 </script>
 
 <template>
@@ -163,6 +176,8 @@ const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? [
             :items="assets"
             container-class="domain-details__native-assets-list"
             :breakpoint="960"
+            row-pointer
+            @click:row="(asset) => handleAssetRowClick(asset.id)"
           >
             <template #header>
               <div class="domain-details__native-assets-list-row">
@@ -174,18 +189,16 @@ const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? [
 
             <template #row="{ item }">
               <div class="domain-details__native-assets-list-row">
-                <div class="domain-details__native-assets-list-row-data row-text">
-                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
-                    {{ item.id.name }}
-                  </BaseLink>
+                <div class="domain-details__native-assets-list-row-data">
+                  <span class="row-text">{{ item.id.name.value }}</span>
                 </div>
 
-                <div class="domain-details__native-assets-list-row-data row-text">
-                  <span>{{ item.type }}</span>
+                <div class="domain-details__native-assets-list-row-data">
+                  <span class="row-text">{{ item.type }}</span>
                 </div>
 
-                <div class="domain-details__native-assets-list-row-data row-text">
-                  <span>{{ item.mintable }}</span>
+                <div class="domain-details__native-assets-list-row-data">
+                  <span class="row-text">{{ item.mintable }}</span>
                 </div>
               </div>
             </template>
@@ -195,7 +208,7 @@ const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? [
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
                   <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
-                    {{ item.id.name }}
+                    {{ item.id.name.value }}
                   </BaseLink>
                 </div>
 
@@ -233,6 +246,8 @@ const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? [
             :items="accounts"
             container-class="domain-details__accounts-container"
             :breakpoint="960"
+            row-pointer
+            @click:row="(account) => handleAccountRowClick(account.id)"
           >
             <template #header>
               <div class="domain-details__accounts-row">

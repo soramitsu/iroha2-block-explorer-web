@@ -34,7 +34,7 @@ const accountIdHashType = computed(() => {
   return 'short';
 });
 
-const transactionHash = computed(() => {
+const txHash = computed(() => {
   const hash = router.currentRoute.value.params['hash'];
 
   invariant(typeof hash === 'string', 'Expected string');
@@ -42,7 +42,7 @@ const transactionHash = computed(() => {
   return hash;
 });
 
-const transactionScope = useParamScope(transactionHash, (value) => setupAsyncData(() => http.fetchTransaction(value)));
+const transactionScope = useParamScope(txHash, (value) => setupAsyncData(() => http.fetchTransaction(value)));
 
 const isTransactionLoading = computed(() => transactionScope.value.expose.isLoading);
 const transaction = computed(() => transactionScope.value?.expose.data);
@@ -149,7 +149,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
           <InstructionsTable
             show-value
             :hash-type="instructionHashType"
-            :filter-by="{ kind: 'transaction', value: transactionHash }"
+            :filter-by="{ kind: 'transaction', value: txHash }"
           />
         </div>
       </template>
@@ -211,7 +211,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
 
             @include sm {
               top: size(-1);
-              left: size(32);
+              left: size(34);
             }
 
             @include lg {
@@ -221,7 +221,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
 
             @include xl {
               top: size(-1);
-              left: size(32);
+              left: size(34);
             }
           }
 

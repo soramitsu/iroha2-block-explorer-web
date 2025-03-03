@@ -4,7 +4,8 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import type { AccountId, Instruction, InstructionsSearchParams } from '@/shared/api/schemas';
+import type { Instruction, InstructionsSearchParams } from '@/shared/api/schemas';
+import type { AccountId } from '@iroha/core/data-model';
 import { useI18n } from 'vue-i18n';
 import {
   type filterTransactionsModel as ftm,

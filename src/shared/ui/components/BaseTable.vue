@@ -27,6 +27,8 @@
         <div
           v-if="item && (width >= props.breakpoint || !$slots['mobile-card'])"
           class="content-row content-row--with-hover"
+          :style="{ cursor: props.rowPointer ? 'pointer' : 'default' }"
+          @click="emit('click:row', item)"
         >
           <slot
             name="row"
@@ -79,11 +81,17 @@ interface Props {
   containerClass: string
   breakpoint?: number
   reversed?: boolean
+  rowPointer?: boolean
 }
+
+const emit = defineEmits<{
+  'click:row': [data: T]
+}>();
 
 const props = withDefaults(defineProps<Props>(), {
   breakpoint: 1200,
   disablePagination: false,
+  rowPointer: false,
 });
 
 const page = defineModel<number>('page', { default: 1 });

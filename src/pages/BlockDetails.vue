@@ -218,7 +218,7 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
         gap: size(2);
 
         &-date .context-tooltip {
-          left: size(29);
+          left: size(31);
         }
       }
 

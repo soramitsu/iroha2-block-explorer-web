@@ -6,6 +6,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import type { AssetId } from '@iroha/core/data-model';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
@@ -107,6 +108,14 @@ const assets = computed(() => assetsScope.value?.expose.data?.items ?? []);
 
 const transactionsTab = ref<TabAccountTransactions>('transactions');
 const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
+
+function handleAssetRowClick(id: AssetId) {
+  router.push(`/assets/${encodeURIComponent(id.definition.toString())}`);
+}
+
+function handleDomainRowClick(id: string) {
+  router.push(`/domains/${id}`);
+}
 </script>
 
 <template>
@@ -162,6 +171,8 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
             :items="assets"
             container-class="account-details__personal-owned-list"
             :breakpoint="960"
+            row-pointer
+            @click:row="(asset) => handleAssetRowClick(asset.id)"
           >
             <template #header>
               <div class="account-details__personal-owned-list-row">
@@ -173,14 +184,12 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
-                <div class="account-details__personal-owned-list-row-data row-text">
-                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
-                    {{ item.id.definition.name }}
-                  </BaseLink>
+                <div class="account-details__personal-owned-list-row-data">
+                  <span class="row-text">{{ item.id.definition.name.value }}</span>
                 </div>
 
-                <div class="account-details__personal-owned-list-row-data row-text">
-                  <span>{{ item.value.kind }}</span>
+                <div class="account-details__personal-owned-list-row-data">
+                  <span class="row-text">{{ item.value.kind }}</span>
                 </div>
 
                 <div class="account-details__personal-owned-list-row-data row-text">
@@ -199,7 +208,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
                   <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
-                    {{ item.id.definition.name }}
+                    {{ item.id.definition.name.value }}
                   </BaseLink>
                 </div>
 
@@ -243,6 +252,8 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
             :items="domains"
             container-class="account-details__personal-owned-list"
             :breakpoint="960"
+            row-pointer
+            @click:row="(domain) => handleDomainRowClick(domain.id)"
           >
             <template #header>
               <div class="account-details__personal-owned-list-row">
@@ -254,18 +265,16 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
-                <div class="account-details__personal-owned-list-row-data row-text">
-                  <BaseLink :to="`/domains/${item.id}`">
-                    {{ item.id }}
-                  </BaseLink>
+                <div class="account-details__personal-owned-list-row-data">
+                  <span class="row-text">{{ item.id }}</span>
                 </div>
 
-                <div class="account-details__personal-owned-list-row-data row-text">
-                  <span>{{ item.assets }}</span>
+                <div class="account-details__personal-owned-list-row-data">
+                  <span class="row-text">{{ item.assets }}</span>
                 </div>
 
-                <div class="account-details__personal-owned-list-row-data row-text">
-                  <span>{{ item.accounts }}</span>
+                <div class="account-details__personal-owned-list-row-data">
+                  <span class="row-text">{{ item.accounts }}</span>
                 </div>
               </div>
             </template>
