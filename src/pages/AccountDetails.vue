@@ -174,7 +174,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
                 <div class="account-details__personal-owned-list-row-data row-text">
-                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
+                  <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
                     {{ item.id.definition.name }}
                   </BaseLink>
                 </div>
@@ -198,7 +198,7 @@ const shouldShowInstructions = computed(() => transactionsTab.value === 'instruc
               <div class="account-details__personal-owned-mobile-list-row">
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
+                  <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
                     {{ item.id.definition.name }}
                   </BaseLink>
                 </div>
