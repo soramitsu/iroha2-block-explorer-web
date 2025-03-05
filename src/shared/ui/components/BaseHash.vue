@@ -17,8 +17,8 @@
       role="button"
       tabindex="0"
       class="base-hash__copy"
-      @click="copyHash"
-      @keydown.enter.space="copyHash"
+      @click.stop="copyHash"
+      @keydown.enter.space.stop="copyHash"
     />
   </div>
 </template>

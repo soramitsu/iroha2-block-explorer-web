@@ -211,7 +211,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
 
             @include sm {
               top: size(-1);
-              left: size(32);
+              left: size(34);
             }
 
             @include lg {
@@ -221,7 +221,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
 
             @include xl {
               top: size(-1);
-              left: size(32);
+              left: size(34);
             }
           }
 

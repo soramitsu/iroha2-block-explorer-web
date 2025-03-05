@@ -8,6 +8,7 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import type { AccountId, AssetDefinitionId } from '@/shared/api/schemas';
 import { DomainId } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
@@ -52,6 +53,7 @@ const domainAccounts = computed(() => domain.value?.accounts ?? 0);
 const assetsListState = reactive({
   page: 1,
   per_page: 10,
+  domain: domainId.value,
 });
 
 watch(
@@ -79,6 +81,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 const accountsListState = reactive({
   page: 1,
   per_page: 10,
+  domain: domainId.value,
 });
 
 watch(
@@ -102,6 +105,14 @@ const accountsListScope = useParamScope(
 
 const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.isLoading);
 const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
+
+function handleAssetRowClick(id: AssetDefinitionId) {
+  router.push(`/assets-list/${encodeURIComponent(id.toString())}`);
+}
+
+function handleAccountRowClick(id: AccountId) {
+  router.push(`/accounts/${id}`);
+}
 </script>
 
 <template>
@@ -163,6 +174,8 @@ const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? [
             :items="assets"
             container-class="domain-details__native-assets-list"
             :breakpoint="960"
+            row-pointer
+            @click:row="(asset) => handleAssetRowClick(asset.id)"
           >
             <template #header>
               <div class="domain-details__native-assets-list-row">
@@ -174,18 +187,16 @@ const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? [
 
             <template #row="{ item }">
               <div class="domain-details__native-assets-list-row">
-                <div class="domain-details__native-assets-list-row-data row-text">
-                  <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.toString())}`">
-                    {{ item.id.name }}
-                  </BaseLink>
+                <div class="domain-details__native-assets-list-row-data">
+                  <span class="row-text">{{ item.id.name }}</span>
                 </div>
 
-                <div class="domain-details__native-assets-list-row-data row-text">
-                  <span>{{ item.type }}</span>
+                <div class="domain-details__native-assets-list-row-data">
+                  <span class="row-text">{{ item.type }}</span>
                 </div>
 
-                <div class="domain-details__native-assets-list-row-data row-text">
-                  <span>{{ item.mintable }}</span>
+                <div class="domain-details__native-assets-list-row-data">
+                  <span class="row-text">{{ item.mintable }}</span>
                 </div>
               </div>
             </template>
@@ -233,6 +244,8 @@ const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? [
             :items="accounts"
             container-class="domain-details__accounts-container"
             :breakpoint="960"
+            row-pointer
+            @click:row="(account) => handleAccountRowClick(account.id)"
           >
             <template #header>
               <div class="domain-details__accounts-row">

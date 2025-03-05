@@ -18,10 +18,14 @@
           v-for="block in blocks"
           :key="block.height"
         >
-          <div class="latest-blocks__row">
-            <BaseLink :to="`/blocks/${block.height}`">
-              {{ block.height }}
-            </BaseLink>
+          <div
+            class="latest-blocks__row"
+            tabindex="0"
+            role="link"
+            @click="handleRowClick(block.height)"
+            @keydown.enter.space="handleRowClick(block.height)"
+          >
+            <span class="row-text">{{ block.height }}</span>
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
@@ -43,18 +47,24 @@
 <script setup lang="ts">
 import TimeIcon from '@/shared/ui/icons/clock.svg';
 import * as http from '@/shared/api';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { computed } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
 
 const isLoading = computed(() => setup.isLoading);
 const blocks = computed(() => setup.data?.items ?? []);
+
+function handleRowClick(height: number) {
+  router.push(`/blocks/${height}`);
+}
 </script>
 
 <style lang="scss">
@@ -69,6 +79,7 @@ const blocks = computed(() => setup.data?.items ?? []);
   }
 
   &__row {
+    cursor: pointer;
     padding: size(1) size(4);
     border-bottom: 1px solid theme-color('border-primary');
     display: grid;

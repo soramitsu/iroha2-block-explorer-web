@@ -10,6 +10,8 @@
       :total="totalAccounts"
       :items="accounts"
       container-class="accounts-list-page__container"
+      row-pointer
+      @click:row="(account) => handleRowClick(account.id)"
     >
       <template #header>
         <div class="accounts-list-page__row">
@@ -71,9 +73,12 @@ import { computed, reactive, watch } from 'vue';
 import { SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useRouter } from 'vue-router';
+import type { AccountId } from '@/shared/api/schemas';
 
 const HASH_BREAKPOINT = 1300;
 const { width } = useWindowSize();
+const router = useRouter();
 
 const hashType = computed(() => {
   if (width.value > HASH_BREAKPOINT) return 'full';
@@ -110,6 +115,10 @@ const scope = useParamScope(
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const totalAccounts = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
 const accounts = computed(() => scope.value?.expose.data?.items ?? []);
+
+function handleRowClick(id: AccountId) {
+  router.push(`/accounts/${id}`);
+}
 </script>
 
 <style lang="scss">
