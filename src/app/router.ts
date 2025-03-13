@@ -16,14 +16,13 @@ const routes = [
     name: 'blocks-details',
     component: () => import('@/pages/BlockDetails.vue'),
   },
-
   {
-    path: '/assets',
+    path: '/assets-list',
     name: 'assets-list',
     component: () => import('@/pages/AssetsList.vue'),
   },
   {
-    path: '/assets/:id',
+    path: '/assets-list/:id',
     name: 'asset-details',
     component: () => import('@/pages/AssetDetails.vue'),
   },
