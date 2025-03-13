@@ -14,17 +14,19 @@
         :key="i"
         class="home-page-info__item"
       >
-        <BaseLoading
-          v-if="isLoading"
-          class="home-page-info__item-loading"
-        />
+        <div class="home-page-info__item-content">
+          <BaseLoading
+            v-if="isLoading"
+            class="home-page-info__item-content-loading"
+          />
 
-        <span
-          v-else
-          class="home-page-info__item-value"
-        >
-          {{ item.value }}
-        </span>
+          <span
+            v-else
+            class="home-page-info__item-content-value"
+          >
+            {{ item.value }}
+          </span>
+        </div>
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -38,17 +40,19 @@
         :key="i"
         class="home-page-info__item"
       >
-        <BaseLoading
-          v-if="isLoading"
-          class="home-page-info__item-loading"
-        />
+        <div class="home-page-info__item-content">
+          <BaseLoading
+            v-if="isLoading"
+            class="home-page-info__item-content-loading"
+          />
 
-        <span
-          v-else
-          class="home-page-info__item-value"
-        >
-          {{ item.value }}
-        </span>
+          <span
+            v-else
+            class="home-page-info__item-content-value"
+          >
+            {{ item.value }}
+          </span>
+        </div>
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -164,12 +168,7 @@ const isLoading = computed(() => setup.isLoading);
     }
 
     @include md {
-      width: $home-content-width-tablet;
       padding: size(2) 0;
-    }
-
-    @include lg {
-      width: $home-content-width;
     }
   }
 
@@ -178,25 +177,48 @@ const isLoading = computed(() => setup.isLoading);
     flex-direction: column;
     align-items: center;
 
-    &-loading {
-      margin-bottom: size(1);
+    &-content {
+      height: size(3);
+      @include xs {
+        height: size(4);
+      }
+      @include sm {
+        height: size(5);
+      }
+      @include lg {
+        height: size(7);
+      }
+
+      &-loading {
+        margin-bottom: size(1);
+      }
+
+      &-value {
+        @include tpg-h3;
+        color: theme-color('content-on-surface-variant');
+
+        @include xs {
+          @include tpg-h1;
+        }
+
+        @include md {
+          @include tpg-d2;
+        }
+
+        @include lg {
+          @include tpg-d1;
+        }
+      }
     }
 
-    &-value {
-      @include tpg-h3;
-      color: theme-color('content-on-surface-variant');
+    width: 33%;
 
-      @include xs {
-        @include tpg-h1;
-      }
+    @include sm {
+      width: 20%;
+    }
 
-      @include md {
-        @include tpg-d2;
-      }
-
-      @include lg {
-        @include tpg-d1;
-      }
+    @include md {
+      width: 15%;
     }
 
     &-label {
