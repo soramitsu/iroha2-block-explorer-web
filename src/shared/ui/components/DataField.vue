@@ -46,7 +46,7 @@ const props = withDefaults(
       />
       <span
         v-else
-        class="row-text"
+        class="data-field__value-text row-text"
       >{{ props.value ?? $t('none') }}</span>
       <ContextTooltip
         v-if="tooltip"
@@ -71,6 +71,10 @@ const props = withDefaults(
 
   &__value {
     position: relative;
+
+    &-text {
+      word-break: break-all;
+    }
   }
 
   &__value span:hover ~ .context-tooltip {

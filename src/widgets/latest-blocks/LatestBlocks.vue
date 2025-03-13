@@ -82,12 +82,10 @@ function handleRowClick(height: number) {
     cursor: pointer;
     padding: size(1) size(4);
     border-bottom: 1px solid theme-color('border-primary');
-    display: grid;
-    grid-gap: size(1);
-    grid-template-columns: 70px auto;
-    justify-content: start;
+    justify-content: space-between;
     align-items: center;
     min-height: 64px;
+    display: flex;
 
     &:hover {
       box-shadow: theme-shadow('row');
@@ -96,11 +94,6 @@ function handleRowClick(height: number) {
 
     & > * {
       width: fit-content;
-    }
-
-    @include xs {
-      grid-template-columns: 70px auto 70px;
-      justify-content: space-between;
     }
 
     @include sm {
