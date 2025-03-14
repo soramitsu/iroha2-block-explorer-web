@@ -8,25 +8,23 @@
       />
     </div>
 
-    <div class="home-page-info__grid">
+    <BaseLoading
+      v-if="isLoading"
+      class="home-page-info_loading"
+    />
+
+    <div
+      v-if="!isLoading"
+      class="home-page-info__grid"
+    >
       <div
         v-for="(item, i) in firstSection"
         :key="i"
         class="home-page-info__item"
       >
-        <div class="home-page-info__item-content">
-          <BaseLoading
-            v-if="isLoading"
-            class="home-page-info__item-content-loading"
-          />
-
-          <span
-            v-else
-            class="home-page-info__item-content-value"
-          >
-            {{ item.value }}
-          </span>
-        </div>
+        <span class="home-page-info__item-value">
+          {{ item.value }}
+        </span>
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -34,25 +32,18 @@
       </div>
     </div>
 
-    <div class="home-page-info__grid">
+    <div
+      v-if="!isLoading"
+      class="home-page-info__grid"
+    >
       <div
         v-for="(item, i) in secondSection"
         :key="i"
         class="home-page-info__item"
       >
-        <div class="home-page-info__item-content">
-          <BaseLoading
-            v-if="isLoading"
-            class="home-page-info__item-content-loading"
-          />
-
-          <span
-            v-else
-            class="home-page-info__item-content-value"
-          >
-            {{ item.value }}
-          </span>
-        </div>
+        <span class="home-page-info__item-value">
+          {{ item.value }}
+        </span>
 
         <span class="home-page-info__item-label">
           {{ $t(item.i18nKey) }}
@@ -110,9 +101,9 @@ const isLoading = computed(() => setup.isLoading);
 @import '@/shared/ui/styles/main';
 
 .home-page-info {
+  height: 160px;
   background: theme-color('surface-variant');
   width: 100%;
-  height: auto;
   display: grid;
   justify-items: center;
   margin-top: 0;
@@ -123,9 +114,21 @@ const isLoading = computed(() => setup.isLoading);
     margin-top: size(0); // #SEARCH: remove when functionality is ready
   }
 
+  @include sm {
+    height: 210px;
+  }
+
   @include md {
     margin-top: size(10);
     margin-top: size(4); // #SEARCH: remove when functionality is ready
+  }
+
+  &_loading {
+    margin-top: 60px;
+
+    @include sm {
+      margin-top: 85px;
+    }
   }
 
   &__search {
@@ -157,15 +160,6 @@ const isLoading = computed(() => setup.isLoading);
     justify-content: center;
     width: 100%;
     padding: size(2) 0 size(1) 0;
-    gap: size(4);
-
-    @include xs {
-      gap: size(8);
-    }
-
-    @include sm {
-      gap: size(12);
-    }
 
     @include md {
       padding: size(2) 0;
@@ -177,48 +171,38 @@ const isLoading = computed(() => setup.isLoading);
     flex-direction: column;
     align-items: center;
 
-    &-content {
-      height: size(3);
+    &-value {
+      @include tpg-h2;
+      color: theme-color('content-on-surface-variant');
+      height: size(3.5);
+
       @include xs {
         height: size(4);
+        @include tpg-h2;
       }
       @include sm {
-        height: size(5);
+        @include tpg-h1;
+        height: size(5.5);
+      }
+      @include md {
+        @include tpg-d2;
       }
       @include lg {
         height: size(7);
-      }
-
-      &-loading {
-        margin-bottom: size(1);
-      }
-
-      &-value {
-        @include tpg-h3;
-        color: theme-color('content-on-surface-variant');
-
-        @include xs {
-          @include tpg-h1;
-        }
-
-        @include md {
-          @include tpg-d2;
-        }
-
-        @include lg {
-          @include tpg-d1;
-        }
+        @include tpg-d1;
       }
     }
 
     width: 33%;
 
-    @include sm {
+    @include md {
+      width: 25%;
+    }
+    @include xl {
       width: 20%;
     }
-
-    @include md {
-      width: 15%;
+    @include xxl {
+      width: 18%;
     }
 
     &-label {
