@@ -109,7 +109,7 @@ const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.i
 const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
 
 function handleAssetRowClick(id: AssetDefinitionId) {
-  router.push(`/assets/${encodeURIComponent(id.toString())}`);
+  router.push(`/assets-list/${encodeURIComponent(id.toString())}`);
 }
 
 function handleAccountRowClick(id: AccountId) {
@@ -207,7 +207,7 @@ function handleAccountRowClick(id: AccountId) {
               <div class="domain-details__native-assets-mobile-list-row">
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
+                  <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.toString())}`">
                     {{ item.id.name.value }}
                   </BaseLink>
                 </div>

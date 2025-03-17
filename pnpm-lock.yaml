@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@iroha/core':
-        specifier: npm:@jsr/iroha__core@^0.2.1
-        version: '@jsr/iroha__core@0.2.1'
+        specifier: npm:@jsr/iroha__core@^0.3.1
+        version: '@jsr/iroha__core@0.3.1'
       '@ngneat/falso':
         specifier: ^6.1.0
         version: 6.4.0
@@ -372,8 +372,8 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.0':
     resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
 
-  '@jsr/iroha__core@0.2.1':
-    resolution: {integrity: sha512-XczgReaoLGyNx8vX2jI6NZ5jRqhvdyBAFQickDqs23lK9LbeJzNs02NqhxuDa+1rj8PaAeFRLkpz743CfFTOyw==, tarball: https://npm.jsr.io/~/11/@jsr/iroha__core/0.2.1.tgz}
+  '@jsr/iroha__core@0.3.1':
+    resolution: {integrity: sha512-xoIxfyF5ziBhNaJMt5n457+NBa2GDM7aCLgFW4Sj/mZV5CR2ClPcQQ3fNokUo2PbFwTx1hGw1uSWKUvcc1kN4A==, tarball: https://npm.jsr.io/~/11/@jsr/iroha__core/0.3.1.tgz}
 
   '@jsr/std__assert@1.0.11':
     resolution: {integrity: sha512-sNXyi9EQA4f/9F3gI1t+Dz+LnvPwCC3JDUqn9YfWl7IK7RRipiHOkDpV8Vq3LL/ZDZF8Tcr36zVhuEOrRs8i+g==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/1.0.11.tgz}
@@ -2863,7 +2863,7 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.0': {}
 
-  '@jsr/iroha__core@0.2.1':
+  '@jsr/iroha__core@0.3.1':
     dependencies:
       '@jsr/std__assert': 1.0.11
       '@jsr/std__encoding': 1.0.7

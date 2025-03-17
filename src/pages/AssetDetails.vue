@@ -171,7 +171,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
           <template #row="{ item }">
             <div class="asset-details__assets-table-list-row">
               <div class="asset-details__assets-table-list-row-data row-text">
-                <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
+                <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
                   {{ item.id.definition.name.value }}
                 </BaseLink>
               </div>
@@ -210,7 +210,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
             <div class="asset-details__assets-table-mobile-list-row">
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
                 <span class="h-sm">{{ $t('name') }}</span>
-                <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
+                <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
                   {{ item.id.definition.name.value }}
                 </BaseLink>
               </div>

@@ -1,6 +1,6 @@
 export const menu = [
   { i18nKey: 'blocks.blocks', to: '/blocks' },
-  { i18nKey: 'assets.assets', to: '/assets' },
+  { i18nKey: 'assets.assets', to: '/assets-list' },
   { i18nKey: 'domains.domains', to: '/domains' },
   { i18nKey: 'accounts.accounts', to: '/accounts' },
   { i18nKey: 'transactions.transactions', to: '/transactions' },

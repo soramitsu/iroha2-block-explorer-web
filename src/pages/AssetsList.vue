@@ -23,7 +23,7 @@
       <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
-            :to="`/assets/${encodeURIComponent(item.id.toString())}`"
+            :to="`/assets-list/${encodeURIComponent(item.id.toString())}`"
             class="cell"
           >
             {{ item.id.name.value }}
@@ -51,7 +51,7 @@
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
+            <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.toString())}`">
               {{ item.id.name.value }}
             </BaseLink>
           </div>
