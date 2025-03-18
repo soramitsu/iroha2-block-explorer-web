@@ -4,17 +4,20 @@
       <ThemeSwitcher />
       <LangDropdown />
       <MobileMenu />
-
-      <div :id="PORTAL_ID" class="home-page__dropdown" />
     </div>
+
+    <div
+      :id="PORTAL_ID"
+      class="home-page__dropdown"
+    />
 
     <BackgroundLogo class="home-page__background-logo" />
     <LogoIcon class="home-page__logo-icon" />
 
     <h1 class="home-page__title">
-      <span class="nowrap">{{ $t('homePage.title.firstLine') }}</span>
+      <strong class="nowrap">{{ $t('homePage.title.firstLine') }}</strong>
       {{ ' ' }}
-      <span class="nowrap">{{ $t('homePage.title.secondLine') }}</span>
+      <strong class="nowrap">{{ $t('homePage.title.secondLine') }}</strong>
     </h1>
 
     <NavigationMenu class="home-page__menu" />
@@ -28,20 +31,20 @@
 </template>
 
 <script setup lang="ts">
-import { ThemeSwitcher } from '~features/switch-theme';
-import { LangDropdown } from '~features/switch-lang';
-import { MobileMenu } from '~features/mobile-menu';
-import { NavigationMenu } from '~features/navigation';
-import { HomePageInfo } from '~widgets/home-page-info';
-import { LatestBlocks } from '~widgets/latest-blocks';
-import { LatestTransactions } from '~widgets/latest-transactions';
-import { PORTAL_ID } from '~shared/config';
-import BackgroundLogo from '~icons/background-logo.svg';
-import LogoIcon from '~icons/logo.svg';
+import BackgroundLogo from '@/shared/ui/icons/background-logo.svg';
+import LogoIcon from '@/shared/ui/icons/logo.svg';
+import { LatestBlocks } from '@/widgets/latest-blocks';
+import { LatestTransactions } from '@/widgets/latest-transactions';
+import { ThemeSwitcher } from '@/features/switch-theme';
+import { LangDropdown } from '@/features/switch-lang';
+import { MobileMenu } from '@/features/mobile-menu';
+import { NavigationMenu } from '@/features/navigation';
+import { HomePageInfo } from '@/widgets/home-page-info';
+import { PORTAL_ID } from '@/shared/ui/consts';
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .home-page {
   position: relative;
@@ -51,13 +54,26 @@ import LogoIcon from '~icons/logo.svg';
 
   &__dropdown {
     position: absolute;
-    top: calc(50% + 20px + size(1));
     z-index: 10;
-    right: 0;
+    right: size(1);
+    top: calc(2% + size(1));
+
+    @include xs {
+      right: size(2);
+      top: calc(2% + size(3));
+    }
+
+    @include md {
+      right: size(3);
+    }
+
+    @include lg {
+      top: calc(3% + size(3.5));
+      right: size(4);
+    }
   }
 
   &__buttons {
-    position: absolute;
     top: size(1);
     right: size(1);
 

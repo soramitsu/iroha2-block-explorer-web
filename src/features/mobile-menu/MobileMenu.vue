@@ -2,6 +2,7 @@
   <BaseButton
     :pressed="dropdown.isOpen.value"
     class="mobile-menu"
+    aria-label="mobile menu"
     bordered
     rounded
     @click="dropdown.toggle"
@@ -9,7 +10,10 @@
     <DotsIcon />
   </BaseButton>
 
-  <Teleport v-if="dropdown.isOpen.value" :to="`#${PORTAL_ID}`">
+  <Teleport
+    v-if="dropdown.isOpen.value"
+    :to="`#${PORTAL_ID}`"
+  >
     <BaseDropdownWindow
       v-model="routeModel"
       size="lg"
@@ -22,13 +26,17 @@
 import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import DotsIcon from '@soramitsu-ui/icons/icomoon/basic-more-vertical-24.svg';
-import BaseButton from '~base/BaseButton.vue';
-import BaseDropdownWindow from '~base/BaseDropdownWindow.vue';
-import { menu, PORTAL_ID } from '~shared/config';
-import { useMenuDropdown } from '~shared/ui/composables/header-portal';
+import { useMenuDropdown } from '@/shared/ui/composables/header-portal';
+import { menu } from '@/shared/config';
+import BaseDropdownWindow from '@/shared/ui/components/BaseDropdownWindow.vue';
+import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import { useI18n } from 'vue-i18n';
+import { PORTAL_ID } from '@/shared/ui/consts';
+
+const { t } = useI18n();
 
 const dropdown = useMenuDropdown();
-const links = computed(() => menu.map(item => ({ label: item.label, value: item.to })));
+const links = computed(() => menu.map((item) => ({ label: t(item.i18nKey), value: item.to })));
 const router = useRouter();
 const route = useRoute();
 
@@ -42,7 +50,7 @@ const routeModel = computed({
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .mobile-menu {
   @include lg {

@@ -1,65 +1,77 @@
 <template>
-  <BaseContentBlock :title="$t('assets')" class="assets-list-page">
+  <BaseContentBlock
+    :title="$t('assets.assets')"
+    class="assets-list-page"
+  >
     <BaseTable
-      :loading="table.loading.value"
-      :pagination="table.pagination"
-      :items="table.items.value"
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isLoading"
+      :total="totalAssets"
+      :items="assets"
       container-class="assets-list-page__container"
-      @next-page="table.nextPage()"
-      @prev-page="table.prevPage()"
-      @set-page="table.setPage($event)"
-      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="assets-list-page__row">
           <span class="h-sm cell">{{ $t('name') }}</span>
           <span class="h-sm cell">{{ $t('domain') }}</span>
-          <span class="h-sm cell">{{ $t('total') }}</span>
+          <span class="h-sm cell">{{ $t('mintable') }}</span>
+          <span class="h-sm cell">{{ $t('type') }}</span>
         </div>
       </template>
 
-      <template #row="{ item }: { item: Asset }">
+      <template #row="{ item }">
         <div class="assets-list-page__row">
-          <BaseLink :to="`/assets/${item.definition_id}`" class="cell">
-            {{ item.definition_id.split('#')[0] }}
+          <BaseLink
+            :to="`/assets-list/${encodeURIComponent(item.id.toString())}`"
+            class="cell"
+          >
+            {{ item.id.name.value }}
           </BaseLink>
 
-          <BaseLink :to="`/domains/${item.definition_id.split('#')[1]}`" class="cell">
-            {{ item.definition_id.split('#')[1] }}
+          <BaseLink
+            :to="`/domains/${item.id.domain.value}`"
+            class="cell"
+          >
+            {{ item.id.domain.value }}
           </BaseLink>
 
           <div class="cell row-text">
-            <template v-if="item.value.t === 'Store'">
-              🔑: {{ Object.keys(item.value.c).length }}
-            </template>
-            <template v-else>
-              {{ item.value.c }}
-            </template>
+            {{ item.mintable }}
+          </div>
+
+          <div class="cell row-text">
+            {{ item.type }}
           </div>
         </div>
       </template>
 
-      <template #mobile-card="{ item }: { item: Asset }">
+      <template #mobile-card="{ item }">
         <div class="assets-list-page__mobile-card">
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/assets/${item.definition_id}`">
-              {{ item.definition_id.split('#')[0] }}
+            <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.toString())}`">
+              {{ item.id.name.value }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('domain') }}</span>
 
-            <BaseLink :to="`/domains/${item.definition_id.split('#')[1]}`">
-              {{ item.definition_id.split('#')[1] }}
+            <BaseLink :to="`/domains/${item.id.domain.value}`">
+              {{ item.id.domain.value }}
             </BaseLink>
           </div>
 
           <div class="assets-list-page__mobile-row">
-            <span class="h-sm assets-list-page__mobile-label">{{ $t('total') }}</span>
-            <span class="row-text">{{ item.value.c }}</span>
+            <span class="h-sm assets-list-page__mobile-label">{{ $t('mintable') }}</span>
+            <span class="row-text">{{ item.mintable }}</span>
+          </div>
+
+          <div class="assets-list-page__mobile-row">
+            <span class="h-sm assets-list-page__mobile-label">{{ $t('type') }}</span>
+            <span class="row-text">{{ item.type }}</span>
           </div>
         </div>
       </template>
@@ -68,29 +80,54 @@
 </template>
 
 <script setup lang="ts">
-import BaseContentBlock from '~base/BaseContentBlock.vue';
-import BaseTable from '~base/BaseTable.vue';
-import BaseLink from '~base/BaseLink.vue';
-import { useTable } from '~shared/lib/table';
-import { http } from '~shared/api';
+import * as http from '@/shared/api';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import { computed, reactive, watch } from 'vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
-const table = useTable(http.fetchAssets);
-table.fetch();
+const listState = reactive({
+  page: 1,
+  per_page: 10,
+});
+
+watch(
+  () => listState.per_page,
+  () => {
+    listState.page = 1;
+  }
+);
+
+const scope = useParamScope(
+  () => {
+    return {
+      key: JSON.stringify(listState),
+      payload: listState,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchAssetDefinitions(payload))
+);
+
+const isLoading = computed(() => scope.value?.expose.isLoading);
+const totalAssets = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
+const assets = computed(() => scope.value?.expose.data?.items ?? []);
 </script>
 
 <style lang="scss">
-@import 'styles';
+@import '@/shared/ui/styles/main';
 
 .assets-list-page {
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     justify-content: start;
   }
 
   &__mobile-card {
-    padding: size(2);
+    padding: size(2) size(3);
   }
 
   &__mobile-row {
@@ -99,8 +136,8 @@ table.fetch();
   }
 
   &__mobile-label {
-    text-align: right;
-    width: 80px;
+    text-align: left;
+    width: size(12);
     padding: size(1);
     margin-right: size(3);
   }
@@ -116,6 +153,10 @@ table.fetch();
     @include lg {
       grid-template-columns: 1fr;
     }
+  }
+
+  hr {
+    display: none;
   }
 }
 </style>

@@ -1,4 +1,1 @@
-import TransactionStatusUI from './TransactionStatus.vue';
-
-export const TransactionStatus = TransactionStatusUI;
-export * as transactionModel from './model';
+export { default as TransactionStatus } from './TransactionStatus.vue';

@@ -1,31 +1,29 @@
 <template>
   <BaseRadioGroup
     v-model="model"
-    :items="items"
+    :items
   />
 </template>
 
 <script setup lang="ts">
-import BaseRadioGroup from '~base/BaseRadioGroup.vue';
 import { useI18n } from 'vue-i18n';
-import * as ftm from './model';
+import type * as ftm from './model';
 import { useVModel } from '@vueuse/core';
+import BaseRadioGroup from '@/shared/ui/components/BaseRadioGroup.vue';
 
-type Props = {
-  modelValue: ftm.Status,
+interface Props {
+  modelValue: ftm.Status
 }
 
-type Emits = {
-  (e: 'update:modelValue', value: ftm.Status): void,
-}
+type Emits = (e: 'update:modelValue', value: ftm.Status) => void;
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 const { t } = useI18n({ useScope: 'global' });
 
 const items = [
-  { label: t('committed'), value: 'committed' },
-  { label: t('rejected'), value: 'rejected' },
+  { label: t('transactions.committed'), value: 'Committed' },
+  { label: t('transactions.rejected'), value: 'Rejected' },
 ];
 
 const model = useVModel(props, 'modelValue', emit);

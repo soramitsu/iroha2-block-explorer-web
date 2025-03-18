@@ -1,33 +1,61 @@
-function getAllElapsedMinutes(dateString: string) {
+import { format } from 'date-fns/format';
+import type { TimeAgo } from '@/shared/ui/composables/useTimeAgo';
+import { toZonedTime } from 'date-fns-tz';
+
+export function countTimeDifference(now: number, dateString: string | Date): TimeAgo {
   const date = new Date(dateString);
-  const diff = Date.now() - date.getTime();
+  const diff = now - date.getTime();
 
-  return Math.floor(diff / 1000 / 60);
-};
+  const minutes = Math.floor(diff / 1000 / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
 
-function getElapsedSeconds(dateString: string) {
-  const date = new Date(dateString);
-  const diff = Date.now() - date.getTime();
+  if (days) {
+    return {
+      precision: 'days',
+      value: days,
+    };
+  } else if (hours) {
+    return {
+      precision: 'hours',
+      value: hours,
+    };
+  } else if (minutes < 1) {
+    return {
+      precision: 'seconds',
+      value: Math.floor((diff / 1000) % 60),
+    };
+  }
 
-  return Math.floor(diff / 1000 % 60);
-};
-
-export const elapsed = {
-  allMinutes: getAllElapsedMinutes,
-  seconds: getElapsedSeconds,
-};
-
-function formatXX(item: number) {
-  return item < 10 ? '0' + item : item;
+  return {
+    precision: 'minutes',
+    value: minutes,
+  };
 }
 
-export function format(timestamp: string) {
-  const date = new Date(timestamp);
-  const day = formatXX(date.getDate());
-  const month = formatXX(date.getMonth() + 1);
-  const year = date.getFullYear();
-  const hours = formatXX(date.getHours());
-  const minutes = formatXX(date.getMinutes());
+export function getGMTOffset(date: Date) {
+  const offset = date.getTimezoneOffset() / 60;
 
-  return `${day}.${month}.${year} ${hours}:${minutes}`;
+  if (offset <= 0) {
+    return 'GMT+' + -offset;
+  }
+
+  return 'GMT-' + offset;
+}
+
+export function getLocalTime(date: Date) {
+  const localDate = format(date, 'dd.MM.yyyy hh:mm:ss a ');
+  const offset = getGMTOffset(date);
+
+  return localDate + offset;
+}
+
+export function defaultFormat(date: Date) {
+  return format(date, 'dd.MM.yyyy hh:mm:ss a');
+}
+
+export function getUTCTime(date: Date) {
+  const utcDate = defaultFormat(toZonedTime(date, 'UTC'));
+
+  return utcDate + ' UTC';
 }

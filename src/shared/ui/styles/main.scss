@@ -10,4 +10,15 @@ $header-height-mobile: 80px;
 $home-content-width: 1200px;
 $home-content-width-tablet: 860px;
 
-@function size($n) { @return #{8 * $n}px }
+@function size($n) {
+  @return #{8 * $n}px;
+}
+
+/* Adds custom focus styles for better accessibility */
+:focus-visible {
+  outline: 1px solid theme-color('content-primary');
+  border-radius: 4px;
+  transition:
+    outline-color 0.2s ease-in-out,
+    outline-offset 0.2s ease-in-out;
+}
