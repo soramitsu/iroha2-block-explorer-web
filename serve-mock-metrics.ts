@@ -9,7 +9,6 @@ import * as colors from "jsr:@std/fmt@1.0.6/colors";
 
 type NetworkMetrics = {
   peers: number;
-  blocks: number;
   domains: number;
   accounts: number;
   assets: number;
@@ -17,6 +16,11 @@ type NetworkMetrics = {
     accepted: number;
     rejected: number;
   };
+  latest_block: number;
+  latest_block_created_at: string;
+  finalized_block: number;
+  average_block_time_ms: number;
+  average_commit_time_ms: number;
 };
 
 const ROLES = new Set(
@@ -84,6 +88,31 @@ function randomRole(): Role {
   return role;
 }
 
+class CircularQueue<T> {
+  #arr: T[];
+  #pointer = 0;
+  #filled = 0;
+  constructor(size: number) {
+    this.#arr = new Array(size);
+  }
+  push(value: T) {
+    this.#arr[this.#pointer] = value;
+    this.#pointer = (this.#pointer + 1) % this.#arr.length;
+    this.#filled = Math.min(this.#filled + 1, this.#arr.length);
+  }
+  last(): undefined | T {
+    if (!this.#filled) return undefined;
+    return this.#arr.at(this.#pointer - 1);
+  }
+  *iter() {
+    for (let i = 0; i < this.#filled; i++) {
+      let point = this.#pointer - i - 1;
+      if (point < 0) point += this.#arr.length;
+      yield this.#arr[point];
+    }
+  }
+}
+
 /**
  * - Create N peers with varying start time (a few months ago)
  * - Set varying queue capacities
@@ -124,36 +153,42 @@ function createMockMetrics(): MetricsService {
     role: Role;
   };
 
-  const peers = R.shuffle(R.times(N_PEERS, (i): PeerState => {
-    const key = KeyPair.random();
-    const url = new URL(`http://fujiwara.sora.org/peer-${i}/`);
-    const start = datefns.addMinutes(START_DATE, R.randomInteger(0, 3_000));
-    const queueCapacity = R.randomInteger(30_000, 100_000);
-    const reachable = i < N_UNREACHABLE_PEERS;
-    return {
-      key,
-      url,
-      start,
-      queueSize: R.randomInteger(0, queueCapacity),
-      queueCapacity,
-      reachable,
-      location: null,
-      blocks: START_BLOCKS,
-      role: randomRole(),
-      block_arrived_at: null,
-      block_committed_at: null,
-      block_created_at: null,
-    };
-  }));
+  const peers = R.shuffle(
+    Array.from({ length: N_PEERS }, (_v, i): PeerState => {
+      const key = KeyPair.random();
+      const url = new URL(`http://fujiwara.sora.org/peer-${i}/`);
+      const start = datefns.addMinutes(START_DATE, R.randomInteger(0, 3_000));
+      const queueCapacity = R.randomInteger(30_000, 100_000);
+      const reachable = i < N_UNREACHABLE_PEERS;
+      return {
+        key,
+        url,
+        start,
+        queueSize: R.randomInteger(0, queueCapacity),
+        queueCapacity,
+        reachable,
+        location: null,
+        blocks: START_BLOCKS,
+        role: randomRole(),
+        block_arrived_at: null,
+        block_committed_at: null,
+        block_created_at: null,
+      };
+    }),
+  );
 
   const network: NetworkMetrics = {
-    blocks: START_BLOCKS,
-    ...randomDomainsAccountsAssets(),
     peers: N_PEERS,
     transactions: {
       accepted: 51_412,
       rejected: 9232,
     },
+    latest_block: START_BLOCKS,
+    latest_block_created_at: new Date().toISOString(),
+    finalized_block: START_BLOCKS,
+    average_block_time_ms: 0,
+    average_commit_time_ms: 0,
+    ...randomDomainsAccountsAssets(),
   };
 
   async function produceBlocksLoop() {
@@ -176,7 +211,6 @@ function createMockMetrics(): MetricsService {
 
       producer.block_committed_at = new Date();
 
-      network.blocks = producer.blocks;
       Object.assign(network, randomDomainsAccountsAssets());
       network.transactions.accepted += R.randomInteger(10, 1000);
       network.transactions.rejected += R.randomInteger(5, 200);
@@ -212,9 +246,95 @@ function createMockMetrics(): MetricsService {
     }
   }
 
-  const latestMetrics = new Map<string, PeerMetrics>();
+  function updateNetworkMetrics() {
+    let blockLatest = 0;
+    let blockLatestAt = "";
+    let blockMin = Infinity;
+    const avgBlockTimes: number[] = [];
+    const avgCommitTimes: number[] = [];
+    for (const queue of metrics.values()) {
+      const last = queue.last();
+      if (last) {
+        if (last.block > blockLatest && last.block_created_at) {
+          blockLatest = last.block;
+          assert(last.block_created_at);
+          blockLatestAt = last.block_created_at;
+        }
+        if (last.block < blockMin) blockMin = last.block;
+      }
+
+      const { diffsCommitted, diffsCreated } = R.reduce(
+        [...queue.iter()],
+        (acc, value) => {
+          if (!acc.laterCreated && value.block_created_at) {
+            acc.laterCreated = {
+              block: value.block,
+              time: value.block_created_at,
+            };
+          } else if (
+            value.block_created_at && acc.laterCreated &&
+            value.block !== acc.laterCreated.block
+          ) {
+            const blocksDiff = acc.laterCreated.block - value.block;
+            const diff = datefns.differenceInMilliseconds(
+              acc.laterCreated.time,
+              value.block_created_at,
+            );
+            acc.diffsCreated.push(diff / blocksDiff);
+          }
+
+          if (!acc.laterCommitted && value.block_committed_at) {
+            acc.laterCommitted = {
+              block: value.block,
+              time: value.block_committed_at,
+            };
+          } else if (
+            value.block_committed_at && acc.laterCommitted &&
+            acc.laterCommitted.block !== value.block
+          ) {
+            const blocksDiff = acc.laterCommitted.block - value.block;
+            const diff = datefns.differenceInMilliseconds(
+              acc.laterCommitted.time,
+              value.block_committed_at,
+            );
+            acc.diffsCommitted.push(diff / blocksDiff);
+          }
+
+          return acc;
+        },
+        {
+          laterCommitted: null,
+          laterCreated: null,
+          diffsCommitted: [],
+          diffsCreated: [],
+        } as {
+          laterCreated: null | { block: number; time: string };
+          laterCommitted: null | { block: number; time: string };
+          diffsCreated: number[];
+          diffsCommitted: number[];
+        },
+      );
+
+      if (diffsCreated.length) {
+        avgBlockTimes.push(R.mean(diffsCreated)!);
+      }
+      if (diffsCommitted.length) {
+        avgCommitTimes.push(R.mean(diffsCommitted)!);
+      }
+    }
+
+    network.latest_block = blockLatest;
+    network.latest_block_created_at = blockLatestAt;
+    network.finalized_block = blockMin;
+    network.average_block_time_ms = R.mean(avgBlockTimes) ?? 0;
+    network.average_commit_time_ms = R.mean(avgCommitTimes) ?? 0;
+  }
+
+  const metrics = new Map<string, CircularQueue<PeerMetrics>>();
   events.on("metrics", (data) => {
-    latestMetrics.set(data.peer, data);
+    const queue = metrics.get(data.peer) ?? new CircularQueue(30);
+    queue.push(data);
+    metrics.set(data.peer, queue);
   });
 
   produceBlocksLoop();
@@ -225,15 +345,23 @@ function createMockMetrics(): MetricsService {
 
   return {
     network: () => {
+      // console.time("upd-net");
+      updateNetworkMetrics();
+      // console.timeEnd("upd-net");
       return network;
     },
     peers: () => {
-      return [...latestMetrics.values()];
+      return R.pipe(
+        [...metrics.values()],
+        R.map((x) => x.last()),
+        R.filter((x) => !!x),
+      );
     },
     peersStream: async function* (signal) {
       // first - emit all existing ones
-      for (const data of latestMetrics.values()) {
-        yield data;
+      for (const queue of metrics.values()) {
+        const data = queue.last();
+        if (data) yield data;
       }
 
       const abortPromise = new Promise<null>((resolve) => {

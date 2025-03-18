@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:serve-mock-metrics": "deno run -N -E=DEBUG --node-modules-dir=none --no-lock ./serve-mock-metrics.ts",
+    "dev:serve-mock-metrics": "deno run -N -E=DEBUG ./serve-mock-metrics.ts",
     "build": "run-s typecheck build:vite",
     "build:vite": "vite build",
     "preview": "vite preview",
