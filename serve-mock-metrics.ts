@@ -134,7 +134,7 @@ function createMockMetrics(): MetricsService {
       key,
       url,
       start,
-      queueSize: ~~(queueCapacity * Math.random()),
+      queueSize: R.randomInteger(0, queueCapacity),
       queueCapacity,
       reachable,
       location: null,
@@ -205,6 +205,13 @@ function createMockMetrics(): MetricsService {
     }
   }
 
+  async function randomizeQueueSizeLoop(peer: PeerState) {
+    while (true) {
+      peer.queueSize = R.randomInteger(0, peer.queueCapacity * 0.8);
+      await delay(300);
+    }
+  }
+
   const latestMetrics = new Map<string, PeerMetrics>();
   events.on("metrics", (data) => {
     latestMetrics.set(data.peer, data);
@@ -213,6 +220,7 @@ function createMockMetrics(): MetricsService {
   produceBlocksLoop();
   for (const x of peers) {
     collectMetricsLoop(x);
+    randomizeQueueSizeLoop(x);
   }
 
   return {
