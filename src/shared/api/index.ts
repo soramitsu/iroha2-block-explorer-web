@@ -19,6 +19,9 @@ import {
   Transaction,
   DetailedTransaction,
   Instruction,
+  NetworkMetrics,
+  PeerMetrics,
+  PeerInfo,
 } from '@/shared/api/schemas';
 
 const BASE_URL = window.location.origin.toString() + '/api/v1';
@@ -87,6 +90,21 @@ export async function fetchBlock(heightOrHash: number | string): Promise<Block> 
 export async function fetchPeerStatus(): Promise<PeerStatus> {
   const res = await get('/status');
   return PeerStatus.parse(res);
+}
+
+export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
+  const res = await get('/metrics');
+  return NetworkMetrics.parse(res);
+}
+
+export async function fetchPeersMetrics(): Promise<PeerMetrics[]> {
+  const res = await get('/metrics/peers');
+  return PeerMetrics.array().parse(res);
+}
+
+export async function fetchPeersInfo(): Promise<PeerInfo[]> {
+  const res = await get('/metrics/peers/info');
+  return PeerInfo.array().parse(res);
 }
 
 export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<Transaction>> {
