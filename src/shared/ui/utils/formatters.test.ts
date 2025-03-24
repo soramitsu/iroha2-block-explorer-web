@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { numberFormatter } from './money-formatters';
+import { numberFormatter } from './formatters';
 
 test.each([
   [1234567.22312, '1,234,567.22312'],
