@@ -144,5 +144,18 @@
     "domainDoesntHaveAnyAccounts": "Domain doesn't have any accounts",
     "domainTransactions": "Domain Transactions",
     "domainDoesntHaveAnyTransactions": "Domain doesn't have any transactions"
+  },
+  "telemetry": {
+   "telemetry": "Telemetry",
+    "nodes": "Nodes",
+    "location": "Location",
+    "txnsInQueue": "Txns in queue",
+    "block": "Block",
+    "blockPropagationTime": "Block propagation time",
+    "bestBlock": "Best block",
+    "finalizedBlock": "Finalized block",
+    "averageBlockTime": "Average block time",
+    "averageBlockCommitTime": "Average block commit time",
+    "lastBlock": "Last block"
   }
 }
