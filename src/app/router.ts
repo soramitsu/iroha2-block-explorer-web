@@ -60,7 +60,7 @@ const routes = [
     path: '/:pathMatch(.*)*',
     component: () => import('@/pages/NotFound.vue'),
   },
-    // FIXME: uncomment when backend ready
+  // FIXME: uncomment when backend ready
   // {
   //   path: '/telemetry',
   //   component: () => import('@/pages/NodesTelemetry.vue'),
