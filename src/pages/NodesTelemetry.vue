@@ -2,7 +2,7 @@
 import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, onMounted, ref, shallowRef } from 'vue';
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 import { numberFormatter } from '@/shared/ui/utils/formatters';
 import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
 import type { NetworkMetrics, Peer } from '@/shared/api/schemas';
@@ -16,7 +16,7 @@ const peers = shallowRef<(Peer | null)[]>([]);
 
 const isLoading = ref(false);
 
-onMounted(async () => {
+async function fetchMetrics() {
   try {
     isLoading.value = true;
 
@@ -42,15 +42,30 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+}
+
+const timerId = ref<ReturnType<typeof setInterval> | null>(null);
+
+onMounted(async () => {
+  await fetchMetrics();
+
+  timerId.value = setInterval(fetchMetrics, 15000);
+});
+
+onUnmounted(() => {
+  if (timerId.value) clearInterval(timerId.value);
 });
 
 const formattedLastBlock = computed(() => {
   return (Math.floor(lastBlockTimestamp.value / 100) / 10).toFixed(1);
 });
-const lastBlockTimestamp = useTimeAgo(metrics.value?.latest_block_created_at ?? new Date(), {
-  refreshInterval: 100,
-  detailedSeconds: true,
-});
+const lastBlockTimestamp = useTimeAgo(
+  computed(() => metrics.value?.latest_block_created_at ?? new Date()),
+  {
+    refreshInterval: 100,
+    detailedSeconds: true,
+  }
+);
 
 function formatTimeSpan(date1: Date, date2: Date) {
   return (date1.getTime() - date2.getTime()) / 1000 + 's';
