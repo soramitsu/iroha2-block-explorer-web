@@ -28,7 +28,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const isExternalLink = computed(() => {
-  return  props.to.startsWith('http');
+  return props.to.startsWith('http');
 });
 </script>
 
