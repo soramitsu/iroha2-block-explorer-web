@@ -20,7 +20,6 @@ import {
   DetailedTransaction,
   Instruction,
   NetworkMetrics,
-  PeerMetrics,
   PeerInfo,
 } from '@/shared/api/schemas';
 
@@ -95,11 +94,6 @@ export async function fetchPeerStatus(): Promise<PeerStatus> {
 export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
   const res = await get('/metrics');
   return NetworkMetrics.parse(res);
-}
-
-export async function fetchPeersMetrics(): Promise<PeerMetrics[]> {
-  const res = await get('/metrics/peers');
-  return PeerMetrics.array().parse(res);
 }
 
 export async function fetchPeersInfo(): Promise<PeerInfo[]> {

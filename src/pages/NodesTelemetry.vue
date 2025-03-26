@@ -2,14 +2,15 @@
 import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, onUnmounted, ref, shallowRef } from 'vue';
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
 import { formatNumber } from '@/shared/ui/utils/formatters';
 import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
-import type { NetworkMetrics, Peer } from '@/shared/api/schemas';
+import type { NetworkMetrics, Peer, PeerInfo } from '@/shared/api/schemas';
+import { PeerMetrics } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useIntervalFn } from '@vueuse/shared';
-import { useAsyncState, useWindowSize } from '@vueuse/core';
+import { useAsyncState, useEventSource, useWindowSize } from '@vueuse/core';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
@@ -31,31 +32,38 @@ const hashType = computed(() => {
 });
 
 const metrics = ref<NetworkMetrics | null>(null);
-const peers = shallowRef<(Peer | null)[]>([]);
+const peersInfo = shallowRef<PeerInfo[]>([]);
+const peers = ref<Peer[]>([]);
 
 const { isLoading, execute } = useAsyncState(fetchMetrics, null, {
   immediate: false,
 });
 
+const { data, close, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
+
+watch(data, () => {
+  if (!data.value) return;
+
+  const peerMetrics = PeerMetrics.parse(JSON.parse(data.value));
+  const peerInfo = peersInfo.value.find((i) => i.public_key === peerMetrics.peer);
+
+  if (!peerInfo) return;
+
+  const updatedPeer = { ...peerMetrics, ...peerInfo };
+
+  const id = peers.value.findIndex((i) => i.peer === updatedPeer.peer);
+
+  if (id === -1) peers.value.push(updatedPeer);
+  else peers.value[id] = updatedPeer;
+});
+
+onMounted(async () => {
+  peersInfo.value = await http.fetchPeersInfo();
+});
+
 async function fetchMetrics() {
   try {
-    const [networkMetrics, peersInfo, peersMetrics] = await Promise.all([
-      http.fetchNetworkMetrics(),
-      http.fetchPeersInfo(),
-      http.fetchPeersMetrics(),
-    ]);
-
-    metrics.value = networkMetrics;
-    peers.value = peersInfo.map((p) => {
-      const data = peersMetrics.find((i) => i.peer === p.public_key);
-
-      if (!data) return null;
-
-      return {
-        ...p,
-        ...data,
-      };
-    });
+    metrics.value = await http.fetchNetworkMetrics();
   } catch (e) {
     handleUnknownError(e);
   }
@@ -65,7 +73,10 @@ const { pause } = useIntervalFn(execute, 15000, {
   immediateCallback: true,
 });
 
-onUnmounted(pause);
+onUnmounted(() => {
+  pause();
+  close();
+});
 
 const formattedLastBlock = computed(() => {
   if (!lastBlockTimestamp.value) return null;
@@ -91,7 +102,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 <template>
   <div class="nodes-telemetry-page">
     <BaseLoading
-      v-if="isLoading"
+      v-if="isLoading && !metrics"
       class="nodes-telemetry-page_loading"
     />
     <div
@@ -133,7 +144,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
     >
       <BaseTable
         disable-pagination
-        :loading="isLoading"
+        :loading="status === 'CONNECTING'"
         :items="peers"
         container-class="nodes-telemetry-page__list-container"
         :breakpoint="1440"
