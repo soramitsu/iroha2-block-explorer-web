@@ -49,15 +49,18 @@ const { pause } = useIntervalFn(execute, 15000, {
 onUnmounted(pause);
 
 const formattedLastBlock = computed(() => {
-  return (Math.floor(lastBlockTimestamp.value / 100) / 10).toFixed(1);
+  if (!lastBlockTimestamp.value) return null;
+
+  return (Math.floor(lastBlockTimestamp.value.value / 100) / 10).toFixed(1);
 });
-const lastBlockTimestamp = useTimeAgo(
-  computed(() => metrics.value?.latest_block_created_at ?? new Date()),
-  {
+const lastBlockTimestamp = computed(() => {
+  if (!metrics.value?.latest_block_created_at) return null;
+
+  return useTimeAgo(metrics.value.latest_block_created_at, {
     refreshInterval: 100,
     detailedSeconds: true,
-  }
-);
+  });
+});
 
 function formatTimeSpan(date1: Date | null, date2: Date | null) {
   if (!date1 || !date2) return '-';
@@ -93,13 +96,18 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.averageBlockCommitTime') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value nodes-telemetry-page__stats-stat-last-block">
-          <span
-            class="nodes-telemetry-page__stats-stat-last-block-timespan"
-            :class="{ 'nodes-telemetry-page__stats-stat-last-block-timespan_big': Number(formattedLastBlock) >= 10 }"
-          >{{ formattedLastBlock }}</span>
-          <span>s</span>
-        </span>
+        <div class="nodes-telemetry-page__stats-stat-value nodes-telemetry-page__stats-stat-last-block">
+          <div v-if="formattedLastBlock">
+            <span
+              class="nodes-telemetry-page__stats-stat-last-block-timespan"
+              :class="{ 'nodes-telemetry-page__stats-stat-last-block-timespan_big': Number(formattedLastBlock) >= 10 }"
+            >{{ formattedLastBlock }}</span>
+            <span>s</span>
+          </div>
+          <div v-else>
+            Unknown
+          </div>
+        </div>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.lastBlock') }}</span>
       </div>
     </div>

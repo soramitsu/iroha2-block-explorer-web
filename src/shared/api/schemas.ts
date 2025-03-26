@@ -179,11 +179,11 @@ export const PeerMetrics = z.object({
   block_created_at: z
     .string()
     .nullable()
-    .transform((x) => (x ? new Date(x) : new Date())),
+    .transform((x) => (x ? new Date(x) : null)),
   block_arrived_at: z
     .string()
     .nullable()
-    .transform((x) => (x ? new Date(x) : new Date())),
+    .transform((x) => (x ? new Date(x) : null)),
   queue_size: z.number(),
   uptime_seconds: z.number(),
 });
