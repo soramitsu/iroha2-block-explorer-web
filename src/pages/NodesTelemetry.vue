@@ -9,14 +9,32 @@ import type { NetworkMetrics, Peer } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useIntervalFn } from '@vueuse/shared';
-import { useAsyncState } from '@vueuse/core';
+import { useAsyncState, useWindowSize } from '@vueuse/core';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 
 const { handleUnknownError } = useErrorHandlers();
+
+const { width } = useWindowSize();
+
+const hashType = computed(() => {
+  if (width.value >= LG_WINDOW_SIZE) return 'medium';
+
+  if (width.value >= MD_WINDOW_SIZE) return 'short';
+
+  if (width.value >= SM_WINDOW_SIZE) return 'medium';
+
+  if (width.value >= XS_WINDOW_SIZE) return 'short';
+
+  return 'short';
+});
 
 const metrics = ref<NetworkMetrics | null>(null);
 const peers = shallowRef<(Peer | null)[]>([]);
 
-const { isLoading, execute } = useAsyncState(fetchMetrics, null);
+const { isLoading, execute } = useAsyncState(fetchMetrics, null, {
+  immediate: false,
+});
 
 async function fetchMetrics() {
   try {
@@ -124,6 +142,8 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       >
         <template #header>
           <div class="nodes-telemetry-page__list-row">
+            <span class="h-sm cell">{{ $t('telemetry.publicKey') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.publicUrl') }}</span>
             <span class="h-sm cell">{{ $t('telemetry.block') }}</span>
             <span class="h-sm cell">{{ $t('telemetry.blockPropagationTime') }}</span>
             <span class="h-sm cell">{{ $t('telemetry.txnsInQueue') }}</span>
@@ -133,6 +153,26 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
         <template #row="{ item }">
           <div class="nodes-telemetry-page__list-row">
+            <BaseHash
+              :hash="item.public_key"
+              type="medium"
+              copy
+              class="row-text cell"
+            />
+            <BaseHash
+              v-if="item.public_url"
+              :hash="item.public_url"
+              :link="item.public_url"
+              copy
+              class="cell"
+              type="medium"
+            />
+            <div
+              v-else
+              class="row-text cell"
+            >
+              -
+            </div>
             <span class="row-text cell">{{ formatNumber(item.block) }}</span>
             <span class="row-text cell">{{ formatTimeSpan(item.block_arrived_at, item.block_created_at) }}</span>
             <span class="row-text cell">{{ formatNumber(item.queue_size) }}</span>
@@ -147,6 +187,33 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
         <template #mobile-card="{ item }">
           <div class="nodes-telemetry-page__list-mobile-card">
+            <div class="nodes-telemetry-page__list-mobile-row">
+              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicKey') }}</span>
+              <BaseHash
+                :hash="item.public_key"
+                :type="hashType"
+                copy
+                class="row-text"
+              />
+            </div>
+
+            <div class="nodes-telemetry-page__list-mobile-row">
+              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicUrl') }}</span>
+              <BaseHash
+                v-if="item.public_url"
+                :hash="item.public_url"
+                :link="item.public_url"
+                copy
+                :type="hashType"
+              />
+              <div
+                v-else
+                class="row-text"
+              >
+                -
+              </div>
+            </div>
+
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.block') }}</span>
               <span class="row-text">{{ formatNumber(item.block) }}</span>
@@ -304,7 +371,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       align-items: center;
 
       @include lg {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: 1fr 1fr 0.5fr 0.75fr 0.5fr 0.5fr;
       }
 
       &-value_empty {

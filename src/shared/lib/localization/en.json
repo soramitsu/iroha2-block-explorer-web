@@ -156,6 +156,8 @@
     "finalizedBlock": "Finalized block",
     "averageBlockTime": "Average block time",
     "averageBlockCommitTime": "Average block commit time",
-    "lastBlock": "Last block"
+    "lastBlock": "Last block",
+    "publicKey": "Public key",
+    "publicUrl": "Public URL"
   }
 }
