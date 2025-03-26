@@ -12,6 +12,7 @@ import { useIntervalFn } from '@vueuse/shared';
 import { useAsyncState, useWindowSize } from '@vueuse/core';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
 
 const { handleUnknownError } = useErrorHandlers();
 
@@ -116,10 +117,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       <div class="nodes-telemetry-page__stats-stat">
         <div class="nodes-telemetry-page__stats-stat-value nodes-telemetry-page__stats-stat-last-block">
           <div v-if="formattedLastBlock">
-            <span
-              class="nodes-telemetry-page__stats-stat-last-block-timespan"
-              :class="{ 'nodes-telemetry-page__stats-stat-last-block-timespan_big': Number(formattedLastBlock) >= 10 }"
-            >{{ formattedLastBlock }}</span>
+            <LatestBlock :date="metrics.latest_block_created_at" />
             <span>s</span>
           </div>
           <div v-else>
@@ -311,28 +309,8 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
           width: 66%;
         }
 
-        &-timespan {
-          @include xxs {
-            width: size(4.5);
-          }
-          @include sm {
-            width: size(6);
-          }
-          @include lg {
-            width: size(8.5);
-          }
-
-          &_big {
-            @include xxs {
-              width: size(6);
-            }
-            @include sm {
-              width: size(8);
-            }
-            @include lg {
-              width: size(11.5);
-            }
-          }
+        & > div {
+          display: flex;
         }
       }
 
