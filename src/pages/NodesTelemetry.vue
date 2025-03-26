@@ -3,7 +3,7 @@ import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { computed, onUnmounted, ref, shallowRef } from 'vue';
-import { numberFormatter } from '@/shared/ui/utils/formatters';
+import { formatNumber } from '@/shared/ui/utils/formatters';
 import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
 import type { NetworkMetrics, Peer } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
@@ -80,11 +80,11 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       class="nodes-telemetry-page__stats"
     >
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value">#{{ numberFormatter(metrics.latest_block) }}</span>
+        <span class="nodes-telemetry-page__stats-stat-value">#{{ formatNumber(metrics.latest_block) }}</span>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.bestBlock') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value">#{{ numberFormatter(metrics.finalized_block) }}</span>
+        <span class="nodes-telemetry-page__stats-stat-value">#{{ formatNumber(metrics.finalized_block) }}</span>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.finalizedBlock') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
@@ -133,9 +133,9 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
         <template #row="{ item }">
           <div class="nodes-telemetry-page__list-row">
-            <span class="row-text cell">{{ numberFormatter(item.block) }}</span>
+            <span class="row-text cell">{{ formatNumber(item.block) }}</span>
             <span class="row-text cell">{{ formatTimeSpan(item.block_arrived_at, item.block_created_at) }}</span>
-            <span class="row-text cell">{{ numberFormatter(item.queue_size) }}</span>
+            <span class="row-text cell">{{ formatNumber(item.queue_size) }}</span>
             <span
               class="row-text cell"
               :class="{ 'nodes-telemetry-page__list-row-value_empty': !item.location }"
@@ -149,7 +149,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
           <div class="nodes-telemetry-page__list-mobile-card">
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.block') }}</span>
-              <span class="row-text">{{ numberFormatter(item.block) }}</span>
+              <span class="row-text">{{ formatNumber(item.block) }}</span>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
@@ -161,7 +161,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.txnsInQueue') }}</span>
-              <span class="row-text">{{ numberFormatter(item.queue_size) }}</span>
+              <span class="row-text">{{ formatNumber(item.queue_size) }}</span>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
