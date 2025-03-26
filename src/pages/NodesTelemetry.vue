@@ -2,24 +2,24 @@
 import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
+import { computed, onUnmounted, ref, shallowRef } from 'vue';
 import { numberFormatter } from '@/shared/ui/utils/formatters';
 import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
 import type { NetworkMetrics, Peer } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import { useIntervalFn } from '@vueuse/shared';
+import { useAsyncState } from '@vueuse/core';
 
 const { handleUnknownError } = useErrorHandlers();
 
 const metrics = ref<NetworkMetrics | null>(null);
 const peers = shallowRef<(Peer | null)[]>([]);
 
-const isLoading = ref(false);
+const { isLoading, execute } = useAsyncState(fetchMetrics, null);
 
 async function fetchMetrics() {
   try {
-    isLoading.value = true;
-
     const [networkMetrics, peersInfo, peersMetrics] = await Promise.all([
       http.fetchNetworkMetrics(),
       http.fetchPeersInfo(),
@@ -39,22 +39,14 @@ async function fetchMetrics() {
     });
   } catch (e) {
     handleUnknownError(e);
-  } finally {
-    isLoading.value = false;
   }
 }
 
-const timerId = ref<ReturnType<typeof setInterval> | null>(null);
-
-onMounted(async () => {
-  await fetchMetrics();
-
-  timerId.value = setInterval(fetchMetrics, 15000);
+const { pause } = useIntervalFn(execute, 15000, {
+  immediateCallback: true,
 });
 
-onUnmounted(() => {
-  if (timerId.value) clearInterval(timerId.value);
-});
+onUnmounted(pause);
 
 const formattedLastBlock = computed(() => {
   return (Math.floor(lastBlockTimestamp.value / 100) / 10).toFixed(1);
@@ -67,7 +59,9 @@ const lastBlockTimestamp = useTimeAgo(
   }
 );
 
-function formatTimeSpan(date1: Date, date2: Date) {
+function formatTimeSpan(date1: Date | null, date2: Date | null) {
+  if (!date1 || !date2) return '-';
+
   return (date1.getTime() - date2.getTime()) / 1000 + 's';
 }
 </script>
