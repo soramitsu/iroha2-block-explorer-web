@@ -2,9 +2,9 @@
 import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { formatNumber } from '@/shared/ui/utils/formatters';
-import type { Peer } from '@/shared/api/schemas';
+import type { PeerInfo } from '@/shared/api/schemas';
 import { PeerMetrics } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
@@ -30,7 +30,12 @@ const hashType = computed(() => {
   return 'short';
 });
 
-const peers = ref<Peer[]>([]);
+interface PeerData {
+  metrics: null | PeerMetrics
+  info: null | PeerInfo
+}
+
+const peers = reactive(new Map<string, PeerData>());
 
 const {
   isLoading: isMetricsLoading,
@@ -44,6 +49,11 @@ const {
 const { state: peersInfo } = useAsyncState(http.fetchPeersInfo, null, {
   immediate: true,
   onError: handleUnknownError,
+  onSuccess: (data) => {
+    data?.forEach((i) => {
+      peers.set(i.public_key, { info: { ...i }, metrics: null });
+    });
+  },
 });
 
 const { data, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
@@ -52,16 +62,9 @@ watch(data, () => {
   if (!data.value || !peersInfo.value) return;
 
   const peerMetrics = PeerMetrics.parse(JSON.parse(data.value));
-  const peerInfo = peersInfo.value.find((i) => i.public_key === peerMetrics.peer);
+  const peer = peers.get(peerMetrics.peer);
 
-  if (!peerInfo) return;
-
-  const updatedPeer = { ...peerMetrics, ...peerInfo };
-
-  const id = peers.value.findIndex((i) => i.peer === updatedPeer.peer);
-
-  if (id === -1) peers.value.push(updatedPeer);
-  else peers.value[id] = updatedPeer;
+  peers.set(peerMetrics.peer, { info: peer?.info ?? null, metrics: peerMetrics });
 });
 
 useIntervalFn(getNetworkMetrics, 15000, {
@@ -121,7 +124,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       <BaseTable
         disable-pagination
         :loading="status === 'CONNECTING'"
-        :items="peers"
+        :items="Array.from(peers.values())"
         container-class="nodes-telemetry-page__list-container"
         :breakpoint="1440"
       >
@@ -137,17 +140,20 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
         </template>
 
         <template #row="{ item }">
-          <div class="nodes-telemetry-page__list-row">
+          <div
+            v-if="item.metrics && item.info"
+            class="nodes-telemetry-page__list-row"
+          >
             <BaseHash
-              :hash="item.public_key"
+              :hash="item.info.public_key"
               type="medium"
               copy
               class="row-text cell"
             />
             <BaseHash
-              v-if="item.public_url"
-              :hash="item.public_url"
-              :link="item.public_url"
+              v-if="item.info.public_url"
+              :hash="item.info.public_url"
+              :link="item.info.public_url"
               copy
               class="cell"
               type="medium"
@@ -158,24 +164,27 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
             >
               -
             </div>
-            <span class="row-text cell">{{ formatNumber(item.block) }}</span>
-            <span class="row-text cell">{{ formatTimeSpan(item.block_arrived_at, item.block_created_at) }}</span>
-            <span class="row-text cell">{{ formatNumber(item.queue_size) }}</span>
+            <span class="row-text cell">{{ formatNumber(item.metrics.block) }}</span>
+            <span class="row-text cell">{{
+              formatTimeSpan(item.metrics.block_arrived_at, item.metrics.block_created_at)
+            }}</span>
+            <span class="row-text cell">{{ formatNumber(item.metrics.queue_size) }}</span>
             <span
               class="row-text cell"
-              :class="{ 'nodes-telemetry-page__list-row-value_empty': !item.location }"
-            >{{
-              item.location ?? 'Unknown'
-            }}</span>
+              :class="{ 'nodes-telemetry-page__list-row-value_empty': !item.info.location }"
+            >{{ item.info.location ?? 'Unknown' }}</span>
           </div>
         </template>
 
         <template #mobile-card="{ item }">
-          <div class="nodes-telemetry-page__list-mobile-card">
+          <div
+            v-if="item.metrics && item.info"
+            class="nodes-telemetry-page__list-mobile-card"
+          >
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicKey') }}</span>
               <BaseHash
-                :hash="item.public_key"
+                :hash="item.info.public_key"
                 :type="hashType"
                 copy
                 class="row-text"
@@ -185,9 +194,9 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicUrl') }}</span>
               <BaseHash
-                v-if="item.public_url"
-                :hash="item.public_url"
-                :link="item.public_url"
+                v-if="item.info.public_url"
+                :hash="item.info.public_url"
+                :link="item.info.public_url"
                 copy
                 :type="hashType"
               />
@@ -201,29 +210,29 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.block') }}</span>
-              <span class="row-text">{{ formatNumber(item.block) }}</span>
+              <span class="row-text">{{ formatNumber(item.metrics.block) }}</span>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{
                 $t('telemetry.blockPropagationTime')
               }}</span>
-              <span class="row-text">{{ formatTimeSpan(item.block_arrived_at, item.block_created_at) }}</span>
+              <span class="row-text">{{
+                formatTimeSpan(item.metrics.block_arrived_at, item.metrics.block_created_at)
+              }}</span>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.txnsInQueue') }}</span>
-              <span class="row-text">{{ formatNumber(item.queue_size) }}</span>
+              <span class="row-text">{{ formatNumber(item.metrics.queue_size) }}</span>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.location') }}</span>
               <span
                 class="row-text"
-                :class="{ 'nodes-telemetry-page__list-mobile-row-value_empty': !item.location }"
-              >{{
-                item.location ?? 'Unknown'
-              }}</span>
+                :class="{ 'nodes-telemetry-page__list-mobile-row-value_empty': !item.info.location }"
+              >{{ item.info.location ?? 'Unknown' }}</span>
             </div>
           </div>
         </template>

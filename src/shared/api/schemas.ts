@@ -207,10 +207,6 @@ export const PeerInfo = z.object({
 
 export type PeerInfo = z.infer<typeof PeerInfo>;
 
-const Peer = PeerMetrics.merge(PeerInfo);
-
-export type Peer = z.infer<typeof Peer>;
-
 export interface InstructionsSearchParams extends PaginationParams {
   authority?: string
   kind?: string
