@@ -34,7 +34,6 @@ export type TransactionStatus = z.infer<typeof TransactionStatus>;
 const Duration = z.object({
   ms: z.number().min(0),
 });
-const Timestamp = z.string().transform((ctx) => new Date(ctx));
 
 export const AccountIdSchema = z.string().transform(AccountId.parse);
 
@@ -113,7 +112,7 @@ export const Transaction = z.object({
   authority: z.string(),
   hash: z.string(),
   block: z.number(),
-  created_at: Timestamp,
+  created_at: z.coerce.date(),
   executable: z.enum(['Instructions', 'Wasm']),
   status: TransactionStatus,
 });
@@ -132,7 +131,7 @@ export type DetailedTransaction = z.infer<typeof DetailedTransaction>;
 export const Block = z.object({
   hash: z.string(),
   height: z.number(),
-  created_at: Timestamp,
+  created_at: z.coerce.date(),
   prev_block_hash: z.string().nullable(),
   transactions_hash: z.string(),
   transactions_rejected: z.number(),
@@ -152,6 +151,54 @@ export const PeerStatus = z.object({
 });
 
 export type PeerStatus = z.infer<typeof PeerStatus>;
+
+export const NetworkMetrics = z.object({
+  peers: z.number(),
+  domains: z.number(),
+  accounts: z.number(),
+  assets: z.number(),
+  transactions: z.object({
+    accepted: z.number(),
+    rejected: z.number(),
+  }),
+  latest_block: z.number(),
+  latest_block_created_at: z.coerce.date().nullable(),
+  finalized_block: z.number(),
+  average_block_time_ms: z.number(),
+  average_commit_time_ms: z.number(),
+});
+
+export type NetworkMetrics = z.infer<typeof NetworkMetrics>;
+
+export const PeerMetrics = z.object({
+  time: z.string(),
+  peer: z.string(),
+  role: z.enum(['Leader', 'ProxyTail', 'ValidatingPeer', 'ObservingPeer']),
+  block: z.number(),
+  block_created_at: z.coerce.date().nullable(),
+  block_arrived_at: z.coerce.date().nullable(),
+  queue_size: z.number(),
+  uptime_seconds: z.number(),
+});
+
+export type PeerMetrics = z.infer<typeof PeerMetrics>;
+
+export const PeerInfo = z.object({
+  public_key: z.string(),
+  public_url: z.string().nullable(),
+  location: z
+    .object({
+      longitude: z.number(),
+      latitude: z.number(),
+      country: z.string(),
+      city: z.string(),
+    })
+    .nullable(),
+  queue_capacity: z.number().nullable(),
+  connected_peers: z.string().array().nullable(),
+});
+
+export type PeerInfo = z.infer<typeof PeerInfo>;
 
 export interface InstructionsSearchParams extends PaginationParams {
   authority?: string
@@ -181,7 +228,7 @@ export type InstructionKind = z.infer<typeof InstructionKind>;
 
 export const Instruction = z.object({
   authority: z.string(),
-  created_at: z.string().transform((x) => new Date(x)),
+  created_at: z.coerce.date(),
   kind: InstructionKind,
   // TODO: add payload schemas for every kind
   payload: z.union([z.record(z.string(), z.any()), z.string()]),

@@ -19,7 +19,10 @@ import {
   Transaction,
   DetailedTransaction,
   Instruction,
+  NetworkMetrics,
+  PeerInfo,
 } from '@/shared/api/schemas';
+import { useEventSource } from '@vueuse/core';
 
 const BASE_URL = window.location.origin.toString() + '/api/v1';
 
@@ -87,6 +90,20 @@ export async function fetchBlock(heightOrHash: number | string): Promise<Block> 
 export async function fetchPeerStatus(): Promise<PeerStatus> {
   const res = await get('/status');
   return PeerStatus.parse(res);
+}
+
+export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
+  const res = await get('/metrics');
+  return NetworkMetrics.parse(res);
+}
+
+export function streamPeerMetrics() {
+  return useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
+}
+
+export async function fetchPeersInfo(): Promise<PeerInfo[]> {
+  const res = await get('/metrics/peers/info');
+  return PeerInfo.array().parse(res);
 }
 
 export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<Transaction>> {
