@@ -9,10 +9,11 @@ import { PeerMetrics } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useIntervalFn } from '@vueuse/shared';
-import { useAsyncState, useEventSource, useWindowSize } from '@vueuse/core';
+import { useAsyncState, useWindowSize } from '@vueuse/core';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
+import { streamPeerMetrics } from '@/shared/api';
 
 const { handleUnknownError } = useErrorHandlers();
 
@@ -56,12 +57,12 @@ const { state: peersInfo } = useAsyncState(http.fetchPeersInfo, null, {
   },
 });
 
-const { data, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
+const { data: streamedPeerMetrics, status: streamStatus } = streamPeerMetrics();
 
-watch(data, () => {
-  if (!data.value || !peersInfo.value) return;
+watch(streamedPeerMetrics, () => {
+  if (!streamedPeerMetrics.value || !peersInfo.value) return;
 
-  const peerMetrics = PeerMetrics.parse(JSON.parse(data.value));
+  const peerMetrics = PeerMetrics.parse(JSON.parse(streamedPeerMetrics.value));
   const peer = peers.get(peerMetrics.peer);
 
   peers.set(peerMetrics.peer, { info: peer?.info ?? null, metrics: peerMetrics });
@@ -123,7 +124,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
     >
       <BaseTable
         disable-pagination
-        :loading="status === 'CONNECTING'"
+        :loading="streamStatus === 'CONNECTING'"
         :items="Array.from(peers.values())"
         container-class="nodes-telemetry-page__list-container"
         :breakpoint="1440"
