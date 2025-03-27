@@ -3,22 +3,19 @@ import { computed } from 'vue';
 import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
 
 const props = defineProps<{
-  date: Date | null
+  date: Date
 }>();
 
 const formattedLastBlock = computed(() => {
-  if (!lastBlockTimestamp.value) return null;
-
-  return (Math.floor(lastBlockTimestamp.value.value / 100) / 10).toFixed(1);
+  return (Math.floor(lastBlockTimestamp.value / 100) / 10).toFixed(1);
 });
-const lastBlockTimestamp = computed(() => {
-  if (!props.date) return null;
-
-  return useTimeAgo(props.date, {
+const lastBlockTimestamp = useTimeAgo(
+  computed(() => props.date),
+  {
     refreshInterval: 100,
     detailedSeconds: true,
-  });
-});
+  }
+);
 </script>
 
 <template>

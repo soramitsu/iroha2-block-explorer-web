@@ -2,9 +2,8 @@
 import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
+import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 import { formatNumber } from '@/shared/ui/utils/formatters';
-import { useTimeAgo } from '@/shared/ui/composables/useTimeAgo';
 import type { NetworkMetrics, Peer, PeerInfo } from '@/shared/api/schemas';
 import { PeerMetrics } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
@@ -39,7 +38,7 @@ const { isLoading, execute } = useAsyncState(fetchMetrics, null, {
   immediate: false,
 });
 
-const { data, close, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
+const { data, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
 
 watch(data, () => {
   if (!data.value) return;
@@ -69,27 +68,8 @@ async function fetchMetrics() {
   }
 }
 
-const { pause } = useIntervalFn(execute, 15000, {
+useIntervalFn(execute, 1000, {
   immediateCallback: true,
-});
-
-onUnmounted(() => {
-  pause();
-  close();
-});
-
-const formattedLastBlock = computed(() => {
-  if (!lastBlockTimestamp.value) return null;
-
-  return (Math.floor(lastBlockTimestamp.value.value / 100) / 10).toFixed(1);
-});
-const lastBlockTimestamp = computed(() => {
-  if (!metrics.value?.latest_block_created_at) return null;
-
-  return useTimeAgo(metrics.value.latest_block_created_at, {
-    refreshInterval: 100,
-    detailedSeconds: true,
-  });
 });
 
 function formatTimeSpan(date1: Date | null, date2: Date | null) {
@@ -127,7 +107,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       </div>
       <div class="nodes-telemetry-page__stats-stat">
         <div class="nodes-telemetry-page__stats-stat-value nodes-telemetry-page__stats-stat-last-block">
-          <div v-if="formattedLastBlock">
+          <div v-if="metrics.latest_block_created_at">
             <LatestBlock :date="metrics.latest_block_created_at" />
             <span>s</span>
           </div>
