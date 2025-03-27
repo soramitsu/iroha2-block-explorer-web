@@ -2,9 +2,9 @@
 import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { formatNumber } from '@/shared/ui/utils/formatters';
-import type { NetworkMetrics, Peer, PeerInfo } from '@/shared/api/schemas';
+import type { Peer } from '@/shared/api/schemas';
 import { PeerMetrics } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
@@ -30,18 +30,26 @@ const hashType = computed(() => {
   return 'short';
 });
 
-const metrics = ref<NetworkMetrics | null>(null);
-const peersInfo = shallowRef<PeerInfo[]>([]);
 const peers = ref<Peer[]>([]);
 
-const { isLoading, execute } = useAsyncState(fetchMetrics, null, {
+const {
+  isLoading: isMetricsLoading,
+  state: metrics,
+  execute: getNetworkMetrics,
+} = useAsyncState(http.fetchNetworkMetrics, null, {
   immediate: false,
+  onError: handleUnknownError,
+  resetOnExecute: false,
+});
+const { state: peersInfo } = useAsyncState(http.fetchPeersInfo, null, {
+  immediate: true,
+  onError: handleUnknownError,
 });
 
 const { data, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
 
 watch(data, () => {
-  if (!data.value) return;
+  if (!data.value || !peersInfo.value) return;
 
   const peerMetrics = PeerMetrics.parse(JSON.parse(data.value));
   const peerInfo = peersInfo.value.find((i) => i.public_key === peerMetrics.peer);
@@ -56,19 +64,7 @@ watch(data, () => {
   else peers.value[id] = updatedPeer;
 });
 
-onMounted(async () => {
-  peersInfo.value = await http.fetchPeersInfo();
-});
-
-async function fetchMetrics() {
-  try {
-    metrics.value = await http.fetchNetworkMetrics();
-  } catch (e) {
-    handleUnknownError(e);
-  }
-}
-
-useIntervalFn(execute, 1000, {
+useIntervalFn(getNetworkMetrics, 15000, {
   immediateCallback: true,
 });
 
@@ -82,7 +78,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 <template>
   <div class="nodes-telemetry-page">
     <BaseLoading
-      v-if="isLoading && !metrics"
+      v-if="isMetricsLoading && !metrics"
       class="nodes-telemetry-page_loading"
     />
     <div
