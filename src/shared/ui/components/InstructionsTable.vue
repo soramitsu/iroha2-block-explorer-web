@@ -201,6 +201,8 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
 .instructions-table {
   &_short {
     .content-row {
+      height: auto;
+
       @include xxs {
         width: 90vw;
       }
@@ -213,8 +215,6 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
       @include xl {
         width: auto;
       }
-
-      height: auto;
     }
     & > .content-row {
       @include lg {
@@ -289,15 +289,15 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
   }
 
   &__label {
-    @include tpg-s3;
     width: size(6);
     color: theme-color('content-quaternary');
+    @include tpg-s3;
   }
 
   &__time {
-    @include tpg-s3;
     color: theme-color('content-primary');
     grid-column: 1 / -1;
+    @include tpg-s3;
   }
 
   &__columns {

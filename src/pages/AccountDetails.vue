@@ -435,6 +435,8 @@ function handleDomainRowClick(id: string) {
 
       &-mobile-list {
         &-row {
+          display: flex;
+          flex-direction: column;
           padding: size(2) size(4);
           @include xxs {
             width: 100%;
@@ -442,8 +444,6 @@ function handleDomainRowClick(id: string) {
           @include sm {
             width: 45vw;
           }
-          display: flex;
-          flex-direction: column;
 
           &-data {
             display: flex;
@@ -468,6 +468,8 @@ function handleDomainRowClick(id: string) {
   }
 
   &__transactions {
+    margin-bottom: size(2);
+
     .base-content-block__header {
       display: flex;
 
@@ -483,7 +485,6 @@ function handleDomainRowClick(id: string) {
       }
     }
 
-    margin-bottom: size(2);
     @include xxs {
       width: 90vw;
     }
@@ -504,10 +505,11 @@ function handleDomainRowClick(id: string) {
     &-table {
       &_short {
         .content-row {
+          height: auto;
+
           @include xxs {
             width: 90vw;
           }
-
           @include lg {
             width: 46vw;
             height: 48px;
@@ -515,8 +517,6 @@ function handleDomainRowClick(id: string) {
           @include xl {
             width: auto;
           }
-
-          height: auto;
         }
         & > .content-row {
           height: auto;

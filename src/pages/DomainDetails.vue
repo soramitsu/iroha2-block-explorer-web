@@ -355,13 +355,13 @@ function handleAccountRowClick(id: AccountId) {
     }
 
     &-assets-list {
+      display: grid;
+
       @include sm {
         .base-table__mobile-card:nth-last-child(2) {
           border-bottom: 1px solid theme-color('border-primary');
         }
       }
-
-      display: grid;
 
       @include xxs {
         grid-template-columns: 1fr;
@@ -390,6 +390,8 @@ function handleAccountRowClick(id: AccountId) {
 
     &-assets-mobile-list {
       &-row {
+        display: flex;
+        flex-direction: column;
         padding: size(2) size(4);
         @include xxs {
           width: 100%;
@@ -397,8 +399,6 @@ function handleAccountRowClick(id: AccountId) {
         @include sm {
           width: 45vw;
         }
-        display: flex;
-        flex-direction: column;
 
         &-data {
           display: flex;

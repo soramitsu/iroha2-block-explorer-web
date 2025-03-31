@@ -287,6 +287,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
         display: flex;
         justify-content: center;
         width: 100%;
+        color: theme-color('content-primary');
         @include tpg-h2-mono();
 
         @include sm {
@@ -296,7 +297,6 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
         @include lg {
           @include tpg-d1-mono();
         }
-        color: theme-color('content-primary');
       }
       &-last-block > div {
         display: flex;
@@ -304,12 +304,12 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
       &-label {
         text-align: center;
+        color: theme-color('content-quaternary');
         @include tpg-s3();
 
         @include lg {
           @include tpg-s4();
         }
-        color: theme-color('content-quaternary');
       }
 
       &:last-child {
