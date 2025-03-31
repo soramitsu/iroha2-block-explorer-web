@@ -14,6 +14,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
 import { streamPeerMetrics } from '@/shared/api';
+import invariant from 'tiny-invariant';
 
 const { handleUnknownError } = useErrorHandlers();
 
@@ -47,12 +48,14 @@ const {
   onError: handleUnknownError,
   resetOnExecute: false,
 });
-const { state: peersInfo } = useAsyncState(http.fetchPeersInfo, null, {
-  immediate: true,
+const { execute: getPeersInfo } = useAsyncState(http.fetchPeersInfo, null, {
+  immediate: false,
   onError: handleUnknownError,
   onSuccess: (data) => {
-    data?.forEach((i) => {
-      peers.set(i.public_key, { info: { ...i }, metrics: null });
+    invariant(data, 'Expected peer info, received:' + data);
+
+    data.forEach((i) => {
+      peers.set(i.public_key, { ...(peers.get(i.public_key) ?? { metrics: null }), info: i });
     });
   },
 });
@@ -62,7 +65,7 @@ const { data: streamedPeerMetrics, status: streamStatus } = streamPeerMetrics();
 watch(
   () => streamedPeerMetrics.value,
   () => {
-    if (!streamedPeerMetrics.value || !peersInfo.value) return;
+    if (!streamedPeerMetrics.value) return;
 
     const peer = peers.get(streamedPeerMetrics.value.peer);
     peers.set(streamedPeerMetrics.value.peer, { info: peer?.info ?? null, metrics: streamedPeerMetrics.value });
@@ -70,6 +73,9 @@ watch(
 );
 
 useIntervalFn(getNetworkMetrics, 15000, {
+  immediateCallback: true,
+});
+useIntervalFn(getPeersInfo, 30000, {
   immediateCallback: true,
 });
 
