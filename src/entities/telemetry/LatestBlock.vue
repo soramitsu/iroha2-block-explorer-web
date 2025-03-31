@@ -19,38 +19,7 @@ const lastBlockTimestamp = useTimeAgo(
 </script>
 
 <template>
-  <div
-    class="latest-block-timespan"
-    :class="{ 'latest-block-timespan_big': Number(formattedLastBlock) >= 10 }"
-  >
+  <div class="latest-block-timespan">
     {{ formattedLastBlock }}
   </div>
 </template>
-
-<style lang="scss">
-@import '@/shared/ui/styles/main';
-
-.latest-block-timespan {
-  @include xxs {
-    width: size(4.5);
-  }
-  @include sm {
-    width: size(6);
-  }
-  @include lg {
-    width: size(8.5);
-  }
-
-  &_big {
-    @include xxs {
-      width: size(6);
-    }
-    @include sm {
-      width: size(8);
-    }
-    @include lg {
-      width: size(11.5);
-    }
-  }
-}
-</style>

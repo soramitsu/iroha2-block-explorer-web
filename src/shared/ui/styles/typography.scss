@@ -12,6 +12,10 @@
   @include t-factory($size: 40px, $height: 56px, $weight: 700);
 }
 
+@mixin tpg-d1-mono() {
+  @include t-factory($size: 40px, $height: 56px, $weight: 700, $family: 'JetBrainsMono');
+}
+
 @mixin tpg-d2() {
   @include t-factory($size: 34px, $height: 48px, $weight: 500);
 }
@@ -19,8 +23,14 @@
 @mixin tpg-h1() {
   @include t-factory($size: 29px, $height: 32px);
 }
+@mixin tpg-h1-mono() {
+  @include t-factory($size: 29px, $height: 32px, $family: 'JetBrainsMono');
+}
 @mixin tpg-h2() {
   @include t-factory($size: 21px, $height: 24px);
+}
+@mixin tpg-h2-mono() {
+  @include t-factory($size: 21px, $height: 24px, $family: 'JetBrainsMono');
 }
 @mixin tpg-h3() {
   @include t-factory($size: 15px, $height: 16px);

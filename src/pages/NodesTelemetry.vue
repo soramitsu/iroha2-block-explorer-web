@@ -280,35 +280,19 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
         display: flex;
         justify-content: center;
         width: 100%;
-        @include tpg-h2();
+        @include tpg-h2-mono();
 
         @include sm {
-          @include tpg-h1();
+          @include tpg-h1-mono();
         }
 
         @include lg {
-          @include tpg-d1();
+          @include tpg-d1-mono();
         }
         color: theme-color('content-primary');
       }
-      &-last-block {
-        width: 100%;
-        @include sm {
-          width: size(17.5);
-        }
-        @include lg {
-          width: size(24.5);
-        }
-        @include xl {
-          width: 75%;
-        }
-        @include xxl {
-          width: 66%;
-        }
-
-        & > div {
-          display: flex;
-        }
+      &-last-block > div {
+        display: flex;
       }
 
       &-label {
@@ -325,13 +309,8 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
         @include xxs {
           grid-column: 1 / -1;
           justify-self: center;
-          width: size(13);
-        }
-        @include sm {
-          width: size(31);
         }
         @include xl {
-          width: 100%;
           grid-column: 5;
           justify-self: stretch;
         }
