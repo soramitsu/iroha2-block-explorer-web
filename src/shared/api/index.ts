@@ -21,8 +21,10 @@ import {
   Instruction,
   NetworkMetrics,
   PeerInfo,
+  PeerMetrics,
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
+import { computed } from 'vue';
 
 const BASE_URL = window.location.origin.toString() + '/api/v1';
 
@@ -98,7 +100,11 @@ export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
 }
 
 export function streamPeerMetrics() {
-  return useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
+  const { data: streamedPeerMetrics, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
+  return {
+    data: computed(() => (streamedPeerMetrics.value ? PeerMetrics.parse(JSON.parse(streamedPeerMetrics.value)) : null)),
+    status,
+  };
 }
 
 export async function fetchPeersInfo(): Promise<PeerInfo[]> {

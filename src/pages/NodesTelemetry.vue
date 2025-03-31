@@ -5,7 +5,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { computed, reactive, watch } from 'vue';
 import { formatNumber } from '@/shared/ui/utils/formatters';
 import type { PeerInfo } from '@/shared/api/schemas';
-import { PeerMetrics } from '@/shared/api/schemas';
+import type { PeerMetrics } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useIntervalFn } from '@vueuse/shared';
@@ -59,14 +59,15 @@ const { state: peersInfo } = useAsyncState(http.fetchPeersInfo, null, {
 
 const { data: streamedPeerMetrics, status: streamStatus } = streamPeerMetrics();
 
-watch(streamedPeerMetrics, () => {
-  if (!streamedPeerMetrics.value || !peersInfo.value) return;
+watch(
+  () => streamedPeerMetrics.value,
+  () => {
+    if (!streamedPeerMetrics.value || !peersInfo.value) return;
 
-  const peerMetrics = PeerMetrics.parse(JSON.parse(streamedPeerMetrics.value));
-  const peer = peers.get(peerMetrics.peer);
-
-  peers.set(peerMetrics.peer, { info: peer?.info ?? null, metrics: peerMetrics });
-});
+    const peer = peers.get(streamedPeerMetrics.value.peer);
+    peers.set(streamedPeerMetrics.value.peer, { info: peer?.info ?? null, metrics: streamedPeerMetrics.value });
+  }
+);
 
 useIntervalFn(getNetworkMetrics, 15000, {
   immediateCallback: true,
