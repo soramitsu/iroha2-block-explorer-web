@@ -12,6 +12,7 @@
     :to
     class="base-link"
     :data-monospace="monospace || null"
+    :data-custom-font="customFont || null"
   >
     <slot />
   </router-link>
@@ -23,6 +24,7 @@ import { computed } from 'vue';
 interface Props {
   to: string
   monospace?: boolean
+  customFont?: boolean
 }
 
 const props = defineProps<Props>();
@@ -47,7 +49,7 @@ const isExternalLink = computed(() => {
     @include tpg-link1-mono;
   }
 
-  &:not([data-monospace]) {
+  &:not([data-custom-font], [data-monospace]) {
     @include tpg-link1;
   }
 }
