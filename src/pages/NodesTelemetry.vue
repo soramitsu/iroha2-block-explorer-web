@@ -14,6 +14,7 @@ import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '
 import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
 import { streamPeerMetrics } from '@/shared/api';
 import invariant from 'tiny-invariant';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
 
 const { handleUnknownError } = useErrorHandlers();
 
@@ -96,11 +97,23 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       class="nodes-telemetry-page__stats"
     >
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value">#{{ formatNumber(metrics.latest_block) }}</span>
+        <BaseLink
+          :to="`/blocks/${metrics.latest_block}`"
+          class="nodes-telemetry-page__stats-stat-value"
+          custom-font
+        >
+          #{{ formatNumber(metrics.latest_block) }}
+        </BaseLink>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.bestBlock') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value">#{{ formatNumber(metrics.finalized_block) }}</span>
+        <BaseLink
+          custom-font
+          :to="`/blocks/${metrics.finalized_block}`"
+          class="nodes-telemetry-page__stats-stat-value"
+        >
+          #{{ formatNumber(metrics.finalized_block) }}
+        </BaseLink>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.finalizedBlock') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
@@ -155,7 +168,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
               :hash="item.info.public_key"
               type="medium"
               copy
-              class="row-text cell"
+              class="row-text-monospace cell"
             />
             <BaseHash
               v-if="item.info.public_url"
@@ -171,11 +184,17 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
             >
               -
             </div>
-            <span class="row-text cell">{{ formatNumber(item.metrics.block) }}</span>
-            <span class="row-text cell">{{
+            <BaseLink
+              monospace
+              :to="`/blocks/${item.metrics.block}`"
+              class="row-text cell"
+            >
+              {{ formatNumber(item.metrics.block) }}
+            </BaseLink>
+            <span class="row-text-monospace cell">{{
               formatTimeSpan(item.metrics.block_arrived_at, item.metrics.block_created_at)
             }}</span>
-            <span class="row-text cell">{{ formatNumber(item.metrics.queue_size) }}</span>
+            <span class="row-text-monospace cell">{{ formatNumber(item.metrics.queue_size) }}</span>
             <span
               class="row-text cell"
               :class="{ 'nodes-telemetry-page__list-row-value_empty': !item.info.location }"
@@ -194,7 +213,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
                 :hash="item.info.public_key"
                 :type="hashType"
                 copy
-                class="row-text"
+                class="row-text-monospace"
               />
             </div>
 
@@ -217,21 +236,27 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.block') }}</span>
-              <span class="row-text">{{ formatNumber(item.metrics.block) }}</span>
+              <BaseLink
+                monospace
+                :to="`/blocks/${item.metrics.block}`"
+                class="row-text"
+              >
+                {{ formatNumber(item.metrics.block) }}
+              </BaseLink>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{
                 $t('telemetry.blockPropagationTime')
               }}</span>
-              <span class="row-text">{{
+              <span class="row-text-monospace">{{
                 formatTimeSpan(item.metrics.block_arrived_at, item.metrics.block_created_at)
               }}</span>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
               <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.txnsInQueue') }}</span>
-              <span class="row-text">{{ formatNumber(item.metrics.queue_size) }}</span>
+              <span class="row-text-monospace">{{ formatNumber(item.metrics.queue_size) }}</span>
             </div>
 
             <div class="nodes-telemetry-page__list-mobile-row">
