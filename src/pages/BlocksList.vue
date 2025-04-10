@@ -145,13 +145,13 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
   &__row {
     width: 100%;
     display: grid;
+    justify-content: start;
     @include lg {
       grid-template-columns: 130px 225px 300px 150px;
     }
     @include xl {
       grid-template-columns: 130px 230px 640px 150px;
     }
-    justify-content: start;
 
     &-time {
       position: relative;

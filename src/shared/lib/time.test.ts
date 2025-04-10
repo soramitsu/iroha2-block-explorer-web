@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { getLocalTime, getUTCTime } from '@/shared/lib/time';
+import { countTimeDifference, getLocalTime, getUTCTime } from '@/shared/lib/time';
 import { mount } from '@vue/test-utils';
 import { i18n } from '@/shared/lib/localization';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
@@ -40,4 +40,15 @@ test.each([
   });
 
   expect(wrapper.find('.time-ago').text()).toBe(expected);
+});
+
+test.each([
+  [new Date(NOW - (1000 * 9 + 999)), false, { precision: 'seconds', value: 9 }],
+  [new Date(NOW - (1000 * 9 + 999)), true, { precision: 'seconds', value: 9999 }],
+  [new Date(NOW - 1000 * 60 * 3), false, { precision: 'minutes', value: 3 }],
+  [new Date(NOW - 1000 * 60 * 60 * 3), false, { precision: 'hours', value: 3 }],
+  [new Date(NOW - 1000 * 60 * 60 * 72), false, { precision: 'days', value: 3 }],
+])('Correct countTimeDifference computation', (date, isDetailed, expected) => {
+  const res = countTimeDifference(NOW, date, isDetailed);
+  expect(res).toStrictEqual(expected);
 });

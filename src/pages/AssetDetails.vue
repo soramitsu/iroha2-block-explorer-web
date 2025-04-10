@@ -352,6 +352,8 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 
     &-mobile-list {
       &-row {
+        display: flex;
+        flex-direction: column;
         padding: size(2) size(4);
         @include xxs {
           width: 100%;
@@ -362,8 +364,6 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
         @include md {
           width: 45vw;
         }
-        display: flex;
-        flex-direction: column;
 
         &-data {
           display: flex;

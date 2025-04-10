@@ -2,7 +2,7 @@ import { format } from 'date-fns/format';
 import type { TimeAgo } from '@/shared/ui/composables/useTimeAgo';
 import { toZonedTime } from 'date-fns-tz';
 
-export function countTimeDifference(now: number, dateString: string | Date): TimeAgo {
+export function countTimeDifference(now: number, dateString: string | Date, isDetailed?: boolean): TimeAgo {
   const date = new Date(dateString);
   const diff = now - date.getTime();
 
@@ -23,7 +23,7 @@ export function countTimeDifference(now: number, dateString: string | Date): Tim
   } else if (minutes < 1) {
     return {
       precision: 'seconds',
-      value: Math.floor((diff / 1000) % 60),
+      value: isDetailed ? diff : Math.floor((diff / 1000) % 60),
     };
   }
 

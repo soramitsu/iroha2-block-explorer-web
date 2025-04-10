@@ -4,6 +4,8 @@ export const menu = [
   { i18nKey: 'domains.domains', to: '/domains' },
   { i18nKey: 'accounts.accounts', to: '/accounts' },
   { i18nKey: 'transactions.transactions', to: '/transactions' },
+  // FIXME: uncomment when backend ready
+  // { i18nKey: 'telemetry.telemetry', to: '/telemetry' },
 ];
 
 export const langOptions = [

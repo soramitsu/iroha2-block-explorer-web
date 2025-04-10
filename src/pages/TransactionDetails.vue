@@ -181,9 +181,8 @@ const transaction = computed(() => transactionScope.value?.expose.data);
     }
 
     &-row {
-      margin-top: size(2);
-
       display: flex;
+      margin-top: size(2);
       padding: 0 size(2) 0 size(4);
 
       @include xxs {
@@ -204,7 +203,9 @@ const transaction = computed(() => transactionScope.value?.expose.data);
         gap: size(1);
 
         &-date {
+          display: flex;
           position: relative;
+          gap: size(1);
 
           &:hover .context-tooltip {
             display: flex;
@@ -224,9 +225,6 @@ const transaction = computed(() => transactionScope.value?.expose.data);
               left: size(34);
             }
           }
-
-          gap: size(1);
-          display: flex;
 
           svg {
             width: 16px;

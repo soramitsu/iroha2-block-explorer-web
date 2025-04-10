@@ -170,6 +170,7 @@ const isLoading = computed(() => setup.isLoading);
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 33%;
 
     &-value {
       @include tpg-h2;
@@ -192,8 +193,6 @@ const isLoading = computed(() => setup.isLoading);
         @include tpg-d1;
       }
     }
-
-    width: 33%;
 
     @include md {
       width: 25%;

@@ -100,8 +100,15 @@ hr {
   white-space: nowrap;
 }
 
+.row-text,
+.row-text-monospace {
+  color: theme-color('content-primary');
+}
 .row-text {
   @include tpg-s3;
-  color: theme-color('content-primary');
+}
+
+.row-text-monospace {
+  @include tpg-link1-mono;
 }
 </style>
