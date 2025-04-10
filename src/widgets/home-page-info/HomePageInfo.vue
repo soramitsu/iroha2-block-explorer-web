@@ -70,18 +70,18 @@ const firstSection = computed(() => {
 
 const secondSection = computed(() => {
   return [
-    { value: setup.data?.blocks ?? 0, i18nKey: 'homePage.totalBlocks' },
+    { value: setup.data?.latest_block ?? 0, i18nKey: 'homePage.totalBlocks' },
     { value: setup.data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
     { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
 const setup = setupAsyncData(async () => {
-  const [assets, accounts, domains, { peers, blocks, txs_accepted, txs_rejected }] = await Promise.all([
+  const [assets, accounts, domains, { peers, latest_block, transactions }] = await Promise.all([
     http.fetchAssets(),
     http.fetchAccounts(),
     http.fetchDomains(),
-    http.fetchPeerStatus(),
+    http.fetchNetworkMetrics(),
   ]);
 
   return {
@@ -89,8 +89,8 @@ const setup = setupAsyncData(async () => {
     accounts: accounts.pagination.total_items,
     domains: domains.pagination.total_items,
     nodes: peers + 1,
-    transactions: txs_accepted + txs_rejected,
-    blocks,
+    transactions: transactions.accepted + transactions.rejected,
+    latest_block,
   };
 });
 

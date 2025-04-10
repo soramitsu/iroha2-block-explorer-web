@@ -11,7 +11,7 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { AccountId, AssetDefinitionId } from '@iroha/core/data-model';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import invariant from 'tiny-invariant';
@@ -32,7 +32,7 @@ const accountHashType = computed(() => {
 const domainAccountsHashType = computed(() => {
   if (width.value > HASH_BREAKPOINT) return 'medium';
 
-  if (width.value > XS_WINDOW_SIZE) return 'short';
+  if (width.value > SM_WINDOW_SIZE) return 'short';
 
   return 'two-line';
 });
@@ -182,24 +182,14 @@ function handleAccountRowClick(id: AccountId) {
             <template #header>
               <div class="domain-details__native-assets-list-row">
                 <span class="h-sm">{{ $t('name') }}</span>
-                <span class="h-sm">{{ $t('type') }}</span>
                 <span class="h-sm">{{ $t('mintable') }}</span>
               </div>
             </template>
 
             <template #row="{ item }">
               <div class="domain-details__native-assets-list-row">
-                <div class="domain-details__native-assets-list-row-data">
-                  <span class="row-text">{{ item.id.name.value }}</span>
-                </div>
-
-                <div class="domain-details__native-assets-list-row-data">
-                  <span class="row-text">{{ item.type }}</span>
-                </div>
-
-                <div class="domain-details__native-assets-list-row-data">
-                  <span class="row-text">{{ item.mintable }}</span>
-                </div>
+                <span class="row-text">{{ item.id.name.value }}</span>
+                <span class="row-text">{{ item.mintable }}</span>
               </div>
             </template>
 
@@ -210,11 +200,6 @@ function handleAccountRowClick(id: AccountId) {
                   <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.toString())}`">
                     {{ item.id.name.value }}
                   </BaseLink>
-                </div>
-
-                <div class="domain-details__native-assets-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('type') }}</span>
-                  <span>{{ item.type }}</span>
                 </div>
 
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
@@ -307,13 +292,19 @@ function handleAccountRowClick(id: AccountId) {
     flex-direction: column;
 
     @include xxs {
-      width: 90vw;
+      width: 85vw;
     }
 
     @include lg {
-      width: 46vw;
+      width: 60%;
     }
 
+    @include xl {
+      width: calc(size(45) + 20vw);
+    }
+    @include xxl {
+      width: calc(size(70) + 10vw);
+    }
     &-information {
       margin-bottom: size(2);
 
@@ -379,11 +370,7 @@ function handleAccountRowClick(id: AccountId) {
         display: grid;
 
         @include md {
-          grid-template-columns: 25vw 25vw 25vw;
-        }
-
-        @include lg {
-          grid-template-columns: 12vw 12vw 12vw;
+          grid-template-columns: size(35) size(20);
         }
       }
     }
@@ -431,11 +418,17 @@ function handleAccountRowClick(id: AccountId) {
     }
 
     @include xxs {
-      width: 90vw;
+      width: 85vw;
     }
 
     @include lg {
-      width: 46vw;
+      width: 60%;
+    }
+    @include xl {
+      width: calc(size(45) + 20vw);
+    }
+    @include xxl {
+      width: calc(size(60) + 10vw);
     }
 
     .content-row {
@@ -453,6 +446,10 @@ function handleAccountRowClick(id: AccountId) {
     &-mobile-row {
       display: flex;
       align-items: center;
+
+      .base-hash {
+        word-break: break-all;
+      }
     }
 
     &-mobile-label {
