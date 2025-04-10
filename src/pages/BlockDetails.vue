@@ -33,9 +33,9 @@ const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(()
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
 const block = computed(() => blockScope.value?.expose.data);
 
-const peerScope = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchPeerStatus));
+const networkMetrics = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchNetworkMetrics));
 
-const totalBlocks = computed(() => peerScope.value.expose.data?.blocks ?? 0);
+const totalBlocks = computed(() => networkMetrics.value.expose.data?.latest_block ?? 0);
 const isNextBlockExists = computed(() => block.value && block.value.height < totalBlocks.value);
 const isPreviousBlockExists = computed(() => block.value && block.value.height > 1);
 

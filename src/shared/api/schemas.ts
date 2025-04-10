@@ -62,10 +62,7 @@ export interface AssetSearchParams extends PaginationParams {
 
 export const Asset = z.object({
   id: AssetIdSchema,
-  value: z.discriminatedUnion('kind', [
-    z.object({ kind: z.literal('Numeric'), value: z.string().transform((value) => BigNumber(value)) }),
-    z.object({ kind: z.literal('Store'), metadata: Metadata }),
-  ]),
+  value: z.string().transform((value) => BigNumber(value)),
 });
 
 export type Asset = z.infer<typeof Asset>;
@@ -77,7 +74,6 @@ export interface AssetDefinitionSearchParams extends PaginationParams {
 
 export const AssetDefinition = z.object({
   id: AssetDefinitionIdSchema,
-  type: z.enum(['Numeric', 'Store']),
   logo: z.string().nullable(),
   assets: z.number(),
   metadata: Metadata,
@@ -139,18 +135,6 @@ export const Block = z.object({
 });
 
 export type Block = z.infer<typeof Block>;
-
-export const PeerStatus = z.object({
-  blocks: z.number(),
-  peers: z.number(),
-  queue_size: z.number(),
-  txs_accepted: z.number(),
-  txs_rejected: z.number(),
-  uptime: Duration,
-  view_changes: z.number(),
-});
-
-export type PeerStatus = z.infer<typeof PeerStatus>;
 
 export const NetworkMetrics = z.object({
   peers: z.number(),

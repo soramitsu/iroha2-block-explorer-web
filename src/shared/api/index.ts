@@ -15,7 +15,6 @@ import {
   AssetDefinition,
   Domain,
   Block,
-  PeerStatus,
   Transaction,
   DetailedTransaction,
   Instruction,
@@ -87,11 +86,6 @@ export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<P
 export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
   const res = await get(`/blocks/${heightOrHash}`);
   return Block.parse(res);
-}
-
-export async function fetchPeerStatus(): Promise<PeerStatus> {
-  const res = await get('/status');
-  return PeerStatus.parse(res);
 }
 
 export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
