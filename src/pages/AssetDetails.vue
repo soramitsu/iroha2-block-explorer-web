@@ -120,10 +120,6 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
               :link="`/domains/${assetDefinitionId.domain.value}`"
             />
             <DataField
-              :title="$t('type')"
-              :value="asset.type"
-            />
-            <DataField
               :title="$t('mintable')"
               :value="asset.mintable"
             />
@@ -163,26 +159,25 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
               <span class="h-sm">{{ $t('name') }}</span>
               <span class="h-sm">{{ $t('domain') }}</span>
               <span class="h-sm">{{ $t('accountId') }}</span>
-              <span class="h-sm">{{ $t('type') }}</span>
               <span class="h-sm">{{ $t('value') }}</span>
             </div>
           </template>
 
           <template #row="{ item }">
             <div class="asset-details__assets-table-list-row">
-              <div class="asset-details__assets-table-list-row-data row-text">
+              <div class="row-text">
                 <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
                   {{ item.id.definition.name.value }}
                 </BaseLink>
               </div>
 
-              <div class="asset-details__assets-table-list-row-data row-text">
+              <div class="row-text">
                 <BaseLink :to="`/domains/${item.id.definition.domain.value}`">
                   {{ item.id.definition.domain.value }}
                 </BaseLink>
               </div>
 
-              <div class="asset-details__assets-table-list-row-data row-text">
+              <div class="row-text">
                 <BaseHash
                   :type="accountIdType"
                   :hash="item.id.account.toString()"
@@ -191,17 +186,8 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
                 />
               </div>
 
-              <div class="asset-details__assets-table-list-row-data row-text">
-                <span>{{ item.value.kind }}</span>
-              </div>
-
-              <div class="asset-details__assets-table-list-row-data row-text">
-                <template v-if="item.value.kind === 'Store'">
-                  🔑: {{ Object.keys(item.value.metadata).length }}
-                </template>
-                <template v-else>
-                  {{ item.value.value }}
-                </template>
+              <div class="row-text">
+                <span>{{ item.value }}</span>
               </div>
             </div>
           </template>
@@ -233,18 +219,8 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
               </div>
 
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
-                <span class="h-sm">{{ $t('type') }}</span>
-                <span>{{ item.value.kind }}</span>
-              </div>
-
-              <div class="asset-details__assets-table-mobile-list-row-data row-text">
                 <span class="h-sm">{{ $t('value') }}</span>
-                <template v-if="item.value.kind === 'Store'">
-                  🔑: {{ Object.keys(item.value.metadata).length }}
-                </template>
-                <template v-else>
-                  {{ item.value.value }}
-                </template>
+                <span>{{ item.value }}</span>
               </div>
             </div>
           </template>
@@ -289,7 +265,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
       }
 
       @include sm {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
       }
     }
   }
@@ -332,11 +308,15 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
         display: grid;
 
         @include lg {
-          grid-template-columns: 15vw 15vw 32vw 15vw 10vw;
+          grid-template-columns: size(25) size(35) size(50) size(10);
         }
 
         @include xl {
-          grid-template-columns: 10vw 15vw 30vw 10vw 10vw;
+          grid-template-columns: size(35) size(40) size(55) size(15);
+        }
+
+        @include xxl {
+          grid-template-columns: size(40) size(45) size(60) size(15);
         }
       }
     }

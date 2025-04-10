@@ -16,7 +16,6 @@
           <span class="h-sm cell">{{ $t('name') }}</span>
           <span class="h-sm cell">{{ $t('domain') }}</span>
           <span class="h-sm cell">{{ $t('mintable') }}</span>
-          <span class="h-sm cell">{{ $t('type') }}</span>
         </div>
       </template>
 
@@ -38,10 +37,6 @@
 
           <div class="cell row-text">
             {{ item.mintable }}
-          </div>
-
-          <div class="cell row-text">
-            {{ item.type }}
           </div>
         </div>
       </template>
@@ -67,11 +62,6 @@
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('mintable') }}</span>
             <span class="row-text">{{ item.mintable }}</span>
-          </div>
-
-          <div class="assets-list-page__mobile-row">
-            <span class="h-sm assets-list-page__mobile-label">{{ $t('type') }}</span>
-            <span class="row-text">{{ item.type }}</span>
           </div>
         </div>
       </template>
@@ -122,7 +112,7 @@ const assets = computed(() => scope.value?.expose.data?.items ?? []);
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     justify-content: start;
   }
 
@@ -146,7 +136,7 @@ const assets = computed(() => scope.value?.expose.data?.items ?? []);
     display: grid;
     grid-template-columns: 1fr;
 
-    @include sm {
+    @include md {
       grid-template-columns: 1fr 1fr;
     }
 

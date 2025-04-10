@@ -16,7 +16,6 @@
   "id": "ID",
   "name": "Name",
   "accountId": "AccountId",
-  "type": "Type",
   "kind": "Kind",
   "payload": "Payload",
   "value": "Value",

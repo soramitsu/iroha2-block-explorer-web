@@ -177,29 +177,14 @@ function handleDomainRowClick(id: string) {
             <template #header>
               <div class="account-details__personal-owned-list-row">
                 <span class="h-sm">{{ $t('name') }}</span>
-                <span class="h-sm">{{ $t('type') }}</span>
                 <span class="h-sm">{{ $t('value') }}</span>
               </div>
             </template>
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
-                <div class="account-details__personal-owned-list-row-data">
-                  <span class="row-text">{{ item.id.definition.name.value }}</span>
-                </div>
-
-                <div class="account-details__personal-owned-list-row-data">
-                  <span class="row-text">{{ item.value.kind }}</span>
-                </div>
-
-                <div class="account-details__personal-owned-list-row-data row-text">
-                  <template v-if="item.value.kind === 'Store'">
-                    🔑: {{ Object.keys(item.value.metadata).length }}
-                  </template>
-                  <template v-else>
-                    {{ item.value.value }}
-                  </template>
-                </div>
+                <span class="row-text">{{ item.id.definition.name.value }}</span>
+                <span class="row-text">{{ item.value }}</span>
               </div>
             </template>
 
@@ -213,18 +198,8 @@ function handleDomainRowClick(id: string) {
                 </div>
 
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
-                  <span class="h-sm">{{ $t('type') }}</span>
-                  <span>{{ item.value.kind }}</span>
-                </div>
-
-                <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('value') }}</span>
-                  <template v-if="item.value.kind === 'Store'">
-                    🔑: {{ Object.keys(item.value.metadata).length }}
-                  </template>
-                  <template v-else>
-                    {{ item.value.value }}
-                  </template>
+                  <span>{{ item.value }}</span>
                 </div>
               </div>
             </template>
@@ -265,17 +240,9 @@ function handleDomainRowClick(id: string) {
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
-                <div class="account-details__personal-owned-list-row-data">
-                  <span class="row-text">{{ item.id }}</span>
-                </div>
-
-                <div class="account-details__personal-owned-list-row-data">
-                  <span class="row-text">{{ item.assets }}</span>
-                </div>
-
-                <div class="account-details__personal-owned-list-row-data">
-                  <span class="row-text">{{ item.accounts }}</span>
-                </div>
+                <span class="row-text">{{ item.id }}</span>
+                <span class="row-text">{{ item.assets }}</span>
+                <span class="row-text">{{ item.accounts }}</span>
               </div>
             </template>
 
@@ -428,7 +395,10 @@ function handleDomainRowClick(id: string) {
           }
 
           @include lg {
-            grid-template-columns: 12vw 12vw 12vw;
+            grid-template-columns: size(25) size(18) size(18);
+          }
+          @include xl {
+            grid-template-columns: size(35) size(20) size(20);
           }
         }
       }
