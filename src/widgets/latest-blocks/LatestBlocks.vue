@@ -25,7 +25,7 @@
             @click="handleRowClick(block.height)"
             @keydown.enter.space="handleRowClick(block.height)"
           >
-            <span class="row-text">{{ block.height }}</span>
+            <span class="row-text">{{ `${block.transactions_hash ? '◉' : 'O'} ${block.height}` }}</span>
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
