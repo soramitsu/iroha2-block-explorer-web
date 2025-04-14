@@ -32,6 +32,7 @@ const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(()
 
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
 const block = computed(() => blockScope.value?.expose.data);
+const isBlockEmpty = computed(() => !block.value?.transactions_hash);
 
 const networkMetrics = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchNetworkMetrics));
 
@@ -131,7 +132,7 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
 
               <DataField
                 :title="$t('blocks.merkleRootHash')"
-                :hash="block.transactions_hash"
+                :value="block.transactions_hash"
                 :type="metricsHashType"
               />
             </div>
@@ -145,11 +146,17 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
     >
       <template #default>
         <TransactionsTable
-          v-if="block"
+          v-if="block && !isBlockEmpty"
           show-authority
           :filter-by="{ kind: 'block', value: block.height }"
           :hash-type
         />
+        <span
+          v-else-if="!isBlockLoading && isBlockEmpty"
+          class="block-details__transactions_empty row-text"
+        >{{
+          $t('blocks.thisBlockIsEmpty')
+        }}</span>
       </template>
     </BaseContentBlock>
   </div>
@@ -230,6 +237,10 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
 
   &__transactions hr {
     display: none;
+  }
+
+  &__transactions_empty {
+    margin-left: size(4);
   }
 }
 </style>

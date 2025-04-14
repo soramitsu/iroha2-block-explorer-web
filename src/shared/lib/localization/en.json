@@ -129,7 +129,8 @@
     "totalAndRejectedTransactions": "{0} ({1} rejected)",
     "totalTransactions": "Total transactions",
     "rejectedTransactions": "Rejected transactions",
-    "merkleRootHash": "Transaction's Merkle Root Hash"
+    "merkleRootHash": "Transaction's Merkle Root Hash",
+    "thisBlockIsEmpty": "This block is empty"
   },
   "domains": {
     "domains": "Domains",
