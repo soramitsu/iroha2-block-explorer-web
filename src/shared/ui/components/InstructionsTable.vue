@@ -11,11 +11,11 @@ import {
   type filterTransactionsModel as ftm,
   InstructionTypeFilter,
   TransactionStatusFilter,
-} from '@/features/filter-transactions';
+} from '@/features/filter/transactions';
 import {
   ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS,
   INSTRUCTIONS_ADAPTIVE_OPTIONS,
-} from '@/features/filter-transactions/adaptive-options';
+} from '@/features/filter/transactions/adaptive-options';
 import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import { objectOmit } from '@vueuse/shared';

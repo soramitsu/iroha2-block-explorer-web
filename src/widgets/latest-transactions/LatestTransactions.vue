@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import TimeIcon from '@/shared/ui/icons/clock.svg';
-import { TransactionStatusFilter } from '@/features/filter-transactions';
+import { TransactionStatusFilter } from '@/features/filter/transactions';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';

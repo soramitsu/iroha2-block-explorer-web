@@ -6,7 +6,7 @@ import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import type { TransactionSearchParams } from '@/shared/api/schemas';
 import type { AccountId } from '@iroha/core/data-model';
-import { TransactionStatusFilter } from '@/features/filter-transactions';
+import { TransactionStatusFilter } from '@/features/filter/transactions';
 import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import { useParamScope } from '@vue-kakuyaku/core';
