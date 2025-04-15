@@ -15,6 +15,7 @@
     >
       <template #header>
         <div class="blocks-list-page__row">
+          <span class="h-sm cell" />
           <span class="h-sm cell">{{ $t('blocks.height') }}</span>
           <span class="h-sm cell">{{ $t('blocks.age') }}</span>
           <span class="h-sm cell">{{ $t('blocks.hash') }}</span>
@@ -24,6 +25,7 @@
 
       <template #row="{ item }">
         <div class="blocks-list-page__row">
+          <span class="row-text">{{ item.transactions_hash ? '◉' : 'O' }}</span>
           <BaseLink
             :to="`/blocks/${item.height}`"
             class="cell"
@@ -54,6 +56,10 @@
 
       <template #mobile-card="{ item }">
         <div class="blocks-list-page__mobile-card">
+          <span
+            class="row-text"
+            :style="{ 'margin-left': '8px' }"
+          >{{ item.transactions_hash ? '◉' : 'O' }}</span>
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('blocks.height') }}</span>
 
@@ -147,10 +153,10 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
     display: grid;
     justify-content: start;
     @include lg {
-      grid-template-columns: 130px 225px 300px 150px;
+      grid-template-columns: 20px 130px 225px 300px 150px;
     }
     @include xl {
-      grid-template-columns: 130px 230px 640px 150px;
+      grid-template-columns: 20px 130px 230px 640px 150px;
     }
 
     &-time {

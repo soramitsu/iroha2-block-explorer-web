@@ -129,7 +129,7 @@ export const Block = z.object({
   height: z.number(),
   created_at: z.coerce.date(),
   prev_block_hash: z.string().nullable(),
-  transactions_hash: z.string(),
+  transactions_hash: z.string().nullable(),
   transactions_rejected: z.number(),
   transactions_total: z.number(),
 });
