@@ -17,14 +17,19 @@ const routes = [
     component: () => import('@/pages/BlockDetails.vue'),
   },
   {
-    path: '/assets-list',
+    path: '/digital-assets',
     name: 'assets-list',
     component: () => import('@/pages/AssetsList.vue'),
   },
   {
-    path: '/assets-list/:id',
+    path: '/asset-details/:id',
     name: 'asset-details',
     component: () => import('@/pages/AssetDetails.vue'),
+  },
+  {
+    path: '/nft-details/:id',
+    name: 'nft-details',
+    component: () => import('@/pages/NFTDetails.vue'),
   },
   {
     path: '/accounts',
