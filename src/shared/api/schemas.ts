@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import BigNumber from 'bignumber.js';
-import { AssetDefinitionId, AccountId, AssetId } from '@iroha/core/data-model';
+import { AssetDefinitionId, AccountId, AssetId, NftId } from '@iroha/core/data-model';
 
 const Pagination = z.object({
   page: z.number(),
@@ -41,6 +41,8 @@ export const AssetDefinitionIdSchema = z.string().transform(AssetDefinitionId.pa
 
 export const AssetIdSchema = z.string().transform(AssetId.parse);
 
+export const NftIdSchema = z.string().transform(NftId.parse);
+
 export interface AccountSearchParams extends PaginationParams {
   domain?: string
   with_asset?: AssetDefinitionId
@@ -50,6 +52,7 @@ export const Account = z.object({
   id: AccountIdSchema,
   metadata: Metadata,
   owned_assets: z.number(),
+  owned_nfts: z.number(),
   owned_domains: z.number(),
 });
 
@@ -83,6 +86,16 @@ export const AssetDefinition = z.object({
 
 export type AssetDefinition = z.infer<typeof AssetDefinition>;
 
+export const NFT = z.object({
+  id: NftIdSchema,
+  owned_by: AccountIdSchema,
+  content: z.record(z.string(), z.any()),
+});
+
+export type NFT = z.infer<typeof NFT>;
+
+export type NFTsSearchParams = AssetDefinitionSearchParams;
+
 export interface DomainSearchParams extends PaginationParams {
   owned_by?: AccountId
 }
@@ -94,6 +107,7 @@ export const Domain = z.object({
   owned_by: AccountIdSchema,
   accounts: z.number(),
   assets: z.number(),
+  nfts: z.number(),
 });
 
 export type Domain = z.infer<typeof Domain>;

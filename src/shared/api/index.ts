@@ -6,8 +6,9 @@ import type {
   AssetDefinitionSearchParams,
   InstructionsSearchParams,
   DomainSearchParams,
+  NFTsSearchParams,
 } from '@/shared/api/schemas';
-import type { AccountId, AssetDefinitionId, AssetId } from '@iroha/core/data-model';
+import type { AccountId, AssetDefinitionId, AssetId, NftId } from '@iroha/core/data-model';
 import {
   Account,
   Paginated,
@@ -21,6 +22,7 @@ import {
   NetworkMetrics,
   PeerInfo,
   PeerMetrics,
+  NFT,
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
 import { computed } from 'vue';
@@ -66,6 +68,16 @@ export async function fetchAssetDefinitions(params?: AssetDefinitionSearchParams
 export async function fetchAssetDefinition(id: AssetDefinitionId): Promise<AssetDefinition> {
   const res = await get(`/assets-definitions/${encodeURIComponent(id.toString())}`);
   return AssetDefinition.parse(res);
+}
+
+export async function fetchNFTs(params?: NFTsSearchParams): Promise<Paginated<NFT>> {
+  const res = await get('/nfts', params);
+  return Paginated(NFT).parse(res);
+}
+
+export async function fetchNFTById(id: NftId): Promise<NFT> {
+  const res = await get(`/nfts/${encodeURIComponent(id.toString())}`);
+  return NFT.parse(res);
 }
 
 export async function fetchDomains(params?: DomainSearchParams): Promise<Paginated<Domain>> {
