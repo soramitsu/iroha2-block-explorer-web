@@ -15,7 +15,7 @@
     "format:fix": "prettier-eslint '{**/*,*}.{vue,js,ts,jsx,tsx,md,css,scss,sass}'  --write"
   },
   "dependencies": {
-    "@iroha/core": "npm:@jsr/iroha__core@^0.3.1",
+    "@iroha/core": "npm:@jsr/iroha__core@^0.4.0-beta.1",
     "@ngneat/falso": "^6.1.0",
     "@soramitsu-ui/icons": "^0.1.0",
     "@vue-kakuyaku/core": "^0.4.3",
