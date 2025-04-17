@@ -32,7 +32,7 @@
           />
 
           <span class="row-text">{{ item.owned_domains }}</span>
-          <span class="row-text">{{ item.owned_assets }}</span>
+          <span class="row-text">{{ item.owned_assets + item.owned_nfts }}</span>
         </div>
       </template>
 
@@ -55,7 +55,7 @@
 
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('assets.assets') }}</span>
-            <span class="row-text">{{ item.owned_assets }}</span>
+            <span class="row-text">{{ item.owned_assets + item.owned_nfts }}</span>
           </div>
         </div>
       </template>
@@ -70,7 +70,7 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import { useWindowSize } from '@vueuse/core';
 import { computed, reactive, watch } from 'vue';
-import { SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
+import { SM_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { AccountId } from '@iroha/core/data-model';
@@ -84,8 +84,6 @@ const hashType = computed(() => {
   if (width.value > HASH_BREAKPOINT) return 'full';
 
   if (width.value > SM_WINDOW_SIZE) return 'medium';
-
-  if (width.value > XS_WINDOW_SIZE) return 'short';
 
   return 'two-line';
 });
