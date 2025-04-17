@@ -37,7 +37,7 @@
           />
 
           <span class="row-text">{{ item.accounts }}</span>
-          <span class="row-text">{{ item.assets }}</span>
+          <span class="row-text">{{ item.assets + item.nfts }}</span>
         </div>
       </template>
 
@@ -67,7 +67,7 @@
           </div>
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAssets') }}</span>
-            <span class="row-text">{{ item.assets }}</span>
+            <span class="row-text">{{ item.assets + item.nfts }}</span>
           </div>
         </div>
       </template>
