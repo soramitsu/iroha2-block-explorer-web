@@ -12,12 +12,12 @@ const props = withDefaults(
     link?: string
     copy?: boolean
     type?: 'full' | 'medium' | 'short' | 'two-line'
-    metadata?: boolean
+    metadata?: { display: 'short' | 'full' } | null
     tooltip?: string
   }>(),
   {
     type: 'full',
-    metadata: false,
+    metadata: null,
   }
 );
 </script>
@@ -42,6 +42,7 @@ const props = withDefaults(
       </BaseLink>
       <BaseJson
         v-else-if="value && metadata"
+        :full="metadata.display === 'full'"
         :value="value as Record<string, any>"
       />
       <span

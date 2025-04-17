@@ -125,7 +125,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
             />
             <DataField
               :title="$t('metadata')"
-              metadata
+              :metadata="{ display: 'short' }"
               :value="parseMetadata(asset.metadata)"
             />
           </div>
@@ -166,7 +166,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
           <template #row="{ item }">
             <div class="asset-details__assets-table-list-row">
               <div class="row-text">
-                <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
+                <BaseLink :to="`/asset-details/${encodeURIComponent(item.id.definition.toString())}`">
                   {{ item.id.definition.name.value }}
                 </BaseLink>
               </div>
@@ -196,7 +196,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
             <div class="asset-details__assets-table-mobile-list-row">
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
                 <span class="h-sm">{{ $t('name') }}</span>
-                <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
+                <BaseLink :to="`/asset-details/${encodeURIComponent(item.id.definition.toString())}`">
                   {{ item.id.definition.name.value }}
                 </BaseLink>
               </div>
