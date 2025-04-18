@@ -118,7 +118,8 @@
     "ownedBy": "Owned By",
     "assetHolders": "Asset holders",
     "assetDoesntContainAnyInstances": "Asset doesn't contain any instances",
-    "nfts": "NFTs"
+    "nfts": "NFTs",
+    "numerics": "Assets"
   },
   "blocks": {
     "age": "Age",
