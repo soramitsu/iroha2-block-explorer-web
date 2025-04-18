@@ -13,10 +13,11 @@ import { useI18n } from 'vue-i18n';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useWindowSize } from '@vueuse/core';
 import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE } from '@/shared/ui/consts';
+import { useRouter } from 'vue-router';
 
 const { t } = useI18n();
-
 const { width } = useWindowSize();
+const router = useRouter();
 
 const hashType = computed(() => {
   if (width.value >= LG_WINDOW_SIZE) return 'full';
@@ -33,8 +34,14 @@ const listState = reactive({
   per_page: 10,
 });
 
-const assetsTab = ref<TabAssets>('assets');
-const isCryptoAssetsSelected = computed(() => assetsTab.value === 'assets');
+const isCryptoAssetsSelected = computed(() => router.currentRoute.value.name === 'assets-list');
+const assetsTab = ref<TabAssets>(isCryptoAssetsSelected.value ? 'assets' : 'nft');
+
+watch(assetsTab, () => {
+  if (assetsTab.value === 'nft') router.push('/nfts-list');
+  else router.push('/assets-list');
+});
+
 const tableTitle = computed(() => {
   if (isCryptoAssetsSelected.value) return t('assets.assets');
 
