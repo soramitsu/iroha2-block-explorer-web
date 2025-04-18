@@ -58,8 +58,8 @@ const domainAssets = computed(() => domain.value?.assets ?? 0);
 const domainNFTs = computed(() => domain.value?.nfts ?? 0);
 const domainAccounts = computed(() => domain.value?.accounts ?? 0);
 
-const assetsTab = ref<TabAssets>('crypto');
-const isCryptoAssetsSelected = computed(() => assetsTab.value === 'crypto');
+const assetsTab = ref<TabAssets>('assets');
+const isCryptoAssetsSelected = computed(() => assetsTab.value === 'assets');
 
 const assetsListState = reactive({
   page: 1,

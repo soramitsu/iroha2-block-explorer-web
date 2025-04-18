@@ -81,8 +81,8 @@ const isDomainsLoading = computed(() => !!domainsScope.value?.expose.isLoading);
 const totalDomains = computed(() => domainsScope.value?.expose?.data?.pagination?.total_items ?? 0);
 const domains = computed(() => domainsScope.value?.expose?.data?.items ?? []);
 
-const assetsTab = ref<TabAssets>('crypto');
-const isCryptoAssetsSelected = computed(() => assetsTab.value === 'crypto');
+const assetsTab = ref<TabAssets>('assets');
+const isCryptoAssetsSelected = computed(() => assetsTab.value === 'assets');
 
 const assetsListState = reactive({
   page: 1,

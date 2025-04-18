@@ -33,8 +33,8 @@ const listState = reactive({
   per_page: 10,
 });
 
-const assetsTab = ref<TabAssets>('crypto');
-const isCryptoAssetsSelected = computed(() => assetsTab.value === 'crypto');
+const assetsTab = ref<TabAssets>('assets');
+const isCryptoAssetsSelected = computed(() => assetsTab.value === 'assets');
 const tableTitle = computed(() => {
   if (isCryptoAssetsSelected.value) return t('assets.assets');
 
