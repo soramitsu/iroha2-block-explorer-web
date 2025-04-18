@@ -89,7 +89,7 @@ export type AssetDefinition = z.infer<typeof AssetDefinition>;
 export const NFT = z.object({
   id: NftIdSchema,
   owned_by: AccountIdSchema,
-  content: z.record(z.string(), z.any()),
+  content: Metadata,
 });
 
 export type NFT = z.infer<typeof NFT>;
@@ -128,7 +128,7 @@ export const Transaction = z.object({
 });
 
 export const DetailedTransaction = Transaction.extend({
-  rejection_reason: z.record(z.string(), z.any()).nullable(),
+  rejection_reason: Metadata.nullable(),
   metadata: Metadata,
   nonce: z.number().nullable(),
   signature: z.string(),
@@ -229,7 +229,7 @@ export const Instruction = z.object({
   created_at: z.coerce.date(),
   kind: InstructionKind,
   // TODO: add payload schemas for every kind
-  payload: z.union([z.record(z.string(), z.any()), z.string()]),
+  payload: z.union([Metadata, z.string()]),
   transaction_hash: z.string(),
   transaction_status: TransactionStatus,
   block: z.number(),
