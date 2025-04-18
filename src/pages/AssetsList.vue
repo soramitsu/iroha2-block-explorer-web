@@ -175,7 +175,7 @@ watch([() => listState.per_page, () => assetsTab.value], () => {
             :to="`/nft-details/${encodeURIComponent(item.id.toString())}`"
             class="cell"
           >
-            {{ item.id.name.value }}
+            {{ item.id.toString() }}
           </BaseLink>
 
           <BaseHash
@@ -194,7 +194,7 @@ watch([() => listState.per_page, () => assetsTab.value], () => {
             <span class="h-sm nfts-list-page__mobile-label">{{ $t('name') }}</span>
 
             <BaseLink :to="`/nft-details/${encodeURIComponent(item.id.toString())}`">
-              {{ item.id.name.value }}
+              {{ item.id.toString() }}
             </BaseLink>
           </div>
 

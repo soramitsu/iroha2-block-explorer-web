@@ -269,7 +269,7 @@ const assetsSection = computed(() => {
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-nft-list-row">
-                <span class="row-text">{{ item.id.name.value }}</span>
+                <span class="row-text">{{ item.id.toString() }}</span>
               </div>
             </template>
 
@@ -278,7 +278,7 @@ const assetsSection = computed(() => {
                 <div class="account-details__personal-owned-nft-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
                   <BaseLink :to="`/nft-details/${encodeURIComponent(item.id.toString())}`">
-                    {{ item.id.name.value }}
+                    {{ item.id.toString() }}
                   </BaseLink>
                 </div>
               </div>
