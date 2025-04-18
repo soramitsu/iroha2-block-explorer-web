@@ -4,6 +4,7 @@
       v-for="(item, i) in translatedMenu"
       :key="i"
       :to="item.to"
+      :class="{ 'base-button_active': item.names.includes(String(router.currentRoute.value.name)) }"
     >
       {{ item.label }}
     </BaseButton>
@@ -15,7 +16,9 @@ import { menu } from '@/shared/config';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const { t } = useI18n();
 
 const translatedMenu = computed(() => menu.map((item) => ({ ...item, label: t(item.i18nKey) })));
