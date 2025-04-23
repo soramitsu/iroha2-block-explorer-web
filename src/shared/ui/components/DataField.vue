@@ -3,7 +3,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
-import {HashType} from "@/shared/ui/composables/useAdaptiveHash";
+import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
 
 const props = withDefaults(
   defineProps<{

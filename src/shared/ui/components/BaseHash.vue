@@ -30,7 +30,7 @@ import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useNotifications } from '@/shared/ui/composables/notifications';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import {HashType} from "@/shared/ui/composables/useAdaptiveHash";
+import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
 
 interface Props {
   hash: string
