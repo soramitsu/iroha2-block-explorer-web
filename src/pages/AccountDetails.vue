@@ -15,23 +15,17 @@ import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import type { AssetId, NftId } from '@iroha/core/data-model';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
-import { useWindowSize } from '@vueuse/core';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { TabAssets } from '@/features/filter/assets/model';
 import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
 import { useI18n } from 'vue-i18n';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const { t } = useI18n();
 const router = useRouter();
-const { width } = useWindowSize();
 
-const hashType = computed(() => {
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
+const hashType = useAdaptiveHash({ xs: 'short', xxs: 'short' }, 'medium');
 
 const accountId = computed(() => {
   const id = router.currentRoute.value.params['id'];

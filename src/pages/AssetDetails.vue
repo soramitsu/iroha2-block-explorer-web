@@ -7,39 +7,17 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { AssetDefinitionIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import { useWindowSize } from '@vueuse/core';
-import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const router = useRouter();
 
-const HASH_BREAKPOINT = 1000;
-
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'full';
-
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
-
-const accountIdType = computed(() => {
-  if (width.value >= LG_WINDOW_SIZE) return 'medium';
-
-  if (width.value >= MD_WINDOW_SIZE) return 'short';
-
-  if (width.value >= SM_WINDOW_SIZE) return 'medium';
-
-  if (width.value >= XS_WINDOW_SIZE) return 'short';
-
-  return 'two-line';
-});
+const hashType = useAdaptiveHash({ md: 'medium', sm: 'medium', xs: 'medium', xxs: 'short' }, 'full');
+const accountIdType = useAdaptiveHash({ md: 'short', xs: 'short', xxs: 'two-line' }, 'medium');
 
 const assetDefinitionId = computed(() => {
   const id = router.currentRoute.value.params['id'];

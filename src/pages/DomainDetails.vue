@@ -6,12 +6,10 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import type { AccountId, AssetDefinitionId, NftId } from '@iroha/core/data-model';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import invariant from 'tiny-invariant';
@@ -19,28 +17,13 @@ import type { TabAssets } from '@/features/filter/assets/model';
 import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
 import { useI18n } from 'vue-i18n';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const { t } = useI18n();
 const router = useRouter();
 
-const HASH_BREAKPOINT = 960;
-const { width } = useWindowSize();
-
-const accountHashType = computed(() => {
-  if (width.value > MD_WINDOW_SIZE && width.value < LG_WINDOW_SIZE) return 'full';
-
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
-
-const domainAccountsHashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'medium';
-
-  if (width.value > SM_WINDOW_SIZE) return 'short';
-
-  return 'two-line';
-});
+const accountHashType = useAdaptiveHash({ xs: 'short', xxs: 'short' }, 'medium');
+const domainAccountsHashType = useAdaptiveHash({ sm: 'short', xs: 'two-line', xxs: 'two-line' }, 'medium');
 
 const domainId = computed(() => {
   const id = router.currentRoute.value.params['id'];

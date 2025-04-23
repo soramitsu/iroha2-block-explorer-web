@@ -2,35 +2,23 @@
 import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, reactive, watch } from 'vue';
+import { reactive, watch } from 'vue';
 import { formatNumber } from '@/shared/ui/utils/formatters';
 import type { PeerInfo, PeerMetrics } from '@/shared/api/schemas';
 import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useIntervalFn } from '@vueuse/shared';
-import { useAsyncState, useWindowSize } from '@vueuse/core';
+import { useAsyncState } from '@vueuse/core';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
 import { streamPeerMetrics } from '@/shared/api';
 import invariant from 'tiny-invariant';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const { handleUnknownError } = useErrorHandlers();
 
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value >= LG_WINDOW_SIZE) return 'medium';
-
-  if (width.value >= MD_WINDOW_SIZE) return 'short';
-
-  if (width.value >= SM_WINDOW_SIZE) return 'medium';
-
-  if (width.value >= XS_WINDOW_SIZE) return 'short';
-
-  return 'short';
-});
+const hashType = useAdaptiveHash({ md: 'short', xs: 'short', xxs: 'short' }, 'medium');
 
 interface PeerData {
   metrics: null | PeerMetrics

@@ -22,11 +22,12 @@ import { objectOmit } from '@vueuse/shared';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
 
 const { t } = useI18n();
 const props = defineProps<{
   showValue?: boolean
-  hashType: 'short' | 'full'
+  hashType: HashType
   filterBy: { kind: 'authority', value: AccountId } | { kind: 'transaction', value: string }
 }>();
 

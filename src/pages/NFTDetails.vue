@@ -7,22 +7,13 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { NftIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import { useWindowSize } from '@vueuse/core';
-import { LG_WINDOW_SIZE, SM_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const router = useRouter();
 
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value >= LG_WINDOW_SIZE) return 'full';
-
-  if (width.value >= SM_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
+const hashType = useAdaptiveHash({ md: 'medium', sm: 'medium', xs: 'short', xxs: 'short' }, 'full');
 
 const NFTId = computed(() => {
   const id = router.currentRoute.value.params['id'];

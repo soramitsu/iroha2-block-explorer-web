@@ -30,12 +30,13 @@ import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useNotifications } from '@/shared/ui/composables/notifications';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import {HashType} from "@/shared/ui/composables/useAdaptiveHash";
 
 interface Props {
   hash: string
   link?: string
   copy?: boolean
-  type: 'full' | 'medium' | 'short' | 'two-line'
+  type: HashType
 }
 
 const props = defineProps<Props>();

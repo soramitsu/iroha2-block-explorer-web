@@ -3,6 +3,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
+import {HashType} from "@/shared/ui/composables/useAdaptiveHash";
 
 const props = withDefaults(
   defineProps<{
@@ -11,7 +12,7 @@ const props = withDefaults(
     hash?: string
     link?: string
     copy?: boolean
-    type?: 'full' | 'medium' | 'short' | 'two-line'
+    type?: HashType
     metadata?: { display: 'short' | 'full' } | null
     tooltip?: string
   }>(),

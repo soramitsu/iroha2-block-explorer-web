@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router';
 import { computed } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { getLocalTime, getUTCTime } from '@/shared/lib/time';
@@ -12,13 +11,11 @@ import invariant from 'tiny-invariant';
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const router = useRouter();
 
-const METRICS_HASH_BREAKPOINT = 800;
-const { width } = useWindowSize();
-
-const metricsHashType = computed(() => (width.value < METRICS_HASH_BREAKPOINT ? 'medium' : 'full'));
+const metricsHashType = useAdaptiveHash({ sm: 'short', xs: 'short', xxs: 'short' }, 'full');
 
 const blockHeightOrHash = computed(() => {
   const heightOrHash = router.currentRoute.value.params['heightOrHash'];
@@ -52,9 +49,7 @@ function handleNextBlockClick() {
   router.push({ name: 'blocks-details', params: { heightOrHash: block.value.height + 1 } });
 }
 
-const TRANSACTIONS_HASH_BREAKPOINT = 1440;
-
-const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 'short' : 'full'));
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
 </script>
 
 <template>

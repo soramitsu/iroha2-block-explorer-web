@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router';
 import { computed } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import invariant from 'tiny-invariant';
@@ -12,27 +11,17 @@ import { TransactionStatus } from '@/entities/transaction';
 import { getLocalTime, getUTCTime } from '@/shared/lib/time';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
-import { LG_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const router = useRouter();
 
-const HASH_BREAKPOINT = 1100;
-const SIGNATURE_HASH_BREAKPOINT = 1400;
-const { width } = useWindowSize();
-
-const transactionHashType = computed(() => (width.value < LG_WINDOW_SIZE ? 'medium' : 'full'));
-const signatureHashType = computed(() => (width.value < SIGNATURE_HASH_BREAKPOINT ? 'medium' : 'full'));
-const instructionHashType = computed(() => (width.value < XL_WINDOW_SIZE ? 'short' : 'full'));
-const accountIdHashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'full';
-
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
+const transactionHashType = useAdaptiveHash({ xxl: 'full', xl: 'full', lg: 'full' }, 'medium');
+const signatureHashType = useAdaptiveHash({ xxl: 'full', xl: 'full' }, 'medium');
+const instructionHashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
+const accountIdHashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xxs: 'short' }, 'medium');
 
 const txHash = computed(() => {
   const hash = router.currentRoute.value.params['hash'];

@@ -81,23 +81,12 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { useWindowSize } from '@vueuse/core';
 import { computed, reactive, watch } from 'vue';
-import { MD_WINDOW_SIZE, SM_WINDOW_SIZE, XL_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value >= XL_WINDOW_SIZE) return 'full';
-
-  if (width.value > SM_WINDOW_SIZE && width.value < MD_WINDOW_SIZE) return 'medium';
-
-  if (width.value > XS_WINDOW_SIZE) return 'short';
-
-  return 'two-line';
-});
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', sm: 'medium', xxs: 'two-line' });
 
 const listState = reactive({
   page: 1,

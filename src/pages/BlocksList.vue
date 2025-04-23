@@ -110,12 +110,9 @@ import { computed, reactive, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
-import { useWindowSize } from '@vueuse/core';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
-const { width } = useWindowSize();
-
-const HASH_BREAKPOINT = 1440;
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' }, 'medium');
 
 const listState = reactive({
   page: 0,

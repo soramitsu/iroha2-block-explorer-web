@@ -68,25 +68,16 @@ import * as http from '@/shared/api';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useWindowSize } from '@vueuse/core';
 import { computed, reactive, watch } from 'vue';
-import { SM_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { AccountId } from '@iroha/core/data-model';
 import { useRouter } from 'vue-router';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
-const HASH_BREAKPOINT = 1300;
-const { width } = useWindowSize();
 const router = useRouter();
 
-const hashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'full';
-
-  if (width.value > SM_WINDOW_SIZE) return 'medium';
-
-  return 'two-line';
-});
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xs: 'two-line', xxs: 'two-line' }, 'medium');
 
 const listState = reactive({
   page: 1,

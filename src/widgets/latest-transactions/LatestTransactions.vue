@@ -71,11 +71,10 @@ import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import * as http from '@/shared/api';
-import { useWindowSize } from '@vueuse/core';
-import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const listState = reactive({
   per_page: 5,
@@ -102,19 +101,7 @@ const scope = useParamScope(
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const transactions = computed(() => scope.value?.expose.data?.items ?? []);
 
-const HASH_BREAKPOINT = 1300;
-
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'medium';
-
-  if (width.value > LG_WINDOW_SIZE) return 'short';
-
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
+const hashType = useAdaptiveHash({ lg: 'short', xxs: 'short' }, 'medium');
 </script>
 
 <style lang="scss">

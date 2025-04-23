@@ -11,23 +11,21 @@ import type { TabAssets } from '@/features/filter/assets/model';
 import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
 import { useI18n } from 'vue-i18n';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { useWindowSize } from '@vueuse/core';
-import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useRouter } from 'vue-router';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
 const { t } = useI18n();
-const { width } = useWindowSize();
 const router = useRouter();
 
-const hashType = computed(() => {
-  if (width.value >= LG_WINDOW_SIZE) return 'full';
-
-  if (width.value < LG_WINDOW_SIZE && width.value >= MD_WINDOW_SIZE) return 'short';
-
-  if (width.value > SM_WINDOW_SIZE) return 'medium';
-
-  return 'two-line';
-});
+const hashType = useAdaptiveHash(
+  {
+    md: 'short',
+    sm: 'medium',
+    xxs: 'two-line',
+    xs: 'two-line',
+  },
+  'full'
+);
 
 const listState = reactive({
   page: 1,
