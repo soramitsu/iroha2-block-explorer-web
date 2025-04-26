@@ -1,7 +1,6 @@
-@import './theme';
-@import './shadows';
-@import './typography';
-@import './breakpoints';
+@forward './theme';
+@forward './typography';
+@forward './breakpoints';
 
 $header-height: 120px;
 $header-height-landscape-mobile: 100px;
