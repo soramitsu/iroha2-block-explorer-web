@@ -231,7 +231,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .asset-details {
   display: flex;

@@ -29,7 +29,7 @@ const slots = defineSlots();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .base-content-block {
   background: theme-color('surface');

@@ -58,7 +58,7 @@ const model = useVModel(props, 'modelValue', emit);
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .base-dropdown-window {
   background: theme-color('background');

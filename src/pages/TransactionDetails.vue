@@ -158,7 +158,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .transaction-details {
   display: flex;

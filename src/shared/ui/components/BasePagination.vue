@@ -187,7 +187,7 @@ const shouldShowNextArrow = computed(
 </template>
 
 <style scoped lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .base-pagination {
   z-index: 0;

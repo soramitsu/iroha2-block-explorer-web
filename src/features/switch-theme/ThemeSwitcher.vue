@@ -35,7 +35,7 @@ function toggleTheme() {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 body.theme-transition * {
   transition-property: background, color, fill, border;

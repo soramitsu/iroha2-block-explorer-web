@@ -34,8 +34,8 @@ function countProperties(obj: Record<string, any>) {
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
-@import 'vue-json-pretty/lib/styles.css';
+@use '@/shared/ui/styles/main' as *;
+@use 'vue-json-pretty/lib/styles.css';
 
 .vjs-tree-node:hover {
   background: none;

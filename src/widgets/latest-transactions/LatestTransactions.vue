@@ -118,7 +118,7 @@ const hashType = computed(() => {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .latest-transactions {
   &_loading {

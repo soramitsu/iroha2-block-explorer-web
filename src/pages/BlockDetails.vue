@@ -163,7 +163,7 @@ const hashType = computed(() => (width.value < TRANSACTIONS_HASH_BREAKPOINT ? 's
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .block-details {
   display: flex;
