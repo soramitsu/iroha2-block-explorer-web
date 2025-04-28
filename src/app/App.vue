@@ -21,7 +21,7 @@ import { TheHeader } from '@/widgets/header';
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 html {
   &:not(.dark) {

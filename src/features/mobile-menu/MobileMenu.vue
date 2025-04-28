@@ -50,7 +50,7 @@ const routeModel = computed({
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .mobile-menu {
   @include lg {

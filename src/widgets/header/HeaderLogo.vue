@@ -16,7 +16,7 @@ import IrohaLogo from '@/assets/iroha-logo.png';
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .header-logo {
   width: 140px;

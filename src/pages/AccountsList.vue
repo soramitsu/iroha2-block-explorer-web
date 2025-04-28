@@ -122,7 +122,7 @@ function handleRowClick(id: AccountId) {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .accounts-list-page {
   &__row {

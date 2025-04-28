@@ -1,3 +1,5 @@
+@use 'sass:map';
+
 $neutral-0: #ffffff;
 $neutral-5: #fcfcfc;
 $neutral-10: #f9f9f9;
@@ -287,11 +289,11 @@ $shadow-var-prefix: '--shadow_';
 }
 
 @function theme-color($name) {
-  @if not map-has-key($map: $light-color-map, $key: $name) {
+  @if not map.has-key($map: $light-color-map, $key: $name) {
     @error "There is no such color in light theme: #{inspect($name)}";
   }
 
-  @if not map-has-key($map: $dark-color-map, $key: $name) {
+  @if not map.has-key($map: $dark-color-map, $key: $name) {
     @error "There is no such color in dark theme: #{inspect($name)}";
   }
 
@@ -299,13 +301,61 @@ $shadow-var-prefix: '--shadow_';
 }
 
 @function theme-shadow($name) {
-  @if not map-has-key($map: $light-shadow-map, $key: $name) {
+  @if not map.has-key($map: $light-shadow-map, $key: $name) {
     @error "There is no such shadow in light theme: #{inspect($name)}";
   }
 
-  @if not map-has-key($map: $dark-shadow-map, $key: $name) {
+  @if not map.has-key($map: $dark-shadow-map, $key: $name) {
     @error "There is no such shadow in dark theme: #{inspect($name)}";
   }
 
   @return var(#{$shadow-var-prefix + $name});
+}
+
+@mixin shadow-row() {
+  box-shadow: theme-shadow('row');
+}
+
+@mixin shadow-input() {
+  box-shadow: theme-shadow('input-1'), theme-shadow('input-2'), theme-shadow('input-3');
+}
+
+@mixin shadow-input-active() {
+  box-shadow: theme-shadow('input-active-1'), theme-shadow('input-active-2'), theme-shadow('input-active-3');
+}
+
+@mixin shadow-large-input() {
+  box-shadow: theme-shadow('large-input-1'), theme-shadow('large-input-2');
+}
+
+@mixin shadow-large-input-active() {
+  box-shadow: theme-shadow('large-input-active-1'), theme-shadow('large-input-active-2');
+}
+
+@mixin shadow-block() {
+  box-shadow: theme-shadow('block-1'), theme-shadow('block-2'), theme-shadow('block-3');
+}
+
+@mixin shadow-inner-block() {
+  box-shadow: theme-shadow('inner-block-1'), theme-shadow('inner-block-2'), theme-shadow('inner-block-3');
+}
+
+@mixin shadow-lowered() {
+  box-shadow: theme-shadow('lowered-1'), theme-shadow('lowered-2'), theme-shadow('lowered-3');
+}
+
+@mixin shadow-lowered-active() {
+  box-shadow: theme-shadow('lowered-active-1'), theme-shadow('lowered-active-2'), theme-shadow('lowered-active-3');
+}
+
+@mixin shadow-elevated() {
+  box-shadow: theme-shadow('elevated-1'), theme-shadow('elevated-2'), theme-shadow('elevated-3');
+}
+
+@mixin shadow-elevated-active() {
+  box-shadow: theme-shadow('elevated-active-1'), theme-shadow('elevated-active-2'), theme-shadow('elevated-active-3');
+}
+
+@mixin shadow-notification() {
+  box-shadow: theme-shadow('notification-1'), theme-shadow('notification-2');
 }

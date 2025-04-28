@@ -45,7 +45,7 @@ const { language } = useApplicationLanguage();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .lang-dropdown {
   &__button {

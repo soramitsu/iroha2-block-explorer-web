@@ -38,7 +38,7 @@ defineProps<Props>();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .transaction-status {
   position: relative;

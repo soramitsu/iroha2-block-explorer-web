@@ -87,7 +87,7 @@ function choose(value: string | number) {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .base-dropdown {
   position: relative;

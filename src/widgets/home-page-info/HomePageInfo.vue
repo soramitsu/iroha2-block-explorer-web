@@ -98,7 +98,7 @@ const isLoading = computed(() => setup.isLoading);
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .home-page-info {
   height: 160px;

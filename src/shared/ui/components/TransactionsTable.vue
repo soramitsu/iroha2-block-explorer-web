@@ -145,7 +145,7 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .transactions-table {
   &__row {

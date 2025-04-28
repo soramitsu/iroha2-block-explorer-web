@@ -11,7 +11,7 @@ const props = defineProps<{
 </template>
 
 <style scoped lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .context-tooltip {
   display: none;

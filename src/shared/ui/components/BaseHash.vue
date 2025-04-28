@@ -102,7 +102,7 @@ const content = computed<Content>(() => {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .base-hash {
   display: flex;
