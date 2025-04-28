@@ -71,7 +71,7 @@ const NFT = computed(() => assetScope.value?.expose.data);
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .nft-details {
   display: flex;
