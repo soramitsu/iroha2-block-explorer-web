@@ -105,7 +105,7 @@ const hashType = useAdaptiveHash({ lg: 'short', xxs: 'short' }, 'medium');
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .latest-transactions {
   &_loading {

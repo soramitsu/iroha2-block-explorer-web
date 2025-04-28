@@ -25,7 +25,7 @@ const translatedMenu = computed(() => menu.map((item) => ({ ...item, label: t(it
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .navigation-menu {
   display: none;

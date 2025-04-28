@@ -142,7 +142,7 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .blocks-list-page {
   &__row {

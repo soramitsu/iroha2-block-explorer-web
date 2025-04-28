@@ -158,7 +158,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .block-details {
   display: flex;

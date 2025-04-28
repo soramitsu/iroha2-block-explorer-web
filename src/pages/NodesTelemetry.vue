@@ -262,7 +262,7 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .nodes-telemetry-page {
   display: flex;

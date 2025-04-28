@@ -220,7 +220,7 @@ watch([() => listState.per_page, () => assetsTab.value], () => {
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .assets-list-page,
 .nfts-list-page {

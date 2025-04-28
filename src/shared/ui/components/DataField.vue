@@ -59,7 +59,7 @@ const props = withDefaults(
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .data-field {
   color: theme-color('content-primary');

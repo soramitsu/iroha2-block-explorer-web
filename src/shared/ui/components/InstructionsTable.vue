@@ -197,7 +197,7 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
 </template>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@use '@/shared/ui/styles/main' as *;
 
 .instructions-table {
   &_short {
