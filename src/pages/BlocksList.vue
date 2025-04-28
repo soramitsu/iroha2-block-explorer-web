@@ -176,10 +176,11 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
     align-items: center;
 
     &-time {
+      position: relative;
+
       @include sm {
         width: 58%;
       }
-      position: relative;
 
       &:hover .context-tooltip {
         display: flex;
