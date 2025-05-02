@@ -17,6 +17,7 @@ export default defineConfig({
     globalSetup: 'test-globals.ts',
   },
   build: {
+    assetsDir: 'folder_for_assets',
     target: 'esnext',
   },
   optimizeDeps: {

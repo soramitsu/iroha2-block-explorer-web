@@ -124,11 +124,11 @@ const transactionsTab = ref<TabAccountTransactions>('transactions');
 const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
 
 function handleAssetRowClick(id: AssetId) {
-  router.push(`/assets-list/${encodeURIComponent(id.definition.toString())}`);
+  router.push(`/assets/${encodeURIComponent(id.definition.toString())}`);
 }
 
 function handleNFTRowClick(id: NftId) {
-  router.push(`/nft-details/${encodeURIComponent(id.toString())}`);
+  router.push(`/nfts/${encodeURIComponent(id.toString())}`);
 }
 
 function handleDomainRowClick(id: string) {
@@ -231,7 +231,7 @@ const assetsSection = computed(() => {
               <div class="account-details__personal-owned-mobile-list-row">
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
                     {{ item.id.definition.name.value }}
                   </BaseLink>
                 </div>
@@ -271,7 +271,7 @@ const assetsSection = computed(() => {
               <div class="account-details__personal-owned-nft-mobile-list-row">
                 <div class="account-details__personal-owned-nft-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/nft-details/${encodeURIComponent(item.id.toString())}`">
+                  <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
                     {{ item.id.toString() }}
                   </BaseLink>
                 </div>

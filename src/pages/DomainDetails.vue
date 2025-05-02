@@ -113,11 +113,11 @@ const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.i
 const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
 
 function handleAssetRowClick(id: AssetDefinitionId) {
-  router.push(`/asset-details/${encodeURIComponent(id.toString())}`);
+  router.push(`/assets/${encodeURIComponent(id.toString())}`);
 }
 
 function handleNFTRowClick(id: NftId) {
-  router.push(`/nft-details/${encodeURIComponent(id.toString())}`);
+  router.push(`/nfts/${encodeURIComponent(id.toString())}`);
 }
 
 function handleAccountRowClick(id: AccountId) {
@@ -226,7 +226,7 @@ const domainAssetsSection = computed(() => {
               <div class="domain-details__native-assets-mobile-list-row">
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/asset-details/${encodeURIComponent(item.id.toString())}`">
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
                     {{ item.id.name.value }}
                   </BaseLink>
                 </div>
@@ -266,7 +266,7 @@ const domainAssetsSection = computed(() => {
               <div class="domain-details__native-nfts-mobile-list-row">
                 <div class="domain-details__native-nfts-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/nft-details/${encodeURIComponent(item.id.toString())}`">
+                  <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
                     {{ item.id.name.value }}
                   </BaseLink>
                 </div>

@@ -2,8 +2,8 @@ export const menu = [
   { i18nKey: 'blocks.blocks', to: '/blocks', names: ['blocks-list', 'blocks-details'] },
   {
     i18nKey: 'assets.assetsAndNFT',
-    to: '/assets-list',
-    names: ['assets-list', 'asset-details', 'nfts-list', 'nft-details'],
+    to: '/assets',
+    names: ['assets', 'asset-details', 'nfts', 'nft-details'],
   },
   { i18nKey: 'domains.domains', to: '/domains', names: ['domains-list', 'domain-details'] },
   { i18nKey: 'accounts.accounts', to: '/accounts', names: ['accounts-list', 'account-details'] },

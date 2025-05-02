@@ -32,12 +32,12 @@ const listState = reactive({
   per_page: 10,
 });
 
-const isCryptoAssetsSelected = computed(() => router.currentRoute.value.name === 'assets-list');
+const isCryptoAssetsSelected = computed(() => router.currentRoute.value.name === 'assets');
 const assetsTab = ref<TabAssets>(isCryptoAssetsSelected.value ? 'assets' : 'nft');
 
 watch(assetsTab, () => {
-  if (assetsTab.value === 'nft') router.push('/nfts-list');
-  else router.push('/assets-list');
+  if (assetsTab.value === 'nft') router.push('/nfts');
+  else router.push('/assets');
 });
 
 const tableTitle = computed(() => {
@@ -114,7 +114,7 @@ watch([() => listState.per_page, () => assetsTab.value], () => {
       <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
-            :to="`/asset-details/${encodeURIComponent(item.id.toString())}`"
+            :to="`/assets/${encodeURIComponent(item.id.toString())}`"
             class="cell"
           >
             {{ item.id.name.value }}
@@ -138,7 +138,7 @@ watch([() => listState.per_page, () => assetsTab.value], () => {
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/asset-details/${encodeURIComponent(item.id.toString())}`">
+            <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
               {{ item.id.name.value }}
             </BaseLink>
           </div>
@@ -177,7 +177,7 @@ watch([() => listState.per_page, () => assetsTab.value], () => {
       <template #row="{ item }">
         <div class="nfts-list-page__row">
           <BaseLink
-            :to="`/nft-details/${encodeURIComponent(item.id.toString())}`"
+            :to="`/nfts/${encodeURIComponent(item.id.toString())}`"
             class="cell"
           >
             {{ item.id.toString() }}
@@ -198,7 +198,7 @@ watch([() => listState.per_page, () => assetsTab.value], () => {
           <div class="nfts-list-page__mobile-row">
             <span class="h-sm nfts-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/nft-details/${encodeURIComponent(item.id.toString())}`">
+            <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
               {{ item.id.toString() }}
             </BaseLink>
           </div>
