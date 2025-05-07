@@ -128,7 +128,12 @@ export const Transaction = z.object({
 });
 
 export const DetailedTransaction = Transaction.extend({
-  rejection_reason: Metadata.nullable(),
+  rejection_reason: z
+    .object({
+      scale: z.string(),
+      json: Metadata,
+    })
+    .nullable(),
   metadata: Metadata,
   nonce: z.number().nullable(),
   signature: z.string(),
@@ -229,7 +234,10 @@ export const Instruction = z.object({
   created_at: z.coerce.date(),
   kind: InstructionKind,
   // TODO: add payload schemas for every kind
-  payload: z.union([Metadata, z.string()]),
+  box: z.object({
+    scale: z.string(),
+    json: z.record(InstructionKind, z.union([Metadata, z.string()])),
+  }),
   transaction_hash: z.string(),
   transaction_status: TransactionStatus,
   block: z.number(),
