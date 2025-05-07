@@ -83,7 +83,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
               <DataField
                 v-if="transaction.rejection_reason"
                 :title="$t('transactions.rejectedReason')"
-                :value="transaction.rejection_reason"
+                :value="transaction.rejection_reason.json"
               />
             </div>
             <div class="transaction-details__info-row">
