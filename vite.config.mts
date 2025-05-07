@@ -17,7 +17,8 @@ export default defineConfig({
     globalSetup: 'test-globals.ts',
   },
   build: {
-    assetsDir: 'folder_for_assets',
+    // to not overlap with the `/assets` route in the app
+    assetsDir: '_assets',
     target: 'esnext',
   },
   optimizeDeps: {
