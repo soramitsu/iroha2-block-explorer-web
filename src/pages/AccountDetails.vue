@@ -6,28 +6,26 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { AssetId } from '@iroha/core/data-model';
 import { AccountIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
-import type { TabAccountTransactions } from '@/features/filter-transactions/model';
-import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter-transactions/model';
+import type { TabAccountTransactions } from '@/features/filter/transactions/model';
+import { ACCOUNT_TRANSACTIONS_OPTIONS } from '@/features/filter/transactions/model';
 import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
+import type { AssetId, NftId } from '@iroha/core/data-model';
 import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { XS_WINDOW_SIZE } from '@/shared/ui/consts';
-import { useWindowSize } from '@vueuse/core';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import type { TabAssets } from '@/features/filter/assets/model';
+import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
+import { useI18n } from 'vue-i18n';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
+const { t } = useI18n();
 const router = useRouter();
-const { width } = useWindowSize();
 
-const hashType = computed(() => {
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
+const hashType = useAdaptiveHash({ xs: 'short', xxs: 'short' }, 'medium');
 
 const accountId = computed(() => {
   const id = router.currentRoute.value.params['id'];
@@ -77,22 +75,22 @@ const isDomainsLoading = computed(() => !!domainsScope.value?.expose.isLoading);
 const totalDomains = computed(() => domainsScope.value?.expose?.data?.pagination?.total_items ?? 0);
 const domains = computed(() => domainsScope.value?.expose?.data?.items ?? []);
 
+const assetsTab = ref<TabAssets>('assets');
+const isCryptoAssetsSelected = computed(() => assetsTab.value === 'assets');
+
 const assetsListState = reactive({
   page: 1,
   per_page: 10,
   owned_by: computed(() => accountId.value),
 });
 
-watch(
-  () => assetsListState.per_page,
-  () => {
-    assetsListState.page = 1;
-  }
-);
+watch([() => assetsListState.per_page, () => assetsTab.value], () => {
+  assetsListState.page = 1;
+});
 
 const assetsScope = useParamScope(
   () => {
-    if (!account.value?.owned_assets) return null;
+    if (!isCryptoAssetsSelected.value || !account.value?.owned_assets) return null;
 
     return {
       key: JSON.stringify(assetsListState),
@@ -106,16 +104,51 @@ const isAssetsLoading = computed(() => !!assetsScope.value?.expose.isLoading);
 const totalAssets = computed(() => assetsScope.value?.expose.data?.pagination?.total_items ?? 0);
 const assets = computed(() => assetsScope.value?.expose.data?.items ?? []);
 
+const nftsScope = useParamScope(
+  () => {
+    if (isCryptoAssetsSelected.value || !account.value?.owned_nfts) return null;
+
+    return {
+      key: JSON.stringify(assetsListState),
+      payload: assetsListState,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchNFTs(payload))
+);
+
+const isNFTsLoading = computed(() => !!nftsScope.value?.expose.isLoading);
+const totalNFTs = computed(() => nftsScope.value?.expose.data?.pagination?.total_items ?? 0);
+const nfts = computed(() => nftsScope.value?.expose.data?.items ?? []);
+
 const transactionsTab = ref<TabAccountTransactions>('transactions');
 const shouldShowInstructions = computed(() => transactionsTab.value === 'instructions');
 
 function handleAssetRowClick(id: AssetId) {
-  router.push(`/assets-list/${encodeURIComponent(id.definition.toString())}`);
+  router.push(`/assets/${encodeURIComponent(id.definition.toString())}`);
+}
+
+function handleNFTRowClick(id: NftId) {
+  router.push(`/nfts/${encodeURIComponent(id.toString())}`);
 }
 
 function handleDomainRowClick(id: string) {
   router.push(`/domains/${id}`);
 }
+
+const assetsSection = computed(() => {
+  if (isCryptoAssetsSelected.value)
+    return {
+      title: t('accounts.accountAssets'),
+      isZero: !account.value?.owned_assets,
+      zeroTitle: t('accounts.accountDoesntHaveAnyAssets'),
+    };
+
+  return {
+    title: t('accounts.accountNFTs'),
+    isZero: !account.value?.owned_nfts,
+    zeroTitle: t('accounts.accountDoesntHaveAnyNFTs'),
+  };
+});
 </script>
 
 <template>
@@ -143,7 +176,7 @@ function handleDomainRowClick(id: string) {
 
               <DataField
                 :title="$t('metadata')"
-                metadata
+                :metadata="{ display: 'short' }"
                 :value="parseMetadata(account.metadata)"
               />
             </div>
@@ -152,18 +185,24 @@ function handleDomainRowClick(id: string) {
       </BaseContentBlock>
 
       <BaseContentBlock
-        :title="$t('accounts.accountAssets')"
+        :title="assetsSection.title"
         class="account-details__personal-owned"
       >
+        <template #header-action>
+          <BaseTabs
+            v-model="assetsTab"
+            :items="ASSETS_OPTIONS"
+          />
+        </template>
         <template #default>
           <span
-            v-if="!account?.owned_assets"
+            v-if="assetsSection.isZero"
             class="account-details__personal-owned_empty row-text"
           >{{
-            $t('accounts.accountDoesntHaveAnyAssets')
+            assetsSection.zeroTitle
           }}</span>
           <BaseTable
-            v-else
+            v-else-if="isCryptoAssetsSelected"
             v-model:page="assetsListState.page"
             v-model:page-size="assetsListState.per_page"
             :loading="isAssetsLoading"
@@ -192,7 +231,7 @@ function handleDomainRowClick(id: string) {
               <div class="account-details__personal-owned-mobile-list-row">
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.definition.toString())}`">
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.definition.toString())}`">
                     {{ item.id.definition.name.value }}
                   </BaseLink>
                 </div>
@@ -200,6 +239,41 @@ function handleDomainRowClick(id: string) {
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('value') }}</span>
                   <span>{{ item.value }}</span>
+                </div>
+              </div>
+            </template>
+          </BaseTable>
+          <BaseTable
+            v-else
+            v-model:page="assetsListState.page"
+            v-model:page-size="assetsListState.per_page"
+            :loading="isNFTsLoading"
+            :total="totalNFTs"
+            :items="nfts"
+            container-class="account-details__personal-owned-nft-list"
+            :breakpoint="960"
+            row-pointer
+            @click:row="(asset) => handleNFTRowClick(asset.id)"
+          >
+            <template #header>
+              <div class="account-details__personal-owned-nft-list-row">
+                <span class="h-sm">{{ $t('name') }}</span>
+              </div>
+            </template>
+
+            <template #row="{ item }">
+              <div class="account-details__personal-owned-nft-list-row">
+                <span class="row-text">{{ item.id.toString() }}</span>
+              </div>
+            </template>
+
+            <template #mobile-card="{ item }">
+              <div class="account-details__personal-owned-nft-mobile-list-row">
+                <div class="account-details__personal-owned-nft-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('name') }}</span>
+                  <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
+                    {{ item.id.toString() }}
+                  </BaseLink>
                 </div>
               </div>
             </template>
@@ -363,8 +437,6 @@ function handleDomainRowClick(id: string) {
       }
 
       .content-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
         padding: 0 size(4);
       }
 
@@ -372,7 +444,8 @@ function handleDomainRowClick(id: string) {
         display: none;
       }
 
-      &-list {
+      &-list,
+      &-nft-list {
         display: grid;
 
         @include xxs {
@@ -403,11 +476,17 @@ function handleDomainRowClick(id: string) {
         }
       }
 
-      &-mobile-list {
+      &-nft-list-row {
+        grid-template-columns: 1fr;
+      }
+
+      &-mobile-list,
+      &-nft-mobile-list {
         &-row {
           display: flex;
           flex-direction: column;
           padding: size(2) size(4);
+
           @include xxs {
             width: 100%;
           }
@@ -421,15 +500,7 @@ function handleDomainRowClick(id: string) {
             margin-top: size(2);
 
             span:first-child {
-              @include xxs {
-                width: size(16);
-              }
-              @include xs {
-                width: size(20);
-              }
-              @include sm {
-                width: size(16);
-              }
+              width: size(10);
             }
           }
         }

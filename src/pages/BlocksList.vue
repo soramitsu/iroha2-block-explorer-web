@@ -110,12 +110,9 @@ import { computed, reactive, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
-import { useWindowSize } from '@vueuse/core';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
-const { width } = useWindowSize();
-
-const HASH_BREAKPOINT = 1440;
-const hashType = computed(() => (width.value < HASH_BREAKPOINT ? 'medium' : 'full'));
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' }, 'medium');
 
 const listState = reactive({
   page: 0,
@@ -165,13 +162,13 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
       &:hover .context-tooltip {
         display: flex;
         bottom: size(3);
-        left: size(4);
+        left: size(8);
       }
     }
   }
 
   &__mobile-card {
-    padding: size(2) size(3);
+    padding: size(2) 0 size(2) size(3);
   }
 
   &__mobile-row {
@@ -181,9 +178,14 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
     &-time {
       position: relative;
 
+      @include sm {
+        width: 58%;
+      }
+
       &:hover .context-tooltip {
         display: flex;
-        left: size(17);
+        bottom: size(3);
+        left: size(6);
       }
     }
   }

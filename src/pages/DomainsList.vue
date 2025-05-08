@@ -37,7 +37,7 @@
           />
 
           <span class="row-text">{{ item.accounts }}</span>
-          <span class="row-text">{{ item.assets }}</span>
+          <span class="row-text">{{ item.assets + item.nfts }}</span>
         </div>
       </template>
 
@@ -67,7 +67,7 @@
           </div>
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAssets') }}</span>
-            <span class="row-text">{{ item.assets }}</span>
+            <span class="row-text">{{ item.assets + item.nfts }}</span>
           </div>
         </div>
       </template>
@@ -81,24 +81,12 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { useWindowSize } from '@vueuse/core';
 import { computed, reactive, watch } from 'vue';
-import { MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
-const HASH_BREAKPOINT = 1350;
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'full';
-
-  if (width.value > SM_WINDOW_SIZE && width.value < MD_WINDOW_SIZE) return 'medium';
-
-  if (width.value > XS_WINDOW_SIZE) return 'short';
-
-  return 'two-line';
-});
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', sm: 'medium', xxs: 'two-line' });
 
 const listState = reactive({
   page: 1,
@@ -134,7 +122,7 @@ const domains = computed(() => scope.value?.expose.data?.items ?? []);
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 0.5fr 2.2fr 0.4fr 0.5fr;
+    grid-template-columns: 0.7fr 2.2fr 0.4fr 0.4fr;
   }
 
   &__mobile-card {

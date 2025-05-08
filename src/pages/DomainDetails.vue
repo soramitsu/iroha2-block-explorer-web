@@ -1,41 +1,29 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { useWindowSize } from '@vueuse/core';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import type { AccountId, AssetDefinitionId } from '@iroha/core/data-model';
+import type { AccountId, AssetDefinitionId, NftId } from '@iroha/core/data-model';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import { LG_WINDOW_SIZE, MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import invariant from 'tiny-invariant';
+import type { TabAssets } from '@/features/filter/assets/model';
+import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
+import { useI18n } from 'vue-i18n';
+import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
+const { t } = useI18n();
 const router = useRouter();
 
-const HASH_BREAKPOINT = 960;
-const { width } = useWindowSize();
-
-const accountHashType = computed(() => {
-  if (width.value > MD_WINDOW_SIZE && width.value < LG_WINDOW_SIZE) return 'full';
-
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
-
-const domainAccountsHashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'medium';
-
-  if (width.value > SM_WINDOW_SIZE) return 'short';
-
-  return 'two-line';
-});
+const accountHashType = useAdaptiveHash({ xs: 'short', xxs: 'short' }, 'medium');
+const domainAccountsHashType = useAdaptiveHash({ sm: 'short', xs: 'two-line', xxs: 'two-line' }, 'medium');
 
 const domainId = computed(() => {
   const id = router.currentRoute.value.params['id'];
@@ -50,7 +38,11 @@ const domainScope = useParamScope(domainId, (value) => setupAsyncData(() => http
 const isDomainLoading = computed(() => domainScope.value.expose.isLoading);
 const domain = computed(() => domainScope.value?.expose.data);
 const domainAssets = computed(() => domain.value?.assets ?? 0);
+const domainNFTs = computed(() => domain.value?.nfts ?? 0);
 const domainAccounts = computed(() => domain.value?.accounts ?? 0);
+
+const assetsTab = ref<TabAssets>('assets');
+const isCryptoAssetsSelected = computed(() => assetsTab.value === 'assets');
 
 const assetsListState = reactive({
   page: 1,
@@ -58,16 +50,13 @@ const assetsListState = reactive({
   domain: domainId.value,
 });
 
-watch(
-  () => assetsListState.per_page,
-  () => {
-    assetsListState.page = 1;
-  }
-);
+watch([() => assetsListState.per_page, () => assetsTab.value], () => {
+  assetsListState.page = 1;
+});
 
 const assetsListScope = useParamScope(
   () => {
-    if (!domainAssets.value) return null;
+    if (!isCryptoAssetsSelected.value || !domainAssets.value) return null;
 
     return {
       key: JSON.stringify(assetsListState),
@@ -79,6 +68,21 @@ const assetsListScope = useParamScope(
 
 const isAssetsListLoading = computed(() => !!assetsListScope.value?.expose.isLoading);
 const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
+
+const NFTsListScope = useParamScope(
+  () => {
+    if (isCryptoAssetsSelected.value || !domainNFTs.value) return null;
+
+    return {
+      key: JSON.stringify(assetsListState),
+      payload: assetsListState,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchNFTs(payload))
+);
+
+const isNFTsListLoading = computed(() => !!NFTsListScope.value?.expose.isLoading);
+const nfts = computed(() => NFTsListScope.value?.expose.data?.items ?? []);
 
 const accountsListState = reactive({
   page: 1,
@@ -109,12 +113,31 @@ const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.i
 const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
 
 function handleAssetRowClick(id: AssetDefinitionId) {
-  router.push(`/assets-list/${encodeURIComponent(id.toString())}`);
+  router.push(`/assets/${encodeURIComponent(id.toString())}`);
+}
+
+function handleNFTRowClick(id: NftId) {
+  router.push(`/nfts/${encodeURIComponent(id.toString())}`);
 }
 
 function handleAccountRowClick(id: AccountId) {
   router.push(`/accounts/${id}`);
 }
+
+const domainAssetsSection = computed(() => {
+  if (isCryptoAssetsSelected.value)
+    return {
+      title: t('domains.domainAssets'),
+      isZero: !domainAssets.value,
+      zeroTitle: t('domains.domainDoesntHaveAnyAssets'),
+    };
+
+  return {
+    title: t('domains.domainNFTs'),
+    isZero: !domainNFTs.value,
+    zeroTitle: t('domains.domainDoesntHaveAnyNFTs'),
+  };
+});
 </script>
 
 <template>
@@ -149,7 +172,7 @@ function handleAccountRowClick(id: AccountId) {
               <DataField
                 :title="$t('metadata')"
                 :value="parseMetadata(domain.metadata)"
-                metadata
+                :metadata="{ display: 'short' }"
               />
             </div>
           </div>
@@ -157,18 +180,24 @@ function handleAccountRowClick(id: AccountId) {
       </BaseContentBlock>
 
       <BaseContentBlock
-        :title="$t('domains.domainAssets')"
+        :title="domainAssetsSection.title"
         class="domain-details__native-assets"
       >
+        <template #header-action>
+          <BaseTabs
+            v-model="assetsTab"
+            :items="ASSETS_OPTIONS"
+          />
+        </template>
         <template #default>
           <span
-            v-if="!domainAssets"
+            v-if="domainAssetsSection.isZero"
             class="domain-details__native-assets_empty row-text"
           >
-            {{ $t('domains.domainDoesntHaveAnyAssets') }}
+            {{ domainAssetsSection.zeroTitle }}
           </span>
           <BaseTable
-            v-else
+            v-else-if="isCryptoAssetsSelected"
             v-model:page="assetsListState.page"
             v-model:page-size="assetsListState.per_page"
             :loading="isAssetsListLoading"
@@ -197,7 +226,7 @@ function handleAccountRowClick(id: AccountId) {
               <div class="domain-details__native-assets-mobile-list-row">
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('name') }}</span>
-                  <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.toString())}`">
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
                     {{ item.id.name.value }}
                   </BaseLink>
                 </div>
@@ -205,6 +234,41 @@ function handleAccountRowClick(id: AccountId) {
                 <div class="domain-details__native-assets-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('mintable') }}</span>
                   <span>{{ item.mintable }}</span>
+                </div>
+              </div>
+            </template>
+          </BaseTable>
+          <BaseTable
+            v-else
+            v-model:page="assetsListState.page"
+            v-model:page-size="assetsListState.per_page"
+            :loading="isNFTsListLoading"
+            :total="domainNFTs"
+            :items="nfts"
+            container-class="domain-details__native-assets-list"
+            :breakpoint="960"
+            row-pointer
+            @click:row="(asset) => handleNFTRowClick(asset.id)"
+          >
+            <template #header>
+              <div class="domain-details__native-nfts-list-row">
+                <span class="h-sm">{{ $t('name') }}</span>
+              </div>
+            </template>
+
+            <template #row="{ item }">
+              <div class="domain-details__native-nfts-list-row">
+                <span class="row-text">{{ item.id.name.value }}</span>
+              </div>
+            </template>
+
+            <template #mobile-card="{ item }">
+              <div class="domain-details__native-nfts-mobile-list-row">
+                <div class="domain-details__native-nfts-mobile-list-row-data row-text">
+                  <span class="h-sm">{{ $t('name') }}</span>
+                  <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
+                    {{ item.id.name.value }}
+                  </BaseLink>
                 </div>
               </div>
             </template>
@@ -345,7 +409,8 @@ function handleAccountRowClick(id: AccountId) {
       }
     }
 
-    &-assets-list {
+    &-assets-list,
+    &-nfts-list {
       display: grid;
 
       @include sm {
@@ -375,7 +440,12 @@ function handleAccountRowClick(id: AccountId) {
       }
     }
 
-    &-assets-mobile-list {
+    &-nfts-list {
+      grid-template-columns: 1fr;
+    }
+
+    &-assets-mobile-list,
+    &-nfts-mobile-list {
       &-row {
         display: flex;
         flex-direction: column;
@@ -393,15 +463,7 @@ function handleAccountRowClick(id: AccountId) {
           margin-top: size(2);
 
           span:first-child {
-            @include xxs {
-              width: size(16);
-            }
-            @include xs {
-              width: size(20);
-            }
-            @include sm {
-              width: size(16);
-            }
+            width: size(10);
           }
         }
       }

@@ -1,12 +1,104 @@
+<script setup lang="ts">
+import * as http from '@/shared/api';
+import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import BaseTable from '@/shared/ui/components/BaseTable.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { useParamScope } from '@vue-kakuyaku/core';
+import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
+import type { TabAssets } from '@/features/filter/assets/model';
+import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
+import { useI18n } from 'vue-i18n';
+import BaseHash from '@/shared/ui/components/BaseHash.vue';
+import { useRouter } from 'vue-router';
+import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+
+const { t } = useI18n();
+const router = useRouter();
+
+const hashType = useAdaptiveHash(
+  {
+    md: 'short',
+    sm: 'medium',
+    xxs: 'two-line',
+    xs: 'two-line',
+  },
+  'full'
+);
+
+const listState = reactive({
+  page: 1,
+  per_page: 10,
+});
+
+const isCryptoAssetsSelected = computed(() => router.currentRoute.value.name === 'assets');
+const assetsTab = ref<TabAssets>(isCryptoAssetsSelected.value ? 'assets' : 'nft');
+
+watch(assetsTab, () => {
+  if (assetsTab.value === 'nft') router.push('/nfts');
+  else router.push('/assets');
+});
+
+const tableTitle = computed(() => {
+  if (isCryptoAssetsSelected.value) return t('assets.assets');
+
+  return t('assets.nfts');
+});
+
+const assetsScope = useParamScope(
+  () => {
+    if (!isCryptoAssetsSelected.value) return null;
+
+    return {
+      key: JSON.stringify(listState),
+      payload: listState,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchAssetDefinitions(payload))
+);
+
+const isAssetsLoading = computed(() => !!assetsScope.value?.expose.isLoading);
+const totalAssets = computed(() => assetsScope.value?.expose.data?.pagination?.total_items ?? 0);
+const assets = computed(() => assetsScope.value?.expose.data?.items ?? []);
+
+const NFTsScope = useParamScope(
+  () => {
+    if (isCryptoAssetsSelected.value) return null;
+
+    return {
+      key: JSON.stringify(listState),
+      payload: listState,
+    };
+  },
+  ({ payload }) => setupAsyncData(() => http.fetchNFTs(payload))
+);
+
+const isNFTsLoading = computed(() => !!NFTsScope.value?.expose.isLoading);
+const totalNFTs = computed(() => NFTsScope.value?.expose.data?.pagination?.total_items ?? 0);
+const NFTs = computed(() => NFTsScope.value?.expose.data?.items ?? []);
+
+watch([() => listState.per_page, () => assetsTab.value], () => {
+  listState.page = 1;
+});
+</script>
+
 <template>
   <BaseContentBlock
-    :title="$t('assets.assets')"
+    :title="tableTitle"
     class="assets-list-page"
   >
+    <template #header-action>
+      <BaseTabs
+        v-model="assetsTab"
+        :items="ASSETS_OPTIONS"
+      />
+    </template>
     <BaseTable
+      v-if="isCryptoAssetsSelected"
       v-model:page="listState.page"
       v-model:page-size="listState.per_page"
-      :loading="isLoading"
+      :loading="isAssetsLoading"
       :total="totalAssets"
       :items="assets"
       container-class="assets-list-page__container"
@@ -22,7 +114,7 @@
       <template #row="{ item }">
         <div class="assets-list-page__row">
           <BaseLink
-            :to="`/assets-list/${encodeURIComponent(item.id.toString())}`"
+            :to="`/assets/${encodeURIComponent(item.id.toString())}`"
             class="cell"
           >
             {{ item.id.name.value }}
@@ -46,7 +138,7 @@
           <div class="assets-list-page__mobile-row">
             <span class="h-sm assets-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/assets-list/${encodeURIComponent(item.id.toString())}`">
+            <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
               {{ item.id.name.value }}
             </BaseLink>
           </div>
@@ -66,49 +158,72 @@
         </div>
       </template>
     </BaseTable>
+    <BaseTable
+      v-else
+      v-model:page="listState.page"
+      v-model:page-size="listState.per_page"
+      :loading="isNFTsLoading"
+      :total="totalNFTs"
+      :items="NFTs"
+      container-class="nfts-list-page__container"
+    >
+      <template #header>
+        <div class="nfts-list-page__row">
+          <span class="h-sm cell">{{ $t('name') }}</span>
+          <span class="h-sm cell">{{ $t('assets.ownedBy') }}</span>
+        </div>
+      </template>
+
+      <template #row="{ item }">
+        <div class="nfts-list-page__row">
+          <BaseLink
+            :to="`/nfts/${encodeURIComponent(item.id.toString())}`"
+            class="cell"
+          >
+            {{ item.id.toString() }}
+          </BaseLink>
+
+          <BaseHash
+            :hash="item.owned_by.toString()"
+            :link="`/accounts/${item.owned_by}`"
+            :type="hashType"
+            class="cell"
+            copy
+          />
+        </div>
+      </template>
+
+      <template #mobile-card="{ item }">
+        <div class="nfts-list-page__mobile-card">
+          <div class="nfts-list-page__mobile-row">
+            <span class="h-sm nfts-list-page__mobile-label">{{ $t('name') }}</span>
+
+            <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
+              {{ item.id.toString() }}
+            </BaseLink>
+          </div>
+
+          <div class="nfts-list-page__mobile-row">
+            <span class="h-sm nfts-list-page__mobile-label">{{ $t('assets.ownedBy') }}</span>
+
+            <BaseHash
+              :hash="item.owned_by.toString()"
+              :link="`/accounts/${item.owned_by}`"
+              :type="hashType"
+              copy
+            />
+          </div>
+        </div>
+      </template>
+    </BaseTable>
   </BaseContentBlock>
 </template>
-
-<script setup lang="ts">
-import * as http from '@/shared/api';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, reactive, watch } from 'vue';
-import { useParamScope } from '@vue-kakuyaku/core';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
-
-const listState = reactive({
-  page: 1,
-  per_page: 10,
-});
-
-watch(
-  () => listState.per_page,
-  () => {
-    listState.page = 1;
-  }
-);
-
-const scope = useParamScope(
-  () => {
-    return {
-      key: JSON.stringify(listState),
-      payload: listState,
-    };
-  },
-  ({ payload }) => setupAsyncData(() => http.fetchAssetDefinitions(payload))
-);
-
-const isLoading = computed(() => scope.value?.expose.isLoading);
-const totalAssets = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
-const assets = computed(() => scope.value?.expose.data?.items ?? []);
-</script>
 
 <style lang="scss">
 @use '@/shared/ui/styles/main' as *;
 
-.assets-list-page {
+.assets-list-page,
+.nfts-list-page {
   &__row {
     width: 100%;
     display: grid;
@@ -148,5 +263,9 @@ const assets = computed(() => scope.value?.expose.data?.items ?? []);
   hr {
     display: none;
   }
+}
+
+.nfts-list-page__row {
+  grid-template-columns: 0.25fr 1fr;
 }
 </style>

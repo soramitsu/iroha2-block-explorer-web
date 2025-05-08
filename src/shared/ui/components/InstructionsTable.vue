@@ -11,22 +11,23 @@ import {
   type filterTransactionsModel as ftm,
   InstructionTypeFilter,
   TransactionStatusFilter,
-} from '@/features/filter-transactions';
+} from '@/features/filter/transactions';
 import {
   ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS,
   INSTRUCTIONS_ADAPTIVE_OPTIONS,
-} from '@/features/filter-transactions/adaptive-options';
+} from '@/features/filter/transactions/adaptive-options';
 import { computed, reactive, watch } from 'vue';
 import * as http from '@/shared/api';
 import { objectOmit } from '@vueuse/shared';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
 
 const { t } = useI18n();
 const props = defineProps<{
   showValue?: boolean
-  hashType: 'short' | 'full'
+  hashType: HashType
   filterBy: { kind: 'authority', value: AccountId } | { kind: 'transaction', value: string }
 }>();
 

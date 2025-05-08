@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
-import type { TabInstructions } from '@/features/filter-transactions/model';
-import { INSTRUCTION_OPTIONS } from '@/features/filter-transactions/model';
+import type { TabInstructions } from '@/features/filter/transactions/model';
+import { INSTRUCTION_OPTIONS } from '@/features/filter/transactions/model';
 import { i18n } from '@/shared/lib/localization';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
-import { ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS } from '@/features/filter-transactions/adaptive-options';
+import { ACCOUNT_INSTRUCTIONS_ADAPTIVE_OPTIONS } from '@/features/filter/transactions/adaptive-options';
 
 test.each([
   [1700, 4],
