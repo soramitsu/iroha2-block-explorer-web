@@ -233,7 +233,7 @@ export const Instruction = z.object({
   authority: z.string(),
   created_at: z.coerce.date(),
   kind: InstructionKind,
-  // TODO: add payload schemas for every kind
+  // TODO: add box schemas for every kind
   box: z.object({
     scale: z.string(),
     json: z.record(InstructionKind, z.union([Metadata, z.string()])),
