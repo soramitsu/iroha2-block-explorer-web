@@ -138,7 +138,7 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
             />
 
             <time
-              class="instructions-table__time"
+              class="instructions-table__time row-text-monospace"
               :datetime="item.created_at.toISOString()"
             >
               {{ defaultFormat(item.created_at) }}
@@ -165,12 +165,15 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
               <span class="row-text">{{ getInstructionPayloadEntity(item) }}</span>
             </div>
 
-            <div class="instructions-table__column">
+            <div class="instructions-table__column-block">
               <div class="instructions-table__label">
                 {{ $t('transactions.block') }}
               </div>
 
-              <BaseLink :to="`/blocks/${item.block}`">
+              <BaseLink
+                :to="`/blocks/${item.block}`"
+                monospace
+              >
                 {{ item.block }}
               </BaseLink>
             </div>
@@ -250,13 +253,13 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
 
     @include sm {
       display: grid;
-      grid-template-columns: 32px 0.8fr 1fr;
+      grid-template-columns: 32px 0.9fr 0.6fr;
       grid-gap: size(2);
       align-items: center;
     }
 
     @include lg {
-      grid-template-columns: 32px 0.4fr 1fr;
+      grid-template-columns: 32px 0.8fr 0.9fr;
     }
 
     @include xl {
@@ -301,7 +304,6 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
   &__time {
     color: theme-color('content-primary');
     grid-column: 1 / -1;
-    @include tpg-s3;
   }
 
   &__columns {
@@ -320,6 +322,13 @@ const items = computed(() => scope.value?.expose.data?.items ?? []);
 
     .instructions-table__column {
       width: size(22);
+
+      &-block {
+        width: size(10);
+        display: flex;
+        gap: size(1);
+        align-items: center;
+      }
     }
   }
 

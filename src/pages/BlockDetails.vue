@@ -117,11 +117,13 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
                 :title="$t('blocks.totalTransactions')"
                 :value="block.transactions_total"
                 copy
+                monospace
               />
 
               <DataField
                 :title="$t('blocks.rejectedTransactions')"
                 :value="block.transactions_rejected"
+                monospace
                 copy
               />
 

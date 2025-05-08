@@ -31,8 +31,8 @@
             class="cell"
           />
 
-          <span class="row-text">{{ item.owned_domains }}</span>
-          <span class="row-text">{{ item.owned_assets + item.owned_nfts }}</span>
+          <span class="row-text-monospace">{{ item.owned_domains }}</span>
+          <span class="row-text-monospace">{{ item.owned_assets + item.owned_nfts }}</span>
         </div>
       </template>
 
@@ -50,12 +50,12 @@
 
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('domains.domains') }}</span>
-            <span class="row-text">{{ item.owned_domains }}</span>
+            <span class="row-text-monospace">{{ item.owned_domains }}</span>
           </div>
 
           <div class="accounts-list-page__mobile-row">
             <span class="h-sm accounts-list-page__mobile-label">{{ $t('assets.assets') }}</span>
-            <span class="row-text">{{ item.owned_assets + item.owned_nfts }}</span>
+            <span class="row-text-monospace">{{ item.owned_assets + item.owned_nfts }}</span>
           </div>
         </div>
       </template>

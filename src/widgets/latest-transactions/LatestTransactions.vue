@@ -182,7 +182,7 @@ const hashType = useAdaptiveHash({ lg: 'short', xxs: 'short' }, 'medium');
 
     &:hover .context-tooltip {
       display: flex;
-      left: size(14);
+      left: size(15);
     }
   }
 

@@ -29,6 +29,7 @@
           <BaseLink
             :to="`/blocks/${item.height}`"
             class="cell"
+            monospace
           >
             {{ item.height }}
           </BaseLink>
@@ -48,7 +49,7 @@
             class="cell"
           />
 
-          <div class="cell row-text">
+          <div class="cell row-text-monospace">
             {{ $t('blocks.totalAndRejectedTransactions', [item.transactions_total, item.transactions_rejected]) }}
           </div>
         </div>
@@ -83,14 +84,14 @@
             <BaseHash
               :hash="item.hash"
               :link="`/blocks/${item.height}`"
-              type="short"
+              :type="hashType"
               copy
             />
           </div>
 
           <div class="blocks-list-page__mobile-row">
             <span class="h-sm blocks-list-page__mobile-label">{{ $t('transactions.transactions') }}</span>
-            <span class="row-text">{{
+            <span class="row-text-monospace">{{
               $t('blocks.totalAndRejectedTransactions', [item.transactions_total, item.transactions_rejected])
             }}</span>
           </div>
@@ -112,7 +113,7 @@ import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 
-const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' }, 'medium');
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xxs: 'short' }, 'medium');
 
 const listState = reactive({
   page: 0,
@@ -150,10 +151,10 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
     display: grid;
     justify-content: start;
     @include lg {
-      grid-template-columns: 20px 130px 225px 300px 150px;
+      grid-template-columns: 20px 130px 260px 300px 1fr;
     }
     @include xl {
-      grid-template-columns: 20px 130px 230px 640px 150px;
+      grid-template-columns: 20px 130px 260px 640px 1fr;
     }
 
     &-time {
@@ -201,7 +202,7 @@ const blocks = computed(() => scope.value?.expose.data?.items ?? []);
     display: grid;
     grid-template-columns: 1fr;
 
-    @include sm {
+    @include md {
       grid-template-columns: 1fr 1fr;
     }
 

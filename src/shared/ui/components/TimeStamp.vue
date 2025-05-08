@@ -44,7 +44,7 @@ const timeAgo = computed(() => t(i18nKey.value, [res.value]));
 <template>
   <div>
     <time
-      class="time-ago row-text"
+      class="time-ago row-text-monospace"
       :datetime="props.value.toISOString()"
     >{{
       props.inverted ? dateTime : timeAgo

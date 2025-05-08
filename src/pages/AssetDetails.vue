@@ -164,9 +164,9 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
                 />
               </div>
 
-              <div class="row-text">
-                <span>{{ item.value }}</span>
-              </div>
+              <span class="row-text-monospace">
+                {{ item.value }}
+              </span>
             </div>
           </template>
 
@@ -198,7 +198,7 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
 
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
                 <span class="h-sm">{{ $t('value') }}</span>
-                <span>{{ item.value }}</span>
+                <span class="row-text-monospace">{{ item.value }}</span>
               </div>
             </div>
           </template>
