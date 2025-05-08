@@ -36,13 +36,16 @@ function isBase64EncodedWasm(item: Instruction) {
 }
 
 function getInstructionPayloadValue(item: Instruction) {
-  return Object.entries(item.payload)[0][1];
+  // TODO: display every instruction differently
+  const value = Object.entries(item.box.json)[0][1];
+
+  return typeof value === 'string' ? {} : value;
 }
 
 function getInstructionPayloadEntity(item: Instruction) {
   if (isBase64EncodedWasm(item)) return t('transactions.object');
 
-  return Object.entries(item.payload)[0][0];
+  return Object.keys(Object.entries(item.box.json)[0][1])[0];
 }
 
 const isOnAccountPage = computed(() => props.filterBy.kind === 'authority');
