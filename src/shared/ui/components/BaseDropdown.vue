@@ -4,7 +4,15 @@
     class="base-dropdown"
     :style="`width: ${props.width}`"
   >
-    <div class="base-dropdown__container">
+    <div
+      class="base-dropdown__container"
+      :class="[
+        { 'base-dropdown__container_reversed': props.reversed },
+        {
+          'base-dropdown__container_reversed_opened': props.reversed && isOpen,
+        },
+      ]"
+    >
       <div
         class="base-dropdown__field"
         role="combobox"
@@ -29,6 +37,7 @@
         v-if="isOpen"
         id="popup_listbox"
         class="base-dropdown__list"
+        :class="{ 'base-dropdown__list_reversed': props.reversed }"
         role="listbox"
       >
         <li
@@ -64,6 +73,7 @@ interface Props {
   items: DropdownItem[]
   fieldLabel: string
   width: string
+  reversed?: boolean
 }
 
 type Emits = (e: 'update:modelValue', value: string | number) => void;
@@ -102,9 +112,19 @@ function choose(value: string | number) {
     border-radius: size(2);
     user-select: none;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
 
     @include tpg-s4;
     @include shadow-input;
+
+    &_reversed {
+      flex-direction: column-reverse;
+
+      &_opened {
+        bottom: 106px;
+      }
+    }
   }
 
   &__icon {
@@ -120,6 +140,12 @@ function choose(value: string | number) {
 
   &__list {
     padding: 0 0 size(1) 0;
+
+    &_reversed {
+      padding: size(1) 0 0 0;
+      overflow: hidden;
+      border-radius: size(2) size(2) 0 0;
+    }
   }
 
   &__value {
