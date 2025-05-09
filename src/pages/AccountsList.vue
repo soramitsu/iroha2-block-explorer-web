@@ -39,22 +39,23 @@
       <template #mobile-card="{ item }">
         <div class="accounts-list-page__mobile-card">
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('accounts.address') }}</span>
+            <span class="h-sm accounts-list-page__mobile-row-label">{{ $t('accounts.address') }}</span>
             <BaseHash
               :hash="item.id.toString()"
               :link="`/accounts/${item.id}`"
               :type="hashType"
+              class="accounts-list-page__mobile-row-id"
               copy
             />
           </div>
 
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('domains.domains') }}</span>
+            <span class="h-sm accounts-list-page__mobile-row-label">{{ $t('domains.domains') }}</span>
             <span class="row-text-monospace">{{ item.owned_domains }}</span>
           </div>
 
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('assets.assets') }}</span>
+            <span class="h-sm accounts-list-page__mobile-row-label">{{ $t('assets.assets') }}</span>
             <span class="row-text-monospace">{{ item.owned_assets + item.owned_nfts }}</span>
           </div>
         </div>
@@ -127,13 +128,22 @@ function handleRowClick(id: AccountId) {
   &__mobile-row {
     display: flex;
     align-items: center;
-  }
 
-  &__mobile-label {
-    text-align: left;
-    width: size(12);
-    padding: size(1);
-    margin-right: size(3);
+    &-label {
+      text-align: left;
+      width: size(12);
+      padding: size(1);
+      margin-right: size(1);
+    }
+
+    &-id {
+      @include xxs {
+        width: 53vw;
+      }
+      @include xs {
+        width: auto;
+      }
+    }
   }
 
   &__container {
