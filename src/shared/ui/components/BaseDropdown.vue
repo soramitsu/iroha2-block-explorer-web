@@ -29,7 +29,7 @@
 
         <ArrowIcon
           class="base-dropdown__icon"
-          :style="`transform: rotate(${isOpen ? 0.5 : 0}turn);`"
+          :style="`transform: rotate(${arrowIconRotateValue}turn);`"
         />
       </div>
 
@@ -94,6 +94,12 @@ function choose(value: string | number) {
   emit('update:modelValue', value);
   isOpen.value = false;
 }
+
+const arrowIconRotateValue = computed(() => {
+  if (props.reversed) return isOpen.value ? 0 : 0.5;
+
+  return isOpen.value ? 0.5 : 0;
+});
 </script>
 
 <style lang="scss">
