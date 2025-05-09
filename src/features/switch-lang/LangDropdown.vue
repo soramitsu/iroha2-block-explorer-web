@@ -13,7 +13,10 @@
   >
     <LangIcon class="lang-dropdown__lang-icon" />
     <span class="lang-dropdown__code">{{ language }}</span>
-    <ArrowIcon class="lang-dropdown__arrow-icon" />
+    <ArrowIcon
+      class="lang-dropdown__arrow-icon"
+      :style="`transform: rotate(${dropdown.isOpen.value ? 0.75 : 0.25}turn);`"
+    />
   </BaseButton>
 
   <Teleport
