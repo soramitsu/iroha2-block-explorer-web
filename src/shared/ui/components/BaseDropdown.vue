@@ -29,7 +29,7 @@
 
         <ArrowIcon
           class="base-dropdown__icon"
-          :style="`transform: rotate(${arrowIconRotateValue}turn);`"
+          :style="{ transform: `rotate(${arrowIconRotateValue}turn)` }"
         />
       </div>
 
