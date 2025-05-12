@@ -15,10 +15,12 @@ const props = withDefaults(
     type?: HashType
     metadata?: { display: 'short' | 'full' } | null
     tooltip?: string
+    monospace?: boolean
   }>(),
   {
     type: 'full',
     metadata: null,
+    monospace: false,
   }
 );
 </script>
@@ -38,6 +40,7 @@ const props = withDefaults(
       <BaseLink
         v-else-if="value && link"
         :to="link"
+        :monospace
       >
         {{ value }}
       </BaseLink>
@@ -49,7 +52,10 @@ const props = withDefaults(
       <span
         v-else
         class="data-field__value-text row-text"
-      >{{ props.value ?? $t('none') }}</span>
+        :class="{ 'row-text-monospace': props.monospace }"
+      >{{
+        props.value ?? $t('none')
+      }}</span>
       <ContextTooltip
         v-if="tooltip"
         :message="tooltip"

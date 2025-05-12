@@ -105,6 +105,7 @@ const transaction = computed(() => transactionScope.value?.expose.data);
                 :title="$t('transactions.block')"
                 :value="transaction.block"
                 :link="`/blocks/${transaction.block}`"
+                monospace
               />
 
               <DataField

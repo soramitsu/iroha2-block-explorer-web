@@ -108,6 +108,7 @@ const content = computed<Content>(() => {
 .base-hash {
   display: flex;
   align-items: center;
+  word-break: break-all;
 
   &__copy {
     margin-left: size(1);

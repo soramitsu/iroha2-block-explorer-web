@@ -96,7 +96,7 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
 
             <time
               :datetime="item.created_at.toISOString()"
-              class="transactions-table__time"
+              class="transactions-table__time row-text-monospace"
             >
               {{ defaultFormat(item.created_at) }}
             </time>
@@ -126,7 +126,10 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
                 {{ $t('transactions.block') }}
               </div>
 
-              <BaseLink :to="`/blocks/${item.block}`">
+              <BaseLink
+                :to="`/blocks/${item.block}`"
+                monospace
+              >
                 {{ item.block }}
               </BaseLink>
             </div>
@@ -165,13 +168,13 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
 
     @include sm {
       display: grid;
-      grid-template-columns: 32px 0.8fr 1fr;
+      grid-template-columns: 32px 0.9fr 1fr;
       grid-gap: size(2);
       align-items: center;
     }
 
     @include md {
-      grid-template-columns: 32px 0.3fr 1fr;
+      grid-template-columns: 32px 0.5fr 1fr;
     }
 
     @include lg {
@@ -215,7 +218,6 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
   }
 
   &__time {
-    @include tpg-s3;
     color: theme-color('content-primary');
     grid-column: 1 / -1;
   }
@@ -246,13 +248,7 @@ const payloadPagination = computed(() => scope.value.expose.data?.pagination);
 
     &-hash {
       @include sm {
-        width: 30vw;
-      }
-      @include md {
-        width: 19vw;
-      }
-      @include lg {
-        width: 25vw;
+        width: 100%;
       }
       @include xl {
         width: size(82);

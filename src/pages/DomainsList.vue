@@ -36,8 +36,8 @@
             copy
           />
 
-          <span class="row-text">{{ item.accounts }}</span>
-          <span class="row-text">{{ item.assets + item.nfts }}</span>
+          <span class="row-text-monospace">{{ item.accounts }}</span>
+          <span class="row-text-monospace">{{ item.assets + item.nfts }}</span>
         </div>
       </template>
 
@@ -63,11 +63,11 @@
 
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAccounts') }}</span>
-            <span class="row-text">{{ item.accounts }}</span>
+            <span class="row-text-monospace">{{ item.accounts }}</span>
           </div>
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAssets') }}</span>
-            <span class="row-text">{{ item.assets + item.nfts }}</span>
+            <span class="row-text-monospace">{{ item.assets + item.nfts }}</span>
           </div>
         </div>
       </template>

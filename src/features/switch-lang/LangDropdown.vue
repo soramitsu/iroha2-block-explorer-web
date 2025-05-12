@@ -13,7 +13,10 @@
   >
     <LangIcon class="lang-dropdown__lang-icon" />
     <span class="lang-dropdown__code">{{ language }}</span>
-    <ArrowIcon class="lang-dropdown__arrow-icon" />
+    <ArrowIcon
+      class="lang-dropdown__arrow-icon"
+      :style="{ transform: `rotate(${arrowIconRotateValue}turn)` }"
+    />
   </BaseButton>
 
   <Teleport
@@ -38,10 +41,13 @@ import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import { langOptions } from '@/shared/config';
 import { useApplicationLanguage } from '@/shared/ui/composables/useApplicationLanguage';
 import { PORTAL_ID } from '@/shared/ui/consts';
+import { computed } from 'vue';
 
 const dropdown = useLangDropdown();
 
 const { language } = useApplicationLanguage();
+
+const arrowIconRotateValue = computed(() => (dropdown.isOpen.value ? 0.75 : 0.25));
 </script>
 
 <style lang="scss">

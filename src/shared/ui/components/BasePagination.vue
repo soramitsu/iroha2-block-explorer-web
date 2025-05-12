@@ -141,6 +141,7 @@ const shouldShowNextArrow = computed(
         :items="sizeOptions"
         :field-label="$t('table.rowsPerPage')"
         width="175px"
+        reversed
       />
     </div>
 

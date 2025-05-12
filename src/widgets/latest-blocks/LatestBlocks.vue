@@ -25,14 +25,15 @@
             @click="handleRowClick(block.height)"
             @keydown.enter.space="handleRowClick(block.height)"
           >
-            <span class="row-text">{{ `${block.transactions_hash ? '◉' : 'O'} ${block.height}` }}</span>
+            <span class="row-text">{{ block.transactions_hash ? '◉' : 'O' }}
+              <span class="row-text-monospace">{{ block.height }}</span></span>
 
             <div class="latest-blocks__time">
               <TimeIcon class="latest-blocks__time-icon" />
               <TimeStamp :value="block.created_at" />
             </div>
 
-            <span class="latest-blocks__number">{{ block.transactions_total }} txns</span>
+            <span class="latest-blocks__number row-text-monospace">{{ block.transactions_total }} txns</span>
           </div>
         </template>
       </div>
@@ -124,7 +125,6 @@ function handleRowClick(height: number) {
 
   &__number {
     color: theme-color('content-primary');
-    @include tpg-s3;
   }
 }
 </style>

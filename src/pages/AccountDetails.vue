@@ -222,8 +222,8 @@ const assetsSection = computed(() => {
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
-                <span class="row-text">{{ item.id.definition.name.value }}</span>
-                <span class="row-text">{{ item.value }}</span>
+                <span class="row-text-monospace">{{ item.id.definition.name.value }}</span>
+                <span class="row-text-monospace">{{ item.value }}</span>
               </div>
             </template>
 
@@ -238,7 +238,7 @@ const assetsSection = computed(() => {
 
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('value') }}</span>
-                  <span>{{ item.value }}</span>
+                  <span class="row-text-monospace">{{ item.value }}</span>
                 </div>
               </div>
             </template>
@@ -263,7 +263,7 @@ const assetsSection = computed(() => {
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-nft-list-row">
-                <span class="row-text">{{ item.id.toString() }}</span>
+                <span class="row-text-monospace">{{ item.id.toString() }}</span>
               </div>
             </template>
 
@@ -314,9 +314,9 @@ const assetsSection = computed(() => {
 
             <template #row="{ item }">
               <div class="account-details__personal-owned-list-row">
-                <span class="row-text">{{ item.id }}</span>
-                <span class="row-text">{{ item.assets }}</span>
-                <span class="row-text">{{ item.accounts }}</span>
+                <span class="row-text-monospace">{{ item.id }}</span>
+                <span class="row-text-monospace">{{ item.assets }}</span>
+                <span class="row-text-monospace">{{ item.accounts }}</span>
               </div>
             </template>
 
@@ -331,12 +331,12 @@ const assetsSection = computed(() => {
 
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('assets.assets') }}</span>
-                  <span>{{ item.assets }}</span>
+                  <span class="row-text-monospace">{{ item.assets }}</span>
                 </div>
 
                 <div class="account-details__personal-owned-mobile-list-row-data row-text">
                   <span class="h-sm">{{ $t('accounts.accounts') }}</span>
-                  <span>{{ item.accounts }}</span>
+                  <span class="row-text-monospace">{{ item.accounts }}</span>
                 </div>
               </div>
             </template>
@@ -578,13 +578,7 @@ const assetsSection = computed(() => {
         .transactions-table__column {
           &-hash {
             @include sm {
-              width: 30vw;
-            }
-            @include md {
-              width: 19vw;
-            }
-            @include lg {
-              width: size(24);
+              width: 100%;
             }
           }
           &-block {
