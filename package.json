@@ -1,6 +1,6 @@
 {
   "name": "iroha2-block-explorer-web",
-  "packageManager": "pnpm@9.13.1",
+  "packageManager": "pnpm@10.11.0",
   "private": true,
   "type": "module",
   "scripts": {
