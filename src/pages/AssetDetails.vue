@@ -82,15 +82,14 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
           <BaseLoading />
         </div>
         <div v-else-if="asset">
-          <div class="asset-details__information-data">
-            <DataField
-              :title="$t('assets.ownedBy')"
-              :hash="asset.owned_by.toString()"
-              copy
-              :link="`/accounts/${asset.owned_by}`"
-              :type="hashType"
-            />
-          </div>
+          <DataField
+            :title="$t('assets.ownedBy')"
+            :hash="asset.owned_by.toString()"
+            copy
+            :link="`/accounts/${asset.owned_by}`"
+            :type="hashType"
+            class="asset-details__information-owner"
+          />
           <div class="asset-details__information-data">
             <DataField
               :title="$t('domain')"
@@ -231,6 +230,10 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
       justify-content: center;
     }
 
+    &-owner {
+      margin-top: size(2);
+      padding: 0 size(2) 0 size(4);
+    }
     &-data {
       display: grid;
       margin-top: size(2);
@@ -243,6 +246,9 @@ const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
       }
 
       @include sm {
+        grid-template-columns: 1.2fr 0.8fr 1fr;
+      }
+      @include md {
         grid-template-columns: 1fr 1fr 1fr;
       }
     }

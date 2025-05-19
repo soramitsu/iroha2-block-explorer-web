@@ -25,15 +25,17 @@
             @click="handleRowClick(block.height)"
             @keydown.enter.space="handleRowClick(block.height)"
           >
-            <span class="row-text">{{ block.transactions_hash ? '◉' : 'O' }}
-              <span class="row-text-monospace">{{ block.height }}</span></span>
+            <div class="latest-blocks__row-block-height row-text">
+              {{ block.transactions_hash ? '◉' : 'O' }}
+              <span class="row-text-monospace">{{ block.height }}</span>
+            </div>
 
-            <div class="latest-blocks__time">
-              <TimeIcon class="latest-blocks__time-icon" />
+            <div class="latest-blocks__row-time">
+              <TimeIcon class="latest-blocks__row-time-icon" />
               <TimeStamp :value="block.created_at" />
             </div>
 
-            <span class="latest-blocks__number row-text-monospace">{{ block.transactions_total }} txns</span>
+            <span class="latest-blocks__row-number row-text-monospace">{{ block.transactions_total }} txns</span>
           </div>
         </template>
       </div>
@@ -100,31 +102,38 @@ function handleRowClick(height: number) {
     @include sm {
       padding: 0 size(4);
     }
-  }
 
-  &__time {
-    user-select: none;
-    cursor: default;
-    display: flex;
-    justify-content: center;
-    width: size(24);
-    gap: size(2);
-    position: relative;
+    &-block-height {
+      width: size(10);
+    }
 
-    &-icon {
-      path {
-        fill: theme-color('content-quaternary');
+    &-time {
+      user-select: none;
+      cursor: default;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      width: size(18);
+      gap: size(2);
+      position: relative;
+
+      &-icon {
+        path {
+          fill: theme-color('content-quaternary');
+        }
+      }
+
+      &:hover .context-tooltip {
+        display: flex;
+        left: size(20);
       }
     }
 
-    &:hover .context-tooltip {
-      display: flex;
-      left: size(20);
+    &-number {
+      width: size(11);
+      text-align: right;
+      color: theme-color('content-primary');
     }
-  }
-
-  &__number {
-    color: theme-color('content-primary');
   }
 }
 </style>
