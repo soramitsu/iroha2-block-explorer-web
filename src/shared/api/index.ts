@@ -21,8 +21,9 @@ import {
   Instruction,
   NetworkMetrics,
   PeerInfo,
-  PeerMetrics,
+  PeerStatus,
   NFT,
+  PeerInitialMetrics,
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
 import { computed } from 'vue';
@@ -101,20 +102,56 @@ export async function fetchBlock(heightOrHash: number | string): Promise<Block> 
 }
 
 export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
-  const res = await get('/metrics');
+  const res = await get('/telemetry/network');
   return NetworkMetrics.parse(res);
 }
 
 export function streamPeerMetrics() {
-  const { data: streamedPeerMetrics, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
+  const { data: streamedPeerMetrics, status } = useEventSource('/api/v1/telemetry/live');
   return {
-    data: computed(() => (streamedPeerMetrics.value ? PeerMetrics.parse(JSON.parse(streamedPeerMetrics.value)) : null)),
+    data: computed<
+      | { kind: 'peer_info', data: PeerInfo }
+      | { kind: 'peer_status', data: PeerStatus }
+      | { kind: 'network_status', data: NetworkMetrics }
+      | { kind: 'first', data: PeerInitialMetrics }
+      | null
+    >(() => {
+      if (!streamedPeerMetrics.value) return null;
+
+      const receivedData = JSON.parse(streamedPeerMetrics.value);
+      switch (receivedData.kind) {
+        case 'peer_info': {
+          return {
+            kind: 'peer_info',
+            data: PeerInfo.parse(receivedData),
+          };
+        }
+        case 'peer_status': {
+          return {
+            kind: 'peer_status',
+            data: PeerStatus.parse(receivedData),
+          };
+        }
+        case 'network_status': {
+          return {
+            kind: 'network_status',
+            data: NetworkMetrics.parse(receivedData),
+          };
+        }
+        default: {
+          return {
+            kind: 'first',
+            data: PeerInitialMetrics.parse(receivedData),
+          };
+        }
+      }
+    }),
     status,
   };
 }
 
 export async function fetchPeersInfo(): Promise<PeerInfo[]> {
-  const res = await get('/metrics/peers/info');
+  const res = await get('/telemetry/peers-info');
   return PeerInfo.array().parse(res);
 }
 

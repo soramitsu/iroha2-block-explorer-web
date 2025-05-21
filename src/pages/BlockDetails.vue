@@ -33,7 +33,7 @@ const isBlockEmpty = computed(() => !block.value?.transactions_hash);
 
 const networkMetrics = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchNetworkMetrics));
 
-const totalBlocks = computed(() => networkMetrics.value.expose.data?.latest_block ?? 0);
+const totalBlocks = computed(() => networkMetrics.value.expose.data?.block ?? 0);
 const isNextBlockExists = computed(() => block.value && block.value.height < totalBlocks.value);
 const isPreviousBlockExists = computed(() => block.value && block.value.height > 1);
 

@@ -70,27 +70,23 @@ const firstSection = computed(() => {
 
 const secondSection = computed(() => {
   return [
-    { value: setup.data?.latest_block ?? 0, i18nKey: 'homePage.totalBlocks' },
+    { value: setup.data?.block ?? 0, i18nKey: 'homePage.totalBlocks' },
     { value: setup.data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
     { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
 const setup = setupAsyncData(async () => {
-  const [assets, accounts, domains, { peers, latest_block, transactions }] = await Promise.all([
-    http.fetchAssets(),
-    http.fetchAccounts(),
-    http.fetchDomains(),
-    http.fetchNetworkMetrics(),
-  ]);
+  const { assets, accounts, domains, peers, block, transactions_accepted, transactions_rejected } =
+    await http.fetchNetworkMetrics();
 
   return {
-    assets: assets.pagination.total_items,
-    accounts: accounts.pagination.total_items,
-    domains: domains.pagination.total_items,
+    assets,
+    accounts,
+    domains,
     nodes: peers + 1,
-    transactions: transactions.accepted + transactions.rejected,
-    latest_block,
+    transactions: transactions_accepted + transactions_rejected,
+    block,
   };
 });
 
