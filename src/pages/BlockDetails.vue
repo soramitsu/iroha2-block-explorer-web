@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
@@ -25,11 +25,28 @@ const blockHeightOrHash = computed(() => {
   return Number(heightOrHash) || heightOrHash;
 });
 
-const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(() => http.fetchBlock(value)));
+const isFetchingBlockFailed = ref(false);
+
+function handleBlockFetchingError(err: unknown) {
+  isFetchingBlockFailed.value = true;
+}
+
+const blockScope = useParamScope(blockHeightOrHash, (value) =>
+  setupAsyncData(() => http.fetchBlock(value), {
+    onError: handleBlockFetchingError,
+  })
+);
 
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
 const block = computed(() => blockScope.value?.expose.data);
 const isBlockEmpty = computed(() => !block.value?.transactions_hash);
+
+watch(
+  () => isBlockLoading.value,
+  (value) => {
+    if (value) isFetchingBlockFailed.value = false;
+  }
+);
 
 const networkMetrics = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchNetworkMetrics));
 
@@ -68,7 +85,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
             @click="handlePreviousBlockClick"
             @keydown.enter.space="handlePreviousBlockClick"
           />
-          <span class="block-details__metrics-header-block">{{ $t('blocks.block', [block?.height]) }}</span>
+          <span class="block-details__metrics-header-block">{{ $t('blocks.block', [blockHeightOrHash]) }}</span>
           <ArrowIcon
             v-if="isNextBlockExists"
             role="button"
@@ -85,6 +102,12 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
           class="block-details__metrics_loading"
         >
           <BaseLoading />
+        </div>
+        <div
+          v-else-if="isFetchingBlockFailed"
+          class="block-details__metrics_unavailable row-text"
+        >
+          {{ $t('blocks.blockNotAvailableYet') }}
         </div>
         <div v-else-if="block">
           <div class="block-details__metrics-data">
@@ -138,6 +161,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
       </template>
     </BaseContentBlock>
     <BaseContentBlock
+      v-if="!isFetchingBlockFailed"
       :title="$t('blocks.blockTransactions')"
       class="block-details__transactions"
     >
@@ -211,6 +235,10 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
       margin-top: size(1);
       display: flex;
       justify-content: center;
+    }
+
+    &_unavailable {
+      margin: size(2) size(4) 0;
     }
 
     &-data {
