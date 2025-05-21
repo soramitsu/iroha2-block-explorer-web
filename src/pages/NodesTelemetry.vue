@@ -247,8 +247,8 @@ watch(
               {{ formatNumber(item.status.block) }}
             </BaseLink>
 
-            <span class="row-text-monospace cell">{{ item.status.commit_time.ms }}ms</span>
-            <span class="row-text-monospace cell">{{ item.status.avg_commit_time.ms }}ms</span>
+            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.commit_time.ms) }}</span>
+            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.avg_commit_time.ms) }}</span>
             <span class="row-text-monospace cell">{{ formatNumber(item.status.queue_size) }}</span>
             <span class="row-text-monospace cell">{{ formatTimestamp(item.status.uptime.ms) }}</span>
           </div>
