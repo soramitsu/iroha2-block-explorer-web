@@ -7,7 +7,7 @@ import type { NetworkMetrics, PeerInfo, PeerStatus } from '@/shared/api/schemas'
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
-import { streamPeerMetrics } from '@/shared/api';
+import { streamTelemetryMetrics } from '@/shared/api';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
@@ -22,41 +22,41 @@ interface PeerData {
 const metrics = ref<NetworkMetrics | null>(null);
 const peers = reactive(new Map<string, PeerData>());
 
-const { data: streamedPeerMetrics, status: streamStatus } = streamPeerMetrics();
+const { data: streamedMetrics, status: streamStatus } = streamTelemetryMetrics();
 
 watch(
-  () => streamedPeerMetrics.value,
+  () => streamedMetrics.value,
   () => {
-    if (!streamedPeerMetrics.value) return;
+    if (!streamedMetrics.value) return;
 
-    switch (streamedPeerMetrics.value.kind) {
+    switch (streamedMetrics.value.kind) {
       case 'first': {
-        metrics.value = streamedPeerMetrics.value.network_status;
+        metrics.value = streamedMetrics.value.network_status;
 
-        streamedPeerMetrics.value.peers_info.forEach((peer) => {
+        streamedMetrics.value.peers_info.forEach((peer) => {
           peers.set(peer.url, { ...(peers.get(peer.url) ?? { status: null }), info: peer });
         });
-        streamedPeerMetrics.value.peers_status.forEach((peer) => {
+        streamedMetrics.value.peers_status.forEach((peer) => {
           peers.set(peer.url, { ...(peers.get(peer.url) ?? { info: null }), status: peer });
         });
         break;
       }
       case 'peer_info': {
-        peers.set(streamedPeerMetrics.value.url, {
-          ...(peers.get(streamedPeerMetrics.value.url) ?? { status: null }),
-          info: streamedPeerMetrics.value,
+        peers.set(streamedMetrics.value.url, {
+          ...(peers.get(streamedMetrics.value.url) ?? { status: null }),
+          info: streamedMetrics.value,
         });
         break;
       }
       case 'peer_status': {
-        peers.set(streamedPeerMetrics.value.url, {
-          ...(peers.get(streamedPeerMetrics.value.url) ?? { info: null }),
-          status: streamedPeerMetrics.value,
+        peers.set(streamedMetrics.value.url, {
+          ...(peers.get(streamedMetrics.value.url) ?? { info: null }),
+          status: streamedMetrics.value,
         });
         break;
       }
       case 'network_status': {
-        metrics.value = streamedPeerMetrics.value;
+        metrics.value = streamedMetrics.value;
         break;
       }
     }

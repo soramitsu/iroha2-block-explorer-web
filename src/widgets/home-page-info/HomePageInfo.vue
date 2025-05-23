@@ -9,12 +9,12 @@
     </div>
 
     <BaseLoading
-      v-if="isLoading"
+      v-if="isMetricsLoading"
       class="home-page-info_loading"
     />
 
     <div
-      v-if="!isLoading"
+      v-if="!isMetricsLoading"
       class="home-page-info__grid"
     >
       <div
@@ -33,7 +33,7 @@
     </div>
 
     <div
-      v-if="!isLoading"
+      v-if="!isMetricsLoading"
       class="home-page-info__grid"
     >
       <div
@@ -55,42 +55,52 @@
 
 <script setup lang="ts">
 import { SearchField } from '@/features/search';
-import { computed } from 'vue';
-import * as http from '@/shared/api';
+import { computed, ref, watch } from 'vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import type { NetworkMetrics } from '@/shared/api/schemas';
+import { streamTelemetryMetrics } from '@/shared/api';
 
 const firstSection = computed(() => {
   return [
-    { value: setup.data?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
-    { value: setup.data?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
-    { value: setup.data?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
+    { value: metrics.value?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
+    { value: metrics.value?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
+    { value: metrics.value?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
   ];
 });
 
 const secondSection = computed(() => {
   return [
-    { value: setup.data?.block ?? 0, i18nKey: 'homePage.totalBlocks' },
-    { value: setup.data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
-    { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
+    { value: metrics.value?.block ?? 0, i18nKey: 'homePage.totalBlocks' },
+    {
+      value: metrics.value ? metrics.value.transactions_accepted + metrics.value.transactions_rejected : 0,
+      i18nKey: 'homePage.totalTransactions',
+    },
+    { value: metrics.value ? metrics.value.peers + 1 : 1, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
-const setup = setupAsyncData(async () => {
-  const { assets, accounts, domains, peers, block, transactions_accepted, transactions_rejected } =
-    await http.fetchNetworkMetrics();
+const metrics = ref<NetworkMetrics | null>(null);
 
-  return {
-    assets,
-    accounts,
-    domains,
-    nodes: peers + 1,
-    transactions: transactions_accepted + transactions_rejected,
-    block,
-  };
-});
+const { data: streamedMetrics, status: streamStatus } = streamTelemetryMetrics();
+const isMetricsLoading = computed(() => streamStatus.value === 'CONNECTING');
 
-const isLoading = computed(() => setup.isLoading);
+watch(
+  () => streamedMetrics.value,
+  () => {
+    if (!streamedMetrics.value) return;
+
+    switch (streamedMetrics.value.kind) {
+      case 'first': {
+        metrics.value = streamedMetrics.value.network_status;
+        break;
+      }
+      case 'network_status': {
+        metrics.value = streamedMetrics.value;
+        break;
+      }
+    }
+  }
+);
 </script>
 
 <style lang="scss">

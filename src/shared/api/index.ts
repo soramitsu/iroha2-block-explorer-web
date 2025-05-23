@@ -105,16 +105,16 @@ export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
   return NetworkMetrics.parse(res);
 }
 
-export function streamPeerMetrics() {
-  const { data: streamedPeerMetrics, status } = useEventSource('/api/v1/telemetry/live', [], {
+export function streamTelemetryMetrics() {
+  const { data: streamedMetrics, status } = useEventSource('/api/v1/telemetry/live', [], {
     autoReconnect: true,
   });
 
   return {
     data: computed(() => {
-      if (!streamedPeerMetrics.value) return null;
+      if (!streamedMetrics.value) return null;
 
-      return PeerMetrics.parse(JSON.parse(streamedPeerMetrics.value));
+      return PeerMetrics.parse(JSON.parse(streamedMetrics.value));
     }),
     status,
   };
