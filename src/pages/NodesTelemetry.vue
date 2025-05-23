@@ -31,32 +31,32 @@ watch(
 
     switch (streamedPeerMetrics.value.kind) {
       case 'first': {
-        metrics.value = streamedPeerMetrics.value.data.network_status;
+        metrics.value = streamedPeerMetrics.value.network_status;
 
-        streamedPeerMetrics.value.data.peers_info.forEach((peer) => {
+        streamedPeerMetrics.value.peers_info.forEach((peer) => {
           peers.set(peer.url, { ...(peers.get(peer.url) ?? { status: null }), info: peer });
         });
-        streamedPeerMetrics.value.data.peers_status.forEach((peer) => {
+        streamedPeerMetrics.value.peers_status.forEach((peer) => {
           peers.set(peer.url, { ...(peers.get(peer.url) ?? { info: null }), status: peer });
         });
         break;
       }
       case 'peer_info': {
-        peers.set(streamedPeerMetrics.value.data.url, {
-          ...(peers.get(streamedPeerMetrics.value.data.url) ?? { status: null }),
-          info: streamedPeerMetrics.value.data,
+        peers.set(streamedPeerMetrics.value.url, {
+          ...(peers.get(streamedPeerMetrics.value.url) ?? { status: null }),
+          info: streamedPeerMetrics.value,
         });
         break;
       }
       case 'peer_status': {
-        peers.set(streamedPeerMetrics.value.data.url, {
-          ...(peers.get(streamedPeerMetrics.value.data.url) ?? { info: null }),
-          status: streamedPeerMetrics.value.data,
+        peers.set(streamedPeerMetrics.value.url, {
+          ...(peers.get(streamedPeerMetrics.value.url) ?? { info: null }),
+          status: streamedPeerMetrics.value,
         });
         break;
       }
       case 'network_status': {
-        metrics.value = streamedPeerMetrics.value.data;
+        metrics.value = streamedPeerMetrics.value;
         break;
       }
     }
@@ -97,14 +97,14 @@ watch(
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.finalizedBlock') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value">{{ Math.trunc(metrics.avg_block_time.ms) / 1000 }}s</span>
+        <span class="nodes-telemetry-page__stats-stat-value">~~{{ metrics.avg_block_time.ms / 1000 }}s</span>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.averageBlockTime') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
         <span
           v-if="metrics.avg_commit_time"
           class="nodes-telemetry-page__stats-stat-value"
-        >{{ Math.trunc(metrics.avg_commit_time.ms) / 1000 }}s</span>
+        >~~{{ metrics.avg_commit_time.ms / 1000 }}s</span>
         <span
           v-else
           class="nodes-telemetry-page__stats-stat-value"
@@ -137,8 +137,8 @@ watch(
       >
         <template #header>
           <div class="nodes-telemetry-page__list-row">
+            <span class="h-sm cell" />
             <span class="h-sm cell">{{ $t('telemetry.publicUrl') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.connectionStatus') }}</span>
             <span class="h-sm cell">{{ $t('telemetry.location') }}</span>
             <span class="h-sm cell">{{ $t('telemetry.publicKey') }}</span>
             <span class="h-sm cell">{{ $t('telemetry.blocksGossiping') }}</span>
@@ -165,6 +165,11 @@ watch(
             v-else-if="item.info && item.status"
             class="nodes-telemetry-page__list-row"
           >
+            <span
+              class="nodes-telemetry-page__list-row-status row-text cell"
+              :data-connected="item.info.connected"
+            >◉</span>
+
             <BaseHash
               :hash="item.info.url"
               :link="item.info.url"
@@ -172,15 +177,6 @@ watch(
               class="cell"
               type="medium"
             />
-
-            <span
-              class="row-text cell"
-              :class="[
-                item.info.connected
-                  ? 'nodes-telemetry-page__list-row-connection-success'
-                  : 'nodes-telemetry-page__list-row-connection-error',
-              ]"
-            >{{ item.info.connected ? $t('telemetry.connected') : $t('telemetry.disconnected') }}</span>
 
             <span
               class="row-text cell"
@@ -267,6 +263,13 @@ watch(
             </div>
             <div v-else-if="item.info && item.status">
               <div class="nodes-telemetry-page__list-mobile-row">
+                <span
+                  class="nodes-telemetry-page__list-mobile-row-status"
+                  :data-connected="item.info.connected"
+                >◉</span>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row">
                 <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicUrl') }}</span>
                 <BaseHash
                   :hash="item.info.url"
@@ -274,20 +277,6 @@ watch(
                   copy
                   :type="hashType"
                 />
-              </div>
-
-              <div class="nodes-telemetry-page__list-mobile-row">
-                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{
-                  $t('telemetry.connectionStatus')
-                }}</span>
-                <span
-                  class="row-text"
-                  :class="[
-                    item.info.connected
-                      ? 'nodes-telemetry-page__list-mobile-row-connection-success'
-                      : 'nodes-telemetry-page__list-mobile-row-connection-error',
-                  ]"
-                >{{ item.info.connected ? $t('telemetry.connected') : $t('telemetry.disconnected') }}</span>
               </div>
 
               <div class="nodes-telemetry-page__list-mobile-row">
@@ -461,11 +450,13 @@ watch(
       align-items: center;
       @include xl {
         grid-template-columns:
-          size(28) size(16) size(14) size(36) size(12) size(12) 1fr size(10) size(10) size(10)
+          size(4) size(28) size(14) size(36) size(12) size(12) 0.8fr size(10) size(16) size(10)
           size(9);
       }
       @include xxl {
-        grid-template-columns: size(28) size(16) 0.8fr size(36) size(12) size(12) 1fr size(16) size(24) size(10) size(9);
+        grid-template-columns:
+          size(4) size(28) size(18) size(36) size(12) size(12) 0.8fr size(16) size(23) size(10)
+          size(9);
       }
 
       &-value_empty {
@@ -490,12 +481,11 @@ watch(
         }
       }
 
-      &-connection-success {
+      &-status[data-connected='true'] {
         color: theme-color('success');
       }
-
-      &-connection-error {
-        color: theme-color('error');
+      &-status {
+        color: theme-color('debug');
       }
     }
 
@@ -506,6 +496,14 @@ watch(
     &-mobile-row {
       display: flex;
       align-items: center;
+
+      &-status[data-connected='true'] {
+        color: theme-color('success');
+      }
+      &-status {
+        margin-left: size(1);
+        color: theme-color('debug');
+      }
 
       &-label {
         text-align: left;
