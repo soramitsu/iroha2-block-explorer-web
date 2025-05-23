@@ -12,6 +12,8 @@ import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+import type { NetworkMetrics } from '@/shared/api/schemas';
+import { streamTelemetryMetrics } from '@/shared/api';
 
 const router = useRouter();
 
@@ -48,9 +50,29 @@ watch(
   }
 );
 
-const networkMetrics = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchNetworkMetrics));
+const metrics = ref<NetworkMetrics | null>(null);
 
-const totalBlocks = computed(() => networkMetrics.value.expose.data?.block ?? 0);
+const { data: streamedMetrics } = streamTelemetryMetrics();
+
+watch(
+  () => streamedMetrics.value,
+  () => {
+    if (!streamedMetrics.value) return;
+
+    switch (streamedMetrics.value.kind) {
+      case 'first': {
+        metrics.value = streamedMetrics.value.network_status;
+        break;
+      }
+      case 'network_status': {
+        metrics.value = streamedMetrics.value;
+        break;
+      }
+    }
+  }
+);
+
+const totalBlocks = computed(() => metrics.value?.block ?? 0);
 const isNextBlockExists = computed(() => block.value && block.value.height < totalBlocks.value);
 const isPreviousBlockExists = computed(() => block.value && block.value.height > 1);
 
