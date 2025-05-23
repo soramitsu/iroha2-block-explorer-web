@@ -21,9 +21,8 @@ import {
   Instruction,
   NetworkMetrics,
   PeerInfo,
-  PeerStatus,
   NFT,
-  PeerInitialMetrics,
+  PeerMetrics,
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
 import { computed } from 'vue';
@@ -109,42 +108,10 @@ export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
 export function streamPeerMetrics() {
   const { data: streamedPeerMetrics, status } = useEventSource('/api/v1/telemetry/live');
   return {
-    data: computed<
-      | { kind: 'peer_info', data: PeerInfo }
-      | { kind: 'peer_status', data: PeerStatus }
-      | { kind: 'network_status', data: NetworkMetrics }
-      | { kind: 'first', data: PeerInitialMetrics }
-      | null
-    >(() => {
+    data: computed(() => {
       if (!streamedPeerMetrics.value) return null;
 
-      const receivedData = JSON.parse(streamedPeerMetrics.value);
-      switch (receivedData.kind) {
-        case 'peer_info': {
-          return {
-            kind: 'peer_info',
-            data: PeerInfo.parse(receivedData),
-          };
-        }
-        case 'peer_status': {
-          return {
-            kind: 'peer_status',
-            data: PeerStatus.parse(receivedData),
-          };
-        }
-        case 'network_status': {
-          return {
-            kind: 'network_status',
-            data: NetworkMetrics.parse(receivedData),
-          };
-        }
-        default: {
-          return {
-            kind: 'first',
-            data: PeerInitialMetrics.parse(receivedData),
-          };
-        }
-      }
+      return PeerMetrics.parse(JSON.parse(streamedPeerMetrics.value));
     }),
     status,
   };

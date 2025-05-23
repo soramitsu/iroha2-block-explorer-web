@@ -209,12 +209,18 @@ export const PeerStatus = z.object({
 
 export type PeerStatus = z.infer<typeof PeerStatus>;
 
-export const PeerInitialMetrics = z.object({
-  peers_info: PeerInfo.array(),
-  peers_status: PeerStatus.array(),
-  network_status: NetworkMetrics,
-});
-export type PeerInitialMetrics = z.infer<typeof PeerInitialMetrics>;
+export const PeerMetrics = z.discriminatedUnion('kind', [
+  PeerInfo.extend({ kind: z.literal('peer_info') }),
+  PeerStatus.extend({ kind: z.literal('peer_status') }),
+  NetworkMetrics.extend({ kind: z.literal('network_status') }),
+  z.object({
+    kind: z.literal('first'),
+    peers_info: PeerInfo.array(),
+    peers_status: PeerStatus.array(),
+    network_status: NetworkMetrics,
+  }),
+]);
+export type PeerMetrics = z.infer<typeof PeerMetrics>;
 
 export interface InstructionsSearchParams extends PaginationParams {
   authority?: string
