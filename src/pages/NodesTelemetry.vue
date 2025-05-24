@@ -490,6 +490,7 @@ watch(
     }
 
     &-mobile-card {
+      border-bottom: 1px solid theme-color('border-primary');
       padding: size(2) size(3);
     }
 
@@ -535,6 +536,10 @@ watch(
 
       @include xl {
         grid-template-columns: 1fr;
+      }
+
+      .content-row:last-child {
+        border-bottom: 1px solid theme-color('border-primary');
       }
     }
 
