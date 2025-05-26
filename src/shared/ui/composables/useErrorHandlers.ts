@@ -1,16 +1,6 @@
 import { useNotifications } from './notifications';
 import { ZodError } from 'zod';
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message;
