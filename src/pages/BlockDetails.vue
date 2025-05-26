@@ -14,6 +14,7 @@ import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import type { NetworkMetrics } from '@/shared/api/schemas';
 import { streamTelemetryMetrics } from '@/shared/api';
+import { ApiError } from '@/shared/ui/composables/useErrorHandlers';
 
 const router = useRouter();
 
@@ -30,7 +31,7 @@ const blockHeightOrHash = computed(() => {
 const isFetchingBlockFailed = ref(false);
 
 function handleBlockFetchingError(err: unknown) {
-  isFetchingBlockFailed.value = true;
+  if (err instanceof ApiError && err.status === 404) isFetchingBlockFailed.value = true;
 }
 
 const blockScope = useParamScope(blockHeightOrHash, (value) =>
