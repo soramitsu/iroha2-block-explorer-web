@@ -26,7 +26,12 @@ import {
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
 import { computed } from 'vue';
-import { NOT_FOUND_ERROR } from '@/shared/api/consts';
+import {
+  ERROR_FETCHING_BLOCK_STATUS,
+  BLOCK_NOT_FOUND_STATUS,
+  SUCCESS_FETCHING_BLOCK_STATUS,
+  NOT_FOUND_ERROR,
+} from '@/shared/api/consts';
 
 const BASE_URL = window.location.origin.toString() + '/api/v1';
 
@@ -103,9 +108,24 @@ export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<P
   return Paginated(Block).parse(res);
 }
 
-export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
-  const res = await get(`/blocks/${heightOrHash}`);
-  return Block.parse(res);
+export async function fetchBlock(
+  heightOrHash: number | string
+): Promise<
+  | { status: typeof SUCCESS_FETCHING_BLOCK_STATUS, data: Block }
+  | { status: typeof BLOCK_NOT_FOUND_STATUS }
+  | { status: typeof ERROR_FETCHING_BLOCK_STATUS }
+> {
+  try {
+    const res = await get(`/blocks/${heightOrHash}`);
+    return {
+      status: SUCCESS_FETCHING_BLOCK_STATUS,
+      data: Block.parse(res),
+    };
+  } catch (e: unknown) {
+    if ((e as Error).message === NOT_FOUND_ERROR) return { status: BLOCK_NOT_FOUND_STATUS };
+
+    return { status: ERROR_FETCHING_BLOCK_STATUS };
+  }
 }
 
 export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {

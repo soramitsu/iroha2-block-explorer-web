@@ -136,7 +136,8 @@
     "rejectedTransactions": "Rejected transactions",
     "merkleRootHash": "Transaction's Merkle Root Hash",
     "thisBlockIsEmpty": "This block is empty",
-    "blockNotAvailableYet": "This block is not available yet in explorer"
+    "blockNotAvailableYet": "This block is not available yet in explorer",
+    "unknownError": "Unknown error occurred"
   },
   "domains": {
     "domains": "Domains",

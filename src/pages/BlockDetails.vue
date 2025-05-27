@@ -14,7 +14,11 @@ import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import type { NetworkMetrics } from '@/shared/api/schemas';
 import { streamTelemetryMetrics } from '@/shared/api';
-import { NOT_FOUND_ERROR } from '@/shared/api/consts';
+import {
+  ERROR_FETCHING_BLOCK_STATUS,
+  BLOCK_NOT_FOUND_STATUS,
+  SUCCESS_FETCHING_BLOCK_STATUS,
+} from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -28,28 +32,19 @@ const blockHeightOrHash = computed(() => {
   return Number(heightOrHash) || heightOrHash;
 });
 
-const isFetchingBlockFailed = ref(false);
-
-function handleBlockFetchingError(err: unknown) {
-  if (err === NOT_FOUND_ERROR) isFetchingBlockFailed.value = true;
-}
-
 const blockScope = useParamScope(blockHeightOrHash, (value) =>
-  setupAsyncData(() => http.fetchBlock(value), {
-    onError: handleBlockFetchingError,
-  })
+  setupAsyncData(() => http.fetchBlock(value))
 );
 
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
-const block = computed(() => blockScope.value?.expose.data);
-const isBlockEmpty = computed(() => !block.value?.transactions_hash);
+const block = computed(() => {
+  if (blockScope.value?.expose.data?.status === SUCCESS_FETCHING_BLOCK_STATUS) return blockScope.value.expose.data.data;
 
-watch(
-  () => isBlockLoading.value,
-  (value) => {
-    if (value) isFetchingBlockFailed.value = false;
-  }
-);
+  return null;
+});
+const isBlockNotFound = computed(() => blockScope.value?.expose.data?.status === BLOCK_NOT_FOUND_STATUS);
+const isOtherError = computed(() => blockScope.value?.expose.data?.status === ERROR_FETCHING_BLOCK_STATUS);
+const isBlockEmpty = computed(() => !block.value?.transactions_hash);
 
 const metrics = ref<NetworkMetrics | null>(null);
 
@@ -127,10 +122,16 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
           <BaseLoading />
         </div>
         <div
-          v-else-if="isFetchingBlockFailed"
-          class="block-details__metrics_unavailable row-text"
+          v-else-if="isBlockNotFound"
+          class="block-details__metrics_error row-text"
         >
           {{ $t('blocks.blockNotAvailableYet') }}
+        </div>
+        <div
+          v-else-if="isOtherError"
+          class="block-details__metrics_error row-text"
+        >
+          {{ $t('blocks.unknownError') }}
         </div>
         <div v-else-if="block">
           <div class="block-details__metrics-data">
@@ -184,7 +185,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
       </template>
     </BaseContentBlock>
     <BaseContentBlock
-      v-if="!isFetchingBlockFailed"
+      v-if="block"
       :title="$t('blocks.blockTransactions')"
       class="block-details__transactions"
     >
@@ -260,7 +261,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
       justify-content: center;
     }
 
-    &_unavailable {
+    &_error {
       margin: size(2) size(4) 0;
     }
 
