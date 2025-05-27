@@ -22,3 +22,7 @@ Build artifacts will be located at `dist` dir.
 
 Frontend sends API requests to its own base URL (`<base>/api/v1`) by default. When served via Vite, it is automatically
 proxied to `localhost:4000`. Proxy target could be changed in `vite.config.mts`.
+
+## Compatibility and Versioning
+
+Please refer to the [Explorer Backend documentation](https://github.com/soramitsu/iroha2-block-explorer-backend#compatibility-and-versioning).
