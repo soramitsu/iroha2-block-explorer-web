@@ -57,14 +57,14 @@ import { computed } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useRouter } from 'vue-router';
-import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const router = useRouter();
 
 const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
 
 const isLoading = computed(() => setup.isLoading);
-const blocks = computed(() => (setup.data?.status === SUCCESSFUL_FETCHING_STATUS ? setup.data.data.items : []));
+const blocks = computed(() => (setup.data?.status === SUCCESSFUL_FETCHING ? setup.data.data.items : []));
 
 function handleRowClick(height: number) {
   router.push(`/blocks/${height}`);

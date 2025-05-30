@@ -85,7 +85,7 @@ import { computed, reactive, watch } from 'vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', sm: 'medium', xxs: 'two-line' });
 
@@ -113,12 +113,12 @@ const scope = useParamScope(
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const totalDomains = computed(() =>
-  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING
     ? scope.value.expose.data.data.pagination.total_items
     : 0
 );
 const domains = computed(() =>
-  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? scope.value.expose.data.data.items : []
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.items : []
 );
 </script>
 

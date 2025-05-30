@@ -13,7 +13,7 @@ import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -38,7 +38,7 @@ const assetScope = useParamScope(
 
 const isAssetLoading = computed(() => assetScope.value.expose.isLoading);
 const asset = computed(() =>
-  assetScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? assetScope.value.expose.data.data : undefined
+  assetScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetScope.value.expose.data.data : undefined
 );
 
 const listState = reactive({
@@ -68,12 +68,12 @@ const assetsListScope = useParamScope(
 
 const isLoadingAssets = computed(() => !!assetsListScope.value?.expose.isLoading);
 const totalAssets = computed(() =>
-  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
     ? assetsListScope.value.expose.data.data.pagination.total_items
     : 0
 );
 const assets = computed(() =>
-  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
     ? assetsListScope.value.expose.data.data.items
     : []
 );

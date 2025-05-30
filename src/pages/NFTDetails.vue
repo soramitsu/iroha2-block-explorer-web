@@ -10,7 +10,7 @@ import { parseMetadata } from '@/shared/ui/utils/json';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -34,7 +34,7 @@ const NFTScope = useParamScope(
 
 const isLoading = computed(() => NFTScope.value.expose.isLoading);
 const NFT = computed(() =>
-  NFTScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? NFTScope.value.expose.data.data : undefined
+  NFTScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? NFTScope.value.expose.data.data : undefined
 );
 </script>
 

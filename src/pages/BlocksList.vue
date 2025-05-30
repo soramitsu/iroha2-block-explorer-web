@@ -112,7 +112,7 @@ import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xxs: 'short' }, 'medium');
 
@@ -140,10 +140,10 @@ const scope = useParamScope(
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const payloadPagination = computed(() =>
-  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? scope.value.expose.data.data.pagination : undefined
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination : undefined
 );
 const blocks = computed(() =>
-  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? scope.value.expose.data.data.items : []
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.items : []
 );
 </script>
 

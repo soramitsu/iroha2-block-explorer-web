@@ -18,7 +18,7 @@ import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
 import { useI18n } from 'vue-i18n';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -38,7 +38,7 @@ const domainScope = useParamScope(domainId, (value) => setupAsyncData(() => http
 
 const isDomainLoading = computed(() => domainScope.value.expose.isLoading);
 const domain = computed(() =>
-  domainScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? domainScope.value.expose.data.data : undefined
+  domainScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? domainScope.value.expose.data.data : undefined
 );
 const domainAssets = computed(() => domain.value?.assets ?? 0);
 const domainNFTs = computed(() => domain.value?.nfts ?? 0);
@@ -71,7 +71,7 @@ const assetsListScope = useParamScope(
 
 const isAssetsListLoading = computed(() => !!assetsListScope.value?.expose.isLoading);
 const assets = computed(() =>
-  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
     ? assetsListScope.value.expose.data.data.items
     : []
 );
@@ -90,7 +90,7 @@ const NFTsListScope = useParamScope(
 
 const isNFTsListLoading = computed(() => !!NFTsListScope.value?.expose.isLoading);
 const NFTs = computed(() =>
-  NFTsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+  NFTsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
     ? NFTsListScope.value.expose.data.data.items
     : []
 );
@@ -122,7 +122,7 @@ const accountsListScope = useParamScope(
 
 const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.isLoading);
 const accounts = computed(() =>
-  accountsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+  accountsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
     ? accountsListScope.value.expose.data.data.items
     : []
 );
