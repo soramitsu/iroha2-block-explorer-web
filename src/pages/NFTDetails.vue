@@ -10,6 +10,7 @@ import { parseMetadata } from '@/shared/ui/utils/json';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+import { SUCCESS_FETCHING_STATUS } from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -21,7 +22,7 @@ const NFTId = computed(() => {
   return NftIdSchema.parse(id);
 });
 
-const assetScope = useParamScope(
+const NFTScope = useParamScope(
   () => {
     return {
       key: NFTId.value.toString(),
@@ -31,8 +32,10 @@ const assetScope = useParamScope(
   ({ payload }) => setupAsyncData(() => http.fetchNFTById(payload))
 );
 
-const isLoading = computed(() => assetScope.value.expose.isLoading);
-const NFT = computed(() => assetScope.value?.expose.data);
+const isLoading = computed(() => NFTScope.value.expose.isLoading);
+const NFT = computed(() =>
+  NFTScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? NFTScope.value.expose.data.data : undefined
+);
 </script>
 
 <template>

@@ -75,6 +75,7 @@ import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { AccountId } from '@iroha/core/data-model';
 import { useRouter } from 'vue-router';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+import { SUCCESS_FETCHING_STATUS } from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -103,8 +104,12 @@ const scope = useParamScope(
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
-const totalAccounts = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
-const accounts = computed(() => scope.value?.expose.data?.items ?? []);
+const totalAccounts = computed(() =>
+  scope.value.expose.data?.status === SUCCESS_FETCHING_STATUS ? scope.value.expose.data.data.pagination.total_items : 0
+);
+const accounts = computed(() =>
+  scope.value.expose.data?.status === SUCCESS_FETCHING_STATUS ? scope.value.expose.data.data.items : []
+);
 
 function handleRowClick(id: AccountId) {
   router.push(`/accounts/${id}`);

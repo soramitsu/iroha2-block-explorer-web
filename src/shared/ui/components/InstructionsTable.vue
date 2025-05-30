@@ -23,6 +23,7 @@ import BaseJson from '@/shared/ui/components/BaseJson.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
+import { SUCCESS_FETCHING_STATUS } from '@/shared/api/consts';
 
 const { t } = useI18n();
 const props = defineProps<{
@@ -88,8 +89,12 @@ const scope = useParamScope(
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
-const totalItems = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
-const items = computed(() => scope.value?.expose.data?.items ?? []);
+const totalItems = computed(() =>
+  scope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? scope.value.expose.data.data.pagination.total_items : 0
+);
+const items = computed(() =>
+  scope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? scope.value?.expose.data.data.items : []
+);
 </script>
 
 <template>

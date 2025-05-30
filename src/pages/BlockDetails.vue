@@ -14,11 +14,7 @@ import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import type { NetworkMetrics } from '@/shared/api/schemas';
 import { streamTelemetryMetrics } from '@/shared/api';
-import {
-  ERROR_FETCHING_BLOCK_STATUS,
-  BLOCK_NOT_FOUND_STATUS,
-  SUCCESS_FETCHING_BLOCK_STATUS,
-} from '@/shared/api/consts';
+import { NOT_FOUND_STATUS, SUCCESS_FETCHING_STATUS, UNKNOWN_ERROR_STATUS } from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -32,18 +28,17 @@ const blockHeightOrHash = computed(() => {
   return Number(heightOrHash) || heightOrHash;
 });
 
-const blockScope = useParamScope(blockHeightOrHash, (value) =>
-  setupAsyncData(() => http.fetchBlock(value))
-);
+const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(() => http.fetchBlock(value)));
 
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
 const block = computed(() => {
-  if (blockScope.value?.expose.data?.status === SUCCESS_FETCHING_BLOCK_STATUS) return blockScope.value.expose.data.data;
+  if (blockScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS) return blockScope.value.expose.data.data;
 
   return null;
 });
-const isBlockNotFound = computed(() => blockScope.value?.expose.data?.status === BLOCK_NOT_FOUND_STATUS);
-const isOtherError = computed(() => blockScope.value?.expose.data?.status === ERROR_FETCHING_BLOCK_STATUS);
+const isBlockNotFound = computed(() => blockScope.value?.expose.data?.status === NOT_FOUND_STATUS);
+// TODO: display unknown error with i18n
+const isOtherError = computed(() => blockScope.value?.expose.data?.status === UNKNOWN_ERROR_STATUS);
 const isBlockEmpty = computed(() => !block.value?.transactions_hash);
 
 const metrics = ref<NetworkMetrics | null>(null);
