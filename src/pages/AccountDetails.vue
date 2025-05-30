@@ -21,7 +21,7 @@ import type { TabAssets } from '@/features/filter/assets/model';
 import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
 import { useI18n } from 'vue-i18n';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESS_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -46,7 +46,9 @@ const accountScope = useParamScope(
 
 const isAccountLoading = computed(() => accountScope.value.expose.isLoading);
 const account = computed(() =>
-  accountScope.value.expose.data?.status === SUCCESS_FETCHING_STATUS ? accountScope.value?.expose.data.data : undefined
+  accountScope.value.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+    ? accountScope.value?.expose.data.data
+    : undefined
 );
 
 const domainsListState = reactive({
@@ -76,12 +78,14 @@ const domainsScope = useParamScope(
 
 const isDomainsLoading = computed(() => !!domainsScope.value?.expose.isLoading);
 const totalDomains = computed(() =>
-  domainsScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS
+  domainsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
     ? domainsScope.value.expose.data.data.pagination.total_items
     : 0
 );
 const domains = computed(() =>
-  domainsScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? domainsScope.value.expose.data.data.items : []
+  domainsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
+    ? domainsScope.value.expose.data.data.items
+    : []
 );
 
 const assetsTab = ref<TabAssets>('assets');
@@ -111,12 +115,12 @@ const assetsScope = useParamScope(
 
 const isAssetsLoading = computed(() => !!assetsScope.value?.expose.isLoading);
 const totalAssets = computed(() =>
-  assetsScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS
+  assetsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
     ? assetsScope.value.expose.data.data.pagination.total_items
     : 0
 );
 const assets = computed(() =>
-  assetsScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? assetsScope.value.expose.data.data.items : []
+  assetsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? assetsScope.value.expose.data.data.items : []
 );
 
 const NFTsScope = useParamScope(
@@ -133,12 +137,12 @@ const NFTsScope = useParamScope(
 
 const isNFTsLoading = computed(() => !!NFTsScope.value?.expose.isLoading);
 const totalNFTs = computed(() =>
-  NFTsScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS
+  NFTsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS
     ? NFTsScope.value.expose.data.data.pagination.total_items
     : 0
 );
 const nfts = computed(() =>
-  NFTsScope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? NFTsScope.value.expose.data.data.items : []
+  NFTsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? NFTsScope.value.expose.data.data.items : []
 );
 
 const transactionsTab = ref<TabAccountTransactions>('transactions');

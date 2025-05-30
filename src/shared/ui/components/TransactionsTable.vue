@@ -12,7 +12,7 @@ import * as http from '@/shared/api';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESS_FETCHING_STATUS } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING_STATUS } from '@/shared/api/consts';
 
 const props = withDefaults(
   defineProps<{
@@ -55,10 +55,10 @@ const scope = useParamScope(
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const transactions = computed(() =>
-  scope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? scope.value.expose.data.data.items : []
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? scope.value.expose.data.data.items : []
 );
 const payloadPagination = computed(() =>
-  scope.value?.expose.data?.status === SUCCESS_FETCHING_STATUS ? scope.value.expose.data.data.pagination : undefined
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING_STATUS ? scope.value.expose.data.data.pagination : undefined
 );
 </script>
 
