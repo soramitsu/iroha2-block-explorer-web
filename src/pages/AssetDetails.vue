@@ -73,9 +73,7 @@ const totalAssets = computed(() =>
     : 0
 );
 const assets = computed(() =>
-  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? assetsListScope.value.expose.data.data.items
-    : []
+  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetsListScope.value.expose.data.data.items : []
 );
 </script>
 

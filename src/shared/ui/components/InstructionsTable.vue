@@ -88,9 +88,7 @@ const scope = useParamScope(
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
 const totalItems = computed(() =>
-  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? scope.value.expose.data.data.pagination.total_items
-    : 0
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination.total_items : 0
 );
 const items = computed(() =>
   scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value?.expose.data.data.items : []

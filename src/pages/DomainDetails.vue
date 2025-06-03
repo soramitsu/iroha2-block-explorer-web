@@ -71,9 +71,7 @@ const assetsListScope = useParamScope(
 
 const isAssetsListLoading = computed(() => !!assetsListScope.value?.expose.isLoading);
 const assets = computed(() =>
-  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? assetsListScope.value.expose.data.data.items
-    : []
+  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetsListScope.value.expose.data.data.items : []
 );
 
 const NFTsListScope = useParamScope(
@@ -90,9 +88,7 @@ const NFTsListScope = useParamScope(
 
 const isNFTsListLoading = computed(() => !!NFTsListScope.value?.expose.isLoading);
 const NFTs = computed(() =>
-  NFTsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? NFTsListScope.value.expose.data.data.items
-    : []
+  NFTsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? NFTsListScope.value.expose.data.data.items : []
 );
 
 const accountsListState = reactive({
