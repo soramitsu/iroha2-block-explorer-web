@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import BigNumber from 'bignumber.js';
 import { AssetDefinitionId, AccountId, AssetId, NftId } from '@iroha/core/data-model';
 
@@ -160,48 +160,67 @@ export const NetworkMetrics = z.object({
   domains: z.number(),
   accounts: z.number(),
   assets: z.number(),
-  transactions: z.object({
-    accepted: z.number(),
-    rejected: z.number(),
-  }),
-  latest_block: z.number(),
-  latest_block_created_at: z.coerce.date().nullable(),
-  finalized_block: z.number(),
-  average_block_time_ms: z.number(),
-  average_commit_time_ms: z.number(),
+  transactions_accepted: z.number(),
+  transactions_rejected: z.number(),
+  block: z.number(),
+  block_created_at: z.coerce.date().nullable(),
+  finalized_block: z.number().nullable(),
+  avg_commit_time: Duration.nullable(),
+  avg_block_time: Duration,
 });
 
 export type NetworkMetrics = z.infer<typeof NetworkMetrics>;
 
-export const PeerMetrics = z.object({
-  time: z.string(),
-  peer: z.string(),
-  role: z.enum(['Leader', 'ProxyTail', 'ValidatingPeer', 'ObservingPeer']),
-  block: z.number(),
-  block_created_at: z.coerce.date().nullable(),
-  block_arrived_at: z.coerce.date().nullable(),
-  queue_size: z.number(),
-  uptime_seconds: z.number(),
-});
-
-export type PeerMetrics = z.infer<typeof PeerMetrics>;
-
 export const PeerInfo = z.object({
-  public_key: z.string(),
-  public_url: z.string().nullable(),
+  url: z.string(),
+  connected: z.boolean(),
+  telemetry_unsupported: z.boolean(),
+  config: z
+    .object({
+      public_key: z.string(),
+      queue_capacity: z.number().nullable(),
+      network_block_gossip_size: z.number().nullable(),
+      network_block_gossip_period: Duration.nullable(),
+      network_tx_gossip_size: z.number().nullable(),
+      network_tx_gossip_period: Duration.nullable(),
+    })
+    .nullable(),
   location: z
     .object({
-      longitude: z.number(),
-      latitude: z.number(),
+      lat: z.number(),
+      lon: z.number(),
       country: z.string(),
       city: z.string(),
     })
     .nullable(),
-  queue_capacity: z.number().nullable(),
   connected_peers: z.string().array().nullable(),
 });
 
 export type PeerInfo = z.infer<typeof PeerInfo>;
+
+export const PeerStatus = z.object({
+  url: z.string(),
+  block: z.number(),
+  commit_time: Duration,
+  avg_commit_time: Duration,
+  queue_size: z.number(),
+  uptime: Duration,
+});
+
+export type PeerStatus = z.infer<typeof PeerStatus>;
+
+export const PeerMetrics = z.discriminatedUnion('kind', [
+  PeerInfo.extend({ kind: z.literal('peer_info') }),
+  PeerStatus.extend({ kind: z.literal('peer_status') }),
+  NetworkMetrics.extend({ kind: z.literal('network_status') }),
+  z.object({
+    kind: z.literal('first'),
+    peers_info: PeerInfo.array(),
+    peers_status: PeerStatus.array(),
+    network_status: NetworkMetrics,
+  }),
+]);
+export type PeerMetrics = z.infer<typeof PeerMetrics>;
 
 export interface InstructionsSearchParams extends PaginationParams {
   authority?: string

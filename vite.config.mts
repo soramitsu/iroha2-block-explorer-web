@@ -8,7 +8,6 @@ import svg from 'vite-svg-loader';
 export default defineConfig({
   server: {
     proxy: {
-      '/api/v1/metrics': 'http://localhost:8099',
       '/api/v1': 'http://127.0.0.1:4000',
     },
   },

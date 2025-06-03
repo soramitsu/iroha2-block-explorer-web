@@ -22,8 +22,8 @@ const props = defineProps<{
   height: size(4);
   padding: size(1);
   border-radius: size(0.5);
-  white-space: nowrap;
   z-index: 1;
+  white-space: pre;
 
   @include tpg-s4;
 }

@@ -135,7 +135,9 @@
     "totalTransactions": "Total transactions",
     "rejectedTransactions": "Rejected transactions",
     "merkleRootHash": "Transaction's Merkle Root Hash",
-    "thisBlockIsEmpty": "This block is empty"
+    "thisBlockIsEmpty": "This block is empty",
+    "blockNotAvailableYet": "This block is not available yet in explorer",
+    "unknownError": "Unknown error occurred"
   },
   "domains": {
     "domains": "Domains",
@@ -156,15 +158,25 @@
    "telemetry": "Telemetry",
     "nodes": "Nodes",
     "location": "Location",
-    "txnsInQueue": "Txns in queue",
+    "queue": "Queue",
+    "connectionStatus": "Connection status",
+    "uptime": "Uptime",
+    "blocksGossiping": "Blocks gossiping",
+    "tnxsGossiping": "Txns gossiping",
     "block": "Block",
-    "blockPropagationTime": "Block propagation time",
+    "commitTime": "Commit time",
+    "avgCommitTime": "Average commit time",
     "bestBlock": "Best block",
     "finalizedBlock": "Finalized block",
     "averageBlockTime": "Average block time",
     "averageBlockCommitTime": "Average block commit time",
     "lastBlock": "Last block",
     "publicKey": "Public key",
-    "publicUrl": "Public URL"
+    "publicUrl": "Public URL",
+    "networkGossipDetails": "size: {0}\nperiod: {1}ms",
+    "blocksGossipStats": "{0} per {1}ms",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "peerDoesntProvideTelemetry": "This peer does not provide telemetry data"
   }
 }

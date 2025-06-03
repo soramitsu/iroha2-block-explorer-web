@@ -18,6 +18,7 @@ import { ASSETS_OPTIONS } from '@/features/filter/assets/model';
 import { useI18n } from 'vue-i18n';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -36,7 +37,9 @@ const domainId = computed(() => {
 const domainScope = useParamScope(domainId, (value) => setupAsyncData(() => http.fetchDomain(value)));
 
 const isDomainLoading = computed(() => domainScope.value.expose.isLoading);
-const domain = computed(() => domainScope.value?.expose.data);
+const domain = computed(() =>
+  domainScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? domainScope.value.expose.data.data : undefined
+);
 const domainAssets = computed(() => domain.value?.assets ?? 0);
 const domainNFTs = computed(() => domain.value?.nfts ?? 0);
 const domainAccounts = computed(() => domain.value?.accounts ?? 0);
@@ -67,7 +70,11 @@ const assetsListScope = useParamScope(
 );
 
 const isAssetsListLoading = computed(() => !!assetsListScope.value?.expose.isLoading);
-const assets = computed(() => assetsListScope.value?.expose.data?.items ?? []);
+const assets = computed(() =>
+  assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
+    ? assetsListScope.value.expose.data.data.items
+    : []
+);
 
 const NFTsListScope = useParamScope(
   () => {
@@ -82,7 +89,11 @@ const NFTsListScope = useParamScope(
 );
 
 const isNFTsListLoading = computed(() => !!NFTsListScope.value?.expose.isLoading);
-const nfts = computed(() => NFTsListScope.value?.expose.data?.items ?? []);
+const NFTs = computed(() =>
+  NFTsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
+    ? NFTsListScope.value.expose.data.data.items
+    : []
+);
 
 const accountsListState = reactive({
   page: 1,
@@ -110,7 +121,11 @@ const accountsListScope = useParamScope(
 );
 
 const isAccountsListLoading = computed(() => !!accountsListScope.value?.expose.isLoading);
-const accounts = computed(() => accountsListScope.value?.expose.data?.items ?? []);
+const accounts = computed(() =>
+  accountsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
+    ? accountsListScope.value.expose.data.data.items
+    : []
+);
 
 function handleAssetRowClick(id: AssetDefinitionId) {
   router.push(`/assets/${encodeURIComponent(id.toString())}`);
@@ -244,7 +259,7 @@ const domainAssetsSection = computed(() => {
             v-model:page-size="assetsListState.per_page"
             :loading="isNFTsListLoading"
             :total="domainNFTs"
-            :items="nfts"
+            :items="NFTs"
             container-class="domain-details__native-assets-list"
             :breakpoint="960"
             row-pointer

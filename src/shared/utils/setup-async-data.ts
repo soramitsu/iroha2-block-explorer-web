@@ -7,6 +7,7 @@ export function setupAsyncData<K>(
   options?: {
     interval?: number
     immediate?: boolean
+    onError?: (err: unknown) => void
   }
 ) {
   const { handleUnknownError } = useErrorHandlers();
@@ -16,7 +17,8 @@ export function setupAsyncData<K>(
   useErrorRetry(state, run, { interval: options?.interval ?? 5000 });
 
   wheneverRejected(state, (err) => {
-    handleUnknownError(err);
+    if (options?.onError) options.onError(err);
+    else handleUnknownError(err);
   });
 
   return reactive({

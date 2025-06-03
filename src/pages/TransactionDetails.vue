@@ -15,6 +15,7 @@ import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -34,7 +35,11 @@ const txHash = computed(() => {
 const transactionScope = useParamScope(txHash, (value) => setupAsyncData(() => http.fetchTransaction(value)));
 
 const isTransactionLoading = computed(() => transactionScope.value.expose.isLoading);
-const transaction = computed(() => transactionScope.value?.expose.data);
+const transaction = computed(() =>
+  transactionScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
+    ? transactionScope.value.expose.data.data
+    : undefined
+);
 </script>
 
 <template>

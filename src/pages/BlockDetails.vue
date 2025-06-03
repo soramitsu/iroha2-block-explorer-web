@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
@@ -12,6 +12,9 @@ import TransactionsTable from '@/shared/ui/components/TransactionsTable.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+import type { NetworkMetrics } from '@/shared/api/schemas';
+import { streamTelemetryMetrics } from '@/shared/api';
+import { NOT_FOUND, SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 
 const router = useRouter();
 
@@ -28,12 +31,39 @@ const blockHeightOrHash = computed(() => {
 const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(() => http.fetchBlock(value)));
 
 const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
-const block = computed(() => blockScope.value?.expose.data);
+const block = computed(() => {
+  if (blockScope.value?.expose.data?.status === SUCCESSFUL_FETCHING) return blockScope.value.expose.data.data;
+
+  return null;
+});
+const isBlockNotFound = computed(() => blockScope.value?.expose.data?.status === NOT_FOUND);
+// TODO: display unknown error with i18n
+const isOtherError = computed(() => blockScope.value?.expose.data?.status === UNKNOWN_ERROR);
 const isBlockEmpty = computed(() => !block.value?.transactions_hash);
 
-const networkMetrics = useParamScope(blockHeightOrHash, () => setupAsyncData(http.fetchNetworkMetrics));
+const metrics = ref<NetworkMetrics | null>(null);
 
-const totalBlocks = computed(() => networkMetrics.value.expose.data?.latest_block ?? 0);
+const { data: streamedMetrics } = streamTelemetryMetrics();
+
+watch(
+  () => streamedMetrics.value,
+  () => {
+    if (!streamedMetrics.value) return;
+
+    switch (streamedMetrics.value.kind) {
+      case 'first': {
+        metrics.value = streamedMetrics.value.network_status;
+        break;
+      }
+      case 'network_status': {
+        metrics.value = streamedMetrics.value;
+        break;
+      }
+    }
+  }
+);
+
+const totalBlocks = computed(() => metrics.value?.block ?? 0);
 const isNextBlockExists = computed(() => block.value && block.value.height < totalBlocks.value);
 const isPreviousBlockExists = computed(() => block.value && block.value.height > 1);
 
@@ -68,7 +98,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
             @click="handlePreviousBlockClick"
             @keydown.enter.space="handlePreviousBlockClick"
           />
-          <span class="block-details__metrics-header-block">{{ $t('blocks.block', [block?.height]) }}</span>
+          <span class="block-details__metrics-header-block">{{ $t('blocks.block', [blockHeightOrHash]) }}</span>
           <ArrowIcon
             v-if="isNextBlockExists"
             role="button"
@@ -85,6 +115,18 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
           class="block-details__metrics_loading"
         >
           <BaseLoading />
+        </div>
+        <div
+          v-else-if="isBlockNotFound"
+          class="block-details__metrics_error row-text"
+        >
+          {{ $t('blocks.blockNotAvailableYet') }}
+        </div>
+        <div
+          v-else-if="isOtherError"
+          class="block-details__metrics_error row-text"
+        >
+          {{ $t('blocks.unknownError') }}
         </div>
         <div v-else-if="block">
           <div class="block-details__metrics-data">
@@ -138,6 +180,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
       </template>
     </BaseContentBlock>
     <BaseContentBlock
+      v-if="block"
       :title="$t('blocks.blockTransactions')"
       class="block-details__transactions"
     >
@@ -211,6 +254,10 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
       margin-top: size(1);
       display: flex;
       justify-content: center;
+    }
+
+    &_error {
+      margin: size(2) size(4) 0;
     }
 
     &-data {

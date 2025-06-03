@@ -1,83 +1,73 @@
 <script setup lang="ts">
-import * as http from '@/shared/api';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { reactive, watch } from 'vue';
-import { formatNumber } from '@/shared/ui/utils/formatters';
-import type { PeerInfo, PeerMetrics } from '@/shared/api/schemas';
-import { useErrorHandlers } from '@/shared/ui/composables/useErrorHandlers';
+import { reactive, ref, watch } from 'vue';
+import { formatNumber, formatTimestamp } from '@/shared/ui/utils/formatters';
+import type { NetworkMetrics, PeerInfo, PeerStatus } from '@/shared/api/schemas';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { useIntervalFn } from '@vueuse/shared';
-import { useAsyncState } from '@vueuse/core';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import LatestBlock from '@/entities/telemetry/LatestBlock.vue';
-import { streamPeerMetrics } from '@/shared/api';
-import invariant from 'tiny-invariant';
+import { streamTelemetryMetrics } from '@/shared/api';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
+import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
 
-const { handleUnknownError } = useErrorHandlers();
-
-const hashType = useAdaptiveHash({ md: 'short', xs: 'short', xxs: 'short' }, 'medium');
+const hashType = useAdaptiveHash({ xxs: 'short' }, 'medium');
 
 interface PeerData {
-  metrics: null | PeerMetrics
   info: null | PeerInfo
+  status: null | PeerStatus
 }
 
+const metrics = ref<NetworkMetrics | null>(null);
 const peers = reactive(new Map<string, PeerData>());
 
-const {
-  isLoading: isMetricsLoading,
-  state: metrics,
-  execute: getNetworkMetrics,
-} = useAsyncState(http.fetchNetworkMetrics, null, {
-  immediate: false,
-  onError: handleUnknownError,
-  resetOnExecute: false,
-});
-const { execute: getPeersInfo } = useAsyncState(http.fetchPeersInfo, null, {
-  immediate: false,
-  onError: handleUnknownError,
-  onSuccess: (data) => {
-    invariant(data, 'Expected peer info, received:' + data);
-
-    data.forEach((i) => {
-      peers.set(i.public_key, { ...(peers.get(i.public_key) ?? { metrics: null }), info: i });
-    });
-  },
-});
-
-const { data: streamedPeerMetrics, status: streamStatus } = streamPeerMetrics();
+const { data: streamedMetrics, status: streamStatus } = streamTelemetryMetrics();
 
 watch(
-  () => streamedPeerMetrics.value,
+  () => streamedMetrics.value,
   () => {
-    if (!streamedPeerMetrics.value) return;
+    if (!streamedMetrics.value) return;
 
-    const peer = peers.get(streamedPeerMetrics.value.peer);
-    peers.set(streamedPeerMetrics.value.peer, { info: peer?.info ?? null, metrics: streamedPeerMetrics.value });
+    switch (streamedMetrics.value.kind) {
+      case 'first': {
+        metrics.value = streamedMetrics.value.network_status;
+
+        streamedMetrics.value.peers_info.forEach((peer) => {
+          peers.set(peer.url, { ...(peers.get(peer.url) ?? { status: null }), info: peer });
+        });
+        streamedMetrics.value.peers_status.forEach((peer) => {
+          peers.set(peer.url, { ...(peers.get(peer.url) ?? { info: null }), status: peer });
+        });
+        break;
+      }
+      case 'peer_info': {
+        peers.set(streamedMetrics.value.url, {
+          ...(peers.get(streamedMetrics.value.url) ?? { status: null }),
+          info: streamedMetrics.value,
+        });
+        break;
+      }
+      case 'peer_status': {
+        peers.set(streamedMetrics.value.url, {
+          ...(peers.get(streamedMetrics.value.url) ?? { info: null }),
+          status: streamedMetrics.value,
+        });
+        break;
+      }
+      case 'network_status': {
+        metrics.value = streamedMetrics.value;
+        break;
+      }
+    }
   }
 );
-
-useIntervalFn(getNetworkMetrics, 15000, {
-  immediateCallback: true,
-});
-useIntervalFn(getPeersInfo, 30000, {
-  immediateCallback: true,
-});
-
-function formatTimeSpan(date1: Date | null, date2: Date | null) {
-  if (!date1 || !date2) return '-';
-
-  return (date1.getTime() - date2.getTime()) / 1000 + 's';
-}
 </script>
 
 <template>
   <div class="nodes-telemetry-page">
     <BaseLoading
-      v-if="isMetricsLoading && !metrics"
+      v-if="!metrics"
       class="nodes-telemetry-page_loading"
     />
     <div
@@ -86,36 +76,45 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
     >
       <div class="nodes-telemetry-page__stats-stat">
         <BaseLink
-          :to="`/blocks/${metrics.latest_block}`"
+          :to="`/blocks/${metrics.block}`"
           class="nodes-telemetry-page__stats-stat-value"
           custom-font
         >
-          #{{ formatNumber(metrics.latest_block) }}
+          #{{ formatNumber(metrics.block) }}
         </BaseLink>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.bestBlock') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
         <BaseLink
+          v-if="metrics.finalized_block"
           custom-font
           :to="`/blocks/${metrics.finalized_block}`"
           class="nodes-telemetry-page__stats-stat-value"
         >
           #{{ formatNumber(metrics.finalized_block) }}
         </BaseLink>
+        <span v-else>Unknown</span>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.finalizedBlock') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value">{{ Math.trunc(metrics.average_commit_time_ms) / 1000 }}s</span>
+        <span class="nodes-telemetry-page__stats-stat-value">~~{{ metrics.avg_block_time.ms / 1000 }}s</span>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.averageBlockTime') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
-        <span class="nodes-telemetry-page__stats-stat-value">{{ Math.trunc(metrics.average_block_time_ms) / 1000 }}s</span>
+        <span
+          v-if="metrics.avg_commit_time"
+          class="nodes-telemetry-page__stats-stat-value"
+        >~~{{ metrics.avg_commit_time.ms / 1000 }}s</span>
+        <span
+          v-else
+          class="nodes-telemetry-page__stats-stat-value"
+        >-</span>
         <span class="nodes-telemetry-page__stats-stat-label">{{ $t('telemetry.averageBlockCommitTime') }}</span>
       </div>
       <div class="nodes-telemetry-page__stats-stat">
         <div class="nodes-telemetry-page__stats-stat-value nodes-telemetry-page__stats-stat-last-block">
-          <div v-if="metrics.latest_block_created_at">
-            <LatestBlock :date="metrics.latest_block_created_at" />
+          <div v-if="metrics.block_created_at">
+            <LatestBlock :date="metrics.block_created_at" />
             <span>s</span>
           </div>
           <div v-else>
@@ -138,121 +137,228 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       >
         <template #header>
           <div class="nodes-telemetry-page__list-row">
-            <span class="h-sm cell">{{ $t('telemetry.publicKey') }}</span>
+            <span class="h-sm cell" />
             <span class="h-sm cell">{{ $t('telemetry.publicUrl') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.block') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.blockPropagationTime') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.txnsInQueue') }}</span>
             <span class="h-sm cell">{{ $t('telemetry.location') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.publicKey') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.blocksGossiping') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.tnxsGossiping') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.block') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.commitTime') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.avgCommitTime') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.queue') }}</span>
+            <span class="h-sm cell">{{ $t('telemetry.uptime') }}</span>
           </div>
         </template>
 
         <template #row="{ item }">
           <div
-            v-if="item.metrics && item.info"
+            v-if="item.info && item.info.telemetry_unsupported"
+            class="nodes-telemetry-page__list-row_unsupported row-text cell"
+          >
+            <BaseLink :to="item.info.url">
+              {{ item.info.url }}
+            </BaseLink>
+            - {{ $t('telemetry.peerDoesntProvideTelemetry') }}
+          </div>
+          <div
+            v-else-if="item.info && item.status"
             class="nodes-telemetry-page__list-row"
           >
+            <span
+              class="nodes-telemetry-page__list-row-status row-text cell"
+              :data-connected="item.info.connected"
+            >◉</span>
+
             <BaseHash
-              :hash="item.info.public_key"
-              type="medium"
-              copy
-              class="row-text-monospace cell"
-            />
-            <BaseHash
-              v-if="item.info.public_url"
-              :hash="item.info.public_url"
-              :link="item.info.public_url"
+              :hash="item.info.url"
+              :link="item.info.url"
               copy
               class="cell"
               type="medium"
             />
-            <div
-              v-else
-              class="row-text cell"
-            >
-              -
-            </div>
-            <BaseLink
-              monospace
-              :to="`/blocks/${item.metrics.block}`"
-              class="row-text cell"
-            >
-              {{ formatNumber(item.metrics.block) }}
-            </BaseLink>
-            <span class="row-text-monospace cell">{{
-              formatTimeSpan(item.metrics.block_arrived_at, item.metrics.block_created_at)
-            }}</span>
-            <span class="row-text-monospace cell">{{ formatNumber(item.metrics.queue_size) }}</span>
+
             <span
               class="row-text cell"
               :class="{ 'nodes-telemetry-page__list-row-value_empty': !item.info.location }"
-            >{{ item.info.location ?? 'Unknown' }}</span>
+            >{{ item.info.location?.country ?? 'Unknown' }}</span>
+
+            <BaseHash
+              v-if="item.info.config"
+              :hash="item.info.config.public_key"
+              type="medium"
+              copy
+              class="row-text-monospace cell"
+            />
+            <span
+              v-else
+              class="row-text cell"
+            >Unknown</span>
+
+            <div
+              v-if="item.info.config && item.info.config.network_block_gossip_size"
+              class="nodes-telemetry-page__list-row-gossip row-text-monospace cell"
+            >
+              <span>{{ item.info.config.network_block_gossip_size }}</span>
+              <ContextTooltip
+                v-if="item.info.config.network_block_gossip_period?.ms"
+                :message="
+                  $t('telemetry.networkGossipDetails', [
+                    item.info.config.network_block_gossip_size,
+                    item.info.config.network_block_gossip_period.ms,
+                  ])
+                "
+              />
+            </div>
+            <span
+              v-else
+              class="row-text cell"
+            >-</span>
+
+            <div
+              v-if="item.info.config && item.info.config.network_tx_gossip_size"
+              class="nodes-telemetry-page__list-row-gossip row-text-monospace cell"
+            >
+              <span>{{ item.info.config.network_tx_gossip_size }}</span>
+              <ContextTooltip
+                v-if="item.info.config.network_tx_gossip_period?.ms"
+                :message="
+                  $t('telemetry.networkGossipDetails', [
+                    item.info.config.network_tx_gossip_size,
+                    item.info.config.network_tx_gossip_period.ms,
+                  ])
+                "
+              />
+            </div>
+            <span
+              v-else
+              class="row-text cell"
+            >-</span>
+
+            <BaseLink
+              monospace
+              :to="`/blocks/${item.status.block}`"
+              class="cell"
+            >
+              {{ formatNumber(item.status.block) }}
+            </BaseLink>
+
+            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.commit_time.ms) }}</span>
+            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.avg_commit_time.ms) }}</span>
+            <span class="row-text-monospace cell">{{ formatNumber(item.status.queue_size) }}</span>
+            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.uptime.ms) }}</span>
           </div>
         </template>
 
         <template #mobile-card="{ item }">
-          <div
-            v-if="item.metrics && item.info"
-            class="nodes-telemetry-page__list-mobile-card"
-          >
-            <div class="nodes-telemetry-page__list-mobile-row">
-              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicKey') }}</span>
-              <BaseHash
-                :hash="item.info.public_key"
-                :type="hashType"
-                copy
-                class="row-text-monospace"
-              />
-            </div>
-
-            <div class="nodes-telemetry-page__list-mobile-row">
-              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicUrl') }}</span>
-              <BaseHash
-                v-if="item.info.public_url"
-                :hash="item.info.public_url"
-                :link="item.info.public_url"
-                copy
-                :type="hashType"
-              />
-              <div
-                v-else
-                class="row-text"
-              >
-                -
-              </div>
-            </div>
-
-            <div class="nodes-telemetry-page__list-mobile-row">
-              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.block') }}</span>
-              <BaseLink
-                monospace
-                :to="`/blocks/${item.metrics.block}`"
-                class="row-text"
-              >
-                {{ formatNumber(item.metrics.block) }}
+          <div class="nodes-telemetry-page__list-mobile-card">
+            <div
+              v-if="item.info?.telemetry_unsupported"
+              class="row-text"
+            >
+              <BaseLink :to="item.info.url">
+                {{ item.info.url }}
               </BaseLink>
+              - {{ $t('telemetry.peerDoesntProvideTelemetry') }}
             </div>
+            <div v-else-if="item.info && item.status">
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span
+                  class="nodes-telemetry-page__list-mobile-row-status"
+                  :data-connected="item.info.connected"
+                >◉</span>
+              </div>
 
-            <div class="nodes-telemetry-page__list-mobile-row">
-              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{
-                $t('telemetry.blockPropagationTime')
-              }}</span>
-              <span class="row-text-monospace">{{
-                formatTimeSpan(item.metrics.block_arrived_at, item.metrics.block_created_at)
-              }}</span>
-            </div>
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicUrl') }}</span>
+                <BaseHash
+                  :hash="item.info.url"
+                  :link="item.info.url"
+                  copy
+                  :type="hashType"
+                />
+              </div>
 
-            <div class="nodes-telemetry-page__list-mobile-row">
-              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.txnsInQueue') }}</span>
-              <span class="row-text-monospace">{{ formatNumber(item.metrics.queue_size) }}</span>
-            </div>
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.location') }}</span>
+                <span
+                  class="row-text"
+                  :class="{ 'nodes-telemetry-page__list-mobile-row-value_empty': !item.info.location }"
+                >{{ item.info.location?.country ?? 'Unknown' }}</span>
+              </div>
 
-            <div class="nodes-telemetry-page__list-mobile-row">
-              <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.location') }}</span>
-              <span
-                class="row-text"
-                :class="{ 'nodes-telemetry-page__list-mobile-row-value_empty': !item.info.location }"
-              >{{ item.info.location ?? 'Unknown' }}</span>
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.publicKey') }}</span>
+                <BaseHash
+                  v-if="item.info.config"
+                  :hash="item.info.config.public_key"
+                  :type="hashType"
+                  copy
+                  class="row-text-monospace"
+                />
+                <span
+                  v-else
+                  class="row-text"
+                >Unknown</span>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row row-text">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{
+                  $t('telemetry.blocksGossiping')
+                }}</span>
+                <span v-if="item.info.config">{{
+                  $t('telemetry.blocksGossipStats', [
+                    item.info.config.network_block_gossip_size ?? 0,
+                    item.info.config.network_block_gossip_period?.ms ?? 0,
+                  ])
+                }}</span>
+                <span v-else>Unknown</span>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row row-text">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{
+                  $t('telemetry.tnxsGossiping')
+                }}</span>
+                <span v-if="item.info.config">{{
+                  $t('telemetry.blocksGossipStats', [
+                    item.info.config.network_tx_gossip_size ?? 0,
+                    item.info.config.network_tx_gossip_period?.ms ?? 0,
+                  ])
+                }}</span>
+                <span v-else>Unknown</span>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.block') }}</span>
+                <BaseLink
+                  monospace
+                  :to="`/blocks/${item.status.block}`"
+                >
+                  {{ formatNumber(item.status.block) }}
+                </BaseLink>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.commitTime') }}</span>
+                <span class="row-text-monospace">{{ item.status.commit_time.ms }}ms</span>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{
+                  $t('telemetry.avgCommitTime')
+                }}</span>
+                <span class="row-text-monospace">{{ item.status.avg_commit_time.ms }}ms</span>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.queue') }}</span>
+                <span class="row-text-monospace">{{ formatNumber(item.status.queue_size) }}</span>
+              </div>
+
+              <div class="nodes-telemetry-page__list-mobile-row">
+                <span class="h-sm nodes-telemetry-page__list-mobile-row-label">{{ $t('telemetry.uptime') }}</span>
+                <span class="row-text-monospace">{{ formatTimestamp(item.status.uptime.ms) }}</span>
+              </div>
             </div>
           </div>
         </template>
@@ -342,18 +448,49 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       width: 100%;
       display: grid;
       align-items: center;
-
-      @include lg {
-        grid-template-columns: 1fr 1fr 0.5fr 0.75fr 0.5fr 0.5fr;
+      @include xl {
+        grid-template-columns:
+          size(4) size(28) size(14) size(36) size(12) size(12) 0.8fr size(10) size(16) size(10)
+          size(9);
+      }
+      @include xxl {
+        grid-template-columns:
+          size(4) size(28) size(18) size(36) size(12) size(12) 0.8fr size(16) size(23) size(10)
+          size(9);
       }
 
       &-value_empty {
         font-style: italic;
         color: theme-color('content-quaternary');
       }
+
+      &_unsupported {
+        @include lg {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      &-gossip {
+        position: relative;
+
+        &:hover .context-tooltip {
+          display: flex;
+          bottom: size(3.5);
+          right: size(-2);
+          height: size(6);
+        }
+      }
+
+      &-status[data-connected='true'] {
+        color: theme-color('success');
+      }
+      &-status {
+        color: theme-color('debug');
+      }
     }
 
     &-mobile-card {
+      border-bottom: 1px solid theme-color('border-primary');
       padding: size(2) size(3);
     }
 
@@ -361,16 +498,31 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
       display: flex;
       align-items: center;
 
+      &-status[data-connected='true'] {
+        color: theme-color('success');
+      }
+      &-status {
+        margin-left: size(1);
+        color: theme-color('debug');
+      }
+
       &-label {
         text-align: left;
-        width: size(24);
+        width: size(20);
         padding: size(1);
-        margin-right: size(2);
       }
 
       &-value_empty {
         font-style: italic;
         color: theme-color('content-quaternary');
+      }
+
+      &-connection-success {
+        color: theme-color('success');
+      }
+
+      &-connection-error {
+        color: theme-color('error');
       }
     }
 
@@ -384,6 +536,10 @@ function formatTimeSpan(date1: Date | null, date2: Date | null) {
 
       @include xl {
         grid-template-columns: 1fr;
+      }
+
+      .content-row:last-child {
+        border-bottom: 1px solid theme-color('border-primary');
       }
     }
 

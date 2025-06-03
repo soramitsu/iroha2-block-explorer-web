@@ -21,15 +21,22 @@ import {
   Instruction,
   NetworkMetrics,
   PeerInfo,
-  PeerMetrics,
   NFT,
+  PeerMetrics,
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
 import { computed } from 'vue';
+import type { ErrorResponse } from '@/shared/utils/transform-error-response';
+import { transformErrorResponse } from '@/shared/utils/transform-error-response';
+import type { SuccessfulFetching } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const BASE_URL = window.location.origin.toString() + '/api/v1';
 
-async function get<T>(path: string, params?: Record<string, any>): Promise<T> {
+type GetResult<T> = { status: SuccessfulFetching, data: T } | { status: 'error', response: Response };
+type ResultWithStatus<T> = { status: SuccessfulFetching, data: T } | ErrorResponse;
+
+async function get<T>(path: string, params?: Record<string, any>): Promise<GetResult<T>> {
   const url = new URL(`${BASE_URL}${path}`);
 
   if (params) {
@@ -37,98 +44,168 @@ async function get<T>(path: string, params?: Record<string, any>): Promise<T> {
   }
 
   const res = await fetch(url);
-  return res.json();
-}
 
-export async function fetchAccounts(params?: AccountSearchParams): Promise<Paginated<Account>> {
-  const res = await get('/accounts', params);
-  return Paginated(Account).parse(res);
-}
+  if (!res.ok) return { status: 'error', response: res };
 
-export async function fetchAccount(id: AccountId): Promise<Account> {
-  const res = await get(`/accounts/${id}`);
-  return Account.parse(res);
-}
-
-export async function fetchAssets(params?: AssetSearchParams): Promise<Paginated<Asset>> {
-  const res = await get('/assets', params);
-  return Paginated(Asset).parse(res);
-}
-
-export async function fetchAsset(id: AssetId): Promise<Asset> {
-  const res = await get(`/assets/${id}`);
-  return Asset.parse(res);
-}
-
-export async function fetchAssetDefinitions(params?: AssetDefinitionSearchParams): Promise<Paginated<AssetDefinition>> {
-  const res = await get('/assets-definitions', params);
-  return Paginated(AssetDefinition).parse(res);
-}
-
-export async function fetchAssetDefinition(id: AssetDefinitionId): Promise<AssetDefinition> {
-  const res = await get(`/assets-definitions/${encodeURIComponent(id.toString())}`);
-  return AssetDefinition.parse(res);
-}
-
-export async function fetchNFTs(params?: NFTsSearchParams): Promise<Paginated<NFT>> {
-  const res = await get('/nfts', params);
-  return Paginated(NFT).parse(res);
-}
-
-export async function fetchNFTById(id: NftId): Promise<NFT> {
-  const res = await get(`/nfts/${encodeURIComponent(id.toString())}`);
-  return NFT.parse(res);
-}
-
-export async function fetchDomains(params?: DomainSearchParams): Promise<Paginated<Domain>> {
-  const res = await get('/domains', params);
-  return Paginated(Domain).parse(res);
-}
-
-export async function fetchDomain(id: string): Promise<Domain> {
-  const res = await get(`/domains/${id}`);
-  return Domain.parse(res);
-}
-
-export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<Paginated<Block>> {
-  const res = await get('/blocks', params);
-  return Paginated(Block).parse(res);
-}
-
-export async function fetchBlock(heightOrHash: number | string): Promise<Block> {
-  const res = await get(`/blocks/${heightOrHash}`);
-  return Block.parse(res);
-}
-
-export async function fetchNetworkMetrics(): Promise<NetworkMetrics> {
-  const res = await get('/metrics');
-  return NetworkMetrics.parse(res);
-}
-
-export function streamPeerMetrics() {
-  const { data: streamedPeerMetrics, status } = useEventSource('/api/v1/metrics/peers?sse', ['metrics']);
   return {
-    data: computed(() => (streamedPeerMetrics.value ? PeerMetrics.parse(JSON.parse(streamedPeerMetrics.value)) : null)),
+    status: SUCCESSFUL_FETCHING,
+    data: await res.json(),
+  };
+}
+
+export async function fetchAccounts(params?: AccountSearchParams): Promise<ResultWithStatus<Paginated<Account>>> {
+  const res = await get('/accounts', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(Account).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchAccount(id: AccountId): Promise<ResultWithStatus<Account>> {
+  const res = await get(`/accounts/${id}`);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Account.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchAssets(params?: AssetSearchParams): Promise<ResultWithStatus<Paginated<Asset>>> {
+  const res = await get('/assets', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(Asset).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchAsset(id: AssetId): Promise<ResultWithStatus<Asset>> {
+  const res = await get(`/assets/${id}`);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Asset.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchAssetDefinitions(
+  params?: AssetDefinitionSearchParams
+): Promise<ResultWithStatus<Paginated<AssetDefinition>>> {
+  const res = await get('/assets-definitions', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(AssetDefinition).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchAssetDefinition(id: AssetDefinitionId): Promise<ResultWithStatus<AssetDefinition>> {
+  const res = await get(`/assets-definitions/${encodeURIComponent(id.toString())}`);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: AssetDefinition.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchNFTs(params?: NFTsSearchParams): Promise<ResultWithStatus<Paginated<NFT>>> {
+  const res = await get('/nfts', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(NFT).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchNFTById(id: NftId): Promise<ResultWithStatus<NFT>> {
+  const res = await get(`/nfts/${encodeURIComponent(id.toString())}`);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: NFT.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchDomains(params?: DomainSearchParams): Promise<ResultWithStatus<Paginated<Domain>>> {
+  const res = await get('/domains', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(Domain).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchDomain(id: string): Promise<ResultWithStatus<Domain>> {
+  const res = await get(`/domains/${id}`);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Domain.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<ResultWithStatus<Paginated<Block>>> {
+  const res = await get('/blocks', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(Block).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchBlock(heightOrHash: number | string): Promise<ResultWithStatus<Block>> {
+  const res = await get(`/blocks/${heightOrHash}`);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Block.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export async function fetchNetworkMetrics(): Promise<ResultWithStatus<NetworkMetrics>> {
+  const res = await get('/telemetry/network');
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: NetworkMetrics.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
+}
+
+export function streamTelemetryMetrics() {
+  const { data: streamedMetrics, status } = useEventSource('/api/v1/telemetry/live', [], {
+    autoReconnect: true,
+  });
+
+  return {
+    data: computed(() => {
+      if (!streamedMetrics.value) return null;
+
+      return PeerMetrics.parse(JSON.parse(streamedMetrics.value));
+    }),
     status,
   };
 }
 
-export async function fetchPeersInfo(): Promise<PeerInfo[]> {
-  const res = await get('/metrics/peers/info');
-  return PeerInfo.array().parse(res);
+export async function fetchPeersInfo(): Promise<ResultWithStatus<PeerInfo[]>> {
+  const res = await get('/telemetry/peers-info');
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: PeerInfo.array().parse(res.data) };
+
+  return await transformErrorResponse(res.response);
 }
 
-export async function fetchTransactions(params?: TransactionSearchParams): Promise<Paginated<Transaction>> {
-  const res = await get('/transactions', params);
-  return Paginated(Transaction).parse(res);
+export async function fetchTransactions(
+  params?: TransactionSearchParams
+): Promise<ResultWithStatus<Paginated<Transaction>>> {
+  const res = await get<Paginated<Transaction>>('/transactions', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(Transaction).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
 }
 
-export async function fetchTransaction(hash: string): Promise<DetailedTransaction> {
-  const res = await get(`/transactions/${hash}`);
-  return DetailedTransaction.parse(res);
+export async function fetchTransaction(hash: string): Promise<ResultWithStatus<DetailedTransaction>> {
+  const res = await get<DetailedTransaction>(`/transactions/${hash}`);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: DetailedTransaction.parse(res.data) };
+
+  return await transformErrorResponse(res.response);
 }
 
-export async function fetchInstructions(params?: InstructionsSearchParams): Promise<Paginated<Instruction>> {
-  const res = await get('/instructions', params);
-  return Paginated(Instruction).parse(res);
+export async function fetchInstructions(
+  params?: InstructionsSearchParams
+): Promise<ResultWithStatus<Paginated<Instruction>>> {
+  const res = await get<Paginated<Instruction>>('/instructions', params);
+  if (res.status === SUCCESSFUL_FETCHING)
+    return { status: SUCCESSFUL_FETCHING, data: Paginated(Instruction).parse(res.data) };
+
+  return await transformErrorResponse(res.response);
 }
