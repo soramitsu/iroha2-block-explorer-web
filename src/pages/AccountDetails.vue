@@ -46,9 +46,7 @@ const accountScope = useParamScope(
 
 const isAccountLoading = computed(() => accountScope.value.expose.isLoading);
 const account = computed(() =>
-  accountScope.value.expose.data?.status === SUCCESSFUL_FETCHING
-    ? accountScope.value?.expose.data.data
-    : undefined
+  accountScope.value.expose.data?.status === SUCCESSFUL_FETCHING ? accountScope.value?.expose.data.data : undefined
 );
 
 const domainsListState = reactive({
@@ -83,9 +81,7 @@ const totalDomains = computed(() =>
     : 0
 );
 const domains = computed(() =>
-  domainsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? domainsScope.value.expose.data.data.items
-    : []
+  domainsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? domainsScope.value.expose.data.data.items : []
 );
 
 const assetsTab = ref<TabAssets>('assets');
@@ -577,11 +573,14 @@ const assetsSection = computed(() => {
             width: 90vw;
           }
           @include lg {
-            width: 46vw;
+            width: 48vw;
             height: 48px;
           }
           @include xl {
-            width: auto;
+            width: size(80);
+          }
+          @include xxl {
+            width: size(95);
           }
         }
         & > .content-row {

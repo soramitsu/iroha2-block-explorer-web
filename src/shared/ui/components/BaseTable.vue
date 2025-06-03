@@ -61,6 +61,7 @@
       :reversed="props.reversed"
       :items="props.items.length"
       :payload-pagination
+      :pagination-breakpoint
     />
   </div>
 </template>
@@ -77,6 +78,7 @@ interface Props {
   total?: number
   payloadPagination?: Pagination
   disablePagination?: boolean
+  paginationBreakpoint?: number
   items: T[]
   containerClass: string
   breakpoint?: number
