@@ -255,7 +255,7 @@ export const Instruction = z.object({
   // TODO: add payload schemas for every kind
   box: z.object({
     scale: z.string(),
-    json: z.record(InstructionKind, z.union([Metadata, z.string()])),
+    json: z.record(InstructionKind, z.any()),
   }),
   transaction_hash: z.string(),
   transaction_status: TransactionStatus,
