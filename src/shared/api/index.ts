@@ -63,8 +63,7 @@ export async function fetchAccounts(params?: AccountSearchParams): Promise<Resul
 
 export async function fetchAccount(id: AccountId): Promise<ResultWithStatus<Account>> {
   const res = await get(`/accounts/${id}`);
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: Account.parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: Account.parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }
@@ -79,8 +78,7 @@ export async function fetchAssets(params?: AssetSearchParams): Promise<ResultWit
 
 export async function fetchAsset(id: AssetId): Promise<ResultWithStatus<Asset>> {
   const res = await get(`/assets/${id}`);
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: Asset.parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: Asset.parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }
@@ -97,24 +95,21 @@ export async function fetchAssetDefinitions(
 
 export async function fetchAssetDefinition(id: AssetDefinitionId): Promise<ResultWithStatus<AssetDefinition>> {
   const res = await get(`/assets-definitions/${encodeURIComponent(id.toString())}`);
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: AssetDefinition.parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: AssetDefinition.parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }
 
 export async function fetchNFTs(params?: NFTsSearchParams): Promise<ResultWithStatus<Paginated<NFT>>> {
   const res = await get('/nfts', params);
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: Paginated(NFT).parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: Paginated(NFT).parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }
 
 export async function fetchNFTById(id: NftId): Promise<ResultWithStatus<NFT>> {
   const res = await get(`/nfts/${encodeURIComponent(id.toString())}`);
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: NFT.parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: NFT.parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }
@@ -129,8 +124,7 @@ export async function fetchDomains(params?: DomainSearchParams): Promise<ResultW
 
 export async function fetchDomain(id: string): Promise<ResultWithStatus<Domain>> {
   const res = await get(`/domains/${id}`);
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: Domain.parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: Domain.parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }
@@ -145,16 +139,14 @@ export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<R
 
 export async function fetchBlock(heightOrHash: number | string): Promise<ResultWithStatus<Block>> {
   const res = await get(`/blocks/${heightOrHash}`);
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: Block.parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: Block.parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }
 
 export async function fetchNetworkMetrics(): Promise<ResultWithStatus<NetworkMetrics>> {
   const res = await get('/telemetry/network');
-  if (res.status === SUCCESSFUL_FETCHING)
-    return { status: SUCCESSFUL_FETCHING, data: NetworkMetrics.parse(res.data) };
+  if (res.status === SUCCESSFUL_FETCHING) return { status: SUCCESSFUL_FETCHING, data: NetworkMetrics.parse(res.data) };
 
   return await transformErrorResponse(res.response);
 }

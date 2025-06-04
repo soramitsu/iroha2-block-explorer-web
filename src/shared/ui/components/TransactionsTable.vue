@@ -77,7 +77,7 @@ const payloadPagination = computed(() =>
       :payload-pagination
       container-class="transactions-table__container"
       reversed
-      :pagination-breakpoint="1441"
+      :pagination-breakpoint="1700"
     >
       <template #row="{ item }">
         <div class="transactions-table__row">
@@ -183,10 +183,6 @@ const payloadPagination = computed(() =>
     }
 
     @include lg {
-      grid-template-columns: 32px 0.5fr 1fr;
-    }
-
-    @include xl {
       grid-template-columns: 32px 0.9fr 1fr;
     }
   }
