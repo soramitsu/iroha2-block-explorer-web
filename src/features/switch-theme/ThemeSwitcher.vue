@@ -2,6 +2,7 @@
   <BaseButton
     :pressed="isDark"
     class="app-theme-switcher"
+    aria-label="theme switcher"
     bordered
     rounded
     @click="toggleTheme"
@@ -11,9 +12,9 @@
 </template>
 
 <script setup lang="ts">
-import DarkModeIcon from '~icons/dark-mode.svg';
-import BaseButton from '~base/BaseButton.vue';
+import DarkModeIcon from '@/shared/ui/icons/dark-mode.svg';
 import { useDark } from '@vueuse/core';
+import BaseButton from '@/shared/ui/components/BaseButton.vue';
 
 const isDark = useDark();
 let isTransitionActive = false;
@@ -34,7 +35,7 @@ function toggleTheme() {
 </script>
 
 <style lang="scss">
-@import 'styles';
+@use '@/shared/ui/styles/main' as *;
 
 body.theme-transition * {
   transition-property: background, color, fill, border;

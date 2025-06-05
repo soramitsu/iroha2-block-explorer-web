@@ -1,5 +1,1 @@
-import HomePageInfo from './HomePageInfo.vue';
-
-export {
-  HomePageInfo,
-};
+export { default as HomePageInfo } from './HomePageInfo.vue';

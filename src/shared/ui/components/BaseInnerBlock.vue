@@ -7,7 +7,9 @@
       class="base-inner-block__header"
       @click="toggle"
     >
-      <h3 class="base-inner-block__title">{{ props.title }}</h3>
+      <h3 class="base-inner-block__title">
+        {{ props.title }}
+      </h3>
 
       <ArrowIcon
         v-if="props.accordion"
@@ -21,12 +23,12 @@
 </template>
 
 <script setup lang="ts">
-import ArrowIcon from '~icons/arrow.svg';
+import ArrowIcon from '@/shared/ui/icons/arrow.svg';
 import { ref } from 'vue';
 
-type Props = {
-  accordion?: boolean,
-  title?: string,
+interface Props {
+  accordion?: boolean
+  title?: string
 }
 
 const props = defineProps<Props>();
@@ -40,7 +42,7 @@ function toggle() {
 </script>
 
 <style lang="scss">
-@import 'styles';
+@use '@/shared/ui/styles/main' as *;
 
 .base-inner-block {
   border-radius: size(4);

@@ -1,5 +1,1 @@
-import SearchField from './SearchField.vue';
-
-export {
-  SearchField,
-};
+export { default as SearchField } from './SearchField.vue';

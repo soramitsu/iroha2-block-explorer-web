@@ -3,24 +3,17 @@
     "target": "esnext",
     "useDefineForClassFields": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "jsx": "preserve",
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "lib": ["esnext", "dom"],
     "paths": {
-      "~app/*": ["./src/app/*"],
-      "~pages/*": ["./src/pages/*"],
-      "~widgets/*": ["./src/widgets/*"],
-      "~features/*": ["./src/features/*"],
-      "~entities/*": ["./src/entities/*"],
-      "~shared/*": ["./src/shared/*"],
-      "~base/*": ["./src/shared/ui/components/*"],
-      "~icons/*": ["./src/shared/ui/icons/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],

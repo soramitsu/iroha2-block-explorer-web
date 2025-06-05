@@ -1,5 +1,1 @@
-import NavigationMenu from './NavigationMenu.vue';
-
-export {
-  NavigationMenu,
-};
+export { default as NavigationMenu } from './NavigationMenu.vue';
