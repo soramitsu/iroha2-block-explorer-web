@@ -4,12 +4,12 @@ WORKDIR /app
 
 RUN corepack enable
 
-COPY pnpm-lock.yaml package.json .
+COPY pnpm-lock.yaml package.json ./
 RUN pnpm fetch
 
 COPY src src
 COPY public public
-COPY *.json *.ts *.cjs *.mts *.html .
+COPY *.json *.ts *.cjs *.mts *.html ./
 RUN pnpm install
 RUN pnpm build
 
