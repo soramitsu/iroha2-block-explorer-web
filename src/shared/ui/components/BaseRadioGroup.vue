@@ -1,18 +1,11 @@
 <template>
-  <div
-    class="base-radio-group"
-    role="radiogroup"
-  >
+  <div class="base-radio-group">
     <div
       v-for="(item, i) in props.items"
       :key="i"
       class="base-radio-group__item"
       :data-active="item.value === props.modelValue || null"
-      :aria-checked="item.value === props.modelValue"
-      role="radio"
-      tabindex="0"
       @click="choose(item.value)"
-      @keydown.enter.space="choose(item.value)"
     >
       {{ item.label }}
     </div>
@@ -20,17 +13,19 @@
 </template>
 
 <script setup lang="ts">
-interface RadioItem {
-  label: string
-  value: string
+type RadioItem = {
+  label: string;
+  value: string;
 }
 
-interface Props {
-  items: RadioItem[]
-  modelValue: string | null
+type Props = {
+  items: RadioItem[],
+  modelValue: string | null,
 }
 
-type Emits = (e: 'update:modelValue', value: string | null) => void;
+type Emits = {
+  (e: 'update:modelValue', value: string | null): void
+}
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
@@ -42,7 +37,7 @@ function choose(value: string) {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .base-radio-group {
   display: grid;
@@ -62,7 +57,7 @@ function choose(value: string) {
     cursor: pointer;
     user-select: none;
     transition: all 300ms ease-in-out;
-    color: theme-color('content-secondary-bright');
+    color: theme-color('content-quaternary');
     @include shadow-input;
     @include tpg-s4;
 

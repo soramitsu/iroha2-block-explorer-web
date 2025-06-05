@@ -1,36 +1,28 @@
 <template>
   <div class="transaction-status">
-    <div
-      class="transaction-status__icon"
-      :data-committed="committed"
-    >
+    <div class="transaction-status__icon" :data-committed="committed">
       <SuccessIcon v-if="committed" />
       <ErrorIcon v-else />
     </div>
 
-    <div
-      v-if="type === 'label'"
-      class="transaction-status__label"
-      :data-committed="committed"
-    >
-      <span v-if="committed">{{ $t('transactions.committed') }}</span>
-      <span v-else>{{ $t('transactions.rejected') }}</span>
+    <div v-if="type === 'label'" class="transaction-status__label" :data-committed="committed">
+      <span v-if="committed">Committed</span>
+      <span v-else>Rejected</span>
     </div>
 
-    <Tooltip
-      v-if="type === 'tooltip'"
-      :message="committed ? $t('transactions.committedTransaction') : $t('transactions.rejectedTransaction')"
-    />
+    <div v-if="type === 'tooltip'" class="transaction-status__tooltip">
+      <span v-if="committed">Committed transaction</span>
+      <span v-else>Rejected transaction</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import SuccessIcon from '@/shared/ui/icons/success.svg';
-import ErrorIcon from '@/shared/ui/icons/error.svg';
-import Tooltip from '@/shared/ui/components/ContextTooltip.vue';
+import SuccessIcon from '~icons/success.svg';
+import ErrorIcon from '~icons/error.svg';
 
-interface Props {
-  committed: boolean
+type Props = {
+  committed: boolean,
   type: 'label' | 'tooltip'
 }
 
@@ -38,21 +30,18 @@ defineProps<Props>();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .transaction-status {
   position: relative;
-  display: flex;
+  display: grid;
   grid-gap: size(1);
   align-items: center;
-  height: size(4);
+  grid-auto-flow: column;
+  grid-auto-columns: auto;
 
-  &:hover .context-tooltip {
+  &:hover .transaction-status__tooltip {
     display: flex;
-    left: 0;
-    bottom: size(-5);
-    padding: size(1.5) size(2);
-    align-items: center;
   }
 
   &__icon {
@@ -68,25 +57,40 @@ defineProps<Props>();
       height: 14px;
     }
 
-    &[data-committed='true'] {
+    &[data-committed=true] {
       background: theme-color('success-background');
       color: theme-color('success');
     }
 
-    &[data-committed='false'] {
+    &[data-committed=false] {
       background: theme-color('error-background');
       color: theme-color('error');
     }
   }
 
+  &__tooltip {
+    display: none;
+    background-color: theme-color('content-primary');
+    color: theme-color('content-on-background-inverted');
+    position: absolute;
+    left: 0;
+    bottom: size(-5);
+    padding: size(1.5) size(2);
+    border-radius: size(0.5);
+    white-space: nowrap;
+    z-index: 1;
+
+    @include tpg-s4;
+  }
+
   &__label {
     @include tpg-h3;
 
-    &[data-committed='true'] {
+    &[data-committed=true] {
       color: theme-color('success');
     }
 
-    &[data-committed='false'] {
+    &[data-committed=false] {
       color: theme-color('error');
     }
   }

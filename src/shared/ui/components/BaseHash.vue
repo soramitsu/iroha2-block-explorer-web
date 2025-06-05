@@ -1,108 +1,68 @@
 <template>
   <div class="base-hash">
-    <BaseLink
-      v-if="props.link"
-      :to="props.link"
-      monospace
-    >
-      <span v-if="content.t === 'two-line'">{{ content.first }}<br>{{ content.second }}</span>
-      <span v-else>{{ content.value }}</span>
+    <BaseLink v-if="props.link" :to="props.link" monospace>
+      {{ content }}
     </BaseLink>
 
-    <span v-else-if="content.t === 'two-line'">{{ content.first }}<br>{{ content.second }}</span>
-    <span v-else>{{ content.value }}</span>
+    <span v-else>{{ content }}</span>
 
-    <CopyIcon
-      v-if="props.copy"
-      role="button"
-      tabindex="0"
-      class="base-hash__copy"
-      @click.stop="copyHash"
-      @keydown.enter.space.stop="copyHash"
-    />
+    <CopyIcon v-if="props.copy" class="base-hash__copy" @click="copy" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import CopyIcon from '@/shared/ui/icons/copy.svg';
+import { computed, h } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
-import { useNotifications } from '@/shared/ui/composables/notifications';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
+import { useNotifications } from '~shared/ui/composables/notifications';
+import CopyIcon from '~icons/copy.svg';
+import BaseLink from '~base/BaseLink.vue';
 
-interface Props {
-  hash: string
-  link?: string
-  copy?: boolean
-  type: 'full' | 'medium' | 'short' | 'two-line'
+type Props = {
+  hash: string,
+  link?: string,
+  copy?: boolean,
+  type?: 'full' | 'medium' | 'short' | 'two-line',
 }
 
 const props = defineProps<Props>();
 const clipboard = useClipboard();
-const notifications = useNotifications();
+const noti = useNotifications();
 const { t } = useI18n({ useScope: 'global' });
 
-async function copyHash() {
+async function copy() {
   if (clipboard.isSupported) {
     await clipboard.copy(props.hash);
-    notifications.success(t('clipboard.success'));
+    noti.success(t('clipboard.success'));
   } else {
-    notifications.error(t('clipboard.error'));
+    noti.error(t('clipboard.error'));
   }
 }
 
-type Content = { t: 'plain', value: string } | { t: 'two-line', first: string, second: string };
-
-function shortenHash(str: string, n: number) {
-  const [authority, domain] = str.split('@');
-
-  const shortenAuthority = authority.slice(0, n) + '...' + authority.slice(-n);
-
-  if (!domain) return shortenAuthority;
-
-  return shortenAuthority + '@' + domain;
-}
-
-const content = computed<Content>(() => {
+const content = computed(() => {
   switch (props.type) {
-    case 'full': {
-      return {
-        t: 'plain',
-        value: props.hash,
-      };
-    }
-    case 'short': {
-      return {
-        t: 'plain',
-        value: shortenHash(props.hash, 4),
-      };
-    }
-    case 'medium': {
-      return {
-        t: 'plain',
-        value: shortenHash(props.hash, 10),
-      };
-    }
-    case 'two-line': {
-      const [authority, domain] = shortenHash(props.hash, 4).split('@');
+    case 'short':
+      return props.hash.slice(0, 4) + '...' + props.hash.slice(-4);
+    case 'medium':
+      return props.hash.slice(0, 10) + '...' + props.hash.slice(-10);
+    case 'two-line':
+      // eslint-disable-next-line no-case-declarations
+      const center = Math.ceil(props.hash.length / 2);
 
-      return {
-        t: 'two-line',
-        first: authority,
-        second: domain ? `@${domain}` : '',
-      };
-    }
-    default: {
-      const x: never = props.type;
-      throw new Error(`Unexpected props.type: ${String(x)}`);
-    }
+      return [
+        props.hash.slice(0, center),
+        h('br'),
+        props.hash.slice(-center + props.hash.length % 2),
+      ];
+
+    default:
+      return props.hash;
   }
 });
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .base-hash {
   display: flex;

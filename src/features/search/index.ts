@@ -1,1 +1,5 @@
-export { default as SearchField } from './SearchField.vue';
+import SearchField from './SearchField.vue';
+
+export {
+  SearchField,
+};

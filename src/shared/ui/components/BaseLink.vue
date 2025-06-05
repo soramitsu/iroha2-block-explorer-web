@@ -1,9 +1,5 @@
 <template>
-  <router-link
-    :to
-    class="base-link"
-    :data-monospace="monospace || null"
-  >
+  <router-link :to="to" class="base-link" :data-monospace="monospace || null">
     <slot />
   </router-link>
 </template>
@@ -11,16 +7,16 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 
-interface Props {
-  to: RouteLocationRaw
-  monospace?: boolean
+type Props = {
+  to: RouteLocationRaw,
+  monospace?: boolean,
 }
 
 defineProps<Props>();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .base-link {
   color: theme-color('primary');

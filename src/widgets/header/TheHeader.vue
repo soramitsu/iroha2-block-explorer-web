@@ -2,11 +2,7 @@
   <header class="app-header">
     <HeaderLogo />
 
-    <SearchField
-      class="app-header__search"
-      size="md"
-      :placeholder="$t('search')"
-    />
+    <SearchField class="app-header__search" size="md" :placeholder="$t('search')" />
 
     <NavigationMenu class="app-header__nav" />
 
@@ -16,25 +12,22 @@
       <MobileMenu />
     </div>
 
-    <div
-      :id="PORTAL_ID"
-      class="app-header__dropdown"
-    />
+    <div :id="PORTAL_ID" class="app-header__dropdown" />
   </header>
 </template>
 
 <script setup lang="ts">
+import { NavigationMenu } from '~features/navigation';
+import { ThemeSwitcher } from '~features/switch-theme';
+import { SearchField } from '~features/search';
 import HeaderLogo from './HeaderLogo.vue';
-import { NavigationMenu } from '@/features/navigation';
-import { MobileMenu } from '@/features/mobile-menu';
-import { LangDropdown } from '@/features/switch-lang';
-import { ThemeSwitcher } from '@/features/switch-theme';
-import { SearchField } from '@/features/search';
-import { PORTAL_ID } from '@/shared/ui/consts';
+import { LangDropdown } from '~features/switch-lang';
+import { MobileMenu } from '~features/mobile-menu';
+import { PORTAL_ID } from '~shared/config';
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .app-header {
   display: flex;
@@ -113,14 +106,18 @@ import { PORTAL_ID } from '@/shared/ui/consts';
     position: absolute;
     top: calc(50% + 20px + size(1));
     z-index: 10;
-    right: size(1);
+    right: size(2);
 
     @include xs {
-      right: size(2);
+      right: size(3);
     }
 
     @include md {
-      right: size(3);
+      right: size(4);
+    }
+
+    @include xl {
+      right: size(1);
     }
   }
 }

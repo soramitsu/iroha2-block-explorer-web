@@ -1,61 +1,59 @@
 <template>
-  <BaseContentBlock
-    :title="$t('accounts.accounts')"
-    class="accounts-list-page"
-  >
+  <BaseContentBlock :title="$t('accounts')" class="accounts-list-page">
     <BaseTable
-      v-model:page="listState.page"
-      v-model:page-size="listState.per_page"
-      :loading="isLoading"
-      :total="totalAccounts"
-      :items="accounts"
+      :loading="table.loading.value"
+      :pagination="table.pagination"
+      :items="table.items.value"
       container-class="accounts-list-page__container"
-      row-pointer
-      @click:row="(account) => handleRowClick(account.id)"
+      @next-page="table.nextPage()"
+      @prev-page="table.prevPage()"
+      @set-page="table.setPage($event)"
+      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="accounts-list-page__row">
-          <span class="h-sm cell">{{ $t('accounts.address') }}</span>
-          <span class="h-sm">{{ $t('domains.domains') }}</span>
-          <span class="h-sm">{{ $t('assets.assets') }}</span>
+          <span class="h-sm cell">{{ $t('address') }}</span>
+          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('nfts') }}</span>
         </div>
       </template>
 
-      <template #row="{ item }">
+      <template #row="{ item }: { item: Account }">
         <div class="accounts-list-page__row">
           <BaseHash
-            :hash="item.id.toString()"
+            :hash="item.id"
             :link="`/accounts/${item.id}`"
-            :type="hashType"
+            type="full"
             copy
             class="cell"
           />
 
-          <span class="row-text">{{ item.owned_domains }}</span>
-          <span class="row-text">{{ item.owned_assets }}</span>
+          <div class="cell row-text">{{ accountModel.countCryptos(item) }}</div>
+
+          <div class="cell row-text">{{ accountModel.countNFTs(item) }}</div>
         </div>
       </template>
 
-      <template #mobile-card="{ item }">
+      <template #mobile-card="{ item }: { item: Account }">
         <div class="accounts-list-page__mobile-card">
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('accounts.address') }}</span>
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('address') }}</span>
             <BaseHash
-              :hash="item.id.toString()"
+              :hash="item.id"
               :link="`/accounts/${item.id}`"
-              :type="hashType"
+              type="short"
               copy
             />
           </div>
 
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('domains.domains') }}</span>
-            <span class="row-text">{{ item.owned_domains }}</span>
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('cryptos') }}</span>
+            <div class="row-text">{{ accountModel.countCryptos(item) }}</div>
           </div>
 
           <div class="accounts-list-page__mobile-row">
-            <span class="h-sm accounts-list-page__mobile-label">{{ $t('assets.assets') }}</span>
-            <span class="row-text">{{ item.owned_assets }}</span>
+            <span class="h-sm accounts-list-page__mobile-label">{{ $t('nfts') }}</span>
+            <div class="row-text">{{ accountModel.countNFTs(item) }}</div>
           </div>
         </div>
       </template>
@@ -64,75 +62,29 @@
 </template>
 
 <script setup lang="ts">
-import * as http from '@/shared/api';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { useWindowSize } from '@vueuse/core';
-import { computed, reactive, watch } from 'vue';
-import { SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
-import { useParamScope } from '@vue-kakuyaku/core';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
-import type { AccountId } from '@iroha/core/data-model';
-import { useRouter } from 'vue-router';
+import BaseContentBlock from '~base/BaseContentBlock.vue';
+import BaseTable from '~base/BaseTable.vue';
+import BaseHash from '~base/BaseHash.vue';
+import { useTable } from '~shared/lib/table';
+import { http } from '~shared/api';
+import { accountModel } from '~entities/account';
 
-const HASH_BREAKPOINT = 1300;
-const { width } = useWindowSize();
-const router = useRouter();
-
-const hashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'full';
-
-  if (width.value > SM_WINDOW_SIZE) return 'medium';
-
-  if (width.value > XS_WINDOW_SIZE) return 'short';
-
-  return 'two-line';
-});
-
-const listState = reactive({
-  page: 1,
-  per_page: 10,
-});
-
-watch(
-  () => listState.per_page,
-  () => {
-    listState.page = 1;
-  }
-);
-
-const scope = useParamScope(
-  () => {
-    return {
-      key: JSON.stringify(listState),
-      payload: listState,
-    };
-  },
-  ({ payload }) => setupAsyncData(() => http.fetchAccounts(payload))
-);
-
-const isLoading = computed(() => scope.value?.expose.isLoading);
-const totalAccounts = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
-const accounts = computed(() => scope.value?.expose.data?.items ?? []);
-
-function handleRowClick(id: AccountId) {
-  router.push(`/accounts/${id}`);
-}
+const table = useTable(http.fetchAccounts);
+table.fetch();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .accounts-list-page {
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 2.5fr 0.5fr 0.5fr;
+    grid-template-columns: 3fr 1fr 1fr;
   }
 
   &__mobile-card {
-    padding: size(2) size(4);
+    padding: size(2);
   }
 
   &__mobile-row {
@@ -141,8 +93,8 @@ function handleRowClick(id: AccountId) {
   }
 
   &__mobile-label {
-    text-align: left;
-    width: size(12);
+    text-align: right;
+    width: 80px;
     padding: size(1);
     margin-right: size(3);
   }
@@ -150,10 +102,14 @@ function handleRowClick(id: AccountId) {
   &__container {
     display: grid;
     grid-template-columns: 1fr;
-  }
 
-  hr {
-    display: none;
+    @include sm {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @include lg {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>

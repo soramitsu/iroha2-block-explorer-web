@@ -1,91 +1,56 @@
 <template>
-  <BaseContentBlock
-    :title="$t('widgets.latestBlocks')"
-    class="latest-blocks"
-  >
+  <BaseContentBlock :title="$t('latestBlocks')" class="latest-blocks">
     <template #header-action>
-      <BaseButton
-        line
-        to="/blocks"
-      >
-        {{ $t('viewAll') }}
-      </BaseButton>
+      <BaseButton line>{{ $t('viewAll') }}</BaseButton>
     </template>
 
     <template #default>
-      <div v-if="!isLoading">
-        <template
-          v-for="block in blocks"
-          :key="block.height"
-        >
-          <div
-            class="latest-blocks__row"
-            tabindex="0"
-            role="link"
-            @click="handleRowClick(block.height)"
-            @keydown.enter.space="handleRowClick(block.height)"
-          >
-            <span class="row-text">{{ block.height }}</span>
+      <template v-for="block in blocks" :key="block.height">
+        <div class="latest-blocks__row">
+          <BaseLink :to="`/blocks/${block.height}`">{{ block.height }}</BaseLink>
 
-            <div class="latest-blocks__time">
-              <TimeIcon class="latest-blocks__time-icon" />
-              <TimeStamp :value="block.created_at" />
-            </div>
-
-            <span class="latest-blocks__number">{{ block.transactions_total }} txns</span>
+          <div class="latest-blocks__time">
+            <TimeIcon />
+            {{ $t('time.min', [elapsed.allMinutes(block.timestamp)]) }}
+            {{ $t('time.sec', [elapsed.seconds(block.timestamp)]) }}
+            {{ $t('time.ago') }}
           </div>
-        </template>
-      </div>
-      <BaseLoading
-        v-else
-        class="latest-blocks_loading"
-      />
+
+          <span class="latest-blocks__number">{{ block.transactions }} txns</span>
+        </div>
+      </template>
     </template>
   </BaseContentBlock>
 </template>
 
 <script setup lang="ts">
-import TimeIcon from '@/shared/ui/icons/clock.svg';
-import * as http from '@/shared/api';
-import BaseButton from '@/shared/ui/components/BaseButton.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { computed } from 'vue';
-import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
+import BaseContentBlock from '~base/BaseContentBlock.vue';
+import BaseButton from '~base/BaseButton.vue';
+import BaseLink from '~base/BaseLink.vue';
+import TimeIcon from '~icons/clock.svg';
+import { http } from '~shared/api';
+import { elapsed } from '~shared/lib/time';
 
-const router = useRouter();
+const blocks = ref<BlockShallow[]>([]);
 
-const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }));
-
-const isLoading = computed(() => setup.isLoading);
-const blocks = computed(() => setup.data?.items ?? []);
-
-function handleRowClick(height: number) {
-  router.push(`/blocks/${height}`);
-}
+http.fetchBlocks({ page_size: 10, page: 1 })
+  .then(res => (blocks.value = res.data));
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .latest-blocks {
-  &_loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 20px;
-  }
-
   &__row {
-    cursor: pointer;
-    padding: size(1) size(4);
+    padding: size(1) size(2);
     border-bottom: 1px solid theme-color('border-primary');
-    justify-content: space-between;
+    display: grid;
+    grid-gap: size(1);
+    grid-template-columns: 70px auto;
+    justify-content: start;
     align-items: center;
     min-height: 64px;
-    display: flex;
 
     &:hover {
       box-shadow: theme-shadow('row');
@@ -96,30 +61,26 @@ function handleRowClick(height: number) {
       width: fit-content;
     }
 
+    @include xs {
+      grid-template-columns: 70px auto 70px;
+      justify-content: space-between;
+    }
+
     @include sm {
       padding: 0 size(4);
     }
   }
 
   &__time {
-    user-select: none;
-    cursor: default;
-    display: flex;
-    justify-content: center;
-    width: size(24);
-    gap: size(2);
-    position: relative;
+    display: grid;
+    grid-gap: size(1);
+    grid-auto-flow: column;
+    color: theme-color('content-primary');
+    @include tpg-s3;
+  }
 
-    &-icon {
-      path {
-        fill: theme-color('content-quaternary');
-      }
-    }
-
-    &:hover .context-tooltip {
-      display: flex;
-      left: size(20);
-    }
+  path {
+    fill: theme-color('content-quaternary');
   }
 
   &__number {
