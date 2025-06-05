@@ -1,1 +1,5 @@
-export { default as LangDropdown } from './LangDropdown.vue';
+import LangDropdown from './LangDropdown.vue';
+
+export {
+  LangDropdown,
+};

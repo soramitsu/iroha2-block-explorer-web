@@ -1,1 +1,5 @@
-export { default as LatestTransactions } from './LatestTransactions.vue';
+import LatestTransactions from './LatestTransactions.vue';
+
+export {
+  LatestTransactions,
+};

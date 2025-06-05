@@ -1,1 +1,5 @@
-export { default as TheHeader } from './TheHeader.vue';
+import TheHeader from './TheHeader.vue';
+
+export {
+  TheHeader,
+};

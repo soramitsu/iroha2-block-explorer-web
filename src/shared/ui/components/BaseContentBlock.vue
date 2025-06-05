@@ -4,9 +4,7 @@
       <slot name="header" />
 
       <template v-if="!slots.header">
-        <h2 class="base-content-block__title">
-          {{ props.title }}
-        </h2>
+        <h2 class="base-content-block__title">{{ props.title }}</h2>
         <slot name="header-action" />
       </template>
     </div>
@@ -20,16 +18,18 @@
 </template>
 
 <script setup lang="ts">
-interface Props {
-  title?: string
+import { useSlots } from 'vue';
+
+type Props = {
+  title: string;
 }
 
 const props = defineProps<Props>();
-const slots = defineSlots();
+const slots = useSlots();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .base-content-block {
   background: theme-color('surface');
@@ -43,7 +43,7 @@ const slots = defineSlots();
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 72px;
+    height: 72px;
     padding: 0 size(4);
   }
 

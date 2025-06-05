@@ -1,1 +1,5 @@
-export { default as LatestBlocks } from './LatestBlocks.vue';
+import LatestBlocks from './LatestBlocks.vue';
+
+export {
+  LatestBlocks,
+};

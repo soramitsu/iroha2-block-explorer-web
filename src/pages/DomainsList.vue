@@ -1,73 +1,57 @@
 <template>
-  <BaseContentBlock
-    :title="$t('domains.domains')"
-    class="domains-list-page"
-  >
+  <BaseContentBlock :title="$t('domains')" class="domains-list-page">
     <BaseTable
-      v-model:page="listState.page"
-      v-model:page-size="listState.per_page"
-      :loading="isLoading"
-      :total="totalDomains"
-      :items="domains"
+      :loading="table.loading.value"
+      :pagination="table.pagination"
+      :items="table.items.value"
       container-class="domains-list-page__container"
+      @next-page="table.nextPage()"
+      @prev-page="table.prevPage()"
+      @set-page="table.setPage($event)"
+      @set-size="table.setSize($event)"
     >
       <template #header>
         <div class="domains-list-page__row">
           <span class="h-sm cell">{{ $t('name') }}</span>
-          <span class="h-sm">{{ $t('domains.ownedBy') }}</span>
-          <span class="h-sm">{{ $t('domains.totalAccounts') }}</span>
-          <span class="h-sm">{{ $t('domains.totalAssets') }}</span>
+          <span class="h-sm cell">{{ $t('cryptos') }}</span>
+          <span class="h-sm cell">{{ $t('nfts') }}</span>
+          <span class="h-sm cell">{{ $t('accounts') }}</span>
         </div>
       </template>
 
-      <template #row="{ item }">
+      <template #row="{ item }: { item: Domain }">
         <div class="domains-list-page__row">
-          <BaseLink
-            :to="`/domains/${item.id}`"
-            class="cell"
-          >
-            {{ item.id }}
-          </BaseLink>
+          <BaseLink :to="`/domains/${item.id}`" class="cell">{{ item.id }}</BaseLink>
 
-          <BaseHash
-            :hash="item.owned_by.toString()"
-            :link="`/accounts/${item.owned_by}`"
-            :type="hashType"
-            copy
-          />
+          <div class="cell row-text">{{ domainModel.countCryptos(item) }}</div>
 
-          <span class="row-text">{{ item.accounts }}</span>
-          <span class="row-text">{{ item.assets }}</span>
+          <div class="cell row-text">{{ domainModel.countNFTs(item) }}</div>
+
+          <span class="cell row-text">{{ item.accounts.length }}</span>
         </div>
       </template>
 
-      <template #mobile-card="{ item }">
+      <template #mobile-card="{ item }: { item: Domain }">
         <div class="domains-list-page__mobile-card">
           <div class="domains-list-page__mobile-row">
             <span class="h-sm domains-list-page__mobile-label">{{ $t('name') }}</span>
 
-            <BaseLink :to="`/domains/${item.id}`">
-              {{ item.id }}
-            </BaseLink>
+            <BaseLink :to="`/domains/${item.id}`">{{ item.id }}</BaseLink>
           </div>
 
           <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.ownedBy') }}</span>
-            <BaseHash
-              :hash="item.owned_by.toString()"
-              :link="`/accounts/${item.owned_by}`"
-              :type="hashType"
-              copy
-            />
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('cryptos') }}</span>
+            <span class="row-text">{{ domainModel.countCryptos(item) }}</span>
           </div>
 
           <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAccounts') }}</span>
-            <span class="row-text">{{ item.accounts }}</span>
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('nfts') }}</span>
+            <span class="row-text">{{ domainModel.countNFTs(item) }}</span>
           </div>
+
           <div class="domains-list-page__mobile-row">
-            <span class="h-sm domains-list-page__mobile-label">{{ $t('domains.totalAssets') }}</span>
-            <span class="row-text">{{ item.assets }}</span>
+            <span class="h-sm domains-list-page__mobile-label">{{ $t('accounts') }}</span>
+            <span class="row-text">{{ item.accounts.length }}</span>
           </div>
         </div>
       </template>
@@ -76,69 +60,29 @@
 </template>
 
 <script setup lang="ts">
-import * as http from '@/shared/api';
-import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import BaseTable from '@/shared/ui/components/BaseTable.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { useWindowSize } from '@vueuse/core';
-import { computed, reactive, watch } from 'vue';
-import { MD_WINDOW_SIZE, SM_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
-import { useParamScope } from '@vue-kakuyaku/core';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import BaseContentBlock from '~base/BaseContentBlock.vue';
+import BaseTable from '~base/BaseTable.vue';
+import BaseLink from '~shared/ui/components/BaseLink.vue';
+import { useTable } from '~shared/lib/table';
+import { http } from '~shared/api';
+import { domainModel } from '~entities/domain';
 
-const HASH_BREAKPOINT = 1350;
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'full';
-
-  if (width.value > SM_WINDOW_SIZE && width.value < MD_WINDOW_SIZE) return 'medium';
-
-  if (width.value > XS_WINDOW_SIZE) return 'short';
-
-  return 'two-line';
-});
-
-const listState = reactive({
-  page: 1,
-  per_page: 10,
-});
-
-watch(
-  () => listState.per_page,
-  () => {
-    listState.page = 1;
-  }
-);
-
-const scope = useParamScope(
-  () => {
-    return {
-      key: JSON.stringify(listState),
-      payload: listState,
-    };
-  },
-  ({ payload }) => setupAsyncData(() => http.fetchDomains(payload))
-);
-
-const isLoading = computed(() => scope.value?.expose.isLoading);
-const totalDomains = computed(() => scope.value?.expose.data?.pagination?.total_items ?? 0);
-const domains = computed(() => scope.value?.expose.data?.items ?? []);
+const table = useTable(http.fetchDomains);
+table.fetch();
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .domains-list-page {
   &__row {
     width: 100%;
     display: grid;
-    grid-template-columns: 0.5fr 2.2fr 0.4fr 0.5fr;
+    grid-template-columns: 3fr 1fr 1fr 1fr;
   }
 
   &__mobile-card {
-    padding: size(2) size(3);
+    padding: size(2);
   }
 
   &__mobile-row {
@@ -147,26 +91,23 @@ const domains = computed(() => scope.value?.expose.data?.items ?? []);
   }
 
   &__mobile-label {
-    text-align: left;
-    width: size(12);
+    text-align: right;
+    width: 80px;
     padding: size(1);
+    margin-right: size(3);
   }
 
   &__container {
     display: grid;
     grid-template-columns: 1fr;
 
-    @include md {
+    @include sm {
       grid-template-columns: 1fr 1fr;
     }
 
     @include lg {
       grid-template-columns: 1fr;
     }
-  }
-
-  hr {
-    display: none;
   }
 }
 </style>

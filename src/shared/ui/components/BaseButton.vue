@@ -1,9 +1,8 @@
 <template>
   <RouterLink
     v-if="to"
-    :to
+    :to="to"
     class="base-button"
-    active-class="base-button_active"
     :data-type="type"
     :data-pressed="pressed || null"
     :data-rounded="rounded || null"
@@ -26,12 +25,12 @@
 import { computed } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 
-interface Props {
-  to?: RouteLocationRaw
-  line?: boolean
-  bordered?: boolean
-  rounded?: boolean
-  pressed?: boolean
+type Props = {
+  to?: RouteLocationRaw;
+  line?: boolean;
+  bordered?: boolean;
+  rounded?: boolean;
+  pressed?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -49,7 +48,7 @@ const type = computed(() => {
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .base-button {
   display: flex;
@@ -59,36 +58,28 @@ const type = computed(() => {
   padding: size(1.5) size(2);
   border: none;
   border-radius: size(3);
-  transition:
-    color 300ms ease-in-out,
-    box-shadow 300ms ease-in-out;
-  color: theme-color('content-secondary-bright');
+  transition: color 300ms ease-in-out, box-shadow 300ms ease-in-out;
+  color: theme-color('content-tertiary');
   background: transparent;
 
   @include tpg-ch1;
-
-  &_active {
-    background: theme-color('background');
-    @include shadow-elevated-active;
-    cursor: default;
-  }
 
   &:hover {
     color: theme-color('content-primary');
   }
 
-  &[data-type='line'] {
+  &[data-type="line"] {
     padding: size(1.5) 0;
   }
 
-  &[data-type='default'] {
+  &[data-type="default"] {
     &:hover {
       background: theme-color('background');
       @include shadow-elevated-active;
     }
   }
 
-  &[data-type='bordered'] {
+  &[data-type="bordered"] {
     background: theme-color('background');
     @include shadow-elevated;
 

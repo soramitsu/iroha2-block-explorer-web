@@ -1,1 +1,5 @@
-export { default as NavigationMenu } from './NavigationMenu.vue';
+import NavigationMenu from './NavigationMenu.vue';
+
+export {
+  NavigationMenu,
+};

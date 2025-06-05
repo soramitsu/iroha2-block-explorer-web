@@ -1,133 +1,73 @@
 <template>
-  <BaseContentBlock
-    :title="$t('widgets.latestTransactions')"
-    class="latest-transactions"
-  >
+  <BaseContentBlock :title="$t('latestTransactions')" class="latest-transactions">
     <template #header-action>
-      <BaseButton
-        line
-        to="/transactions"
-      >
-        {{ $t('viewAll') }}
-      </BaseButton>
+      <BaseButton line>{{ $t('viewAll') }}</BaseButton>
     </template>
 
     <template #default>
       <div class="latest-transactions__filters">
-        <TransactionStatusFilter v-model="listState.status" />
+        <TransactionStatusFilter v-model="status" />
       </div>
 
       <hr>
 
-      <div v-if="!isLoading">
-        <div
-          v-for="(transaction, i) in transactions"
-          :key="i"
-          class="latest-transactions__row"
-        >
-          <TransactionStatus
-            :committed="transaction.status === 'Committed'"
-            type="tooltip"
-            class="latest-transactions__status"
-          />
+      <div v-for="(transaction, i) in transactions" :key="i" class="latest-transactions__row">
+        <TransactionStatus :committed="transaction.committed" type="tooltip" class="latest-transactions__status" />
 
-          <BaseHash
-            :hash="transaction.hash"
-            :type="hashType"
-            :link="`/transactions/${transaction.hash}`"
-            copy
-          />
+        <BaseHash
+          :hash="transaction.hash"
+          type="medium"
+          :link="'/transactions/' + transaction.hash"
+          copy
+        />
 
-          <div class="latest-transactions__info">
-            <div class="latest-transactions__time">
-              <TimeIcon />
-              <TimeStamp :value="transaction.created_at" />
-            </div>
-
-            <BaseHash
-              :hash="transaction.authority"
-              :type="hashType"
-              :link="`/accounts/${transaction.authority}`"
-              class="latest-transactions__account"
-            />
+        <div class="latest-transactions__info">
+          <div class="latest-transactions__time">
+            <TimeIcon />
+            <span>{{ $t('time.min', [8]) }} {{ $t('time.ago') }}</span>
           </div>
+
+          <BaseLink
+            :to="`/accounts/${transaction.payload.account_id}`"
+            monospace
+            class="latest-transactions__account"
+          >
+            {{ transaction.payload.account_id }}
+          </BaseLink>
         </div>
       </div>
-      <BaseLoading
-        v-else
-        class="latest-transactions_loading"
-      />
     </template>
   </BaseContentBlock>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
-import TimeIcon from '@/shared/ui/icons/clock.svg';
-import { TransactionStatusFilter } from '@/features/filter-transactions';
-import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
-import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import BaseButton from '@/shared/ui/components/BaseButton.vue';
-import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import * as http from '@/shared/api';
-import { useWindowSize } from '@vueuse/core';
-import { LG_WINDOW_SIZE, XS_WINDOW_SIZE } from '@/shared/ui/consts';
-import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
-import { useParamScope } from '@vue-kakuyaku/core';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { ref } from 'vue';
+import BaseContentBlock from '~base/BaseContentBlock.vue';
+import BaseButton from '~base/BaseButton.vue';
+import BaseHash from '~base/BaseHash.vue';
+import BaseLink from '~shared/ui/components/BaseLink.vue';
+import { transactionModel, TransactionStatus } from '~entities/transaction';
+import TimeIcon from '~icons/clock.svg';
 
-const listState = reactive({
-  per_page: 5,
-  status: null,
-});
+import {
+  filterTransactionsModel as ftm,
+  TransactionStatusFilter,
+} from '~features/filter-transactions';
 
-async function fetchTransactions(params: typeof listState) {
-  return await http.fetchTransactions({
-    ...params,
-    status: params.status ?? undefined,
-  });
-}
+const status = ref<ftm.Status>(null);
+const transactions = ref<Transaction[]>([]);
 
-const scope = useParamScope(
-  () => {
-    return {
-      key: JSON.stringify(listState),
-      payload: listState,
-    };
-  },
-  ({ payload }) => setupAsyncData(() => fetchTransactions(payload))
-);
-
-const isLoading = computed(() => scope.value?.expose.isLoading);
-const transactions = computed(() => scope.value?.expose.data?.items ?? []);
-
-const HASH_BREAKPOINT = 1300;
-
-const { width } = useWindowSize();
-
-const hashType = computed(() => {
-  if (width.value > HASH_BREAKPOINT) return 'medium';
-
-  if (width.value > LG_WINDOW_SIZE) return 'short';
-
-  if (width.value > XS_WINDOW_SIZE) return 'medium';
-
-  return 'short';
-});
+transactionModel
+  .fetchList({ page: 1, page_size: 6 })
+  .then(res => (transactions.value = res.data));
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .latest-transactions {
-  &_loading {
-    display: flex;
-    align-items: center;
-    margin-top: 20px;
-  }
-
   &__row {
+    padding: size(1);
     border-bottom: 1px solid theme-color('border-primary');
     display: grid;
     grid-gap: size(1);
@@ -147,19 +87,24 @@ const hashType = computed(() => {
       width: fit-content;
     }
 
-    @include xxs {
-      padding: size(3) size(4);
+    @include xs {
+      padding: size(1) size(2);
       grid-gap: size(1) size(2);
+    }
+
+    @include sm {
+      padding: size(2);
     }
 
     @include lg {
       grid-gap: size(1.5) size(2);
+      padding: size(3) size(4);
     }
   }
 
   &__info {
     display: grid;
-    grid-gap: size(0.5) size(4);
+    grid-gap: size(0.5) size(2);
 
     @include md {
       grid-template-columns: auto auto;
@@ -180,22 +125,14 @@ const hashType = computed(() => {
   }
 
   &__time {
-    user-select: none;
-    cursor: default;
-    position: relative;
-    display: flex;
-    align-items: center;
+    color: theme-color('content-primary');
+    @include tpg-s3;
 
     svg {
       fill: theme-color('content-quaternary');
       width: 10px;
       height: 10px;
       margin-right: 6px;
-    }
-
-    &:hover .context-tooltip {
-      display: flex;
-      left: size(14);
     }
   }
 

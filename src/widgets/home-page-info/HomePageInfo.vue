@@ -8,45 +8,14 @@
       />
     </div>
 
-    <BaseLoading
-      v-if="isLoading"
-      class="home-page-info_loading"
-    />
-
-    <div
-      v-if="!isLoading"
-      class="home-page-info__grid"
-    >
-      <div
-        v-for="(item, i) in firstSection"
-        :key="i"
-        class="home-page-info__item"
-      >
-        <span class="home-page-info__item-value">
+    <div class="home-page-info__grid">
+      <div v-for="(item, i) in info" :key="i" class="home-page-info__item">
+        <span class="home-page-info__value">
           {{ item.value }}
         </span>
 
-        <span class="home-page-info__item-label">
-          {{ $t(item.i18nKey) }}
-        </span>
-      </div>
-    </div>
-
-    <div
-      v-if="!isLoading"
-      class="home-page-info__grid"
-    >
-      <div
-        v-for="(item, i) in secondSection"
-        :key="i"
-        class="home-page-info__item"
-      >
-        <span class="home-page-info__item-value">
-          {{ item.value }}
-        </span>
-
-        <span class="home-page-info__item-label">
-          {{ $t(item.i18nKey) }}
+        <span class="home-page-info__label">
+          {{ item.label }}
         </span>
       </div>
     </div>
@@ -54,56 +23,28 @@
 </template>
 
 <script setup lang="ts">
-import { SearchField } from '@/features/search';
-import { computed } from 'vue';
-import * as http from '@/shared/api';
-import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
+import { useI18n } from 'vue-i18n';
+import { SearchField } from '~features/search';
 
-const firstSection = computed(() => {
-  return [
-    { value: setup.data?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
-    { value: setup.data?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
-    { value: setup.data?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
-  ];
-});
+const { t } = useI18n({ useScope: 'global' });
 
-const secondSection = computed(() => {
-  return [
-    { value: setup.data?.blocks ?? 0, i18nKey: 'homePage.totalBlocks' },
-    { value: setup.data?.transactions ?? 0, i18nKey: 'homePage.totalTransactions' },
-    { value: setup.data?.nodes ?? 1, i18nKey: 'homePage.totalNodes' },
-  ];
-});
-
-const setup = setupAsyncData(async () => {
-  const [assets, accounts, domains, { peers, blocks, txs_accepted, txs_rejected }] = await Promise.all([
-    http.fetchAssets(),
-    http.fetchAccounts(),
-    http.fetchDomains(),
-    http.fetchPeerStatus(),
-  ]);
-
-  return {
-    assets: assets.pagination.total_items,
-    accounts: accounts.pagination.total_items,
-    domains: domains.pagination.total_items,
-    nodes: peers + 1,
-    transactions: txs_accepted + txs_rejected,
-    blocks,
-  };
-});
-
-const isLoading = computed(() => setup.isLoading);
+const info = [
+  { value: '5.599s', label: t('homePage.averageBlockTime') },
+  { value: '654', label: t('homePage.validators') },
+  { value: '68', label: t('homePage.nodes') },
+  { value: '12,658', label: t('homePage.accounts') },
+  { value: '12345', label: t('homePage.domains') },
+  { value: '12,658', label: t('homePage.assets') },
+];
 </script>
 
 <style lang="scss">
-@import '@/shared/ui/styles/main';
+@import 'styles';
 
 .home-page-info {
-  height: 160px;
   background: theme-color('surface-variant');
   width: 100%;
+  height: auto;
   display: grid;
   justify-items: center;
   margin-top: 0;
@@ -114,21 +55,9 @@ const isLoading = computed(() => setup.isLoading);
     margin-top: size(0); // #SEARCH: remove when functionality is ready
   }
 
-  @include sm {
-    height: 210px;
-  }
-
   @include md {
     margin-top: size(10);
     margin-top: size(4); // #SEARCH: remove when functionality is ready
-  }
-
-  &_loading {
-    margin-top: 60px;
-
-    @include sm {
-      margin-top: 85px;
-    }
   }
 
   &__search {
@@ -156,63 +85,64 @@ const isLoading = computed(() => setup.isLoading);
   }
 
   &__grid {
-    display: flex;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: fit-content(100%) fit-content(100%);
+    grid-gap: size(2) 0;
     width: 100%;
-    padding: size(2) 0 size(1) 0;
+    padding: size(2) size(1);
+
+    @include xs {
+      grid-gap: size(3) 0;
+    }
+
+    @include sm {
+      grid-template-columns: repeat(3, 1fr);
+      padding: size(3) 0;
+    }
 
     @include md {
-      padding: size(2) 0;
+      grid-template-columns: repeat(3, 1fr);
+      width: $home-content-width-tablet;
+      padding: size(5) 0;
+    }
+
+    @include lg {
+      width: $home-content-width;
+      padding: size(7) size(12) size(7) size(12);
+      grid-gap: size(5) 0;
     }
   }
 
   &__item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: grid;
+    justify-items: center;
+  }
 
-    &-value {
-      @include tpg-h2;
-      color: theme-color('content-on-surface-variant');
-      height: size(3.5);
+  &__value {
+    @include tpg-h3;
+    color: theme-color('content-on-surface-variant');
 
-      @include xs {
-        height: size(4);
-        @include tpg-h2;
-      }
-      @include sm {
-        @include tpg-h1;
-        height: size(5.5);
-      }
-      @include md {
-        @include tpg-d2;
-      }
-      @include lg {
-        height: size(7);
-        @include tpg-d1;
-      }
+    @include xs {
+      @include tpg-h1;
     }
-
-    width: 33%;
 
     @include md {
-      width: 25%;
-    }
-    @include xl {
-      width: 20%;
-    }
-    @include xxl {
-      width: 18%;
+      @include tpg-d2;
     }
 
-    &-label {
-      @include tpg-s5;
-      color: theme-color('content-quaternary');
-      text-align: center;
+    @include lg {
+      @include tpg-d1;
+    }
+  }
 
-      @include xs {
-        @include tpg-s4;
-      }
+  &__label {
+    @include tpg-s5;
+    color: theme-color('content-quaternary');
+    text-align: center;
+
+    @include xs {
+      @include tpg-s4;
     }
   }
 }
