@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-import BaseContentBlock from '~base/BaseContentBlock.vue';
+import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 </script>

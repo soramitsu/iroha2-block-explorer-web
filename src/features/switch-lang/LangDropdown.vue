@@ -2,40 +2,56 @@
   <BaseButton
     class="lang-dropdown__button"
     bordered
+    aria-label="lang dropdown"
     :pressed="dropdown.isOpen.value"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-haspopup="listbox"
+    :aria-expanded="dropdown.isOpen.value"
+    aria-controls="window_listbox"
     @click="dropdown.toggle"
   >
     <LangIcon class="lang-dropdown__lang-icon" />
-    <span class="lang-dropdown__code">{{ value }}</span>
-    <ArrowIcon class="lang-dropdown__arrow-icon" />
+    <span class="lang-dropdown__code">{{ language }}</span>
+    <ArrowIcon
+      class="lang-dropdown__arrow-icon"
+      :style="{ transform: `rotate(${arrowIconRotateValue}turn)` }"
+    />
   </BaseButton>
 
-  <Teleport v-if="dropdown.isOpen.value" :to="`#${PORTAL_ID}`">
+  <Teleport
+    v-if="dropdown.isOpen.value"
+    :to="`#${PORTAL_ID}`"
+  >
     <BaseDropdownWindow
-      v-model:model-value="value"
+      v-model:model-value="language"
       :items="langOptions"
       size="lg"
-      @update:model-value="dropdown.toggle"
+      @update:model-value="dropdown.toggle()"
     />
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import BaseButton from '~base/BaseButton.vue';
-import BaseDropdownWindow from '~base/BaseDropdownWindow.vue';
-import LangIcon from '~icons/lang.svg';
-import ArrowIcon from '~icons/arrow.svg';
-import { useLangDropdown } from '~shared/ui/composables/header-portal';
-import { langOptions, PORTAL_ID } from '~shared/config';
-import { ref } from 'vue';
+import LangIcon from '@/shared/ui/icons/lang.svg';
+import ArrowIcon from '@/shared/ui/icons/arrow.svg';
+import { useLangDropdown } from '@/shared/ui/composables/header-portal';
+import BaseDropdownWindow from '@/shared/ui/components/BaseDropdownWindow.vue';
+import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import { langOptions } from '@/shared/config';
+import { useApplicationLanguage } from '@/shared/ui/composables/useApplicationLanguage';
+import { PORTAL_ID } from '@/shared/ui/consts';
+import { computed } from 'vue';
 
 const dropdown = useLangDropdown();
 
-const value = ref('en');
+const { language } = useApplicationLanguage();
+
+const arrowIconRotateValue = computed(() => (dropdown.isOpen.value ? 0.75 : 0.25));
 </script>
 
 <style lang="scss">
-@import 'styles';
+@use '@/shared/ui/styles/main' as *;
 
 .lang-dropdown {
   &__button {

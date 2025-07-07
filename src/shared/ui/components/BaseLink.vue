@@ -1,22 +1,41 @@
 <template>
-  <router-link :to="to" class="base-link" :data-monospace="monospace || null">
+  <a
+    v-if="isExternalLink"
+    :href="props.to"
+    target="_blank"
+    class="base-link"
+  >
+    <slot />
+  </a>
+  <router-link
+    v-else
+    :to
+    class="base-link"
+    :data-monospace="monospace || null"
+    :data-custom-font="customFont || null"
+  >
     <slot />
   </router-link>
 </template>
 
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
+import { computed } from 'vue';
 
-type Props = {
-  to: RouteLocationRaw,
-  monospace?: boolean,
+interface Props {
+  to: string
+  monospace?: boolean
+  customFont?: boolean
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+const isExternalLink = computed(() => {
+  return props.to.startsWith('http');
+});
 </script>
 
 <style lang="scss">
-@import 'styles';
+@use '@/shared/ui/styles/main' as *;
 
 .base-link {
   color: theme-color('primary');
@@ -30,7 +49,7 @@ defineProps<Props>();
     @include tpg-link1-mono;
   }
 
-  &:not([data-monospace]) {
+  &:not([data-custom-font], [data-monospace]) {
     @include tpg-link1;
   }
 }

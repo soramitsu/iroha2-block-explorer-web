@@ -5,7 +5,7 @@
 </template>
 
 <style lang="scss">
-@import 'styles';
+@use '@/shared/ui/styles/main' as *;
 
 .base-page-layout {
   padding: 0 size(1) size(3) size(1);
@@ -26,11 +26,11 @@
 
   @include xl {
     width: $xl;
-  };
+  }
 
   @include xxl {
     padding: 0 size(7) size(7) size(7);
     width: $xxl;
-  };
+  }
 }
 </style>

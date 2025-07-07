@@ -15,13 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import BasePageLayout from '~base/BasePageLayout.vue';
-import NotificationsInstance from '~base/NotificationsInstance.vue';
-import { TheHeader } from '~widgets/header';
+import NotificationsInstance from '@/shared/ui/components/NotificationsInstance.vue';
+import BasePageLayout from '@/shared/ui/components/BasePageLayout.vue';
+import { TheHeader } from '@/widgets/header';
 </script>
 
 <style lang="scss">
-@import 'styles';
+@use '@/shared/ui/styles/main' as *;
 
 html {
   &:not(.dark) {
@@ -70,7 +70,11 @@ hr {
   }
 
   @include md {
-    padding: 0 size(4);
+    padding: 0 size(2);
+  }
+
+  &_empty {
+    justify-content: center;
   }
 }
 
@@ -96,8 +100,15 @@ hr {
   white-space: nowrap;
 }
 
+.row-text,
+.row-text-monospace {
+  color: theme-color('content-primary');
+}
 .row-text {
   @include tpg-s3;
-  color: theme-color('content-primary');
+}
+
+.row-text-monospace {
+  @include tpg-link1-mono;
 }
 </style>

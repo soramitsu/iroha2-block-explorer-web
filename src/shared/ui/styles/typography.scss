@@ -8,30 +8,72 @@
   letter-spacing: 0;
 }
 
-@mixin tpg-d1() { @include t-factory($size: 40px, $height: 56px, $weight: 700) }
+@mixin tpg-d1() {
+  @include t-factory($size: 40px, $height: 56px, $weight: 700);
+}
 
-@mixin tpg-d2() {  @include t-factory($size: 34px, $height: 48px, $weight: 500) }
+@mixin tpg-d1-mono() {
+  @include t-factory($size: 40px, $height: 56px, $weight: 700, $family: 'JetBrainsMono');
+}
 
-@mixin tpg-h1() {  @include t-factory($size: 29px, $height: 32px) }
-@mixin tpg-h2() {  @include t-factory($size: 21px, $height: 24px) }
-@mixin tpg-h3() {  @include t-factory($size: 15px, $height: 16px) }
-@mixin tpg-h4() {  @include t-factory($size: 13px, $height: 16px, $weight: 700) }
+@mixin tpg-d2() {
+  @include t-factory($size: 34px, $height: 48px, $weight: 500);
+}
 
-@mixin tpg-ch1() { 
+@mixin tpg-h1() {
+  @include t-factory($size: 29px, $height: 32px);
+}
+@mixin tpg-h1-mono() {
+  @include t-factory($size: 29px, $height: 32px, $family: 'JetBrainsMono');
+}
+@mixin tpg-h2() {
+  @include t-factory($size: 21px, $height: 24px);
+}
+@mixin tpg-h2-mono() {
+  @include t-factory($size: 21px, $height: 24px, $family: 'JetBrainsMono');
+}
+@mixin tpg-h3() {
+  @include t-factory($size: 15px, $height: 16px);
+}
+@mixin tpg-h4() {
+  @include t-factory($size: 13px, $height: 16px, $weight: 700);
+}
+
+@mixin tpg-ch1() {
   @include t-factory($size: 13px, $height: 16px, $weight: 700);
   text-transform: uppercase;
 }
 
-@mixin tpg-p1() {  @include t-factory($size: 15px, $height: 24px, $weight: 200) }
+@mixin tpg-p1() {
+  @include t-factory($size: 15px, $height: 24px, $weight: 200);
+}
 
-@mixin tpg-s1() {  @include t-factory($size: 24px, $height: 32px, $weight: 200) }
-@mixin tpg-s2() {  @include t-factory($size: 18px, $height: 24px, $weight: 300) }
-@mixin tpg-s3() {  @include t-factory($size: 15px, $height: 16px, $weight: 200) }
-@mixin tpg-s3-mono() {  @include t-factory($size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono') }
-@mixin tpg-s4() {  @include t-factory($size: 13px, $height: 16px) }
-@mixin tpg-s5() {  @include t-factory($size: 11px, $height: 16px, $weight: 200) }
-@mixin tpg-s5-bold() {  @include t-factory($size: 11px, $height: 16px, $weight: 700) }
+@mixin tpg-s1() {
+  @include t-factory($size: 24px, $height: 32px, $weight: 200);
+}
+@mixin tpg-s2() {
+  @include t-factory($size: 18px, $height: 24px, $weight: 300);
+}
+@mixin tpg-s3() {
+  @include t-factory($size: 15px, $height: 16px, $weight: 200);
+}
+@mixin tpg-s3-mono() {
+  @include t-factory($size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono');
+}
+@mixin tpg-s4() {
+  @include t-factory($size: 13px, $height: 16px);
+}
+@mixin tpg-s5() {
+  @include t-factory($size: 11px, $height: 16px, $weight: 200);
+}
+@mixin tpg-s5-bold() {
+  @include t-factory($size: 11px, $height: 16px, $weight: 700);
+}
 
-@mixin tpg-link1() { @include t-factory($size: 15px, $height: 16px, $weight: 200) }
+@mixin tpg-link1() {
+  @include t-factory($size: 15px, $height: 16px, $weight: 200);
+}
 
-@mixin tpg-link1-mono() { @include t-factory($size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono') }
+@mixin tpg-link1-mono() {
+  @include t-factory($size: 15px, $height: 16px, $weight: 300, $family: 'JetBrainsMono');
+}
