@@ -75,7 +75,7 @@ const secondSection = computed(() => {
       value: metrics.value ? metrics.value.transactions_accepted + metrics.value.transactions_rejected : 0,
       i18nKey: 'homePage.totalTransactions',
     },
-    { value: metrics.value ? metrics.value.peers + 1 : 1, i18nKey: 'homePage.totalNodes' },
+    { value: metrics.value ? metrics.value.peers : 1, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
