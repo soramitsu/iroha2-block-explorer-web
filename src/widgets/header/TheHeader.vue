@@ -94,6 +94,14 @@ const currentScope = useCurrentExplorerScope();
     min-height: $header-height;
   }
 
+  @include lg {
+    grid-template-columns: auto minmax(230px, 1fr) auto;
+    grid-template-areas:
+      'logo search controls'
+      'nav nav nav';
+    column-gap: size(2);
+  }
+
   @include xl {
     max-width: $xl;
   }
@@ -105,6 +113,13 @@ const currentScope = useCurrentExplorerScope();
 
   &__search {
     display: none !important;
+
+    @include lg {
+      grid-area: search;
+      display: flex !important;
+      justify-self: center;
+      min-width: 0;
+    }
   }
 
   &__nav {

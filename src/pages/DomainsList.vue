@@ -4,8 +4,8 @@
     class="domains-list-page"
   >
     <BaseTable
-      v-model:page="listState.page"
-      v-model:page-size="listState.per_page"
+      v-model:page="page"
+      v-model:page-size="pageSize"
       :loading="isLoading"
       :total="totalDomains"
       :items="domains"
@@ -82,32 +82,24 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import { computed, reactive, watch } from 'vue';
+import { computed } from 'vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import type { Domain } from '@/shared/api/schemas';
+import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', sm: 'medium', xxs: 'two-line' });
 
-const listState = reactive({
-  page: 1,
-  per_page: 10,
-});
-
-watch(
-  () => listState.per_page,
-  () => {
-    listState.page = 1;
-  }
-);
+const { page, pageSize } = useListRouteQuery();
+const listParams = computed(() => ({ page: page.value, per_page: pageSize.value }));
 
 const scope = useParamScope(
   () => {
     return {
-      key: JSON.stringify(listState),
-      payload: listState,
+      key: JSON.stringify(listParams.value),
+      payload: listParams.value,
     };
   },
   ({ payload }) => setupAsyncData(() => http.fetchDomains(payload))

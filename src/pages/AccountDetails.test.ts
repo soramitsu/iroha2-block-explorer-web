@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { config, flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, ref } from 'vue';
 import BigNumber from 'bignumber.js';
 import { i18n } from '@/shared/lib/localization';
 import QRCode from 'qrcode';
 import AccountDetails from './AccountDetails.vue';
-import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
+import { NOT_FOUND, SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 
 const validAccountId =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
@@ -13,8 +13,14 @@ const modernCanonicalAccountId = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃ
 const modernTestnetAccountId = 'testuﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const toriiBaseUrlState = vi.hoisted(() => ({ value: 'https://nexus.mof3.sora.org:18080' }));
 
+config.global.stubs = {
+  ...config.global.stubs,
+  RouterLink: { template: '<a><slot /></a>' },
+};
+
 const mockRoute = ref({
   params: { id: validAccountId },
+  query: {} as Record<string, string>,
 });
 
 const pushSpy = vi.fn().mockResolvedValue(undefined);
@@ -26,6 +32,29 @@ const scopeExpose = ref<any>({
 let scopeExposeQueue: any[] = [];
 let scopeExposeIndex = 0;
 
+function exposeWithSnapshot(candidate: any) {
+  if (candidate.snapshot) return candidate;
+  if (candidate.data?.status === SUCCESSFUL_FETCHING) {
+    return {
+      ...candidate,
+      snapshot: {
+        status: 'ready',
+        data: candidate.data,
+        isRefreshing: false,
+        refreshError: null,
+      },
+    };
+  }
+  if (candidate.data?.status === NOT_FOUND) return { ...candidate, snapshot: { status: 'not-found' } };
+  return {
+    ...candidate,
+    snapshot: {
+      status: 'error',
+      problem: { kind: 'invalid-response', message: 'request failed' },
+    },
+  };
+}
+
 vi.mock('vue-router', () => ({
   useRouter: () => ({
     currentRoute: mockRoute,
@@ -35,11 +64,18 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@vue-kakuyaku/core', () => ({
   useParamScope: () => {
-    const expose = scopeExposeQueue[scopeExposeIndex++] ?? scopeExpose.value;
+    const expose = exposeWithSnapshot(scopeExposeQueue[scopeExposeIndex++] ?? scopeExpose.value);
     return ref({
       expose,
     });
   },
+}));
+
+vi.mock('@/shared/ui/composables/useExplorerScopeNavigation', () => ({
+  useCurrentExplorerScope: () => ref(null),
+  useScopedExplorerNavigation: () => ({
+    push: pushSpy,
+  }),
 }));
 
 vi.mock('@/shared/api', () => ({
@@ -112,6 +148,14 @@ const BaseTableStub = defineComponent({
   `,
 });
 
+const BaseLinkStub = defineComponent({
+  name: 'BaseLink',
+  props: {
+    to: { type: [String, Object], required: true },
+  },
+  template: '<a :href="typeof to === \'string\' ? to : \'#\'"><slot /></a>',
+});
+
 const DataFieldProbeStub = defineComponent({
   name: 'DataField',
   props: {
@@ -146,10 +190,13 @@ describe('AccountDetails', () => {
     };
     mockRoute.value = {
       params: { id: validAccountId },
+      query: {},
     };
   });
 
   it('routes to tracing workspace when tracing tab is selected', async () => {
+    mockRoute.value.query = { tab: 'activity' };
+
     const wrapper = mount(AccountDetails, {
       global: {
         plugins: [i18n],
@@ -157,11 +204,12 @@ describe('AccountDetails', () => {
           BaseContentBlock: BaseContentBlockStub,
           BaseTabs: BaseTabsStub,
           BaseTable: BaseTableStub,
-          BaseLink: true,
+          BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: true,
           TransactionsTable: true,
           InstructionsTable: true,
+          AccountActivityView: true,
           CopyIcon: true,
         },
       },
@@ -178,6 +226,34 @@ describe('AccountDetails', () => {
         seed_value: validAccountId,
       },
     });
+  });
+
+  it('derives the account surface from the URL and writes tab changes back to query state', async () => {
+    mockRoute.value.query = { tab: 'permissions' };
+    const wrapper = mount(AccountDetails, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          BaseContentBlock: BaseContentBlockStub,
+          BaseTabs: BaseTabsStub,
+          BaseTable: BaseTableStub,
+          AccountPermissionsView: { template: '<div data-test="permissions-view-stub" />' },
+          BaseLink: BaseLinkStub,
+          BaseLoading: true,
+          DataField: true,
+          TransactionsTable: true,
+          InstructionsTable: true,
+          CopyIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('[data-test="account-permissions"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="account-overview"]').exists()).toBe(false);
+
+    await wrapper.get('.tab-button-multisig').trigger('click');
+
+    expect(pushSpy).toHaveBeenCalledWith({ query: { tab: 'multisig' } });
   });
 
   it('hides the standalone account id field when the same i105 address is already shown', async () => {
@@ -205,7 +281,7 @@ describe('AccountDetails', () => {
           BaseContentBlock: BaseContentBlockStub,
           BaseTabs: BaseTabsStub,
           BaseTable: BaseTableStub,
-          BaseLink: true,
+          BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: DataFieldProbeStub,
           TransactionsTable: true,
@@ -220,6 +296,71 @@ describe('AccountDetails', () => {
     const accountField = wrapper.find(`.data-field-probe[data-title="${i18n.global.t('accounts.accountId')}"]`);
     expect(accountField.exists()).toBe(false);
     expect(wrapper.text()).toContain(validAccountId);
+    expect(wrapper.get('.account-details__address-copy').element.tagName).toBe('BUTTON');
+    expect(wrapper.get('.account-details__address-copy').attributes('aria-label')).toBe('Copy I105 address');
+  });
+
+  it('renders account not-found explicitly without misleading owned-resource sections', async () => {
+    scopeExpose.value = {
+      isLoading: false,
+      data: { status: NOT_FOUND },
+      refetch: vi.fn(),
+    };
+
+    const wrapper = mount(AccountDetails, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          BaseContentBlock: BaseContentBlockStub,
+          BaseTabs: BaseTabsStub,
+          BaseTable: BaseTableStub,
+          BaseLink: BaseLinkStub,
+          BaseLoading: true,
+          DataField: true,
+          TransactionsTable: true,
+          InstructionsTable: true,
+          CopyIcon: true,
+          RouterLink: { template: '<a><slot /></a>' },
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Account not found');
+    expect(wrapper.find('.base-table-stub').exists()).toBe(false);
+  });
+
+  it('keeps a terminal account error visible until retry is requested', async () => {
+    const refetch = vi.fn();
+    scopeExpose.value = {
+      isLoading: false,
+      data: { status: UNKNOWN_ERROR },
+      refetch,
+    };
+
+    const wrapper = mount(AccountDetails, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          BaseContentBlock: BaseContentBlockStub,
+          BaseTabs: BaseTabsStub,
+          BaseTable: BaseTableStub,
+          BaseLink: BaseLinkStub,
+          BaseLoading: true,
+          DataField: true,
+          TransactionsTable: true,
+          InstructionsTable: true,
+          CopyIcon: true,
+          RouterLink: { template: '<a><slot /></a>' },
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(refetch).not.toHaveBeenCalled();
+    expect(wrapper.get('[role="alert"]').text()).toContain('Account could not be loaded');
+    await wrapper.get('[data-test="resource-retry"]').trigger('click');
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 
   it('renders account id field in full mode when no i105 address block is available', async () => {
@@ -245,7 +386,7 @@ describe('AccountDetails', () => {
           BaseContentBlock: BaseContentBlockStub,
           BaseTabs: BaseTabsStub,
           BaseTable: BaseTableStub,
-          BaseLink: true,
+          BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: DataFieldProbeStub,
           TransactionsTable: true,
@@ -290,7 +431,7 @@ describe('AccountDetails', () => {
           BaseContentBlock: BaseContentBlockStub,
           BaseTabs: BaseTabsStub,
           BaseTable: BaseTableStub,
-          BaseLink: true,
+          BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: true,
           TransactionsTable: true,
@@ -325,7 +466,7 @@ describe('AccountDetails', () => {
       },
       refetch: vi.fn(),
     };
-    mockRoute.value = { params: { id: validAccountId } };
+    mockRoute.value = { params: { id: validAccountId }, query: {} };
 
     const wrapper = mount(AccountDetails, {
       global: {
@@ -334,7 +475,7 @@ describe('AccountDetails', () => {
           BaseContentBlock: BaseContentBlockStub,
           BaseTabs: BaseTabsStub,
           BaseTable: BaseTableStub,
-          BaseLink: true,
+          BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: true,
           TransactionsTable: true,
@@ -369,7 +510,7 @@ describe('AccountDetails', () => {
       },
       refetch: vi.fn(),
     };
-    mockRoute.value = { params: { id: modernTestnetAccountId } };
+    mockRoute.value = { params: { id: modernTestnetAccountId }, query: {} };
 
     const wrapper = mount(AccountDetails, {
       global: {
@@ -378,7 +519,7 @@ describe('AccountDetails', () => {
           BaseContentBlock: BaseContentBlockStub,
           BaseTabs: BaseTabsStub,
           BaseTable: BaseTableStub,
-          BaseLink: true,
+          BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: true,
           TransactionsTable: true,
@@ -486,7 +627,7 @@ describe('AccountDetails', () => {
           BaseContentBlock: BaseContentBlockStub,
           BaseTabs: BaseTabsStub,
           BaseTable: BaseTableStub,
-          BaseLink: true,
+          BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: true,
           TransactionsTable: true,
@@ -504,8 +645,6 @@ describe('AccountDetails', () => {
     expect(wrapper.text()).toContain('42');
     expect(wrapper.text()).toContain('2');
 
-    await wrapper.get('.base-table-stub__row').trigger('click');
-
-    expect(pushSpy).toHaveBeenCalledWith(`/rwas/${encodeURIComponent(rwaId)}`);
+    expect(wrapper.get(`a[href="/rwas/${encodeURIComponent(rwaId)}"]`).text()).toContain(rwaId);
   });
 });

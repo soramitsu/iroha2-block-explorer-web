@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import InstructionsTable from './InstructionsTable.vue';
 import { i18n } from '@/shared/lib/localization';
-import { SUCCESSFUL_FETCHING, NOT_FOUND } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import * as api from '@/shared/api';
 import type * as SharedApiModule from '@/shared/api';
 import type * as VueUse from '@vueuse/core';
@@ -10,6 +10,11 @@ import { defineComponent, ref } from 'vue';
 
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_I105_ALT = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const LIVE_MULTISIG_ACCOUNT = 'soraﾁｷVMXKﾏtKAoQﾅﾛ3qｾヱ8aﾄdNuｷﾀｱｽh9ｻtWﾐBﾒ9AﾏHｼQﾅvﾛﾌｹYﾑﾐﾛCﾎjtQQヰYCbﾎｵPfb6vXcﾖ1176ﾃﾈcﾐｲUEtﾎヱﾅｻﾀiuｦ2MPﾍﾏiﾌhﾓJｶｶgboCｻBpｷ35ｸ15ｼmGｲFK9NﾑoVﾜWvQMKﾃﾎB7ヰdM99EU4V';
+const LIVE_TRANSFER_SOURCE = `66owaQmAQMuHxPzxUN3bqZ6FJfDa#${LIVE_MULTISIG_ACCOUNT}`;
+const LIVE_TRANSFER_DESTINATION = 'sorauﾛ1QEﾄiBzndﾆDwﾉｴxSﾔﾋ6KXﾆ2xﾗﾆrﾐﾚﾄoNqｳZﾘqtHﾛDBCRJ5';
+const LIVE_TRANSFER_INSTRUCTION =
+  'TlJUMAAAhip9dwddTSP/bBJh2wJ4EQDSAQAAAAAAABQKMDTp3Yu+Ag8OaXJvaGEudHJhbnNmZXLAA7gBAAAAAAAATlJUMAAApBdMeNY0H4+Y/Cra6O1nuQCQAQAAAAAAAOy4mMbcuTFWAgIAAACKA6oCggIBAAAA/AEBAQICAPUBAwAAAAAAAABOSiEAAAAAAAAAAQABhAExAb0BZQH/ASQBcwHNAacBpwEHAcEBgAH3AcEB5AH2AcQBzAGVASABPQFuAXoBJwFLAYUBswHtAW8BbAE1AgEATkohAAAAAAAAAAEAAbQBJgHPAXIBUQE3Af8B5gEzAbkB7gFJAXQBIAGoAYIB2gGYAW0BNgGxAfMBgQGPASEBkQFsAdUBtQH9AUoB/QIBAE5KIQAAAAAAAAABAAHHAeIB8QH8AZMBSQHvAZ8BkgG6AYEBeAFSAa4BbQGBAV0B2wGyAWABgQHUAWsBrQHiATMBSwERATwBHwF/AWUCAQAgAW4BFQFrAVABEAHmAUUB+AGDAesBgwEZAUYBuAGNAbgEAAAAAA0HAwAAAKCGAQQAAAAATwAAAABKIQAAAAAAAAABAAH9AVUB7wEWAZIB1QGPAYcBkwEvAVkBgAEhAbEB1gEWATkBRwGAAQgBIwHlAb4BuQF0AcoBiAEEAZoByAGaAfc=';
 
 const clipboardCopySpy = vi.fn();
 const eventSourceData = ref<string | null>(null);
@@ -91,11 +96,14 @@ describe('InstructionsTable', () => {
       json: {
         kind: 'Register',
         payload: {
-          object: {
-            type: 'Domain',
-            id: 'wonderland',
+          variant: 'Domain',
+          value: {
+            object: {
+              id: 'wonderland.universal',
+              logo: null,
+              metadata: {},
+            },
           },
-          owner: SAMPLE_I105,
         },
       },
     },
@@ -113,15 +121,19 @@ describe('InstructionsTable', () => {
       json: {
         kind: 'Custom',
         payload: {
-          Register: {
-            account: SAMPLE_I105,
-            spec: {
-              signatories: {
-                [SAMPLE_I105]: 1,
-                [SAMPLE_I105_ALT]: 1,
+          variant: 'Custom',
+          value: {
+            Register: {
+              account: SAMPLE_I105,
+              home_domain: null,
+              spec: {
+                signatories: {
+                  [SAMPLE_I105]: 1,
+                  [SAMPLE_I105_ALT]: 1,
+                },
+                quorum: 2,
+                transaction_ttl_ms: 60000,
               },
-              quorum: 2,
-              transaction_ttl_ms: 60000,
             },
           },
         },
@@ -141,6 +153,28 @@ describe('InstructionsTable', () => {
             note: 'hello',
           },
         },
+      },
+    },
+  });
+
+  const makeNestedTransferMultisigInstruction = () => ({
+    ...baseInstruction,
+    kind: 'Custom',
+    box: {
+      encoded: '0x0d0c69726f68612e637573746f6d',
+      json: {
+        kind: 'Custom',
+        payload: {
+          variant: 'Custom',
+          value: {
+            Propose: {
+              account: LIVE_MULTISIG_ACCOUNT,
+              instructions: [LIVE_TRANSFER_INSTRUCTION],
+              transaction_ttl_ms: null,
+            },
+          },
+        },
+        wire_id: 'iroha_data_model::isi::transparent::CustomInstruction',
       },
     },
   });
@@ -217,12 +251,14 @@ describe('InstructionsTable', () => {
           json: {
             kind: 'Register',
             payload: {
-              object: {
-                type: 'Domain',
-                id: 'wonderland',
+              variant: 'Domain',
+              value: {
+                object: {
+                  id: 'wonderland.universal',
+                  logo: null,
+                  metadata: { label: 'Wonderland' },
+                },
               },
-              owner: SAMPLE_I105,
-              metadata: { label: 'Wonderland' },
             },
           },
         },
@@ -407,6 +443,43 @@ describe('InstructionsTable', () => {
     expect(kindField?.find('.data-field__value-text').text()).toBe('Multisig');
   });
 
+  it('renders canonically decoded nested multisig instructions as semantic cards and preserves raw JSON', async () => {
+    const multisigInstruction = makeNestedTransferMultisigInstruction();
+    (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        pagination: {
+          page: 1,
+          per_page: 10,
+          total_pages: 1,
+          total_items: 1,
+        },
+        items: [multisigInstruction],
+      },
+    });
+    (api.fetchInstructionDetail as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: SUCCESSFUL_FETCHING,
+      data: multisigInstruction,
+    });
+
+    const wrapper = factory({ initialInstructionIndex: 0 });
+    await flushPromises();
+
+    const jsonComponents = wrapper.findAllComponents(BaseJsonStub);
+    const rowJson = jsonComponents.find((component) => component.classes().includes('instructions-table__value-json'));
+    const detailJson = jsonComponents.find((component) => component.classes().includes('instructions-detail__json-tree'));
+
+    expect(wrapper.findAll('[data-test="instruction-semantic-card"]')).toHaveLength(2);
+    expect(wrapper.text()).toContain('Multisig proposal');
+    expect(wrapper.text()).toContain('Asset transfer');
+    expect(wrapper.text()).toContain('100000');
+    expect(wrapper.text()).toContain(LIVE_TRANSFER_SOURCE);
+    expect(wrapper.text()).toContain(LIVE_TRANSFER_DESTINATION);
+    expect(rowJson?.props('value')).toEqual(multisigInstruction.box.json);
+    expect(detailJson?.props('value')).toEqual(multisigInstruction.box.json);
+    expect(multisigInstruction.box.json.payload.value.Propose.instructions).toEqual([LIVE_TRANSFER_INSTRUCTION]);
+  });
+
   it('keeps Custom kind label for non-multisig custom instructions', async () => {
     const customInstruction = makeNonMultisigCustomInstruction();
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -428,7 +501,7 @@ describe('InstructionsTable', () => {
     expect(wrapper.get('[data-test="instruction-kind-label"]').text()).toBe('Custom');
   });
 
-  it('shows concrete custom ISI label derived from payload wire_id', async () => {
+  it('does not infer a custom ISI label from payload wire_id', async () => {
     const wireIdInstruction = makeWireIdCustomInstruction();
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
@@ -450,15 +523,15 @@ describe('InstructionsTable', () => {
     const wrapper = factory();
     await flushPromises();
 
-    expect(wrapper.get('[data-test="instruction-kind-label"]').text()).toBe('SubmitOfflineToOnlineTransfer');
+    expect(wrapper.get('[data-test="instruction-kind-label"]').text()).toBe('Custom');
 
     await wrapper.find('.instructions-table__action-button').trigger('click');
     await flushPromises();
 
-    expect(wrapper.get('[data-test="instruction-detail-kind"]').text()).toContain('SubmitOfflineToOnlineTransfer');
+    expect(wrapper.get('[data-test="instruction-detail-kind"]').text()).toContain('Custom');
   });
 
-  it('shows concrete custom ISI label derived from payload variant', async () => {
+  it('does not infer a custom ISI label from an unregistered payload variant', async () => {
     const variantInstruction = makeVariantCustomInstruction();
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
@@ -476,7 +549,23 @@ describe('InstructionsTable', () => {
     const wrapper = factory();
     await flushPromises();
 
-    expect(wrapper.get('[data-test="instruction-kind-label"]').text()).toBe('RegisterConsensusKey');
+    expect(wrapper.get('[data-test="instruction-kind-label"]').text()).toBe('Custom');
+  });
+
+  it('uses the concrete instruction kind supplied by Torii', async () => {
+    const resolvedInstruction = makeResolvedWireIdCustomInstruction();
+    (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+        items: [resolvedInstruction],
+      },
+    });
+
+    const wrapper = factory();
+    await flushPromises();
+
+    expect(wrapper.get('[data-test="instruction-kind-label"]').text()).toBe('SubmitOfflineToOnlineTransfer');
   });
 
   it('auto-opens instruction when initialInstructionIndex is provided', async () => {
@@ -510,7 +599,14 @@ describe('InstructionsTable', () => {
           json: {
             kind: 'Register',
             payload: {
-              object: 'domain',
+              variant: 'Domain',
+              value: {
+                object: {
+                  id: 'wonderland.universal',
+                  logo: null,
+                  metadata: {},
+                },
+              },
             },
           },
         },
@@ -615,12 +711,7 @@ describe('InstructionsTable', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('falls back to instruction detail endpoints when history query is temporarily empty', async () => {
-    const fallbackInstruction = {
-      ...baseInstruction,
-      transaction_hash: '0xfallback',
-      index: 0,
-    };
+  it('does not probe instruction detail indexes when the history query is empty', async () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
@@ -633,22 +724,11 @@ describe('InstructionsTable', () => {
         items: [],
       },
     });
-    (api.fetchInstructionDetail as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-      async (_hash: string, index: number) => {
-        if (index === 0) {
-          return {
-            status: SUCCESSFUL_FETCHING,
-            data: fallbackInstruction,
-          };
-        }
-        return { status: NOT_FOUND };
-      }
-    );
 
-    const wrapper = factory({ filterBy: { kind: 'transaction', value: '0xfallback' } });
+    const wrapper = factory({ filterBy: { kind: 'transaction', value: '0xempty' } });
     await flushPromises();
 
-    expect(api.fetchInstructionDetail).toHaveBeenCalledWith('0xfallback', 0);
-    expect(wrapper.find('[data-test="instruction-kind-label"]').text()).toBe('Register');
+    expect(api.fetchInstructionDetail).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-test="instruction-kind-label"]').exists()).toBe(false);
   });
 });

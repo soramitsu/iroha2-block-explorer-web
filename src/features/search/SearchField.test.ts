@@ -52,13 +52,38 @@ describe('SearchField', () => {
     expect(pushSpy).toHaveBeenCalledWith({ name: 'blocks-details', params: { heightOrHash: '123' } });
   });
 
-  it('navigates to transaction details when query looks like a hash', async () => {
+  it('navigates exact hashes to scoped search after normalizing their prefix and case', async () => {
+    const wrapper = mountField();
+    const input = wrapper.get('input');
+    await input.setValue(`0x${'AB'.repeat(32)}`);
+    await input.trigger('keyup.enter');
+
+    expect(pushSpy).toHaveBeenCalledWith({
+      name: 'search-results',
+      query: { q: 'ab'.repeat(32) },
+    });
+  });
+
+  it('treats an all-decimal 64-character value as a hash before block height', async () => {
+    const wrapper = mountField();
+    const input = wrapper.get('input');
+    await input.setValue('1'.repeat(64));
+    await input.trigger('keyup.enter');
+
+    expect(pushSpy).toHaveBeenCalledWith({
+      name: 'search-results',
+      query: { q: '1'.repeat(64) },
+    });
+  });
+
+  it('does not treat a short hexadecimal prefix as a hash', async () => {
     const wrapper = mountField();
     const input = wrapper.get('input');
     await input.setValue('0xabc123');
     await input.trigger('keyup.enter');
 
-    expect(pushSpy).toHaveBeenCalledWith({ name: 'transaction-details', params: { hash: '0xabc123' } });
+    expect(pushSpy).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledTimes(1);
   });
 
   it('routes to canonical account ids, account aliases, asset aliases, RWAs, or NFTs based on the identifier format', async () => {
@@ -89,6 +114,14 @@ describe('SearchField', () => {
     await input.setValue(nftId);
     await input.trigger('keyup.enter');
     expect(pushSpy).toHaveBeenNthCalledWith(5, { name: 'nft-details', params: { id: nftId } });
+
+    const domainId = 'Treasury.Universal';
+    await input.setValue(domainId);
+    await input.trigger('keyup.enter');
+    expect(pushSpy).toHaveBeenNthCalledWith(6, {
+      name: 'domain-details',
+      params: { id: 'treasury.universal' },
+    });
   });
 
   it('rejects malformed account aliases', async () => {

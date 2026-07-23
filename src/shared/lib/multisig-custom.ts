@@ -1,4 +1,6 @@
-const MULTISIG_VARIANTS = ['Register', 'Propose', 'Approve'] as const;
+import { noritoDecodeInstruction } from '@iroha/iroha-js/browser';
+
+const MULTISIG_VARIANTS = ['Register', 'Propose', 'Approve', 'Cancel'] as const;
 
 export type MultisigVariant = (typeof MULTISIG_VARIANTS)[number];
 
@@ -12,8 +14,7 @@ export interface MultisigCustomEnvelope {
 export interface DecodedMultisigInstruction {
   index: number
   kind: string | null
-  wire_id: string | null
-  preview: string | null
+  instruction: unknown | null
 }
 
 export interface MultisigCustomDisplayPayload {
@@ -30,7 +31,6 @@ export interface MultisigCustomDisplayPayload {
 type AnyRecord = Record<string, unknown>;
 
 const MULTISIG_VARIANT_SET = new Set<string>(MULTISIG_VARIANTS);
-const PREVIEW_LENGTH = 120;
 
 function asRecord(value: unknown): AnyRecord | null {
   return value && typeof value === 'object' ? (value as AnyRecord) : null;
@@ -69,85 +69,31 @@ function extractEnvelope(entry: { variant: MultisigVariant, body: AnyRecord }): 
   };
 }
 
-function toPascalCase(raw: string): string {
-  return raw
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean)
-    .map((segment) => `${segment.charAt(0).toUpperCase()}${segment.slice(1).toLowerCase()}`)
-    .join('');
-}
-
 function decodeBase64ToBytes(raw: string): Uint8Array | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-
-  try {
-    if (typeof atob === 'function') {
-      const binary = atob(trimmed);
-      const bytes = new Uint8Array(binary.length);
-      for (let index = 0; index < binary.length; index++) {
-        bytes[index] = binary.charCodeAt(index);
-      }
-      return bytes;
-    }
-  } catch {
-    // ignore
+  if (!raw || raw.trim() !== raw || raw.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(raw)) {
+    return null;
   }
 
-  const bufferFactory = (globalThis as { Buffer?: { from: (input: string, encoding: string) => Uint8Array } }).Buffer;
-  if (!bufferFactory) return null;
-
   try {
-    return new Uint8Array(bufferFactory.from(trimmed, 'base64'));
+    const binary = atob(raw);
+    if (!binary || btoa(binary) !== raw) return null;
+
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
   } catch {
     return null;
   }
 }
 
-function decodeBytesToText(bytes: Uint8Array): string {
-  if (typeof TextDecoder !== 'undefined') {
-    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-  }
+function readDecodedInstructionKind(instruction: unknown): string | null {
+  const instructionRecord = asRecord(instruction);
+  if (!instructionRecord) return null;
 
-  let output = '';
-  for (const value of bytes) {
-    output += String.fromCharCode(value);
-  }
-  return output;
-}
-
-function extractInstructionWireId(decodedText: string): string | null {
-  const canonicalMatch = decodedText.match(/iroha_data_model::isi::[A-Za-z0-9_:]+/);
-  if (canonicalMatch) return canonicalMatch[0];
-
-  const shortMatch = decodedText.match(/iroha\.[a-z_]+/i);
-  if (shortMatch) return shortMatch[0].toLowerCase();
-
-  return null;
-}
-
-function extractInstructionKind(wireId: string | null): string | null {
-  if (!wireId) return null;
-
-  if (wireId.includes('::')) {
-    const segments = wireId.split('::').filter(Boolean);
-    const last = segments.at(-1);
-    return last ?? null;
-  }
-
-  if (wireId.startsWith('iroha.')) {
-    return toPascalCase(wireId.slice('iroha.'.length));
-  }
-
-  return null;
-}
-
-function extractPreview(decodedText: string): string | null {
-  const printable = decodedText.replace(/[^\x20-\x7E]+/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!printable) return null;
-
-  if (printable.length <= PREVIEW_LENGTH) return printable;
-  return `${printable.slice(0, PREVIEW_LENGTH - 3)}...`;
+  const variants = Object.keys(instructionRecord);
+  return variants.length === 1 ? variants[0] ?? null : null;
 }
 
 function decodeNestedInstruction(encoded: string, index: number): DecodedMultisigInstruction {
@@ -156,20 +102,24 @@ function decodeNestedInstruction(encoded: string, index: number): DecodedMultisi
     return {
       index,
       kind: null,
-      wire_id: null,
-      preview: null,
+      instruction: null,
     };
   }
 
-  const decodedText = decodeBytesToText(bytes);
-  const wireId = extractInstructionWireId(decodedText);
-
-  return {
-    index,
-    kind: extractInstructionKind(wireId),
-    wire_id: wireId,
-    preview: extractPreview(decodedText),
-  };
+  try {
+    const instruction = noritoDecodeInstruction(bytes);
+    return {
+      index,
+      kind: readDecodedInstructionKind(instruction),
+      instruction,
+    };
+  } catch {
+    return {
+      index,
+      kind: null,
+      instruction: null,
+    };
+  }
 }
 
 export function readMultisigCustomEnvelope(payload: unknown): MultisigCustomEnvelope | null {

@@ -1,10 +1,10 @@
 import type { KotodamaStudioWorkspaceSummary } from './kotodama-studio-source';
 import {
-  type KotodamaStudioCompiledBudgetEntry,
-  compileKotodamaStudioProgram,
-  type KotodamaStudioCompiledManifestMetadata,
-  type KotodamaStudioCompilerDiagnostic,
-  type KotodamaStudioCompiledSourceMapEntry,
+  type KotodamaCompiledBudgetEntry,
+  type KotodamaCompiledManifestMetadata,
+  type KotodamaCompiledSourceMapEntry,
+  type KotodamaCompilerDiagnostic,
+  compileKotodamaProgram,
 } from './kotodama-studio-compiler';
 
 export interface KotodamaStudioCompileResult {
@@ -13,34 +13,18 @@ export interface KotodamaStudioCompileResult {
   codeHashHex: string
   abiHashHex: string
   compilerFingerprint: string
-  diagnostics: KotodamaStudioCompilerDiagnostic[]
-  warnings: KotodamaStudioCompilerDiagnostic[]
-  manifest: KotodamaStudioCompiledManifestMetadata | null
-  sourceMap: KotodamaStudioCompiledSourceMapEntry[]
-  budgetReport: KotodamaStudioCompiledBudgetEntry[]
+  diagnostics: KotodamaCompilerDiagnostic[]
+  warnings: KotodamaCompilerDiagnostic[]
+  manifest: KotodamaCompiledManifestMetadata | null
+  sourceMap: KotodamaCompiledSourceMapEntry[]
+  budgetReport: KotodamaCompiledBudgetEntry[]
   summary: KotodamaStudioWorkspaceSummary
 }
 
 export interface KotodamaStudioCompileInput {
   source: string
   summary: KotodamaStudioWorkspaceSummary
-}
-
-export interface KotodamaStudioToriiDeployRequest {
-  endpoint: '/v1/contracts/deploy'
-  authority: string
-  code_b64: string
-  dataspace?: string
-}
-
-export interface KotodamaStudioDeployDraft {
-  authority: string
-  chainId: string
-  dataspace: string
-  codeHashHex: string
-  abiHashHex: string
-  deployMode: 'torii_contracts_deploy_v1'
-  toriiRequest: KotodamaStudioToriiDeployRequest
+  compilerUrl: string
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -55,49 +39,47 @@ function bytesToBase64(bytes: Uint8Array): string {
 export async function compileKotodamaStudioSource(
   input: KotodamaStudioCompileInput
 ): Promise<KotodamaStudioCompileResult> {
-  const compiled = compileKotodamaStudioProgram(input.source, { sourceName: 'studio.ko' });
+  const compilerUrl = input.compilerUrl.trim();
+  if (!compilerUrl) {
+    throw new Error(
+      'Kotodama compiler service URL is not configured. Configure a trusted canonical Rust compiler service before compiling.'
+    );
+  }
+
+  const compiled = await compileKotodamaProgram(input.source, {
+    compilerUrl,
+    sourceName: 'studio.ko',
+  });
+
+  if (!compiled.ok) {
+    return {
+      artifactLabel: '.to bundle',
+      artifactB64: '',
+      codeHashHex: '',
+      abiHashHex: '',
+      compilerFingerprint: '',
+      diagnostics: compiled.diagnostics.filter((diagnostic) => diagnostic.severity === 'error'),
+      warnings: compiled.diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
+      manifest: null,
+      sourceMap: [],
+      budgetReport: [],
+      summary: input.summary,
+    };
+  }
+
+  const output = compiled.output;
 
   return {
     artifactLabel: '.to bundle',
-    artifactB64: bytesToBase64(compiled.artifactBytes),
-    codeHashHex: compiled.codeHashHex,
-    abiHashHex: compiled.abiHashHex,
-    compilerFingerprint: compiled.compilerFingerprint,
-    diagnostics: compiled.diagnostics,
-    warnings: compiled.warnings,
-    manifest: compiled.manifest,
-    sourceMap: compiled.sourceMap,
-    budgetReport: compiled.budgetReport,
+    artifactB64: bytesToBase64(output.artifactBytes),
+    codeHashHex: output.codeHashHex,
+    abiHashHex: output.abiHashHex,
+    compilerFingerprint: output.compilerFingerprint,
+    diagnostics: [],
+    warnings: [],
+    manifest: output.manifest,
+    sourceMap: output.sourceMap,
+    budgetReport: output.budgetReport,
     summary: input.summary,
-  };
-}
-
-export function buildKotodamaStudioDeployDraft(options: {
-  authority: string
-  chainId: string
-  dataspace: string
-  compileResult: KotodamaStudioCompileResult
-}): KotodamaStudioDeployDraft {
-  if (options.compileResult.manifest === null) {
-    throw new Error('Cannot build a deploy draft without a successful local compiler manifest.');
-  }
-
-  const normalizedDataspace = options.dataspace.trim();
-  const resolvedDataspace = normalizedDataspace.length > 0 ? normalizedDataspace : 'universal';
-  const includeDataspace = normalizedDataspace.length > 0 && normalizedDataspace.toLowerCase() !== 'universal';
-
-  return {
-    authority: options.authority,
-    chainId: options.chainId,
-    dataspace: resolvedDataspace,
-    codeHashHex: options.compileResult.codeHashHex,
-    abiHashHex: options.compileResult.abiHashHex,
-    deployMode: 'torii_contracts_deploy_v1',
-    toriiRequest: {
-      endpoint: '/v1/contracts/deploy',
-      authority: options.authority,
-      code_b64: options.compileResult.artifactB64,
-      ...(includeDataspace ? { dataspace: resolvedDataspace } : {}),
-    },
   };
 }

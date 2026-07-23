@@ -7,18 +7,20 @@ import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import type { TransactionSearchParams, TransactionStatus as TransactionStatusType } from '@/shared/api/schemas';
 import { TransactionStatusFilter } from '@/features/filter/transactions';
-import { computed, reactive, ref, shallowRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { useI18n } from 'vue-i18n';
-import { useThrottleFn, useWindowScroll } from '@vueuse/core';
+import { useThrottleFn, useWindowScroll, watchDebounced } from '@vueuse/core';
 import { Transaction as TransactionSchema } from '@/shared/api/schemas';
 import type { Transaction as TransactionDto } from '@/shared/api/schemas';
 import { useExplorerTransactionsEvents } from '@/shared/ui/composables/useExplorerTransactionsEvents';
 import { normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
+import { firstRouteQueryValue } from '@/shared/lib/route-query';
+import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 
 interface TransactionsTableCachePayload {
   version: number
@@ -80,19 +82,48 @@ const props = withDefaults(
     showAuthority?: boolean
     hashType: HashType
     filterBy?: { kind: 'authority', value: string } | { kind: 'block', value: number } | null
+    queryPrefix?: string
   }>(),
-  { showBlock: false, showAuthority: false, filterBy: null }
+  { showBlock: false, showAuthority: false, filterBy: null, queryPrefix: undefined }
 );
 
 const { t } = useI18n();
 
-const listState = reactive({
-  status: null as TransactionStatusType | null,
-  page: 1,
-  per_page: 10,
+const queryPrefix = props.queryPrefix ?? (props.filterBy ? 'tx_' : '');
+const pageKey = `${queryPrefix}page`;
+const pageSizeKey = `${queryPrefix}per_page`;
+const statusKey = `${queryPrefix}status`;
+const authorityKey = `${queryPrefix}authority`;
+const blockKey = `${queryPrefix}block`;
+const { route, page, pageSize, updateListQuery } = useListRouteQuery({ pageKey, pageSizeKey });
+
+const status = computed<TransactionStatusType | null>({
+  get: () => {
+    const value = firstRouteQueryValue(route.query[statusKey]);
+    return value === 'Committed' || value === 'Rejected' ? value : null;
+  },
+  set: (value) => {
+    updateListQuery({ [statusKey]: value }, { history: 'replace' }).catch(() => undefined);
+  },
 });
-const authority = shallowRef<string | undefined>(undefined);
-const block = ref<number | undefined>(undefined);
+
+const routeAuthority = computed<string | undefined>(() => {
+  const value = firstRouteQueryValue(route.query[authorityKey])?.trim();
+  if (!value) return undefined;
+  return normalizeAccountSelectorLiteral(value) ?? undefined;
+});
+const routeBlock = computed<number | undefined>(() => {
+  const value = firstRouteQueryValue(route.query[blockKey])?.trim();
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
+});
+const authority = computed(() =>
+  props.filterBy?.kind === 'authority' ? props.filterBy.value : routeAuthority.value
+);
+const block = computed(() =>
+  props.filterBy?.kind === 'block' ? props.filterBy.value : routeBlock.value
+);
 
 const authorityFilter = ref('');
 const blockFilter = ref('');
@@ -126,47 +157,54 @@ function writeTransactionsTableCache(items: readonly TransactionDto[]) {
 }
 
 const cachedTransactions = ref<TransactionDto[]>(readTransactionsTableCache());
+let filterByInitialized = false;
 
 watch(
   () => props.filterBy,
   (value) => {
     if (value?.kind === 'authority') {
-      authority.value = value.value;
-      block.value = undefined;
       authorityFilter.value = value.value.toString();
     } else if (value?.kind === 'block') {
-      block.value = value.value;
-      authority.value = undefined;
       blockFilter.value = value.value.toString();
-    } else {
-      authority.value = undefined;
-      block.value = undefined;
     }
-    listState.page = 1;
+    if (filterByInitialized) updateListQuery({}, { history: 'replace' }).catch(() => undefined);
+    filterByInitialized = true;
+  },
+  { immediate: true }
+);
+
+watch(
+  () => firstRouteQueryValue(route.query[authorityKey]) ?? '',
+  (value) => {
+    if (props.filterBy?.kind !== 'authority') authorityFilter.value = value;
+  },
+  { immediate: true }
+);
+
+watch(
+  () => firstRouteQueryValue(route.query[blockKey]) ?? '',
+  (value) => {
+    if (props.filterBy?.kind !== 'block') blockFilter.value = value;
   },
   { immediate: true }
 );
 
 const searchParams = computed<TransactionSearchParams>(() => {
   return {
-    page: listState.page,
-    per_page: listState.per_page,
-    status: listState.status ?? undefined,
+    page: page.value,
+    per_page: pageSize.value,
+    status: status.value ?? undefined,
     authority: authority.value,
     block: typeof block.value === 'number' && Number.isFinite(block.value) ? block.value : undefined,
   };
 });
 
-watch([() => listState.per_page, () => listState.status], () => {
-  listState.page = 1;
-});
-
-watch(authorityFilter, (value) => {
+watchDebounced(authorityFilter, (value) => {
+  if (props.filterBy?.kind === 'authority') return;
   const trimmed = value.trim();
   if (!trimmed) {
     authorityFilterError.value = null;
-    authority.value = props.filterBy?.kind === 'authority' ? props.filterBy.value : undefined;
-    listState.page = 1;
+    updateListQuery({ [authorityKey]: null }, { history: 'replace' }).catch(() => undefined);
     return;
   }
   const normalized = normalizeAccountSelectorLiteral(trimmed);
@@ -174,28 +212,26 @@ watch(authorityFilter, (value) => {
     authorityFilterError.value = t('searchUnsupported');
     return;
   }
-  authority.value = normalized;
   authorityFilterError.value = null;
-  listState.page = 1;
-});
+  updateListQuery({ [authorityKey]: normalized }, { history: 'replace' }).catch(() => undefined);
+}, { debounce: 300, maxWait: 600 });
 
-watch(blockFilter, (value) => {
+watchDebounced(blockFilter, (value) => {
+  if (props.filterBy?.kind === 'block') return;
   const trimmed = value.trim();
   if (!trimmed) {
     blockFilterError.value = null;
-    block.value = props.filterBy?.kind === 'block' ? props.filterBy.value : undefined;
-    listState.page = 1;
+    updateListQuery({ [blockKey]: null }, { history: 'replace' }).catch(() => undefined);
     return;
   }
   const parsed = Number(trimmed);
-  if (Number.isNaN(parsed) || parsed < 0) {
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     blockFilterError.value = t('transactions.filters.blockInvalid');
     return;
   }
   blockFilterError.value = null;
-  block.value = parsed;
-  listState.page = 1;
-});
+  updateListQuery({ [blockKey]: parsed }, { history: 'replace' }).catch(() => undefined);
+}, { debounce: 300, maxWait: 600 });
 
 const scope = useParamScope(
   () => {
@@ -217,13 +253,13 @@ const payloadPagination = computed(() =>
 
 const hasAuthorityFilter = computed(() => Boolean(authority.value?.trim()));
 const hasBlockFilter = computed(() => typeof block.value === 'number' && Number.isFinite(block.value));
-const isDefaultFeed = computed(() => !listState.status && !hasAuthorityFilter.value && !hasBlockFilter.value);
-const isLatestPage = computed(() => listState.page === 1);
+const isDefaultFeed = computed(() => !status.value && !hasAuthorityFilter.value && !hasBlockFilter.value);
+const isLatestPage = computed(() => page.value === 1);
 const shouldRenderLiveDefaultFeed = computed(() => isDefaultFeed.value && isLatestPage.value);
 
 const transactions = computed(() =>
   shouldRenderLiveDefaultFeed.value
-    ? mergeTransactions([streamedTransactions.value, fetchedTransactions.value, cachedTransactions.value], listState.per_page)
+    ? mergeTransactions([streamedTransactions.value, fetchedTransactions.value, cachedTransactions.value], pageSize.value)
     : fetchedTransactions.value
 );
 const visibleTransactionHashes = computed(() => new Set(transactions.value.map((item) => item.hash)));
@@ -297,7 +333,7 @@ watch(
   () => isLoading.value,
   (loading) => {
     if (loading || !pendingAutoRefresh.value) return;
-    if (listState.page !== 1) {
+    if (page.value !== 1) {
       pendingAutoRefresh.value = false;
       return;
     }
@@ -313,7 +349,7 @@ watch(
   () => latestTransaction.value,
   (transaction) => {
     if (!transaction) return;
-    if (listState.status && transaction.status !== listState.status) return;
+    if (status.value && transaction.status !== status.value) return;
 
     const authorityFilterValue = authority.value?.toString();
     if (authorityFilterValue && transaction.authority !== authorityFilterValue) return;
@@ -326,7 +362,7 @@ watch(
 
     // Avoid shifting paginated views under the user's cursor.
     // Only auto-refresh when the table is on the "latest" page.
-    if (listState.page !== 1) return;
+    if (page.value !== 1) return;
 
     // Avoid shifting the page while the user is scrolled down.
     if (windowScrollY.value > 80) {
@@ -335,7 +371,7 @@ watch(
     }
 
     if (isDefaultFeed.value) {
-      streamedTransactions.value = mergeTransactions([[transaction], streamedTransactions.value], listState.per_page);
+      streamedTransactions.value = mergeTransactions([[transaction], streamedTransactions.value], pageSize.value);
     }
 
     scheduleTransactionsReload();
@@ -346,7 +382,7 @@ watch(
 <template>
   <div class="transactions-table">
     <div class="transactions-table-filters content-row">
-      <TransactionStatusFilter v-model="listState.status" />
+      <TransactionStatusFilter v-model="status" />
       <label class="transactions-table-filter">
         <span class="transactions-table-filter__label">{{ $t('accounts.accountId') }}</span>
         <input
@@ -393,8 +429,8 @@ watch(
     </div>
 
     <BaseTable
-      v-model:page="listState.page"
-      v-model:page-size="listState.per_page"
+      v-model:page="page"
+      v-model:page-size="pageSize"
       :loading="isLoading"
       :items="transactions"
       :row-key="transactionRowKey"

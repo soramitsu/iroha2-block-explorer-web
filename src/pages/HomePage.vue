@@ -71,7 +71,7 @@ import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorer
 const navigation = useScopedExplorerNavigation();
 const { t } = useI18n({ useScope: 'global' });
 const SAMPLE_BLOCK = '12345';
-const SAMPLE_TX_HASH = '0xabc123';
+const SAMPLE_TX_HASH = '0301b76be6d3dead32484180986523173082d770bc4fd954760d0a74a434624f';
 const SAMPLE_ACCOUNT_ID = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_ASSET_DEFINITION = 'usd#issuer.main';
 const SAMPLE_NFT_ID = 'cool-cat$gallery';
@@ -92,7 +92,7 @@ const searchSamples = computed<SearchSample[]>(() => [
   {
     key: 'tx',
     label: t('homePage.search.samples.tx'),
-    route: { name: 'transaction-details', params: { hash: SAMPLE_TX_HASH } },
+    route: { name: 'search-results', query: { q: SAMPLE_TX_HASH } },
   },
   {
     key: 'account',

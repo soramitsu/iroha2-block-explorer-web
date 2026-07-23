@@ -76,6 +76,17 @@ describe('localization: historic poetic locales', () => {
     i18n.global.locale.value = 'en';
   });
 
+  it('uses the canonical Hyperledger Iroha brand spelling', () => {
+    expect(en.homePage.title.firstLine).toBe('Hyperledger Iroha');
+
+    for (const file of SHIPPED_LOCALE_FILES) {
+      const locale = file.replace(/\.json$/, '');
+      const raw = readFileSync(`${LOCALIZATION_DIR}/${file}`, 'utf8');
+
+      expect(raw, `locale=${locale}`).not.toMatch(/Hyperleger Iroha/i);
+    }
+  });
+
   it('registers poetic cuneiform labels for core navigation strings', () => {
     i18n.global.locale.value = 'akk';
 

@@ -92,6 +92,11 @@ export const routes = [
     component: () => import('@/pages/TransactionDetails.vue'),
   },
   {
+    path: '/search',
+    name: 'search-results',
+    component: () => import('@/pages/SearchResults.vue'),
+  },
+  {
     path: '/tracing',
     name: 'tracing-workspace',
     component: () => import('@/pages/TracingWorkspace.vue'),
@@ -105,10 +110,6 @@ export const routes = [
     path: '/soracloud',
     name: 'soracloud',
     component: () => import('@/pages/SoracloudPage.vue'),
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    component: () => import('@/pages/NotFound.vue'),
   },
   {
     path: '/telemetry',
@@ -144,6 +145,10 @@ export const routes = [
     path: '/vpn',
     name: 'vpn-stats',
     component: () => import('@/pages/VpnStats.vue'),
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    component: () => import('@/pages/NotFound.vue'),
   },
 ];
 

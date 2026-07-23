@@ -67,4 +67,16 @@ describe('router', () => {
       ])
     );
   });
+
+  it('registers exact search before the final catch-all route', () => {
+    expect(routes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/search',
+          name: 'search-results',
+        }),
+      ])
+    );
+    expect(routes.at(-1)).toEqual(expect.objectContaining({ path: '/:pathMatch(.*)*' }));
+  });
 });

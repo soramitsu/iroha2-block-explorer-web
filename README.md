@@ -44,6 +44,11 @@ The file is fetched from:
 Supported keys:
 
 - `toriiBaseUrl` (string): default Torii base URL used by the node selector when no user override is stored.
+- `kotodamaCompilerUrl` (string): explicit base URL of a trusted canonical Rust Kotodama compiler service. The Studio
+  sends `POST /v1/kotodama/compile` beneath this base URL and sends the complete generated source. This service is
+  separate from Torii; the Explorer does not infer or default it from `toriiBaseUrl`. Production URLs must use HTTPS
+  (the upstream SDK permits HTTP only for loopback development). Studio compilation remains disabled when this key is
+  absent. A build can instead provide the same explicit value through `VITE_KOTODAMA_COMPILER_URL`.
 - `sorafsPublicBaseUrl` (string): optional public gateway origin used to build `/sorafs/cid/<cid>/...` links on
   `/sorafs/registry`. When omitted, the explorer falls back to the active Torii base URL and then
   `window.location.origin`.
@@ -59,6 +64,27 @@ corepack enable
 pnpm i
 pnpm dev --host 0.0.0.0 --port 5173
 ```
+
+### Deterministic Mochi integration chain
+
+The Explorer pins its local integration network in `tests/mochi/explorer-profile.json`. The
+wrapper refuses to start against a different sibling Iroha revision, so an upstream bump must be
+reviewed together with the profile pin.
+The wrapper also loads `tests/mochi/explorer-local.toml`, which enables Torii's native CORS policy
+only for the explicit loopback Vite/Playwright origins used by this repository.
+
+```bash
+pnpm mochi:up
+pnpm mochi:status
+pnpm mochi:verify-seed
+```
+
+Mochi writes runtime-only bootstrap material to `.env.local` and `.mochi/generated/*`; both stay
+uncommitted. Use `pnpm mochi:mcp-add-command` to print the exact local MCP registration command,
+and `pnpm mochi:down` when the integration chain is no longer needed. `pnpm mochi:reset` wipes only
+the profile-scoped local chain state before recreating a fresh deterministic run.
+The wrapper selects `/usr/bin/python3` on macOS and `python3` elsewhere for the upstream helper;
+set `MOCHI_PYTHON` explicitly to use another validated interpreter.
 
 ### Nginx subpath deployment
 

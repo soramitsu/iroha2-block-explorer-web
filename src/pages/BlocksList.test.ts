@@ -57,6 +57,13 @@ vi.mock('@/shared/utils/setup-async-data', () => ({
   setupAsyncData: setupAsyncDataMock,
 }));
 
+vi.mock('@/shared/ui/composables/useListRouteQuery', async () => {
+  const { ref } = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    useListRouteQuery: () => ({ page: ref(1), pageSize: ref(10), updateListQuery: vi.fn() }),
+  };
+});
+
 const BaseContentBlockStub = {
   template: '<div><slot /></div>',
 };

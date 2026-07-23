@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { compileKotodamaStudioSource } from './kotodama-studio-deploy';
 import {
   buildKotodamaStudioGraphSource,
   cloneKotodamaStudioGraphDocument,
@@ -249,17 +248,17 @@ describe('kotodama studio graph documents', () => {
   });
 
   it.each(['stablecoin', 'asset_ops', 'threshold_escrow', 'subscription', 'irohaswap_reduced'] as const)(
-    'compiles the generated %s graph through the browser compiler',
-    async (templateId) => {
-      const output = buildKotodamaStudioGraphSource(createKotodamaStudioGraphTemplate(templateId));
-      const result = await compileKotodamaStudioSource({
-        source: output.source,
-        summary: output.summary,
-      });
+    'generates a valid branded %s graph for canonical Rust service compilation',
+    (templateId) => {
+      const document = createKotodamaStudioGraphTemplate(templateId);
+      const output = buildKotodamaStudioGraphSource(document);
 
-      expect(result.diagnostics).toEqual([]);
-      expect(result.codeHashHex).toHaveLength(64);
-      expect(result.manifest?.entrypoints.length).toBe(output.summary.entrypoints.length);
+      expect(validateKotodamaStudioGraphDocument(document)).toEqual([]);
+      expect(output.source).toMatch(/(?:^|\n)seiyaku\s+[A-Za-z_][A-Za-z0-9_]*\s*\{/u);
+      expect(output.summary.entrypoints.length).toBeGreaterThan(0);
+      for (const entrypoint of output.summary.entrypoints) {
+        expect(output.source).toContain(`${entrypoint.kind} fn ${entrypoint.name}`);
+      }
     }
   );
 

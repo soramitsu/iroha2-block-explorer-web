@@ -20,7 +20,7 @@ const instructionsListState = ref({
   totalItems: 1,
   itemsCount: 1,
 });
-const scopeExpose = ref({
+const scopeExpose = ref<any>({
   isLoading: false,
   data: {
     status: SUCCESSFUL_FETCHING,
@@ -41,6 +41,27 @@ const scopeExpose = ref({
       signature: 'deadbeef',
       time_to_live: { ms: 1000 },
     },
+  },
+  snapshot: {
+    status: 'ready',
+    data: {
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        authority: SAMPLE_I105,
+        hash: '0xtest-hash',
+        block: 42,
+        created_at: new Date('2026-02-24T12:00:00Z'),
+        executable: 'Instructions',
+        status: 'Rejected',
+        rejection_reason: { encoded: '', json: '', message: '' },
+        metadata: {},
+        nonce: null,
+        signature: 'deadbeef',
+        time_to_live: { ms: 1000 },
+      },
+    },
+    isRefreshing: false,
+    refreshError: null,
   },
   refetch: vi.fn(),
 });
@@ -196,6 +217,31 @@ describe('TransactionDetails', () => {
           time_to_live: { ms: 1000 },
         },
       },
+      snapshot: {
+        status: 'ready',
+        data: {
+          status: SUCCESSFUL_FETCHING,
+          data: {
+            authority: SAMPLE_I105,
+            hash: '0xtest-hash',
+            block: 42,
+            created_at: new Date('2026-02-24T12:00:00Z'),
+            executable: 'Instructions',
+            status: 'Rejected',
+            rejection_reason: {
+              encoded: '',
+              json: '',
+              message: '',
+            },
+            metadata: {},
+            nonce: null,
+            signature: 'deadbeef',
+            time_to_live: { ms: 1000 },
+          },
+        },
+        isRefreshing: false,
+        refreshError: null,
+      },
       refetch: vi.fn(),
     };
   });
@@ -213,6 +259,7 @@ describe('TransactionDetails', () => {
           TransactionStatus: TransactionStatusStub,
           InstructionsTable: InstructionsTableStub,
           ContextTooltip: ContextTooltipStub,
+          TransactionEvidencePanel: { template: '<div class="transaction-evidence-stub" />' },
         },
       },
     });
@@ -237,6 +284,32 @@ describe('TransactionDetails', () => {
     expect(findRejectedReasonValue(wrapper)).toBe(
       'Validation failed: Instruction execution failed: Failed to find domain: sbp'
     );
+  });
+
+  it('renders not-found and error snapshots explicitly with user-controlled retry', async () => {
+    const retry = vi.fn();
+    scopeExpose.value = {
+      isLoading: false,
+      data: undefined,
+      snapshot: { status: 'not-found' },
+      refetch: retry,
+    };
+    const missing = factory();
+    await flushPromises();
+    expect(missing.text()).toContain('Transaction not found');
+    expect(retry).not.toHaveBeenCalled();
+
+    scopeExpose.value = {
+      isLoading: false,
+      data: undefined,
+      snapshot: { status: 'error', problem: { kind: 'network', message: 'offline' } },
+      refetch: retry,
+    };
+    const failed = factory();
+    await flushPromises();
+    expect(failed.text()).toContain('Transaction could not be loaded');
+    await failed.get('[data-test="resource-retry"]').trigger('click');
+    expect(retry).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to local decoder when torii message is missing', async () => {
@@ -288,9 +361,9 @@ describe('TransactionDetails', () => {
 
     const wrapper = factory();
     await flushPromises();
+    await vi.waitFor(() => expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true));
 
     expect(wrapper.find('.instructions-table-stub').exists()).toBe(false);
-    expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true);
   });
 
   it('treats IvmProved executables as smart-contract transactions', async () => {
@@ -298,9 +371,9 @@ describe('TransactionDetails', () => {
 
     const wrapper = factory();
     await flushPromises();
+    await vi.waitFor(() => expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true));
 
     expect(wrapper.find('.instructions-table-stub').exists()).toBe(false);
-    expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true);
   });
 
   it('treats ContractCall executables as smart-contract transactions', async () => {
@@ -308,9 +381,9 @@ describe('TransactionDetails', () => {
 
     const wrapper = factory();
     await flushPromises();
+    await vi.waitFor(() => expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true));
 
     expect(wrapper.find('.instructions-table-stub').exists()).toBe(false);
-    expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true);
   });
 
   it('passes the primary smart-contract instruction target into the contract panel', async () => {
@@ -318,9 +391,9 @@ describe('TransactionDetails', () => {
 
     const wrapper = factory();
     await flushPromises();
+    await vi.waitFor(() => expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true));
 
     const panel = wrapper.find('.contract-code-view-stub');
-    expect(panel.exists()).toBe(true);
     expect(panel.attributes('data-transaction-hash')).toBe('0xtest-hash');
     expect(panel.attributes('data-instruction-index')).toBe('0');
     expect(panel.attributes('data-related-count')).toBe('1');
@@ -393,9 +466,9 @@ describe('TransactionDetails', () => {
 
     const wrapper = factory();
     await flushPromises();
+    await vi.waitFor(() => expect(wrapper.find('.contract-code-view-stub').exists()).toBe(true));
 
     const panel = wrapper.find('.contract-code-view-stub');
-    expect(panel.exists()).toBe(true);
     expect(panel.attributes('data-related-count')).toBe('2');
     expect(api.fetchInstructions).toHaveBeenCalledWith({
       page: 1,

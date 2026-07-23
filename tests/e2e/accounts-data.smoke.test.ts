@@ -8,6 +8,10 @@ import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const fetchAccountsMock = vi.fn();
 
+function requestedAccountsDomain(domain: string): boolean {
+  return fetchAccountsMock.mock.calls.some(([params]) => params?.domain === domain);
+}
+
 vi.mock('@/shared/api', async () => {
   const actual = await vi.importActual<typeof SharedApiModule>('@/shared/api');
   return {
@@ -80,8 +84,11 @@ const BaseTableStub = defineComponent({
 
 const BaseHashStub = defineComponent({
   name: 'BaseHashStub',
-  props: { hash: { type: String, required: true } },
-  template: '<span data-test="base-hash">{{ hash }}</span>',
+  props: {
+    hash: { type: String, required: true },
+    link: { type: String, required: false, default: '' },
+  },
+  template: '<span data-test="base-hash" :data-link="link">{{ hash }}</span>',
 });
 
 async function mountAppAt(path: string) {
@@ -142,7 +149,7 @@ describe('Accounts data smoke', () => {
     }
   });
 
-  it('renders fetched accounts, handles filters, and routes to the detail page', async () => {
+  it('renders fetched accounts, persists filters, and exposes an explicit detail link', async () => {
     const { wrapper, router } = await mountAppAt('/accounts');
     mountedWrappers.push(wrapper);
     await flushPromises();
@@ -160,10 +167,13 @@ describe('Accounts data smoke', () => {
 
     const domainInput = wrapper.find(`input[placeholder="${i18n.global.t('accounts.filters.domainPlaceholder')}"]`);
     await domainInput.setValue('wonderland');
-    await flushPromises();
+    await vi.waitFor(() => {
+      expect(requestedAccountsDomain('wonderland')).toBe(true);
+    });
     const domainCall = fetchAccountsMock.mock.calls.at(-1)?.[0];
     expect(domainCall?.domain).toBe('wonderland');
     expect(domainCall?.page).toBe(1);
+    expect(router.currentRoute.value.query.domain).toBe('wonderland');
 
     const assetInput = wrapper.find(`input[placeholder="${i18n.global.t('accounts.filters.assetPlaceholder')}"]`);
     await assetInput.setValue('invalid asset id');
@@ -172,11 +182,8 @@ describe('Accounts data smoke', () => {
     expect(errorHint.exists()).toBe(true);
     expect(errorHint.text()).toBe(i18n.global.t('accounts.filters.assetInvalid'));
 
-    const pushSpy = vi.spyOn(router, 'push');
-    const updatedRow = wrapper.find('[data-test="base-table-row"]');
-    await updatedRow.trigger('click');
-    await flushPromises();
-    expect(pushSpy).toHaveBeenCalledWith(`/accounts/${encodeURIComponent('alice@wonderland')}`);
-    pushSpy.mockRestore();
+    expect(wrapper.get('[data-test="base-hash"]').attributes('data-link')).toBe(
+      `/accounts/${encodeURIComponent('alice@wonderland')}`
+    );
   }, 20000);
 });

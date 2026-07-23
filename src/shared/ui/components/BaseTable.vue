@@ -1,20 +1,37 @@
 <template>
-  <div class="base-table">
+  <div
+    class="base-table"
+    role="table"
+    :aria-busy="props.loading"
+  >
     <div
-      v-if="$slots.header && width >= props.breakpoint && !isEmpty"
-      class="content-row"
+      v-if="$slots.header && rendersDesktopRows && !isEmpty"
+      role="rowgroup"
     >
-      <slot name="header" />
+      <div
+        class="content-row"
+        role="row"
+      >
+        <div
+          class="base-table__semantic-cell"
+          role="columnheader"
+        >
+          <slot name="header" />
+        </div>
+      </div>
     </div>
     <div
       v-else-if="showInitialLoading"
       class="content-row content-row_empty"
+      role="status"
+      aria-live="polite"
     >
       <BaseLoading />
     </div>
     <div
       v-else-if="isEmpty"
       class="content-row content-row_empty row-text"
+      role="status"
     >
       {{ $t('noData') }}
     </div>
@@ -27,26 +44,39 @@
       <BaseLoading />
     </div>
 
-    <div :class="containerClass">
+    <div
+      :class="containerClass"
+      :role="rendersDesktopRows ? 'rowgroup' : 'list'"
+    >
       <template
         v-for="(item, i) in props.items"
         :key="props.rowKey ? props.rowKey(item, i) : i"
       >
         <div
-          v-if="width >= props.breakpoint || !$slots['mobile-card']"
+          v-if="rendersDesktopRows"
           class="content-row content-row--with-hover"
+          role="row"
+          :tabindex="props.rowPointer ? 0 : undefined"
           :style="{ cursor: props.rowPointer ? 'pointer' : 'default' }"
           @click="emit('click:row', item)"
+          @keydown.enter="emit('click:row', item)"
+          @keydown.space.prevent="emit('click:row', item)"
         >
-          <slot
-            name="row"
-            :item
-          />
+          <div
+            class="base-table__semantic-cell"
+            role="cell"
+          >
+            <slot
+              name="row"
+              :item
+            />
+          </div>
         </div>
 
         <div
           v-else
           class="base-table__mobile-card"
+          role="listitem"
         >
           <slot
             name="mobile-card"
@@ -70,7 +100,7 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import { computed } from 'vue';
+import { computed, useSlots } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import BaseLoading from './BaseLoading.vue';
 import BasePagination from '@/shared/ui/components/BasePagination.vue';
@@ -108,10 +138,12 @@ const page = defineModel<number>('page', { default: 1 });
 const pageSize = defineModel<number>('pageSize', { default: 10 });
 
 const { width } = useWindowSize();
+const slots = useSlots();
 
 const isEmpty = computed(() => props.items.length === 0);
 const showInitialLoading = computed(() => props.loading && props.items.length === 0);
 const showRefreshLoading = computed(() => props.loading && props.items.length > 0);
+const rendersDesktopRows = computed(() => width.value >= props.breakpoint || !slots['mobile-card']);
 </script>
 
 <style lang="scss">
@@ -133,6 +165,12 @@ const showRefreshLoading = computed(() => props.loading && props.items.length > 
       width: size(3.5);
       height: size(3.5);
     }
+  }
+
+  // Preserve the consumer-provided CSS grid as the visual row while retaining
+  // the table cell in the accessibility tree.
+  &__semantic-cell {
+    display: contents;
   }
 
   &__mobile-card {

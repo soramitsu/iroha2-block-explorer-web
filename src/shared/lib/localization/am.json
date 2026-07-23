@@ -44,7 +44,7 @@
     "totalNodes": "ጠቅላላ አንጓዎች",
     "searchPlaceholder": "በብሎክ ቁመት/ሀሽ፣ የግብይት ሃሽ፣ I105/sora/norito account፣ asset#domain፣ ወይም nft$domain ይፈልጉ",
     "title": {
-      "firstLine": "Hyperleger Iroha",
+      "firstLine": "Hyperledger Iroha",
       "secondLine": "Blockchain Explorer"
     },
     "search": {
@@ -1406,7 +1406,6 @@
     "fields": {
       "title": "ርዕስ",
       "dataspace": "የውሂብ ቦታ",
-      "directDeployPrivateKey": "ለቀጥታ ቶሪ ማሰማራት የግል ቁልፍ",
       "authority": "ስልጣን",
       "chainId": "ሰንሰለት መታወቂያ",
       "description": "መግለጫ",
@@ -1470,11 +1469,9 @@
     "sourceTitle": "የመነጨ ምንጭ",
     "sourceHint": "የብሎክ ሸራው የKotodama ምንጭን በቅጽበት ይጽፍልዎታል።",
     "compileTitle": "አጠናቅር እና አሰማራ",
-    "compileIdle": "ሃሾቹን እና `/v1/contracts/deploy` ጥያቄውን ለማደስ የአሁኑን የስቱዲዮ ሰነድ አጠናቅር።",
     "compileBlocked": "የቀጥታ ስቱዲዮ ምርመራዎችን ከማጠናቀር ወይም ከማሰማራትዎ በፊት ያስተካክሉ።",
     "compileReady": "የተጠናቀረ ቅርቅብ ለመፈረም እና በቶሪ በኩል ለማስገባት ዝግጁ ነው።",
     "compilePreview": "የእውነተኛ የአቀናባሪ የመጨረሻ ነጥብ እስኪዋቀር ድረስ የቅድመ እይታ ሁነታ ገባሪ ነው።",
-    "directDeployHint": "የማሰማራት ጥያቄውን በቀጥታ ለቶሪ ለማስገባት የግል ቁልፍ እዚህ ይለጥፉ። ይህ ዋጋ በገጽ ማህደረ ትውስታ ውስጥ ብቻ ነው የተቀመጠው እና ከስቱዲዮ ሰነድ ጋር ወደ ውጭ አይላክም።",
     "compileMode": "የማጠናቀር ሁነታ",
     "codeHash": "ኮድ ሃሽ",
     "abiHash": "የABI ሃሽ",

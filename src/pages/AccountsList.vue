@@ -29,15 +29,13 @@
     </div>
 
     <BaseTable
-      v-model:page="pagination.page"
-      v-model:page-size="pagination.per_page"
+      v-model:page="page"
+      v-model:page-size="pageSize"
       :loading="isLoading"
       :total="totalAccounts"
       :items="accounts"
       :row-key="accountRowKey"
       container-class="accounts-list-page__container"
-      row-pointer
-      @click:row="handleRowClick"
     >
       <template #header>
         <div class="accounts-list-page__row">
@@ -95,37 +93,27 @@ import * as http from '@/shared/api';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { useI18n } from 'vue-i18n';
 import type { Account } from '@/shared/api/schemas';
-import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
 import { getPreferredAccountId } from '@/shared/lib/account-id';
 import { normalizeAssetDefinitionSelectorLiteral } from '@/shared/lib/asset-definition-literal';
 import { parseOptionalFilterCatching } from '@/shared/lib/optional-filter';
+import { firstRouteQueryValue } from '@/shared/lib/route-query';
+import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
+import { watchDebounced } from '@vueuse/core';
 
-const navigation = useScopedExplorerNavigation();
 const { t } = useI18n();
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xs: 'two-line', xxs: 'two-line' }, 'medium');
 
-const pagination = reactive({
-  page: 1,
-  per_page: 10,
-});
-
-watch(
-  () => pagination.per_page,
-  () => {
-    pagination.page = 1;
-  }
-);
-
-const domainFilter = ref('');
-const assetFilter = ref('');
+const { route, page, pageSize, updateListQuery } = useListRouteQuery();
+const domainFilter = ref(firstRouteQueryValue(route.query.domain) ?? '');
+const assetFilter = ref(firstRouteQueryValue(route.query.asset) ?? '');
 function parseAssetSelector(value: string): string {
   const normalized = normalizeAssetDefinitionSelectorLiteral(value);
   if (!normalized) throw new Error('invalid asset selector');
@@ -137,16 +125,39 @@ const assetFilterState = computed(() =>
 const parsedAssetFilter = computed<string | undefined>(() => assetFilterState.value.value);
 const assetFilterError = computed(() => assetFilterState.value.error);
 
-watch([domainFilter, assetFilter], () => {
-  pagination.page = 1;
-});
+watch(
+  () => [route.query.domain, route.query.asset] as const,
+  ([domain, asset]) => {
+    domainFilter.value = firstRouteQueryValue(domain) ?? '';
+    assetFilter.value = firstRouteQueryValue(asset) ?? '';
+  }
+);
+
+watchDebounced(
+  [domainFilter, assetFilter],
+  () => {
+    if (assetFilterError.value) return;
+    updateListQuery({
+      domain: domainFilter.value.trim() || null,
+      asset: parsedAssetFilter.value ?? null,
+    }).catch(() => undefined);
+  },
+  { debounce: 300, maxWait: 600 }
+);
 
 const accountQuery = computed(() => ({
-  page: pagination.page,
-  per_page: pagination.per_page,
-  domain: domainFilter.value.trim() || undefined,
-  with_asset: parsedAssetFilter.value,
+  page: page.value,
+  per_page: pageSize.value,
+  domain: (firstRouteQueryValue(route.query.domain) ?? '').trim() || undefined,
+  with_asset: (() => {
+    const raw = firstRouteQueryValue(route.query.asset) ?? '';
+    return raw ? normalizeAssetDefinitionSelectorLiteral(raw) ?? undefined : undefined;
+  })(),
 }));
+const hasInvalidRouteAsset = computed(() => {
+  const raw = firstRouteQueryValue(route.query.asset) ?? '';
+  return Boolean(raw && !normalizeAssetDefinitionSelectorLiteral(raw));
+});
 
 const scope = useParamScope(
   () => ({
@@ -156,9 +167,9 @@ const scope = useParamScope(
       domain: accountQuery.value.domain ?? null,
       with_asset: accountQuery.value.with_asset?.toString() ?? null,
     }),
-    payload: accountQuery.value,
+    payload: { params: accountQuery.value, valid: !hasInvalidRouteAsset.value },
   }),
-  ({ payload }) => setupAsyncData(() => http.fetchAccounts(payload))
+  ({ payload }) => setupAsyncData(() => http.fetchAccounts(payload.params), { immediate: payload.valid })
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
@@ -171,10 +182,6 @@ const accounts = computed(() =>
 const accountDisplayId = (item: Account) => getPreferredAccountId(item);
 const accountLink = (item: Account) => `/accounts/${encodeURIComponent(accountDisplayId(item))}`;
 const accountRowKey = (item: Account) => accountDisplayId(item);
-
-function handleRowClick(account: Account) {
-  navigation.push(accountLink(account)).catch(() => {});
-}
 </script>
 
 <style lang="scss">

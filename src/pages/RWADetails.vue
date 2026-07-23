@@ -5,17 +5,16 @@ import * as http from '@/shared/api';
 import type { RWA } from '@/shared/api/schemas';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
-import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import BaseResourceState from '@/shared/ui/components/BaseResourceState.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { RwaIdSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
-import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { getRwaDomain } from '@/shared/lib/rwa-id';
 import type { RwaProvenanceEdge, RwaProvenanceGraph, RwaProvenanceNode } from '@/shared/lib/rwa-provenance';
-import { fetchRwaProvenanceBundle } from '@/shared/lib/rwa-provenance';
+import { fetchRwaProvenanceResource } from '@/shared/lib/rwa-provenance-resource';
 
 const router = useRouter();
 
@@ -36,14 +35,6 @@ const rwaId = computed(() => {
 });
 const rwaDomain = computed(() => getRwaDomain(rwaId.value));
 
-async function fetchExistingRwa(id: string): Promise<RWA> {
-  const result = await http.fetchRwaById(id);
-  if (result.status !== SUCCESSFUL_FETCHING) {
-    throw new Error(`Failed to fetch RWA ${id}`);
-  }
-  return result.data;
-}
-
 const rwaScope = useParamScope(
   () => {
     return {
@@ -51,11 +42,14 @@ const rwaScope = useParamScope(
       payload: rwaId.value,
     };
   },
-  ({ payload }) => setupAsyncData(() => fetchRwaProvenanceBundle(payload, fetchExistingRwa))
+  ({ payload }) => setupAsyncData(() => fetchRwaProvenanceResource(payload, http.fetchRwaById))
 );
 
-const isLoading = computed(() => rwaScope.value.expose.isLoading);
-const provenanceBundle = computed(() => rwaScope.value?.expose.data);
+const rwaSnapshot = computed(() => rwaScope.value.expose.snapshot);
+const provenanceBundle = computed(() => {
+  const value = rwaScope.value?.expose.data;
+  return value && 'root' in value ? value : undefined;
+});
 const rwa = computed(() => provenanceBundle.value?.root);
 const provenanceGraph = computed(() => provenanceBundle.value?.graph ?? EMPTY_GRAPH);
 const missingAncestorIds = computed(() => provenanceBundle.value?.missingAncestorIds ?? []);
@@ -116,164 +110,169 @@ function nodeAvailableQuantity(node: RWA | null): string | null {
       class="rwa-details__section"
     >
       <template #default>
-        <div
-          v-if="isLoading"
-          class="rwa-details__section_loading"
+        <BaseResourceState
+          :snapshot="rwaSnapshot"
+          loading-label="Loading RWA provenance"
+          not-found-label="RWA not found"
+          error-label="RWA provenance could not be loaded"
+          retry-label="Retry RWA provenance"
+          @retry="rwaScope.expose.refetch()"
         >
-          <BaseLoading />
-        </div>
-        <div v-else-if="rwa">
-          <div class="rwa-details__section-information">
-            <DataField
-              :title="$t('assets.ownedBy')"
-              :hash="rwa.owned_by.toString()"
-              copy
-              :link="`/accounts/${rwa.owned_by}`"
-              :type="hashType"
-            />
-            <div class="rwa-details__section-grid">
+          <div v-if="rwa">
+            <div class="rwa-details__section-information">
               <DataField
-                :title="$t('domain')"
-                :value="rwaDomain ?? $t('none')"
-                :link="rwaDomain ? `/domains/${rwaDomain}` : undefined"
+                :title="$t('assets.ownedBy')"
+                :hash="rwa.owned_by.toString()"
+                copy
+                :link="`/accounts/${rwa.owned_by}`"
+                :type="hashType"
               />
-              <DataField
-                :title="$t('value')"
-                :value="rwa.quantity.toString()"
-                monospace
-              />
-              <DataField
-                :title="$t('assets.heldQuantity')"
-                :value="rwa.held_quantity.toString()"
-                monospace
-              />
-              <DataField
-                :title="$t('assets.availableQuantity')"
-                :value="availableQuantity"
-                monospace
-              />
-              <DataField
-                :title="$t('assets.primaryReference')"
-                :value="rwa.primary_reference"
-                monospace
-              />
-              <DataField
-                :title="$t('assets.frozen')"
-                :value="rwa.is_frozen ? $t('assets.frozenYes') : $t('assets.frozenNo')"
-              />
-              <DataField
-                :title="$t('transactions.status')"
-                :value="rwa.status ?? $t('none')"
-              />
-            </div>
-            <DataField
-              :title="$t('metadata')"
-              :metadata="{ display: 'full' }"
-              :value="parseMetadata(rwa.metadata)"
-            />
-            <section class="rwa-details__provenance">
-              <div class="rwa-details__provenance-header">
-                <h2 class="rwa-details__provenance-title">{{ $t('assets.provenanceGraph') }}</h2>
-                <p
-                  v-if="!hasRecordedParents"
-                  class="rwa-details__provenance-note"
-                >
-                  {{ $t('assets.provenanceNoParents') }}
-                </p>
-                <p
-                  v-if="missingAncestorIds.length"
-                  class="rwa-details__provenance-note"
-                >
-                  {{ $t('assets.provenanceIncomplete') }}
-                </p>
-                <p
-                  v-if="provenanceTruncated"
-                  class="rwa-details__provenance-note"
-                >
-                  {{ $t('assets.provenanceTruncated') }}
-                </p>
+              <div class="rwa-details__section-grid">
+                <DataField
+                  :title="$t('domain')"
+                  :value="rwaDomain ?? $t('none')"
+                  :link="rwaDomain ? `/domains/${rwaDomain}` : undefined"
+                />
+                <DataField
+                  :title="$t('value')"
+                  :value="rwa.quantity.toString()"
+                  monospace
+                />
+                <DataField
+                  :title="$t('assets.heldQuantity')"
+                  :value="rwa.held_quantity.toString()"
+                  monospace
+                />
+                <DataField
+                  :title="$t('assets.availableQuantity')"
+                  :value="availableQuantity"
+                  monospace
+                />
+                <DataField
+                  :title="$t('assets.primaryReference')"
+                  :value="rwa.primary_reference"
+                  monospace
+                />
+                <DataField
+                  :title="$t('assets.frozen')"
+                  :value="rwa.is_frozen ? $t('assets.frozenYes') : $t('assets.frozenNo')"
+                />
+                <DataField
+                  :title="$t('transactions.status')"
+                  :value="rwa.status ?? $t('none')"
+                />
               </div>
-              <div class="rwa-details__provenance-viewport">
-                <div
-                  class="rwa-details__provenance-graph"
-                  :style="{
-                    width: `${provenanceGraph.width}px`,
-                    height: `${provenanceGraph.height}px`,
-                  }"
-                >
-                  <svg
-                    class="rwa-details__provenance-svg"
-                    :viewBox="`0 0 ${provenanceGraph.width} ${provenanceGraph.height}`"
-                    fill="none"
-                    aria-hidden="true"
+              <DataField
+                :title="$t('metadata')"
+                :metadata="{ display: 'full' }"
+                :value="parseMetadata(rwa.metadata)"
+              />
+              <section class="rwa-details__provenance">
+                <div class="rwa-details__provenance-header">
+                  <h2 class="rwa-details__provenance-title">
+                    {{ $t('assets.provenanceGraph') }}
+                  </h2>
+                  <p
+                    v-if="!hasRecordedParents"
+                    class="rwa-details__provenance-note"
                   >
-                    <path
-                      v-for="edge in provenanceGraph.edges"
-                      :key="edge.id"
-                      class="rwa-details__provenance-edge"
-                      :d="edgePath(edge)"
-                    />
-                  </svg>
-                  <div
-                    v-for="edge in provenanceGraph.edges"
-                    :key="`${edge.id}-label`"
-                    class="rwa-details__provenance-edge-label"
-                    :style="edgeLabelStyle(edge)"
+                    {{ $t('assets.provenanceNoParents') }}
+                  </p>
+                  <p
+                    v-if="missingAncestorIds.length"
+                    class="rwa-details__provenance-note"
                   >
-                    <span class="rwa-details__provenance-edge-label-caption">
-                      {{ $t('assets.provenanceContribution') }}
-                    </span>
-                    <span class="rwa-details__provenance-edge-label-value">{{ edge.quantity }}</span>
-                  </div>
-                  <article
-                    v-for="node in provenanceGraph.nodes"
-                    :key="node.id"
-                    class="rwa-details__provenance-node"
-                    :data-root="node.isRoot || null"
-                    :data-placeholder="node.isPlaceholder || null"
-                    :style="graphNodeStyle(node.x, node.y)"
+                    {{ $t('assets.provenanceIncomplete') }}
+                  </p>
+                  <p
+                    v-if="provenanceTruncated"
+                    class="rwa-details__provenance-note"
                   >
-                    <BaseLink
-                      :to="`/rwas/${node.id}`"
-                      monospace
-                      class="rwa-details__provenance-node-id"
-                    >
-                      {{ node.id }}
-                    </BaseLink>
-                    <template v-if="node.rwa">
-                      <div class="rwa-details__provenance-node-grid">
-                        <div class="rwa-details__provenance-node-field">
-                          <span class="rwa-details__provenance-node-label">{{ $t('value') }}</span>
-                          <span class="rwa-details__provenance-node-value">{{ node.rwa.quantity.toString() }}</span>
-                        </div>
-                        <div class="rwa-details__provenance-node-field">
-                          <span class="rwa-details__provenance-node-label">{{ $t('assets.availableQuantity') }}</span>
-                          <span class="rwa-details__provenance-node-value">{{ nodeAvailableQuantity(node.rwa) }}</span>
-                        </div>
-                      </div>
-                      <div class="rwa-details__provenance-node-owner">
-                        <span class="rwa-details__provenance-node-label">{{ $t('assets.ownedBy') }}</span>
-                        <BaseLink
-                          :to="`/accounts/${node.rwa.owned_by}`"
-                          monospace
-                          class="rwa-details__provenance-node-owner-link"
-                        >
-                          {{ node.rwa.owned_by }}
-                        </BaseLink>
-                      </div>
-                    </template>
-                    <p
-                      v-else
-                      class="rwa-details__provenance-node-missing"
-                    >
-                      {{ $t('assets.provenanceUnavailableParent') }}
-                    </p>
-                  </article>
+                    {{ $t('assets.provenanceTruncated') }}
+                  </p>
                 </div>
-              </div>
-            </section>
+                <div class="rwa-details__provenance-viewport">
+                  <div
+                    class="rwa-details__provenance-graph"
+                    :style="{
+                      width: `${provenanceGraph.width}px`,
+                      height: `${provenanceGraph.height}px`,
+                    }"
+                  >
+                    <svg
+                      class="rwa-details__provenance-svg"
+                      :viewBox="`0 0 ${provenanceGraph.width} ${provenanceGraph.height}`"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        v-for="edge in provenanceGraph.edges"
+                        :key="edge.id"
+                        class="rwa-details__provenance-edge"
+                        :d="edgePath(edge)"
+                      />
+                    </svg>
+                    <div
+                      v-for="edge in provenanceGraph.edges"
+                      :key="`${edge.id}-label`"
+                      class="rwa-details__provenance-edge-label"
+                      :style="edgeLabelStyle(edge)"
+                    >
+                      <span class="rwa-details__provenance-edge-label-caption">
+                        {{ $t('assets.provenanceContribution') }}
+                      </span>
+                      <span class="rwa-details__provenance-edge-label-value">{{ edge.quantity }}</span>
+                    </div>
+                    <article
+                      v-for="node in provenanceGraph.nodes"
+                      :key="node.id"
+                      class="rwa-details__provenance-node"
+                      :data-root="node.isRoot || null"
+                      :data-placeholder="node.isPlaceholder || null"
+                      :style="graphNodeStyle(node.x, node.y)"
+                    >
+                      <BaseLink
+                        :to="`/rwas/${node.id}`"
+                        monospace
+                        class="rwa-details__provenance-node-id"
+                      >
+                        {{ node.id }}
+                      </BaseLink>
+                      <template v-if="node.rwa">
+                        <div class="rwa-details__provenance-node-grid">
+                          <div class="rwa-details__provenance-node-field">
+                            <span class="rwa-details__provenance-node-label">{{ $t('value') }}</span>
+                            <span class="rwa-details__provenance-node-value">{{ node.rwa.quantity.toString() }}</span>
+                          </div>
+                          <div class="rwa-details__provenance-node-field">
+                            <span class="rwa-details__provenance-node-label">{{ $t('assets.availableQuantity') }}</span>
+                            <span class="rwa-details__provenance-node-value">{{ nodeAvailableQuantity(node.rwa) }}</span>
+                          </div>
+                        </div>
+                        <div class="rwa-details__provenance-node-owner">
+                          <span class="rwa-details__provenance-node-label">{{ $t('assets.ownedBy') }}</span>
+                          <BaseLink
+                            :to="`/accounts/${node.rwa.owned_by}`"
+                            monospace
+                            class="rwa-details__provenance-node-owner-link"
+                          >
+                            {{ node.rwa.owned_by }}
+                          </BaseLink>
+                        </div>
+                      </template>
+                      <p
+                        v-else
+                        class="rwa-details__provenance-node-missing"
+                      >
+                        {{ $t('assets.provenanceUnavailableParent') }}
+                      </p>
+                    </article>
+                  </div>
+                </div>
+              </section>
+            </div>
           </div>
-        </div>
+        </BaseResourceState>
       </template>
     </BaseContentBlock>
   </div>

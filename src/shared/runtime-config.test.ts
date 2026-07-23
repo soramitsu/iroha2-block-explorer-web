@@ -12,6 +12,7 @@ describe('runtime config', () => {
       json: async () => ({
         toriiEconometricsEndpointsEnabled: true,
         toriiBaseUrl: 'https://torii.example',
+        kotodamaCompilerUrl: 'https://compiler.example',
         sorafsPublicBaseUrl: 'https://cdn.example',
         toriiFailoverEnabled: true,
         toriiFailoverNodes: ['https://nexus.mof3.sora.org:18080', 'https://testus.mof3.sora.org:18080'],
@@ -29,6 +30,7 @@ describe('runtime config', () => {
     expect(fetchMock).toHaveBeenCalledWith('/config.json', expect.any(Object));
     expect(module.getRuntimeConfig().toriiEconometricsEndpointsEnabled).toBe(true);
     expect(module.getRuntimeConfig().toriiBaseUrl).toBe('https://torii.example');
+    expect(module.getRuntimeConfig().kotodamaCompilerUrl).toBe('https://compiler.example');
     expect(module.getRuntimeConfig().sorafsPublicBaseUrl).toBe('https://cdn.example');
     expect(module.getRuntimeConfig().toriiFailoverEnabled).toBe(true);
     expect(module.getRuntimeConfig().toriiFailoverNodes).toEqual([

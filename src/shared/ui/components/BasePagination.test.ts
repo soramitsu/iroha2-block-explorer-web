@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { i18n } from '@/shared/lib/localization';
 import BasePagination from '@/shared/ui/components/BasePagination.vue';
@@ -208,6 +208,63 @@ test.each([
     expect(computeNumbers({ isMobile, totalPages, reversed, totalItems, page, activePage })).toStrictEqual(expected);
   }
 );
+
+describe('BasePagination accessibility', () => {
+  function mountPagination(page: number, totalItems = 35) {
+    return mount(BasePagination, {
+      props: {
+        items: 10,
+        page,
+        pageSize: 10,
+        reversed: false,
+        totalItems,
+      },
+      global: {
+        plugins: [i18n],
+      },
+    });
+  }
+
+  it('renders a labelled navigation landmark with native page buttons', () => {
+    const wrapper = mountPagination(7, 189);
+    expect(wrapper.element.tagName).toBe('NAV');
+    expect(wrapper.attributes('aria-label')).toBe('Pagination');
+
+    const pageButtons = wrapper.findAll('button.base-pagination__item-numbers-number');
+    expect(pageButtons.length).toBeGreaterThan(1);
+    expect(pageButtons.every((button) => button.attributes('type') === 'button')).toBe(true);
+    expect(wrapper.get('[aria-current="page"]').text()).toBe('7');
+
+    const ellipses = wrapper.findAll('[data-ellipsis]');
+    expect(ellipses.length).toBeGreaterThan(0);
+    expect(ellipses.every((ellipsis) => ellipsis.element.tagName === 'SPAN')).toBe(true);
+    expect(ellipses.every((ellipsis) => ellipsis.attributes('aria-hidden') === 'true')).toBe(true);
+  });
+
+  it('disables the previous native button on the first page and emits next-page selection', async () => {
+    const wrapper = mountPagination(1);
+    const previous = wrapper.get<HTMLButtonElement>('[data-testid="prev"]');
+    const next = wrapper.get<HTMLButtonElement>('[data-testid="next"]');
+
+    expect(previous.element.tagName).toBe('BUTTON');
+    expect(previous.element.disabled).toBe(true);
+    expect(previous.attributes('aria-label')).toBe('Previous page');
+    expect(next.element.disabled).toBe(false);
+    await next.trigger('click');
+    expect(wrapper.emitted('update:page')?.at(-1)).toEqual([2]);
+  });
+
+  it('disables the next native button on the last page and allows moving backward', async () => {
+    const wrapper = mountPagination(4);
+    const previous = wrapper.get<HTMLButtonElement>('[data-testid="prev"]');
+    const next = wrapper.get<HTMLButtonElement>('[data-testid="next"]');
+
+    expect(next.element.disabled).toBe(true);
+    expect(next.attributes('aria-label')).toBe('Next page');
+    await previous.trigger('click');
+    expect(wrapper.emitted('update:page')?.at(-1)).toEqual([3]);
+  });
+});
 
 test.each([
   [

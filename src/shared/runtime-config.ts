@@ -3,6 +3,7 @@ import { z } from 'zod';
 const RuntimeConfigSchema = z
   .object({
     toriiBaseUrl: z.string().trim().min(1).optional(),
+    kotodamaCompilerUrl: z.string().trim().min(1).optional(),
     sorafsPublicBaseUrl: z.string().trim().min(1).optional(),
     toriiForceBaseUrl: z.boolean().optional(),
     toriiEconometricsEndpointsEnabled: z.boolean().optional(),

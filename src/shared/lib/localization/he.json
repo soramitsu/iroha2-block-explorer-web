@@ -44,7 +44,7 @@
     "totalNodes": "סך הכל צמתים",
     "searchPlaceholder": "חפש לפי גובה בלוק/hash, hash עסקה, I105/sora/norito account, asset#domain או nft$domain",
     "title": {
-      "firstLine": "Hyperleger Iroha",
+      "firstLine": "Hyperledger Iroha",
       "secondLine": "אקספלורר בלוקצ'יין"
     },
     "search": {
@@ -1406,7 +1406,6 @@
     "fields": {
       "title": "כותרת",
       "dataspace": "מרחב נתונים",
-      "directDeployPrivateKey": "מפתח פרטי לפריסה ישירה של Torii",
       "authority": "סמכות",
       "chainId": "מזהה שרשרת",
       "description": "תיאור",
@@ -1470,11 +1469,9 @@
     "sourceTitle": "מקור שנוצר",
     "sourceHint": "בד הבלוקים כותב עבורכם את קוד המקור של Kotodama בזמן אמת.",
     "compileTitle": "הידור ופריסה",
-    "compileIdle": "הדרו את מסמך הסטודיו הנוכחי כדי לרענן את ערכי הגיבוב ואת בקשת `/v1/contracts/deploy`.",
     "compileBlocked": "תקנו את בדיקות הסטודיו החיות לפני הידור או פריסה.",
     "compileReady": "החבילה שהודרה מוכנה לחתימה ולהגשה דרך Torii.",
     "compilePreview": "מצב התצוגה המקדימה פעיל עד שתוגדר נקודת קצה אמיתית של מהדר.",
-    "directDeployHint": "הדבק כאן מפתח פרטי כדי לשלוח את בקשת הפריסה ישירות ל-Torii. ערך זה נשמר רק בזיכרון העמוד ואינו מיוצא עם מסמך הסטודיו.",
     "compileMode": "מצב הידור",
     "codeHash": "גיבוב קוד",
     "abiHash": "גיבוב ABI",

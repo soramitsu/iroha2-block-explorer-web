@@ -44,7 +44,7 @@
     "totalNodes": "Gesamtzahl der Knoten",
     "searchPlaceholder": "Suche nach Blockhöhe/Hash, Transaktions-Hash, I105/sora/norito account, asset#domain oder nft$domain",
     "title": {
-      "firstLine": "Hyperleger Iroha",
+      "firstLine": "Hyperledger Iroha",
       "secondLine": "Blockchain-Explorer"
     },
     "search": {
@@ -1406,7 +1406,6 @@
     "fields": {
       "title": "Titel",
       "dataspace": "Datenraum",
-      "directDeployPrivateKey": "Privater Schlüssel für die direkte Torii-Bereitstellung",
       "authority": "Unterzeichner",
       "chainId": "Ketten-ID",
       "description": "Beschreibung",
@@ -1470,11 +1469,9 @@
     "sourceTitle": "Generierter Quelltext",
     "sourceHint": "Der Block-Canvas schreibt den Kotodama-Quelltext in Echtzeit für Sie.",
     "compileTitle": "Kompilieren und bereitstellen",
-    "compileIdle": "Kompilieren Sie das aktuelle Studio-Dokument, um Hashes und die Anfrage `/v1/contracts/deploy` zu aktualisieren.",
     "compileBlocked": "Beheben Sie die Studio-Prüfungen, bevor Sie kompilieren oder deployen.",
     "compileReady": "Ein kompiliertes Bundle ist bereit, über Torii signiert und eingereicht zu werden.",
     "compilePreview": "Der Vorschaumodus ist aktiv, bis ein echter Compiler-Endpunkt konfiguriert ist.",
-    "directDeployHint": "Fügen Sie hier einen privaten Schlüssel ein, um die Bereitstellungsanforderung direkt an Torii zu senden. Dieser Wert wird nur im Seitenspeicher gehalten und nicht mit dem Studio-Dokument exportiert.",
     "compileMode": "Kompilierungsmodus",
     "codeHash": "Code-Hash",
     "abiHash": "ABI-Hash",

@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router';
 import { computed, reactive, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import BaseResourceState from '@/shared/ui/components/BaseResourceState.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { AssetDefinitionSelectorSchema } from '@/shared/api/schemas';
 import { parseMetadata } from '@/shared/ui/utils/json';
@@ -43,7 +43,7 @@ const assetScope = useParamScope(
   ({ payload }) => setupAsyncData(() => http.fetchAssetDefinition(payload))
 );
 
-const isAssetLoading = computed(() => assetScope.value.expose.isLoading);
+const assetSnapshot = computed(() => assetScope.value.expose.snapshot);
 const asset = computed(() =>
   assetScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetScope.value.expose.data.data : undefined
 );
@@ -132,42 +132,46 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
       </template>
 
       <template #default>
-        <div
-          v-if="isAssetLoading"
-          class="asset-details__information_loading"
+        <BaseResourceState
+          :snapshot="assetSnapshot"
+          loading-label="Loading asset definition"
+          not-found-label="Asset definition not found"
+          error-label="Asset definition could not be loaded"
+          retry-label="Retry asset definition"
+          @retry="assetScope.expose.refetch()"
         >
-          <BaseLoading />
-        </div>
-        <div v-else-if="asset">
-          <DataField
-            :title="$t('assets.ownedBy')"
-            :hash="asset.owned_by.toString()"
-            copy
-            :link="`/accounts/${asset.owned_by}`"
-            :type="hashType"
-            class="asset-details__information-owner"
-          />
-          <div class="asset-details__information-data">
+          <div v-if="asset">
             <DataField
-              :title="$t('domain')"
-              :value="assetDefinitionDomain ?? '-'"
-              :link="assetDefinitionDomain ? `/domains/${assetDefinitionDomain}` : undefined"
+              :title="$t('assets.ownedBy')"
+              :hash="asset.owned_by.toString()"
+              copy
+              :link="`/accounts/${asset.owned_by}`"
+              :type="hashType"
+              class="asset-details__information-owner"
             />
-            <DataField
-              :title="$t('mintable')"
-              :value="asset.mintable"
-            />
-            <DataField
-              :title="$t('metadata')"
-              :metadata="{ display: 'short' }"
-              :value="parseMetadata(asset.metadata)"
-            />
+            <div class="asset-details__information-data">
+              <DataField
+                :title="$t('domain')"
+                :value="assetDefinitionDomain ?? '-'"
+                :link="assetDefinitionDomain ? `/domains/${assetDefinitionDomain}` : undefined"
+              />
+              <DataField
+                :title="$t('mintable')"
+                :value="asset.mintable"
+              />
+              <DataField
+                :title="$t('metadata')"
+                :metadata="{ display: 'short' }"
+                :value="parseMetadata(asset.metadata)"
+              />
+            </div>
           </div>
-        </div>
+        </BaseResourceState>
       </template>
     </BaseContentBlock>
 
     <BaseContentBlock
+      v-if="asset"
       :title="$t('assets.assetHolders')"
       class="asset-details__assets-table"
     >

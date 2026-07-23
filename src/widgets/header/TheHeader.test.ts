@@ -44,6 +44,7 @@ describe('TheHeader', () => {
     const wrapper = factory();
 
     expect(wrapper.find('[data-test="navigation-menu"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="search-field"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="node-settings"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="scoped-explorer-control"]').exists()).toBe(false);
     expect(wrapper.find('[data-test="theme-switcher"]').exists()).toBe(true);

@@ -7,7 +7,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
-import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import BaseResourceState from '@/shared/ui/components/BaseResourceState.vue';
 import { parseMetadata } from '@/shared/ui/utils/json';
 import BaseLink from '@/shared/ui/components/BaseLink.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
@@ -19,7 +19,6 @@ import { useI18n } from 'vue-i18n';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
-import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
 import { getPreferredAccountId } from '@/shared/lib/account-id';
 import { normalizeAssetDefinitionSelectorLiteral } from '@/shared/lib/asset-definition-literal';
 import { getAssetDefinitionDisplayName } from '@/shared/lib/asset-definition-id';
@@ -27,7 +26,6 @@ import { parseOptionalFilterCatching } from '@/shared/lib/optional-filter';
 
 const { t } = useI18n();
 const router = useRouter();
-const navigation = useScopedExplorerNavigation();
 
 const accountHashType = useAdaptiveHash({ xs: 'short', xxs: 'short' }, 'medium');
 const domainAccountsHashType = useAdaptiveHash({ sm: 'short', xs: 'two-line', xxs: 'two-line' }, 'medium');
@@ -42,7 +40,7 @@ const domainId = computed(() => {
 
 const domainScope = useParamScope(domainId, (value) => setupAsyncData(() => http.fetchDomain(value)));
 
-const isDomainLoading = computed(() => domainScope.value.expose.isLoading);
+const domainSnapshot = computed(() => domainScope.value.expose.snapshot);
 const domain = computed(() =>
   domainScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? domainScope.value.expose.data.data : undefined
 );
@@ -180,18 +178,6 @@ const accountDisplayId = (item: Account) => getPreferredAccountId(item);
 const accountLink = (item: Account) => `/accounts/${encodeURIComponent(accountDisplayId(item))}`;
 const accountRowKey = (item: Account) => accountDisplayId(item);
 
-function handleAssetRowClick(id: string) {
-  navigation.push(`/assets/${encodeURIComponent(id)}`).catch(() => {});
-}
-
-function handleNFTRowClick(id: string) {
-  navigation.push(`/nfts/${encodeURIComponent(id)}`).catch(() => {});
-}
-
-function handleAccountRowClick(account: Account) {
-  navigation.push(accountLink(account)).catch(() => {});
-}
-
 const domainAssetsSection = computed(() => {
   if (isCryptoAssetsSelected.value)
     return {
@@ -216,38 +202,42 @@ const domainAssetsSection = computed(() => {
         class="domain-details__native-information"
       >
         <template #default>
-          <div
-            v-if="isDomainLoading"
-            class="domain-details__native-information_loading"
+          <BaseResourceState
+            :snapshot="domainSnapshot"
+            loading-label="Loading domain"
+            not-found-label="Domain not found"
+            error-label="Domain could not be loaded"
+            retry-label="Retry domain"
+            @retry="domainScope.expose.refetch()"
           >
-            <BaseLoading />
-          </div>
-          <div v-else-if="domain">
-            <div class="domain-details__native-information-row">
-              <DataField
-                :title="$t('domains.domainId')"
-                :hash="domainId"
-              />
+            <div v-if="domain">
+              <div class="domain-details__native-information-row">
+                <DataField
+                  :title="$t('domains.domainId')"
+                  :hash="domainId"
+                />
 
-              <DataField
-                :title="$t('domains.ownedBy')"
-                :hash="domain.owned_by.toString()"
-                copy
-                :link="`/accounts/${domain.owned_by}`"
-                :type="accountHashType"
-              />
+                <DataField
+                  :title="$t('domains.ownedBy')"
+                  :hash="domain.owned_by.toString()"
+                  copy
+                  :link="`/accounts/${domain.owned_by}`"
+                  :type="accountHashType"
+                />
 
-              <DataField
-                :title="$t('metadata')"
-                :value="parseMetadata(domain.metadata)"
-                :metadata="{ display: 'short' }"
-              />
+                <DataField
+                  :title="$t('metadata')"
+                  :value="parseMetadata(domain.metadata)"
+                  :metadata="{ display: 'short' }"
+                />
+              </div>
             </div>
-          </div>
+          </BaseResourceState>
         </template>
       </BaseContentBlock>
 
       <BaseContentBlock
+        v-if="domain"
         :title="domainAssetsSection.title"
         class="domain-details__native-assets"
       >
@@ -274,8 +264,6 @@ const domainAssetsSection = computed(() => {
             :row-key="assetDefinitionRowKey"
             container-class="domain-details__native-assets-list"
             :breakpoint="960"
-            row-pointer
-            @click:row="(asset) => handleAssetRowClick(asset.id)"
           >
             <template #header>
               <div class="domain-details__native-assets-list-row">
@@ -286,7 +274,9 @@ const domainAssetsSection = computed(() => {
 
             <template #row="{ item }">
               <div class="domain-details__native-assets-list-row">
-                <span class="row-text">{{ domainAssetDefinitionName(item) }}</span>
+                <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
+                  {{ domainAssetDefinitionName(item) }}
+                </BaseLink>
                 <span class="row-text">{{ item.mintable }}</span>
               </div>
             </template>
@@ -317,8 +307,6 @@ const domainAssetsSection = computed(() => {
             :row-key="nftRowKey"
             container-class="domain-details__native-assets-list"
             :breakpoint="960"
-            row-pointer
-            @click:row="(asset) => handleNFTRowClick(asset.id)"
           >
             <template #header>
               <div class="domain-details__native-nfts-list-row">
@@ -328,7 +316,9 @@ const domainAssetsSection = computed(() => {
 
             <template #row="{ item }">
               <div class="domain-details__native-nfts-list-row">
-                <span class="row-text">{{ nftDisplayName(item) }}</span>
+                <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
+                  {{ nftDisplayName(item) }}
+                </BaseLink>
               </div>
             </template>
 
@@ -347,7 +337,10 @@ const domainAssetsSection = computed(() => {
       </BaseContentBlock>
     </div>
 
-    <div class="domain-details__accounts">
+    <div
+      v-if="domain"
+      class="domain-details__accounts"
+    >
       <BaseContentBlock :title="$t('domains.domainAccounts')">
         <template #default>
           <div class="domain-details__accounts-filters">
@@ -382,8 +375,6 @@ const domainAssetsSection = computed(() => {
             :row-key="accountRowKey"
             container-class="domain-details__accounts-container"
             :breakpoint="960"
-            row-pointer
-            @click:row="handleAccountRowClick"
           >
             <template #header>
               <div class="domain-details__accounts-row">

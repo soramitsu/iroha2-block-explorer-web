@@ -25,8 +25,8 @@
         <BaseButton
           data-test="studio-deploy"
           bordered
-          :disabled="deployUnavailable"
-          @click="runDeploy"
+          disabled
+          :title="DEPLOYMENT_UNAVAILABLE_MESSAGE"
         >
           {{ $t('studio.deployAction') }}
         </BaseButton>
@@ -348,7 +348,7 @@
             >
               <div>
                 <dt>{{ $t('studio.compileMode') }}</dt>
-                <dd data-test="studio-compile-mode">graph-local-browser</dd>
+                <dd data-test="studio-compile-mode">canonical-rust-service</dd>
               </div>
               <div>
                 <dt>{{ $t('studio.codeHash') }}</dt>
@@ -360,21 +360,14 @@
               </div>
             </dl>
 
-            <label class="kotodama-studio__field">
-              <span>{{ $t('studio.fields.directDeployPrivateKey') }}</span>
-              <input
-                v-model="deployPrivateKey"
-                data-test="studio-direct-deploy-private-key"
-                type="password"
-                autocomplete="off"
-                autocapitalize="off"
-                spellcheck="false"
-              >
-            </label>
-            <p class="kotodama-studio__inline-hint">
-              {{ $t('studio.directDeployHint') }}
-            </p>
           </template>
+
+          <p
+            data-test="studio-deployment-unavailable"
+            class="kotodama-studio__inline-hint"
+          >
+            {{ DEPLOYMENT_UNAVAILABLE_MESSAGE }}
+          </p>
         </section>
 
         <section class="kotodama-studio__panel kotodama-studio__panel--source">
@@ -394,7 +387,6 @@ import { computed, ref, watch } from 'vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useNotifications } from '@/shared/ui/composables/notifications';
-import { submitContractDeployRequest } from '@/shared/api';
 import ContractGraphCanvas from '@/features/studio/ContractGraphCanvas.vue';
 import {
   KOTODAMA_STUDIO_GRAPH_CONFIG_FIELDS,
@@ -423,7 +415,9 @@ import {
   type KotodamaStudioGraphTemplateId,
   type KotodamaStudioGraphValueType,
 } from '@/shared/lib/kotodama-studio-graph';
-import { buildKotodamaStudioDeployDraft, compileKotodamaStudioSource, type KotodamaStudioCompileResult } from '@/shared/lib/kotodama-studio-deploy';
+import { compileKotodamaStudioSource, type KotodamaStudioCompileResult } from '@/shared/lib/kotodama-studio-deploy';
+import { getKotodamaCompilerUrl } from '@/shared/lib/kotodama-studio-compiler-config';
+import type { KotodamaCompilerDiagnostic } from '@/shared/lib/kotodama-studio-compiler';
 
 type MetadataKey = 'title' | 'dataspace' | 'authority' | 'chainId' | 'description';
 
@@ -435,6 +429,8 @@ interface TemplateOption {
 
 const STORAGE_KEY = 'kotodama_studio_graph_document_v2';
 const LEGACY_STORAGE_KEY = 'kotodama_studio_document_v1';
+const DEPLOYMENT_UNAVAILABLE_MESSAGE =
+  'Deployment is unavailable in this Explorer build because the exact linked Iroha JavaScript SDK does not provide an approved browser signing and submission API. No signing key is accepted or transmitted.';
 
 const templateOptions: TemplateOption[] = [
   { id: 'stablecoin', label: 'Stablecoin', description: 'Collateral checks, minting, and returned quotes.' },
@@ -477,10 +473,10 @@ const effectFieldKeys: Record<string, string[]> = {
 };
 
 const notifications = useNotifications();
+const compilerUrl = computed(() => getKotodamaCompilerUrl());
 const importInput = ref<HTMLInputElement | null>(null);
 const selectedTemplate = ref<KotodamaStudioGraphTemplateId>('stablecoin');
 const selectedNodeId = ref<string | null>(null);
-const deployPrivateKey = ref('');
 const graphDocument = ref(loadInitialDocument());
 const compileState = ref<{
   status: 'idle' | 'running' | 'ready' | 'error'
@@ -491,6 +487,7 @@ const compileState = ref<{
   error: '',
   result: null,
 });
+let compileRequestGeneration = 0;
 
 function loadInitialDocument(): KotodamaStudioGraphDocumentV2 {
   if (typeof window === 'undefined') return createKotodamaStudioGraphTemplate('stablecoin');
@@ -518,13 +515,19 @@ const compileDiagnostics = computed<KotodamaStudioGraphDiagnostic[]>(() => {
       code: 'compiler_error',
       severity: 'error' as const,
       message: formatDiagnostic(diagnostic),
-      nodeId: findKotodamaStudioGraphNodeForLine(sourceOutput.value.ranges, diagnostic.line),
+      nodeId: findKotodamaStudioGraphNodeForLine(
+        sourceOutput.value.ranges,
+        diagnostic.primary_span?.start.line
+      ),
     })),
     ...result.warnings.map((diagnostic) => ({
       code: 'compiler_warning',
       severity: 'warning' as const,
       message: formatDiagnostic(diagnostic),
-      nodeId: findKotodamaStudioGraphNodeForLine(sourceOutput.value.ranges, diagnostic.line),
+      nodeId: findKotodamaStudioGraphNodeForLine(
+        sourceOutput.value.ranges,
+        diagnostic.primary_span?.start.line
+      ),
     })),
   ];
 });
@@ -588,25 +591,21 @@ const paletteGroups = computed(() => {
   }
   return [...groups.entries()].map(([name, items]) => ({ name, items }));
 });
-const compileUnavailable = computed(() => compileState.value.status === 'running' || blockingDiagnostics.value.length > 0);
-const deployDraft = computed(() =>
-  compileState.value.result && compileState.value.result.diagnostics.length === 0 && blockingDiagnostics.value.length === 0
-    ? buildKotodamaStudioDeployDraft({
-      authority: graphDocument.value.metadata.authority,
-      chainId: graphDocument.value.metadata.chainId,
-      dataspace: graphDocument.value.metadata.dataspace,
-      compileResult: compileState.value.result,
-    })
-    : null
+const compileUnavailable = computed(() =>
+  compilerUrl.value === null || compileState.value.status === 'running' || blockingDiagnostics.value.length > 0
 );
-const deployUnavailable = computed(() => !deployDraft.value || deployPrivateKey.value.trim().length === 0 || blockingDiagnostics.value.length > 0);
 const compilePanelMessage = computed(() => {
+  if (compilerUrl.value === null) {
+    return $tFallback(
+      'Compilation is disabled until an operator configures a trusted canonical Rust compiler service URL.'
+    );
+  }
   if (blockingDiagnostics.value.length > 0) return $tFallback('Fix the graph errors before compiling.');
-  if (compileState.value.status === 'running') return $tFallback('Compiling graph-generated Kotodama source.');
+  if (compileState.value.status === 'running') return $tFallback('Compiling graph-generated Kotodama source with the canonical Rust service.');
   if (compileState.value.status === 'error') return compileState.value.error;
-  if (compileState.value.result?.diagnostics.length) return 'Local compile found problems. Select a diagnostic to jump to the graph node.';
-  if (compileState.value.result) return $tFallback('Contract bundle compiled locally.');
-  return $tFallback('Compile the graph-generated source to refresh hashes and deploy data.');
+  if (compileState.value.result?.diagnostics.length) return 'The canonical Rust compiler found problems. Select a diagnostic to jump to the graph node.';
+  if (compileState.value.result) return $tFallback('Contract bundle compiled by the canonical Rust service.');
+  return $tFallback('Compile the graph-generated source to refresh the canonical artifact hashes.');
 });
 
 watch(
@@ -622,14 +621,19 @@ watch(
   { deep: true, immediate: true }
 );
 
-watch(generatedSource, (nextSource, previousSource) => {
-  if (!previousSource || nextSource === previousSource || compileState.value.status === 'running') return;
-  compileState.value = {
-    status: 'idle',
-    error: '',
-    result: null,
-  };
-});
+watch(
+  graphDocument,
+  () => {
+    compileRequestGeneration += 1;
+    if (compileState.value.status === 'idle' && compileState.value.result === null) return;
+    compileState.value = {
+      status: 'idle',
+      error: '',
+      result: null,
+    };
+  },
+  { deep: true, flush: 'sync' }
+);
 
 function $tFallback(value: string): string {
   return value;
@@ -658,7 +662,6 @@ function applyTemplate(templateId: KotodamaStudioGraphTemplateId) {
   selectedTemplate.value = templateId;
   graphDocument.value = createKotodamaStudioGraphTemplate(templateId);
   selectedNodeId.value = graphDocument.value.graph.nodes.find((node) => node.data.kind === 'entrypoint')?.id ?? null;
-  deployPrivateKey.value = '';
   compileState.value = {
     status: 'idle',
     error: '',
@@ -864,10 +867,39 @@ function selectDiagnostic(nodeId: string | null) {
 }
 
 async function runCompile() {
+  const configuredCompilerUrl = compilerUrl.value;
+  if (configuredCompilerUrl === null) {
+    notifications.error(
+      'Kotodama compiler service URL is not configured. Configure a trusted canonical Rust compiler service before compiling.'
+    );
+    return;
+  }
   if (blockingDiagnostics.value.length > 0) {
     notifications.error('Fix the graph errors before compiling.');
     return;
   }
+
+  const requestGeneration = ++compileRequestGeneration;
+  const sourceSnapshot = generatedSource.value;
+  const graphSnapshot = stringifyKotodamaStudioGraphDocument(graphDocument.value);
+  const summarySnapshot = sourceOutput.value.summary;
+  const requestIsCurrent = () =>
+    requestGeneration === compileRequestGeneration &&
+    sourceSnapshot === generatedSource.value &&
+    graphSnapshot === stringifyKotodamaStudioGraphDocument(graphDocument.value) &&
+    configuredCompilerUrl === getKotodamaCompilerUrl();
+  const discardStaleRequest = () => {
+    if (requestIsCurrent()) return false;
+    if (requestGeneration === compileRequestGeneration) {
+      compileRequestGeneration += 1;
+      compileState.value = {
+        status: 'idle',
+        error: '',
+        result: null,
+      };
+    }
+    return true;
+  };
 
   compileState.value = {
     status: 'running',
@@ -877,20 +909,23 @@ async function runCompile() {
 
   try {
     const result = await compileKotodamaStudioSource({
-      source: generatedSource.value,
-      summary: sourceOutput.value.summary,
+      source: sourceSnapshot,
+      summary: summarySnapshot,
+      compilerUrl: configuredCompilerUrl,
     });
+    if (discardStaleRequest()) return;
     compileState.value = {
       status: 'ready',
       error: '',
       result,
     };
     if (result.diagnostics.length > 0) {
-      notifications.error('Local compile found problems.');
+      notifications.error('The canonical Rust compiler found problems.');
     } else {
-      notifications.success('Contract bundle compiled locally.');
+      notifications.success('Contract bundle compiled by the canonical Rust service.');
     }
   } catch (error) {
+    if (discardStaleRequest()) return;
     const message = error instanceof Error ? error.message : 'Unable to compile the graph-generated source.';
     compileState.value = {
       status: 'error',
@@ -913,7 +948,6 @@ async function handleImportChange(event: Event) {
   try {
     graphDocument.value = parseKotodamaStudioGraphDocument(await file.text());
     selectedNodeId.value = graphDocument.value.graph.nodes.find((node) => node.data.kind === 'entrypoint')?.id ?? null;
-    deployPrivateKey.value = '';
     compileState.value = {
       status: 'idle',
       error: '',
@@ -949,39 +983,15 @@ function buildStudioExportSlug(title: string): string {
   return normalized.length > 0 ? normalized : 'kotodama-studio-graph';
 }
 
-function formatDiagnostic(diagnostic: {
-  message: string
-  line?: number
-  column?: number
-}) {
-  const location = diagnostic.line
-    ? diagnostic.column
-      ? `Line ${diagnostic.line}, column ${diagnostic.column}: `
-      : `Line ${diagnostic.line}: `
+function formatDiagnostic(diagnostic: KotodamaCompilerDiagnostic) {
+  const line = diagnostic.primary_span?.start.line;
+  const column = diagnostic.primary_span?.start.column;
+  const location = line
+    ? column
+      ? `Line ${line}, column ${column}: `
+      : `Line ${line}: `
     : '';
   return `${location}${diagnostic.message}`;
-}
-
-async function runDeploy() {
-  if (!deployDraft.value || compileState.value.result?.diagnostics.length || blockingDiagnostics.value.length > 0) return;
-  const privateKey = deployPrivateKey.value.trim();
-  if (!privateKey) return;
-
-  try {
-    const result = await submitContractDeployRequest({
-      authority: deployDraft.value.toriiRequest.authority,
-      private_key: privateKey,
-      code_b64: deployDraft.value.toriiRequest.code_b64,
-      ...(deployDraft.value.toriiRequest.dataspace ? { dataspace: deployDraft.value.toriiRequest.dataspace } : {}),
-    });
-    if (!result.ok) {
-      throw result.error ?? new Error(`Direct deploy failed with status ${result.statusCode}.`);
-    }
-    deployPrivateKey.value = '';
-    notifications.success(`Deploy submitted: ${result.data.tx_hash_hex}`);
-  } catch (error) {
-    notifications.error(error instanceof Error ? error.message : 'Direct Torii deploy failed.');
-  }
 }
 </script>
 

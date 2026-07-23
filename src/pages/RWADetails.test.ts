@@ -29,6 +29,10 @@ vi.mock('@vue-kakuyaku/core', () => ({
     }),
 }));
 
+vi.mock('@/shared/ui/composables/useExplorerScopeNavigation', () => ({
+  useCurrentExplorerScope: () => ref(null),
+}));
+
 const BaseContentBlockStub = {
   props: ['title'],
   template: '<div><h1>{{ title }}</h1><slot /></div>',
@@ -124,6 +128,12 @@ describe('RWADetails', () => {
       },
       refetch: vi.fn(),
     };
+    scopeExpose.value.snapshot = {
+      status: 'ready',
+      data: scopeExpose.value.data,
+      isRefreshing: false,
+      refreshError: null,
+    };
   });
 
   it('renders rwa detail fields', async () => {
@@ -135,6 +145,7 @@ describe('RWADetails', () => {
           BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: DataFieldStub,
+          RouterLink: { template: '<a><slot /></a>' },
         },
       },
     });
@@ -201,6 +212,12 @@ describe('RWADetails', () => {
       },
       refetch: vi.fn(),
     };
+    scopeExpose.value.snapshot = {
+      status: 'ready',
+      data: scopeExpose.value.data,
+      isRefreshing: false,
+      refreshError: null,
+    };
 
     const wrapper = mount(RWADetails, {
       global: {
@@ -210,6 +227,7 @@ describe('RWADetails', () => {
           BaseLink: BaseLinkStub,
           BaseLoading: true,
           DataField: DataFieldStub,
+          RouterLink: { template: '<a><slot /></a>' },
         },
       },
     });
@@ -217,5 +235,63 @@ describe('RWADetails', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('This lot has no recorded parent provenance.');
+  });
+
+  it('renders a distinct not-found state without provenance placeholders', async () => {
+    scopeExpose.value = {
+      isLoading: false,
+      data: undefined,
+      snapshot: { status: 'not-found' },
+      refetch: vi.fn(),
+    };
+
+    const wrapper = mount(RWADetails, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          BaseContentBlock: BaseContentBlockStub,
+          BaseLink: BaseLinkStub,
+          BaseLoading: true,
+          DataField: DataFieldStub,
+          RouterLink: { template: '<a><slot /></a>' },
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('RWA not found');
+    expect(wrapper.find('.rwa-details__provenance').exists()).toBe(false);
+  });
+
+  it('keeps terminal provenance failures visible until retry is requested', async () => {
+    const refetch = vi.fn();
+    scopeExpose.value = {
+      isLoading: false,
+      data: undefined,
+      snapshot: {
+        status: 'error',
+        problem: { kind: 'network', message: 'offline' },
+      },
+      refetch,
+    };
+
+    const wrapper = mount(RWADetails, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          BaseContentBlock: BaseContentBlockStub,
+          BaseLink: BaseLinkStub,
+          BaseLoading: true,
+          DataField: DataFieldStub,
+          RouterLink: { template: '<a><slot /></a>' },
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(refetch).not.toHaveBeenCalled();
+    expect(wrapper.get('[role="alert"]').text()).toContain('RWA provenance could not be loaded');
+    await wrapper.get('[data-test="resource-retry"]').trigger('click');
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

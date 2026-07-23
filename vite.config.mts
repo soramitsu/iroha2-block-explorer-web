@@ -63,13 +63,28 @@ export default defineConfig(({ mode }) => {
     build: {
       // to not overlap with the `/assets` route in the app
       assetsDir: '_assets',
+      manifest: true,
       target: 'esnext',
       chunkSizeWarningLimit: 1200,
       rollupOptions: {
         output: {
-          manualChunks: {
-            vue: ['vue', 'vue-router', 'vue-i18n'],
-            vendor: ['@vueuse/core', '@iroha/core', 'zod', 'date-fns', 'date-fns-tz', 'bignumber.js'],
+          manualChunks(id) {
+            const moduleId = id.replaceAll('\\', '/');
+            if (/\/node_modules\/(?:vue|vue-router|vue-i18n)\//u.test(moduleId)) return 'vue';
+            if (moduleId.includes('/node_modules/blockly/')) return 'studio-blockly';
+            if (moduleId.includes('/node_modules/@vue-flow/')) return 'studio-flow';
+            if (moduleId.includes('/node_modules/qrcode/')) return 'qr-code';
+            if (moduleId.includes('/node_modules/vue-json-pretty/')) return 'json-viewer';
+            if (
+              moduleId.includes('/javascript/iroha_js/')
+              || moduleId.includes('/node_modules/@iroha/iroha-js/')
+            ) return 'iroha-sdk';
+            if (
+              /\/node_modules\/(?:@vueuse\/core|@iroha\/core|zod|date-fns|date-fns-tz|bignumber\.js)\//u.test(
+                moduleId
+              )
+            ) return 'vendor';
+            return undefined;
           },
         },
       },

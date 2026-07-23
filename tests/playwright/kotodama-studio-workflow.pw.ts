@@ -54,25 +54,7 @@ function createLegacyStudioDocument() {
   };
 }
 
-test('builds, diagnoses, fixes, compiles, and deploys a graph-first contract', async ({ page }) => {
-  let deployPayload: unknown = null;
-  await page.route('**/contracts/deploy', async (route) => {
-    deployPayload = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ok: true,
-        contract_address: 'tairac1qyqqqqqqqqqqqq95fes93ygegsv5enq9mqsz6x4lv4vp9ggff82m7',
-        dataspace: 'stable',
-        deploy_nonce: 2,
-        tx_hash_hex: '0xplaywright123',
-        code_hash_hex: 'aa'.repeat(32),
-        abi_hash_hex: 'bb'.repeat(32),
-      }),
-    });
-  });
-
+test('builds and diagnoses a graph-first contract while deployment stays unavailable', async ({ page }) => {
   await page.goto('/studio');
 
   await expect(page.locator('.contract-graph-canvas')).toBeVisible();
@@ -93,24 +75,13 @@ test('builds, diagnoses, fixes, compiles, and deploys a graph-first contract', a
   await expect(page.locator(dataTest('studio-semantic-diagnostics'))).toHaveCount(0);
   await expect(page.locator(dataTest('studio-source'))).toContainText('state int counter_two;');
 
-  await page.locator(dataTest('studio-compile')).click();
-  await expect(page.locator(dataTest('studio-compile-mode'))).toHaveText('graph-local-browser');
-
-  await page.locator(dataTest('studio-direct-deploy-private-key')).fill('ed25519:playwright-secret');
-  await expect(page.locator(dataTest('studio-deploy'))).toBeEnabled();
-  await page.locator(dataTest('studio-deploy')).click();
-
-  await expect(page.locator('.app-notifications__message', { hasText: 'Deploy submitted: 0xplaywright123' })).toBeVisible();
-  expect(deployPayload).toEqual(expect.objectContaining({
-    authority: 'operator@stable.main',
-    private_key: 'ed25519:playwright-secret',
-    code_b64: expect.any(String),
-    dataspace: 'stable',
-  }));
+  await expect(page.locator(dataTest('studio-deploy'))).toBeDisabled();
+  await expect(page.locator(dataTest('studio-deployment-unavailable')))
+    .toContainText('does not provide an approved browser signing and submission API');
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
 
   const stored = await page.evaluate((key) => window.localStorage.getItem(key), GRAPH_STORAGE_KEY);
   expect(stored).toContain('"version": 2');
-  expect(stored).not.toContain('ed25519:playwright-secret');
 });
 
 test('imports legacy v1 Studio storage into the graph document model', async ({ page }) => {

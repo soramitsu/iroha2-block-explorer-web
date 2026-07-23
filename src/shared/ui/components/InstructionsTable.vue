@@ -29,14 +29,15 @@ import { SUCCESSFUL_FETCHING, NOT_FOUND } from '@/shared/api/consts';
 import { useClipboard, useThrottleFn, useWindowScroll } from '@vueuse/core';
 import { useNotifications } from '@/shared/ui/composables/notifications';
 import { Instruction as InstructionSchema } from '@/shared/api/schemas';
-import { collectInstructionFallback } from '@/shared/lib/instruction-fallback';
 import { resolveContractViewInstructionKind } from '@/shared/lib/contract-view';
 import { fetchAllTransactionInstructions } from '@/shared/lib/transaction-instructions';
-import {
-  buildMultisigCustomDisplayPayload,
-  readMultisigCustomEnvelope,
-} from '@/shared/lib/multisig-custom';
 import { useExplorerInstructionsEvents } from '@/shared/ui/composables/useExplorerInstructionsEvents';
+import InstructionSemanticCard from '@/shared/ui/components/InstructionSemanticCard.vue';
+import {
+  buildInstructionPresentation,
+  type InstructionPresentation,
+  type InstructionPresentationField,
+} from '@/shared/lib/instruction-presentation';
 
 const { t } = useI18n();
 const props = defineProps<{
@@ -52,136 +53,21 @@ const emit = defineEmits<{
   (e: 'list-state', payload: { isLoading: boolean, totalItems: number, itemsCount: number }): void
 }>();
 
-function isBase64EncodedWasm(item: Instruction) {
-  return item.kind === 'Upgrade';
-}
+const presentationCache = new WeakMap<Instruction, InstructionPresentation | null>();
 
-function resolveInstructionRawPayload(item: Instruction) {
-  return item.box.json.payload ?? null;
-}
-
-function resolveInstructionPayload(item: Instruction) {
-  const payload = resolveInstructionRawPayload(item);
-  if (item.kind !== 'Custom') return payload;
-
-  return buildMultisigCustomDisplayPayload(payload) ?? payload;
-}
-
-const MULTISIG_CUSTOM_VARIANTS = new Set(['Register', 'Propose', 'Approve']);
-const CUSTOM_VARIANT_PLACEHOLDER = 'Unknown';
-
-function readMultisigVariantCandidate(candidate: unknown): string | null {
-  if (!candidate || typeof candidate !== 'object') return null;
-  const entries = Object.entries(candidate as Record<string, unknown>);
-  if (entries.length !== 1) return null;
-  const [variant, details] = entries[0];
-  if (!MULTISIG_CUSTOM_VARIANTS.has(variant)) return null;
-  if (!details || typeof details !== 'object') return null;
-  const account = (details as Record<string, unknown>).account;
-  if (typeof account !== 'string') return null;
-  return variant;
-}
-
-function getMultisigVariant(item: Instruction): string | null {
-  if (item.kind !== 'Custom') return null;
-  const payload = resolveInstructionRawPayload(item);
-  const directVariant = readMultisigVariantCandidate(payload);
-  if (directVariant) return directVariant;
-
-  return readMultisigCustomEnvelope(payload)?.variant ?? null;
-}
-
-function toVariantLabel(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const sections = trimmed.split('::').filter(Boolean);
-  return sections.at(-1) ?? trimmed;
-}
-
-function readWireIdVariant(payload: unknown, wireId: string | undefined): string | null {
-  const topLevelVariant = toVariantLabel(wireId);
-  if (topLevelVariant) return topLevelVariant;
-
-  if (!payload || typeof payload !== 'object') return null;
-  const payloadRecord = payload as Record<string, unknown>;
-
-  const payloadWireIdVariant = toVariantLabel(payloadRecord.wire_id);
-  if (payloadWireIdVariant) return payloadWireIdVariant;
-
-  const nestedValue = payloadRecord.value;
-  if (!nestedValue || typeof nestedValue !== 'object') return null;
-  return toVariantLabel((nestedValue as Record<string, unknown>).wire_id);
-}
-
-function readSingleKeyVariant(payload: unknown): string | null {
-  if (!payload || typeof payload !== 'object') return null;
-  const entries = Object.entries(payload as Record<string, unknown>);
-  if (entries.length !== 1) return null;
-  const [key] = entries[0];
-  if (key === 'value') return null;
-  if (!/^[A-Z][A-Za-z0-9_]*$/.test(key)) return null;
-  return toVariantLabel(key);
-}
-
-function getCustomInstructionKind(item: Instruction): string | null {
-  if (item.kind !== 'Custom') return null;
-  if (getMultisigVariant(item)) return t('transactions.multisig');
-
-  const payload = resolveInstructionRawPayload(item);
-  const wireIdVariant = readWireIdVariant(payload, item.box.json.wire_id);
-  if (wireIdVariant) return wireIdVariant;
-
-  if (payload && typeof payload === 'object') {
-    const payloadRecord = payload as Record<string, unknown>;
-
-    const variant = toVariantLabel(payloadRecord.variant);
-    if (variant && variant !== CUSTOM_VARIANT_PLACEHOLDER) return variant;
-
-    const directKeyVariant = readSingleKeyVariant(payloadRecord);
-    if (directKeyVariant) return directKeyVariant;
-
-    const nestedValue = payloadRecord.value;
-    const nestedValueVariant = readSingleKeyVariant(nestedValue);
-    if (nestedValueVariant) return nestedValueVariant;
-  }
-
-  return null;
+function getInstructionPresentation(item: Instruction): InstructionPresentation | null {
+  if (presentationCache.has(item)) return presentationCache.get(item) ?? null;
+  const result = buildInstructionPresentation(item);
+  presentationCache.set(item, result);
+  return result;
 }
 
 function getInstructionKindLabel(item: Instruction): string {
-  const customInstructionKind = getCustomInstructionKind(item);
-  if (customInstructionKind) return customInstructionKind;
-  return item.kind;
+  return getInstructionPresentation(item)?.kindLabel ?? item.kind;
 }
 
-function getInstructionPayloadValue(item: Instruction): Record<string, any> {
-  const payload = resolveInstructionPayload(item);
-  if (payload && typeof payload === 'object') return payload as Record<string, any>;
-  if (payload !== null && payload !== undefined) return { value: payload };
-  return {};
-}
-
-function getInstructionPayloadEntity(item: Instruction) {
-  if (isBase64EncodedWasm(item)) return t('transactions.object');
-  const payload = resolveInstructionRawPayload(item);
-  if (!payload || typeof payload !== 'object') return t('transactions.object');
-  const multisigEnvelope = readMultisigCustomEnvelope(payload);
-  if (multisigEnvelope) {
-    return `${multisigEnvelope.variant} (${multisigEnvelope.instructions.length})`;
-  }
-  const payloadRecord = payload as Record<string, any>;
-  if ('object' in payloadRecord) {
-    const target = payloadRecord.object;
-    if (typeof target === 'string') return target;
-    if (target && typeof target === 'object') {
-      if (typeof target.id === 'string') return target.id;
-      if (typeof target.type === 'string') return target.type;
-    }
-  }
-  const keys = Object.keys(payloadRecord);
-  if (keys.length > 0) return keys[0];
-  return t('transactions.object');
+function getInstructionPrimaryEntity(item: Instruction): InstructionPresentationField | null {
+  return getInstructionPresentation(item)?.primaryEntity ?? null;
 }
 
 const isOnAccountPage = computed(() => props.filterBy.kind === 'authority');
@@ -230,26 +116,8 @@ const fetchedTotalItems = computed(() =>
 const fetchedItems = computed(() =>
   scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value?.expose.data.data.items : []
 );
-const fallbackInstructions = ref<Instruction[]>([]);
-const fallbackAttemptedHash = ref<string | null>(null);
-const fallbackLoading = ref(false);
-const shouldUseFallbackInstructions = computed(
-  () => props.filterBy.kind === 'transaction' && listState.page === 1 && fallbackInstructions.value.length > 0
-);
-const totalItems = computed(() =>
-  fetchedTotalItems.value > 0 || fetchedItems.value.length > 0
-    ? fetchedTotalItems.value
-    : shouldUseFallbackInstructions.value
-      ? fallbackInstructions.value.length
-      : 0
-);
-const items = computed(() =>
-  fetchedItems.value.length > 0
-    ? fetchedItems.value
-    : shouldUseFallbackInstructions.value
-      ? fallbackInstructions.value
-      : []
-);
+const totalItems = computed(() => fetchedTotalItems.value);
+const items = computed(() => fetchedItems.value);
 
 const instructionRowKey = (item: Instruction) => `${item.transaction_hash}:${item.index}`;
 
@@ -293,43 +161,6 @@ const scheduleInstructionsReload = useThrottleFn(() => {
 
 function applyPendingRefresh() {
   scheduleInstructionsReload();
-}
-
-async function tryTransactionInstructionFallback() {
-  if (props.filterBy.kind !== 'transaction') return;
-  if (listState.page !== 1) return;
-  if (isLoading.value || fallbackLoading.value) return;
-  if (fetchedItems.value.length > 0 || fetchedTotalItems.value > 0) {
-    fallbackInstructions.value = [];
-    return;
-  }
-
-  const hash = props.filterBy.value;
-  const targetIndex = isNil(autoInstructionIndex.value) ? null : Math.max(0, Math.floor(autoInstructionIndex.value));
-  const targetPresent = isNil(targetIndex)
-    ? true
-    : fallbackInstructions.value.some((instruction) => instruction.index === targetIndex);
-
-  if (fallbackAttemptedHash.value === hash && targetPresent) return;
-
-  fallbackAttemptedHash.value = hash;
-  fallbackLoading.value = true;
-  try {
-    fallbackInstructions.value = await collectInstructionFallback({
-      transactionHash: hash,
-      fetchInstructionDetail: http.fetchInstructionDetail,
-      priorityIndex: targetIndex,
-      maxProbe: 64,
-    });
-  } finally {
-    fallbackLoading.value = false;
-  }
-}
-
-function triggerTransactionInstructionFallback() {
-  tryTransactionInstructionFallback().catch((error) => {
-    console.warn('[InstructionsTable] Failed to collect instruction fallback', error);
-  });
 }
 
 async function loadInstructionDetail(target: { transactionHash: string, index: number }) {
@@ -378,20 +209,11 @@ async function loadRelatedContractInstructions(instruction: Instruction) {
 
   detailRelatedInstructionsState.isLoading = true;
   try {
-    let instructions = await fetchAllTransactionInstructions({
+    const instructions = await fetchAllTransactionInstructions({
       transactionHash: instruction.transaction_hash,
       fetchInstructions: http.fetchInstructions,
       perPage: 128,
     });
-
-    if (!instructions.length) {
-      instructions = await collectInstructionFallback({
-        transactionHash: instruction.transaction_hash,
-        fetchInstructionDetail: http.fetchInstructionDetail,
-        priorityIndex: instruction.index,
-        maxProbe: 128,
-      });
-    }
 
     detailRelatedInstructionsState.transactionHash = instruction.transaction_hash;
     detailRelatedInstructionsState.items = instructions;
@@ -423,7 +245,13 @@ function closeInstructionDetails() {
 const selectedInstructionJson = computed(() => {
   const instruction = detailState.data;
   if (!instruction) return null;
-  return resolveInstructionPayload(instruction) ?? instruction.box.json.payload ?? instruction.box.json;
+  return instruction.box.json;
+});
+
+const selectedInstructionPresentation = computed(() => {
+  const instruction = detailState.data;
+  if (!instruction) return null;
+  return getInstructionPresentation(instruction);
 });
 
 const selectedInstructionKindLabel = computed(() => {
@@ -460,8 +288,6 @@ watch(
   () => JSON.stringify(searchParams.value),
   () => {
     pendingRefresh.value = false;
-    fallbackInstructions.value = [];
-    fallbackAttemptedHash.value = null;
     if (detailState.isOpen) closeInstructionDetails();
   }
 );
@@ -474,26 +300,9 @@ watch(
   () => props.initialInstructionIndex ?? null,
   (value) => {
     autoInstructionIndex.value = Number.isFinite(value) ? (value as number) : null;
-    fallbackAttemptedHash.value = null;
     if (isNil(value) && detailState.isOpen) {
       closeInstructionDetails();
     }
-  },
-  { immediate: true }
-);
-
-watch(
-  () => [
-    props.filterBy.kind,
-    props.filterBy.value,
-    listState.page,
-    isLoading.value,
-    fetchedItems.value.length,
-    fetchedTotalItems.value,
-    autoInstructionIndex.value,
-  ],
-  () => {
-    triggerTransactionInstructionFallback();
   },
   { immediate: true }
 );
@@ -579,10 +388,10 @@ watch(
 );
 
 watch(
-  () => [isLoading.value, fallbackLoading.value, totalItems.value, items.value.length] as const,
-  ([tableLoading, fallbackInFlight, currentTotalItems, currentItemsCount]) => {
+  () => [isLoading.value, totalItems.value, items.value.length] as const,
+  ([tableLoading, currentTotalItems, currentItemsCount]) => {
     emit('list-state', {
-      isLoading: tableLoading || fallbackInFlight,
+      isLoading: Boolean(tableLoading),
       totalItems: currentTotalItems,
       itemsCount: currentItemsCount,
     });
@@ -683,7 +492,17 @@ watch(
                 {{ $t('entity') }}
               </div>
 
-              <span class="row-text">{{ getInstructionPayloadEntity(item) }}</span>
+              <BaseLink
+                v-if="getInstructionPrimaryEntity(item)?.link"
+                :to="getInstructionPrimaryEntity(item)?.link ?? ''"
+                monospace
+              >
+                {{ getInstructionPrimaryEntity(item)?.value }}
+              </BaseLink>
+              <span
+                v-else
+                class="row-text"
+              >{{ getInstructionPrimaryEntity(item)?.value ?? '—' }}</span>
             </div>
 
             <div class="instructions-table__column-block">
@@ -708,15 +527,23 @@ watch(
               {{ $t('value') }}
             </div>
 
-            <BaseJson
-              v-if="!isBase64EncodedWasm(item)"
-              class="instructions-table__value-json"
-              :value="getInstructionPayloadValue(item)"
-            />
-            <span
-              v-else
-              class="row-text"
-            >{{ $t('transactions.displayingIsntSupported') }}</span>
+            <div class="instructions-table__value-content">
+              <InstructionSemanticCard
+                v-if="getInstructionPresentation(item)"
+                :presentation="getInstructionPresentation(item)!"
+                compact
+              />
+              <details
+                class="instructions-table__raw-disclosure"
+                data-test="instruction-row-raw-json"
+              >
+                <summary>Raw instruction JSON</summary>
+                <BaseJson
+                  class="instructions-table__value-json"
+                  :value="item.box.json"
+                />
+              </details>
+            </div>
           </div>
 
           <div class="instructions-table__actions">
@@ -830,14 +657,19 @@ watch(
           </DataField>
         </div>
 
+        <InstructionSemanticCard
+          v-if="selectedInstructionPresentation"
+          :presentation="selectedInstructionPresentation"
+        />
+
         <div class="instructions-detail__json">
           <div class="instructions-table__label">
-            {{ $t('transactions.metadata') }}
+            Raw instruction JSON
           </div>
           <BaseJson
             class="instructions-detail__json-tree"
             full
-            :value="selectedInstructionJson ?? detailState.data.box.json?.payload ?? detailState.data.box.json ?? {}"
+            :value="selectedInstructionJson ?? detailState.data.box.json"
           />
         </div>
 
@@ -1166,6 +998,33 @@ watch(
     :deep(.vjs-value) {
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+  }
+
+  &__value-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: size(1.5);
+    min-width: 0;
+  }
+
+  &__raw-disclosure {
+    min-width: 0;
+    padding: size(1.5);
+    border: 1px solid theme-color('border-primary');
+    border-radius: size(1);
+    background: theme-color('background-hover');
+
+    summary {
+      width: fit-content;
+      color: theme-color('content-tertiary');
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    &[open] summary {
+      margin-bottom: size(1.5);
     }
   }
 

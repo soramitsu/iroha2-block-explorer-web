@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   Account,
+  AccountHistoryResponse,
+  AccountPermissionsResponse,
   Asset,
   AssetDefinition,
   AssetDefinitionEconometrics,
   AssetDefinitionSnapshot,
-  ContractDeployResponse,
   ContractCodeView,
   ContractVerifiedSourceJobResponse,
   ConnectSessionResponse,
@@ -16,10 +17,14 @@ import {
   Instruction,
   LatestInstructionsResponse,
   LatestTransactionsResponse,
+  LedgerStateProof,
+  LedgerStateRoot,
   MinistryAgendaProposalDraftRequest,
   MinistryAgendaProposalDraftResponse,
   MinistryAgendaProposalGetResponse,
   MinistryAgendaProposalRecord,
+  MultisigProposalsQueryResponse,
+  MultisigSpecResponse,
   NetworkMetrics,
   NFT,
   Paginated,
@@ -174,6 +179,69 @@ describe('Instruction schema', () => {
         encoded: '0x05',
       },
     });
+  });
+});
+
+describe('ledger evidence schemas', () => {
+  const commitQc = {
+    phase: 'Commit',
+    subject_block_hash: 'hash:block',
+    parent_state_root: 'hash:parent',
+    post_state_root: 'hash:state',
+    height: 42,
+    view: 7,
+    epoch: 3,
+    mode_tag: 'sumeragi-v2',
+    highest_qc: null,
+    validator_set_hash: 'hash:validators',
+    validator_set_hash_version: 1,
+    validator_set: ['peer-a', 'peer-b'],
+    aggregate: {
+      signers_bitmap: '03',
+      bls_aggregate_signature: 'cafe',
+    },
+  };
+
+  it('accepts the exact state-root and persisted-QC response shapes', () => {
+    expect(LedgerStateRoot.parse({
+      height: 42,
+      block_hash: 'hash:block',
+      state_root: 'hash:state',
+      source: 'commit_qc',
+      commit_qc: commitQc,
+    }).source).toBe('commit_qc');
+
+    expect(LedgerStateProof.parse({
+      height: 42,
+      block_hash: 'hash:block',
+      state_root: 'hash:state',
+      commit_qc: commitQc,
+    }).commit_qc.aggregate.signers_bitmap).toBe('03');
+  });
+
+  it('accepts a result-root response without a QC but rejects invented sources and extra fields', () => {
+    expect(LedgerStateRoot.parse({
+      height: 42,
+      block_hash: 'hash:block',
+      state_root: 'hash:state',
+      source: 'result_merkle_root',
+      commit_qc: null,
+    }).commit_qc).toBeNull();
+
+    expect(() => LedgerStateRoot.parse({
+      height: 42,
+      block_hash: 'hash:block',
+      state_root: 'hash:state',
+      source: 'fallback',
+      commit_qc: null,
+    })).toThrow();
+    expect(() => LedgerStateProof.parse({
+      height: 42,
+      block_hash: 'hash:block',
+      state_root: 'hash:state',
+      commit_qc: commitQc,
+      locally_verified: true,
+    })).toThrow();
   });
 });
 
@@ -404,6 +472,131 @@ describe('Explorer payload schemas', () => {
     expect(parsed.i105_address).toBe(validAccountIdModern);
     expect(parsed.network_prefix).toBe(753);
     expect(parsed.owned_assets).toBe(1);
+  });
+
+  it('preserves exact account permission payloads and requires totals in exact mode', () => {
+    const parsed = AccountPermissionsResponse.parse({
+      items: [
+        {
+          name: 'CanTransferAssetWithDefinition',
+          payload: { asset_definition: validAssetDefinitionId, limit: '100000000000000000001' },
+        },
+      ],
+      total: 1,
+      has_more: false,
+      count_mode: 'exact',
+    });
+
+    expect(parsed.items[0]?.payload).toEqual({
+      asset_definition: validAssetDefinitionId,
+      limit: '100000000000000000001',
+    });
+    expect(() =>
+      AccountPermissionsResponse.parse({
+        items: [],
+        has_more: false,
+        count_mode: 'exact',
+      })
+    ).toThrow(/total/u);
+  });
+
+  it('accepts bounded permission pages without inventing a total', () => {
+    const parsed = AccountPermissionsResponse.parse({
+      items: [],
+      has_more: true,
+      count_mode: 'bounded',
+    });
+
+    expect(parsed.total).toBeUndefined();
+    expect(parsed.has_more).toBe(true);
+  });
+
+  it('preserves exact indexed account-history quantities and evidence fields', () => {
+    const parsed = AccountHistoryResponse.parse({
+      items: [
+        {
+          id: 'history:1',
+          source: 'asset_transfer',
+          type: 'TRANSFER',
+          timestamp_ms: 1_700_000_000_123,
+          status: 'Committed',
+          result_ok: true,
+          direction: 'incoming',
+          account_id: validAccountId,
+          counterparty_account_id: validAccountIdAlt,
+          asset_id: validAssetId,
+          asset_definition_id: validAssetDefinitionId,
+          amount: '100000000000000000001.000000000000000001',
+          tx_hash: 'ab'.repeat(32),
+        },
+      ],
+      total: 1,
+      has_more: false,
+      count_mode: 'exact',
+      indexed_height: 42,
+      indexed_block_hash: 'cd'.repeat(32),
+      query_source: 'account_history_index',
+    });
+
+    expect(parsed.items[0]?.amount).toBe('100000000000000000001.000000000000000001');
+    expect(parsed.indexed_height).toBe(42);
+    expect(() =>
+      AccountHistoryResponse.parse({
+        ...parsed,
+        items: [{ ...parsed.items[0], amount: 10 }],
+      })
+    ).toThrow();
+  });
+
+  it('parses strict multisig specs and decoded proposal instructions', () => {
+    const spec = MultisigSpecResponse.parse({
+      resolved_multisig_account_id: validAccountId,
+      spec: {
+        signatories: { [validAccountId]: 2, [validAccountIdAlt]: 1 },
+        quorum: 2,
+        transaction_ttl_ms: 60_000,
+      },
+    });
+    const proposals = MultisigProposalsQueryResponse.parse({
+      resolved_multisig_account_id: validAccountId,
+      proposals: [
+        {
+          proposal_id: 'aa'.repeat(32),
+          instructions_hash: 'aa'.repeat(32),
+          operation_type: 'TRANSFER',
+          intent: null,
+          proposal: {
+            instructions: [
+              {
+                Transfer: {
+                  Asset: {
+                    source: validAccountId,
+                    object: validAssetId,
+                    destination: validAccountIdAlt,
+                  },
+                },
+              },
+            ],
+            proposed_at_ms: 1_700_000_000_000,
+            expires_at_ms: 1_700_000_060_000,
+            approvals: [validAccountId],
+            is_relayed: null,
+          },
+          status: 'COLLECTING_SIGNATURES',
+          terminal_at_ms: null,
+        },
+      ],
+      next_cursor: 'cursor_2',
+    });
+
+    expect(spec.spec.signatories[validAccountId]).toBe(2);
+    expect(proposals.proposals[0]?.proposal.instructions[0]).toHaveProperty('Transfer.Asset');
+    expect(() =>
+      MultisigProposalsQueryResponse.parse({
+        ...proposals,
+        proposals: [{ ...proposals.proposals[0], status: 'READY' }],
+      })
+    ).toThrow();
   });
 
   it('parses governance deploy proposals that use contract_address payloads', () => {
@@ -1093,23 +1286,6 @@ describe('Explorer payload schemas', () => {
     expect(parsed.status).toBe('mismatch');
     expect(parsed.actual_code_hash).toBe('bb'.repeat(32));
     expect(parsed.verified_source_ref).toBeNull();
-  });
-
-  it('parses direct contract deploy responses from Torii', () => {
-    const parsed = ContractDeployResponse.parse({
-      ok: true,
-      contract_address: 'tairac1qyqqqqqqqqqqqq95fes93ygegsv5enq9mqsz6x4lv4vp9ggff82m7',
-      dataspace: 'party',
-      deploy_nonce: '7',
-      tx_hash_hex: 'aa'.repeat(32),
-      code_hash_hex: 'bb'.repeat(32),
-      abi_hash_hex: 'cc'.repeat(32),
-    });
-
-    expect(parsed.ok).toBe(true);
-    expect(parsed.contract_address).toBe('tairac1qyqqqqqqqqqqqq95fes93ygegsv5enq9mqsz6x4lv4vp9ggff82m7');
-    expect(parsed.dataspace).toBe('party');
-    expect(parsed.deploy_nonce).toBe(7);
   });
 
   it('accepts Ivm executable values in transaction payloads', () => {

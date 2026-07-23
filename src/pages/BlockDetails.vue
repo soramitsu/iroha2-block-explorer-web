@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router';
 import { computed } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
+import BaseResourceState from '@/shared/ui/components/BaseResourceState.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { getLocalTime, getUTCTime } from '@/shared/lib/time';
 import ArrowIcon from '@soramitsu-ui/icons/icomoon/arrows-chevron-left-rounded-24.svg';
@@ -13,7 +13,7 @@ import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { useTelemetryMetrics } from '@/shared/ui/composables/useTelemetryMetrics';
-import { NOT_FOUND, SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
 
 const router = useRouter();
@@ -31,14 +31,12 @@ const blockHeightOrHash = computed(() => {
 
 const blockScope = useParamScope(blockHeightOrHash, (value) => setupAsyncData(() => http.fetchBlock(value)));
 
-const isBlockLoading = computed(() => blockScope.value.expose.isLoading);
+const blockSnapshot = computed(() => blockScope.value.expose.snapshot);
 const block = computed(() => {
   if (blockScope.value?.expose.data?.status === SUCCESSFUL_FETCHING) return blockScope.value.expose.data.data;
 
   return null;
 });
-const isBlockNotFound = computed(() => blockScope.value?.expose.data?.status === NOT_FOUND);
-const isOtherError = computed(() => blockScope.value?.expose.data?.status === UNKNOWN_ERROR);
 const isBlockEmpty = computed(() => !block.value?.transactions_hash);
 
 const { metrics } = useTelemetryMetrics();
@@ -66,50 +64,43 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
   <div class="block-details">
     <BaseContentBlock class="block-details__metrics">
       <template #header>
-        <div
-          v-if="!isBlockLoading"
-          class="block-details__metrics-header"
-        >
-          <ArrowIcon
+        <div class="block-details__metrics-header">
+          <button
             v-if="isPreviousBlockExists"
-            role="button"
-            tabindex="0"
+            type="button"
+            class="block-details__metrics-header-navigation"
+            aria-label="Previous block"
             data-testid="prevBlock"
             @click="handlePreviousBlockClick"
-            @keydown.enter.space="handlePreviousBlockClick"
-          />
+          >
+            <ArrowIcon aria-hidden="true" />
+          </button>
           <span class="block-details__metrics-header-block">{{ $t('blocks.block', [blockHeightOrHash]) }}</span>
-          <ArrowIcon
+          <button
             v-if="isNextBlockExists"
-            role="button"
-            tabindex="0"
+            type="button"
+            class="block-details__metrics-header-navigation"
+            aria-label="Next block"
             data-testid="nextBlock"
             @click="handleNextBlockClick"
-            @keydown.enter.space="handleNextBlockClick"
-          />
+          >
+            <ArrowIcon aria-hidden="true" />
+          </button>
         </div>
       </template>
       <template #default>
-        <div
-          v-if="isBlockLoading"
-          class="block-details__metrics_loading"
+        <BaseResourceState
+          :snapshot="blockSnapshot"
+          loading-label="Loading block"
+          :not-found-label="$t('blocks.blockNotAvailableYet')"
+          :error-label="$t('blocks.unknownError')"
+          :retry-label="$t('transactions.retryInstruction')"
+          @retry="blockScope.expose.refetch()"
         >
-          <BaseLoading />
-        </div>
-        <div
-          v-else-if="isBlockNotFound"
-          class="block-details__metrics_error row-text"
-        >
-          {{ $t('blocks.blockNotAvailableYet') }}
-        </div>
-        <div
-          v-else-if="isOtherError"
-          class="block-details__metrics_error row-text"
-        >
-          {{ $t('blocks.unknownError') }}
-        </div>
-        <div v-else-if="block">
-          <div class="block-details__metrics-data">
+          <div
+            v-if="block"
+            class="block-details__metrics-data"
+          >
             <div class="block-details__metrics-data-row">
               <DataField
                 :title="$t('blocks.blockHash')"
@@ -156,7 +147,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
               />
             </div>
           </div>
-        </div>
+        </BaseResourceState>
       </template>
     </BaseContentBlock>
     <BaseContentBlock
@@ -172,7 +163,7 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
           :hash-type
         />
         <span
-          v-else-if="!isBlockLoading && isBlockEmpty"
+          v-else-if="isBlockEmpty"
           class="block-details__transactions_empty row-text"
         >{{
           $t('blocks.thisBlockIsEmpty')
@@ -214,10 +205,23 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
       @include tpg-h2();
 
       svg {
-        cursor: pointer;
         height: size(4);
         width: size(4);
         fill: theme-color('content-quaternary');
+      }
+
+      &-navigation {
+        display: inline-flex;
+        padding: size(1);
+        border: 0;
+        border-radius: size(1);
+        background: transparent;
+        cursor: pointer;
+
+        &:focus-visible {
+          outline: 2px solid theme-color('primary');
+          outline-offset: 2px;
+        }
       }
 
       [data-testid='nextBlock'] {
@@ -228,16 +232,6 @@ const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
         user-select: none;
         cursor: default;
       }
-    }
-
-    &_loading {
-      margin-top: size(1);
-      display: flex;
-      justify-content: center;
-    }
-
-    &_error {
-      margin: size(2) size(4) 0;
     }
 
     &-data {

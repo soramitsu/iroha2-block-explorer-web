@@ -44,7 +44,7 @@
     "totalNodes": "Total nodes",
     "searchPlaceholder": "Search by block height/hash, transaction hash, canonical halfwidth i105 account, account alias, asset Base58 ID/alias, or nft$domain",
     "title": {
-      "firstLine": "Hyperleger Iroha",
+      "firstLine": "Hyperledger Iroha",
       "secondLine": "Blockchain Explorer"
     },
     "search": {
@@ -1417,7 +1417,6 @@
     "fields": {
       "title": "Title",
       "dataspace": "Dataspace",
-      "directDeployPrivateKey": "Private key for direct Torii deploy",
       "authority": "Authority",
       "chainId": "Chain ID",
       "description": "Description",
@@ -1481,11 +1480,9 @@
     "sourceTitle": "Generated source",
     "sourceHint": "The block canvas writes Kotodama source for you in real time.",
     "compileTitle": "Compile and deploy",
-    "compileIdle": "Compile the current studio document to refresh hashes and the `/v1/contracts/deploy` request.",
     "compileBlocked": "Fix the live Studio checks before compiling or deploying.",
     "compileReady": "A compiled bundle is ready to sign and submit through Torii.",
     "compilePreview": "Preview mode is active until a real compiler endpoint is configured.",
-    "directDeployHint": "Paste a private key here to submit the deploy request directly to Torii. This value is kept only in page memory and is not exported with the Studio document.",
     "compileMode": "Compile mode",
     "codeHash": "Code hash",
     "abiHash": "ABI hash",

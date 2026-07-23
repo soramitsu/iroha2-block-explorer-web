@@ -143,6 +143,192 @@ export const Account = z
 
 export type Account = z.infer<typeof Account>;
 
+export const ToriiCountMode = z.enum(['bounded', 'exact']);
+export type ToriiCountMode = z.infer<typeof ToriiCountMode>;
+
+const CountedListEnvelope = z.object({
+  has_more: z.boolean(),
+  count_mode: ToriiCountMode,
+  total: z.number().int().nonnegative().optional(),
+});
+
+export const AccountPermission = z
+  .object({
+    name: z.string().min(1),
+    payload: z.json(),
+  })
+  .strict();
+export type AccountPermission = z.infer<typeof AccountPermission>;
+
+export const AccountPermissionsResponse = CountedListEnvelope.extend({
+  items: AccountPermission.array(),
+}).superRefine((value, ctx) => {
+  if (value.count_mode === 'exact' && value.total === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['total'],
+      message: 'Exact counted-list responses must include total',
+    });
+  }
+});
+export type AccountPermissionsResponse = z.infer<typeof AccountPermissionsResponse>;
+
+export const AccountHistoryItem = z
+  .object({
+    id: z.string().min(1),
+    source: z.string().min(1),
+    type: z.string().min(1),
+    timestamp_ms: z.number().int().nonnegative().optional(),
+    status: z.string().min(1),
+    result_ok: z.boolean().optional(),
+    direction: z.string().min(1),
+    account_id: AccountIdSchema,
+    counterparty_account_id: AccountIdSchema.optional(),
+    asset_id: z.string().min(1).optional(),
+    asset_definition_id: AssetDefinitionIdSchema.optional(),
+    amount: z.string().min(1).optional(),
+    tx_hash: z.string().min(1).optional(),
+    operation_id: z.string().min(1).optional(),
+    expires_at_ms: z.number().int().nonnegative().optional(),
+    finalized_at_ms: z.number().int().nonnegative().optional(),
+    requesting_fi_id: z.string().min(1).optional(),
+  })
+  .strict();
+export type AccountHistoryItem = z.infer<typeof AccountHistoryItem>;
+
+export const AccountHistoryResponse = CountedListEnvelope.extend({
+  items: AccountHistoryItem.array(),
+  indexed_height: z.number().int().nonnegative(),
+  indexed_block_hash: z.string().min(1).nullable(),
+  query_source: z.literal('account_history_index'),
+}).superRefine((value, ctx) => {
+  if (value.count_mode === 'exact' && value.total === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['total'],
+      message: 'Exact counted-list responses must include total',
+    });
+  }
+});
+export type AccountHistoryResponse = z.infer<typeof AccountHistoryResponse>;
+
+export const ContractActivity = z
+  .object({
+    authority: z.string().min(1).optional(),
+    timestamp_ms: z.number().int().nonnegative().optional(),
+    entrypoint_hash: z.string().min(1),
+    result_ok: z.boolean(),
+    contract_address: z.string().min(1),
+    contract_alias: z.string().min(1).optional(),
+    contract_entrypoint: z.string().min(1).optional(),
+    contract_payload: z.json().optional(),
+    fee_payment: z.json().optional(),
+  })
+  .strict();
+export type ContractActivity = z.infer<typeof ContractActivity>;
+
+export const ContractActivityResponse = z
+  .object({
+    items: ContractActivity.array(),
+    total: z.number().int().nonnegative(),
+    has_more: z.boolean(),
+    count_mode: z.literal('exact'),
+  })
+  .strict();
+export type ContractActivityResponse = z.infer<typeof ContractActivityResponse>;
+
+export const ContractEvent = z
+  .object({
+    event_id: z.string().min(1),
+    schema_version: z.number().int().nonnegative(),
+    provenance: z.enum(['emitted', 'derived']),
+    authority: z.string().min(1).optional(),
+    timestamp_ms: z.number().int().nonnegative().optional(),
+    tx_hash_hex: z.string().min(1),
+    block_height: z.number().int().nonnegative(),
+    block_hash_hex: z.string().min(1),
+    result_ok: z.boolean(),
+    contract_address: z.string().min(1),
+    contract_alias: z.string().min(1).optional(),
+    module: z.string().min(1),
+    event_kind: z.string().min(1),
+    participants: z.string().min(1).array().optional(),
+    asset_ids: z.string().min(1).array().optional(),
+    numeric_fields: z.json().optional(),
+    payload: z.json().optional(),
+    fee_payment: z.json().optional(),
+  })
+  .strict();
+export type ContractEvent = z.infer<typeof ContractEvent>;
+
+export const ContractEventResponse = z
+  .object({
+    items: ContractEvent.array(),
+    total: z.number().int().nonnegative(),
+    has_more: z.boolean(),
+    count_mode: z.literal('exact'),
+  })
+  .strict();
+export type ContractEventResponse = z.infer<typeof ContractEventResponse>;
+
+export const MultisigProposalStatus = z.enum([
+  'COLLECTING_SIGNATURES',
+  'FINALIZED',
+  'CANCELED',
+  'EXPIRED',
+]);
+export type MultisigProposalStatus = z.infer<typeof MultisigProposalStatus>;
+
+export const MultisigSpecPayload = z
+  .object({
+    signatories: z.record(AccountIdSchema, z.number().int().min(0).max(255)),
+    quorum: z.number().int().positive().max(65_535),
+    transaction_ttl_ms: z.number().int().positive(),
+  })
+  .strict();
+export type MultisigSpecPayload = z.infer<typeof MultisigSpecPayload>;
+
+export const MultisigSpecResponse = z
+  .object({
+    resolved_multisig_account_id: AccountIdSchema,
+    spec: MultisigSpecPayload,
+  })
+  .strict();
+export type MultisigSpecResponse = z.infer<typeof MultisigSpecResponse>;
+
+export const MultisigProposalPayload = z
+  .object({
+    instructions: z.array(z.record(z.string(), z.json())),
+    proposed_at_ms: z.number().int().nonnegative(),
+    expires_at_ms: z.number().int().nonnegative(),
+    approvals: AccountIdSchema.array(),
+    is_relayed: z.boolean().nullable().optional(),
+  })
+  .strict();
+export type MultisigProposalPayload = z.infer<typeof MultisigProposalPayload>;
+
+export const MultisigProposalEntry = z
+  .object({
+    proposal_id: z.string().regex(/^[0-9a-f]{64}$/u),
+    instructions_hash: z.string().regex(/^[0-9a-f]{64}$/u),
+    operation_type: z.string().regex(/^[A-Z][A-Z0-9_]*$/u),
+    intent: z.json().nullable().optional(),
+    proposal: MultisigProposalPayload,
+    status: MultisigProposalStatus,
+    terminal_at_ms: z.number().int().nonnegative().nullable().optional(),
+  })
+  .strict();
+export type MultisigProposalEntry = z.infer<typeof MultisigProposalEntry>;
+
+export const MultisigProposalsQueryResponse = z
+  .object({
+    resolved_multisig_account_id: AccountIdSchema,
+    proposals: MultisigProposalEntry.array().max(100),
+    next_cursor: z.string().regex(/^[A-Za-z0-9_-]+$/u).nullable().optional(),
+  })
+  .strict();
+export type MultisigProposalsQueryResponse = z.infer<typeof MultisigProposalsQueryResponse>;
+
 export interface AssetSearchParams extends PaginationParams {
   owned_by?: string;
   definition?: AssetDefinitionSelector;
@@ -471,6 +657,52 @@ export const Block = z.object({
 });
 
 export type Block = z.infer<typeof Block>;
+
+export const LedgerCommitQc = z.object({
+  phase: z.string(),
+  subject_block_hash: z.string(),
+  parent_state_root: z.string(),
+  post_state_root: z.string(),
+  height: z.number(),
+  view: z.number(),
+  epoch: z.number(),
+  mode_tag: z.string(),
+  highest_qc: z.object({
+    height: z.number(),
+    view: z.number(),
+    epoch: z.number(),
+    subject_block_hash: z.string(),
+    phase: z.string(),
+  }).strict().nullable(),
+  validator_set_hash: z.string(),
+  validator_set_hash_version: z.number(),
+  validator_set: z.string().array(),
+  aggregate: z.object({
+    signers_bitmap: z.string(),
+    bls_aggregate_signature: z.string(),
+  }).strict(),
+}).strict();
+
+export type LedgerCommitQc = z.infer<typeof LedgerCommitQc>;
+
+export const LedgerStateRoot = z.object({
+  height: z.number(),
+  block_hash: z.string(),
+  state_root: z.string(),
+  source: z.enum(['commit_qc', 'result_merkle_root']),
+  commit_qc: LedgerCommitQc.nullable(),
+}).strict();
+
+export type LedgerStateRoot = z.infer<typeof LedgerStateRoot>;
+
+export const LedgerStateProof = z.object({
+  height: z.number(),
+  block_hash: z.string(),
+  state_root: z.string(),
+  commit_qc: LedgerCommitQc,
+}).strict();
+
+export type LedgerStateProof = z.infer<typeof LedgerStateProof>;
 
 export const NetworkMetrics = z.object({
   peers: z.number(),
@@ -1142,25 +1374,6 @@ export const ContractVerifiedSourceJobResponse = z.object({
     .transform((value) => value ?? null),
 });
 export type ContractVerifiedSourceJobResponse = z.infer<typeof ContractVerifiedSourceJobResponse>;
-
-export const SubmitContractDeployRequest = z.object({
-  authority: z.string().trim().min(1),
-  private_key: z.string().trim().min(1),
-  code_b64: z.string().trim().min(1),
-  dataspace: z.string().trim().min(1).optional(),
-});
-export type SubmitContractDeployRequest = z.infer<typeof SubmitContractDeployRequest>;
-
-export const ContractDeployResponse = z.object({
-  ok: z.boolean(),
-  contract_address: z.string(),
-  dataspace: z.string(),
-  deploy_nonce: z.coerce.number(),
-  tx_hash_hex: z.string(),
-  code_hash_hex: z.string(),
-  abi_hash_hex: z.string(),
-});
-export type ContractDeployResponse = z.infer<typeof ContractDeployResponse>;
 
 export const KaigiRelayStatus = z.enum(['Healthy', 'Degraded', 'Unavailable']);
 export type KaigiRelayStatus = z.infer<typeof KaigiRelayStatus>;

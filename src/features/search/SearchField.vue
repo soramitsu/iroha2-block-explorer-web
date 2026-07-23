@@ -23,10 +23,9 @@ import { ref, computed, useId } from 'vue';
 import { useActiveElement } from '@vueuse/core';
 import { useNotifications } from '@/shared/ui/composables/notifications';
 import { useI18n } from 'vue-i18n';
-import { normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
-import { normalizeAssetDefinitionSelectorLiteral } from '@/shared/lib/asset-definition-literal';
-import { normalizeRwaIdLiteral } from '@/shared/lib/rwa-id';
+import type { RouteLocationRaw } from 'vue-router';
 import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
+import { classifySearchQuery } from './classifier';
 
 interface Props {
   size?: 'sm' | 'md' | 'lg'
@@ -58,65 +57,37 @@ function submit() {
 }
 
 function resolveNavigation(value: string): boolean {
-  if (/^\d+$/.test(value)) {
-    navigateTo('blocks-details', { heightOrHash: value });
-    return true;
-  }
+  const result = classifySearchQuery(value);
 
-  if (/^0x[a-fA-F0-9]{6,}$/.test(value)) {
-    navigateTo('transaction-details', { hash: value });
-    return true;
+  switch (result.kind) {
+    case 'hash':
+      navigateTo({ name: 'search-results', query: { q: result.value } });
+      return true;
+    case 'rwa':
+      navigateTo({ name: 'rwa-details', params: { id: result.value } });
+      return true;
+    case 'nft':
+      navigateTo({ name: 'nft-details', params: { id: result.value } });
+      return true;
+    case 'account':
+      navigateTo({ name: 'account-details', params: { id: result.value } });
+      return true;
+    case 'asset-definition':
+      navigateTo({ name: 'asset-details', params: { id: result.value } });
+      return true;
+    case 'domain':
+      navigateTo({ name: 'domain-details', params: { id: result.value } });
+      return true;
+    case 'block-height':
+      navigateTo({ name: 'blocks-details', params: { heightOrHash: result.value } });
+      return true;
+    case 'unsupported':
+      return false;
   }
-
-  const accountId = parseAccountId(value);
-  if (accountId) {
-    navigateTo('account-details', { id: accountId });
-    return true;
-  }
-
-  const assetDefinitionId = parseAssetDefinitionId(value);
-  if (assetDefinitionId) {
-    navigateTo('asset-details', { id: assetDefinitionId });
-    return true;
-  }
-
-  const rwaId = parseRwaId(value);
-  if (rwaId) {
-    navigateTo('rwa-details', { id: rwaId });
-    return true;
-  }
-
-  const nftId = parseNftId(value);
-  if (nftId) {
-    navigateTo('nft-details', { id: nftId });
-    return true;
-  }
-
-  return false;
 }
 
-function parseAccountId(value: string): string | null {
-  return normalizeAccountSelectorLiteral(value);
-}
-
-function parseAssetDefinitionId(value: string): string | null {
-  return normalizeAssetDefinitionSelectorLiteral(value);
-}
-
-function parseNftId(value: string): string | null {
-  const trimmed = value.trim();
-  const [name, domain] = trimmed.split('$');
-  if (!name || !domain) return null;
-  if (trimmed.indexOf('$') !== trimmed.lastIndexOf('$')) return null;
-  return /\s|[@#$]/u.test(name) || /\s|[@#$]/u.test(domain) ? null : trimmed;
-}
-
-function parseRwaId(value: string): string | null {
-  return normalizeRwaIdLiteral(value);
-}
-
-function navigateTo(name: string, params: Record<string, any>) {
-  const result = navigation.push({ name, params });
+function navigateTo(to: RouteLocationRaw) {
+  const result = navigation.push(to);
   if (result && typeof result.catch === 'function') {
     result.catch(() => {});
   }

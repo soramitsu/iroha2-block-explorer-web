@@ -40,6 +40,8 @@ describe('explorer scope helpers', () => {
     expect(shouldPreserveExplorerScopeForPath('/blocks')).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/accounts/abc')).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/rwas/lot-001%24commodities')).toBe(true);
+    expect(shouldPreserveExplorerScopeForPath('/search?q=abc')).toBe(true);
+    expect(shouldPreserveExplorerScopeForPath('/contracts')).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/soracloud')).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/dataspaces')).toBe(false);
     expect(shouldPreserveExplorerScopeForPath('/')).toBe(false);
@@ -84,6 +86,29 @@ describe('explorer scope helpers', () => {
     expect(scopedDestination).toMatchObject({
       name: 'rwa-details',
       params: { id: 'lot-001$commodities' },
+      query: toExplorerScopeQuery(scope),
+    });
+  });
+
+  it('applies scope to exact search and contract route-name destinations', () => {
+    const searchDestination = applyExplorerScopeToLocation(
+      { name: 'search-results', query: { q: 'ab'.repeat(32) } },
+      scope
+    ) as Exclude<RouteLocationRaw, string>;
+    expect(searchDestination).toMatchObject({
+      name: 'search-results',
+      query: {
+        q: 'ab'.repeat(32),
+        ...toExplorerScopeQuery(scope),
+      },
+    });
+
+    const contractsDestination = applyExplorerScopeToLocation({ name: 'smart-contracts' }, scope) as Exclude<
+      RouteLocationRaw,
+      string
+    >;
+    expect(contractsDestination).toMatchObject({
+      name: 'smart-contracts',
       query: toExplorerScopeQuery(scope),
     });
   });

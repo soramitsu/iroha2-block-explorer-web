@@ -18,8 +18,8 @@
       </BaseButton>
     </div>
     <BaseTable
-      v-model:page="listState.page"
-      v-model:page-size="listState.per_page"
+      v-model:page="page"
+      v-model:page-size="pageSize"
       :loading="isLoading"
       :total="payloadPagination?.total_items"
       :payload-pagination
@@ -122,7 +122,7 @@ import * as http from '@/shared/api';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
@@ -131,20 +131,12 @@ import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { useBlockStream } from '@/shared/ui/composables/useBlockStream';
 import type { Block } from '@/shared/api/schemas';
 import { useWindowScroll } from '@vueuse/core';
+import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xxs: 'short' }, 'medium');
 
-const listState = reactive({
-  page: 1,
-  per_page: 10,
-});
-
-watch(
-  () => listState.per_page,
-  () => {
-    listState.page = 1;
-  }
-);
+const { page, pageSize } = useListRouteQuery();
+const listParams = computed(() => ({ page: page.value, per_page: pageSize.value }));
 
 const { y: windowScrollY } = useWindowScroll();
 const isScrolledDown = computed(() => windowScrollY.value > 80);
@@ -152,7 +144,7 @@ const pendingRefresh = ref(false);
 
 let refetchLatestBlocks: (() => void) | null = null;
 const blockStream = useBlockStream(() => {
-  if (listState.page !== 1) return;
+  if (page.value !== 1) return;
   if (isScrolledDown.value) {
     pendingRefresh.value = true;
     return;
@@ -163,8 +155,8 @@ const blockStream = useBlockStream(() => {
 const scope = useParamScope(
   () => {
     return {
-      key: JSON.stringify(listState),
-      payload: listState,
+      key: JSON.stringify(listParams.value),
+      payload: listParams.value,
     };
   },
   ({ payload }) =>
@@ -193,7 +185,7 @@ const latestBlockProbe = setupAsyncData(() => http.fetchBlocks({ page: 1, per_pa
   immediate: false,
   pollWhen: () =>
     isScrolledDown.value &&
-    listState.page === 1 &&
+    page.value === 1 &&
     (!blockStream.isSupported || !blockStream.isStreaming.value),
   onError: () => {
     // Background probe while scrolling should not spam toasts; the main table fetch handles errors.
@@ -212,7 +204,7 @@ const maxDisplayedHeight = computed(() => {
 });
 
 watch(
-  () => [latestRemoteHeight.value, maxDisplayedHeight.value, isScrolledDown.value, listState.page] as const,
+  () => [latestRemoteHeight.value, maxDisplayedHeight.value, isScrolledDown.value, page.value] as const,
   ([remoteHeight, localHeight, scrolledDown, page]) => {
     if (!scrolledDown || page !== 1) {
       pendingRefresh.value = false;
@@ -225,7 +217,7 @@ watch(
 );
 
 watch(
-  () => [isScrolledDown.value, listState.page] as const,
+  () => [isScrolledDown.value, page.value] as const,
   ([scrolledDown, page], previous) => {
     const [prevScrolledDown, prevPage] = previous ?? [false, page];
     if (page !== 1) {

@@ -17,7 +17,7 @@ const TORII_API_VERSION_HEADER = 'x-iroha-api-version';
 const TORII_API_VERSION = '1.1';
 
 const eventSourceStore = vi.hoisted(() => ({
-  instances: [] as Array<{ source: unknown; data: Ref<string | null>; status: Ref<string> }>,
+  instances: [] as Array<{ source: unknown, data: Ref<string | null>, status: Ref<string> }>,
 }));
 
 const runtimeConfigState = vi.hoisted((): { value: Record<string, unknown> } => ({
@@ -522,7 +522,7 @@ describe('API url builders', () => {
       toriiFailoverMaxPeerCandidates: 8,
     };
 
-    const fetchSpy = vi.fn(async (input: unknown, _init?: RequestInit) => {
+    const fetchSpy = vi.fn(async (input: unknown) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (url.startsWith('https://torii.example/v1/explorer/transactions')) {
         return new Response('bad gateway', { status: 502 });
@@ -625,7 +625,7 @@ describe('API url builders', () => {
       toriiFailoverMaxPeerCandidates: 4,
     };
 
-    const fetchSpy = vi.fn(async (input: unknown) => {
+    const fetchSpy = vi.fn(async (input: unknown, _init?: RequestInit) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (url === 'https://torii.example/peers') {
         return new Response(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -1044,6 +1044,159 @@ describe('Explorer accounts API helpers', () => {
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.searchParams.get('address_format')).toBe('i105');
     expect(result.status).toBe(UNKNOWN_ERROR);
+  });
+});
+
+describe('Account read-only surface API helpers', () => {
+  const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
+
+  it('requests exact effective permissions with limit/offset and preserves JSON payload values', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          items: [{ name: 'CanTransfer', payload: { maximum: '100000000000000000001' } }],
+          total: 1,
+          has_more: false,
+          count_mode: 'exact',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    );
+    global.fetch = fetchSpy as any;
+
+    const { fetchAccountPermissions } = await importApiModule(toriiEnv);
+    const result = await fetchAccountPermissions(SAMPLE_ACCOUNT_ALIAS, { page: 3, per_page: 20 });
+
+    const requestUrl = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(requestUrl.pathname).toBe(`/v1/accounts/${encodeURIComponent(SAMPLE_ACCOUNT_ALIAS)}/permissions`);
+    expect(requestUrl.searchParams.get('limit')).toBe('20');
+    expect(requestUrl.searchParams.get('offset')).toBe('40');
+    expect(requestUrl.searchParams.get('count_mode')).toBe('exact');
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.items[0]?.payload).toEqual({ maximum: '100000000000000000001' });
+    }
+  });
+
+  it.each([401, 403])('returns an explicit permission-denied result for HTTP %s', async (status) => {
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response('private dataspace permission denied', { status })
+    ) as any;
+
+    const { fetchAccountPermissions } = await importApiModule(toriiEnv);
+    const result = await fetchAccountPermissions(SAMPLE_I105, { page: 1, per_page: 10 });
+
+    expect(result.status).toBe('permission-denied');
+    if (result.status === 'permission-denied') {
+      expect(result.error.message).toContain('private dataspace');
+    }
+  });
+
+  it('requests indexed account history with an exact asset selector and preserves amount strings', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          items: [
+            {
+              id: 'history:1',
+              source: 'asset_transfer',
+              type: 'TRANSFER',
+              timestamp_ms: 1_700_000_000_000,
+              status: 'Committed',
+              result_ok: true,
+              direction: 'outgoing',
+              account_id: SAMPLE_I105,
+              counterparty_account_id: SAMPLE_I105_ALT,
+              asset_id: SAMPLE_ASSET_ID,
+              asset_definition_id: SAMPLE_ASSET_DEFINITION_ID,
+              amount: '99999999999999999999.000001',
+              tx_hash: 'ab'.repeat(32),
+            },
+          ],
+          total: 1,
+          has_more: false,
+          count_mode: 'exact',
+          indexed_height: 77,
+          indexed_block_hash: 'cd'.repeat(32),
+          query_source: 'account_history_index',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    );
+    global.fetch = fetchSpy as any;
+
+    const { fetchAccountHistory } = await importApiModule(toriiEnv);
+    const result = await fetchAccountHistory(SAMPLE_I105, {
+      page: 2,
+      per_page: 10,
+      asset_id: SAMPLE_ASSET_ALIAS,
+    });
+
+    const requestUrl = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(requestUrl.pathname).toBe(`/v1/accounts/${encodeURIComponent(SAMPLE_I105)}/history`);
+    expect(requestUrl.searchParams.get('limit')).toBe('10');
+    expect(requestUrl.searchParams.get('offset')).toBe('10');
+    expect(requestUrl.searchParams.get('count_mode')).toBe('exact');
+    expect(requestUrl.searchParams.get('asset_id')).toBe(SAMPLE_ASSET_ALIAS);
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.items[0]?.amount).toBe('99999999999999999999.000001');
+      expect(result.data.query_source).toBe('account_history_index');
+    }
+  });
+
+  it('uses canonical signed multisig selectors for IDs and aliases without mutation controls', async () => {
+    const fetchSpy = vi.fn(async (input: unknown, init?: RequestInit) => {
+      const url = input instanceof URL ? input : new URL(String(input));
+      if (url.pathname === '/v1/multisig/spec') {
+        return new Response(
+          JSON.stringify({
+            resolved_multisig_account_id: SAMPLE_I105,
+            spec: {
+              signatories: { [SAMPLE_I105]: 2, [SAMPLE_I105_ALT]: 1 },
+              quorum: 2,
+              transaction_ttl_ms: 60_000,
+            },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      expect(url.pathname).toBe('/v1/multisig/proposals/query');
+      return new Response(
+        JSON.stringify({
+          resolved_multisig_account_id: SAMPLE_I105,
+          proposals: [],
+          next_cursor: null,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    });
+    global.fetch = fetchSpy as any;
+    const sign = vi.fn(async () => new Uint8Array(64).fill(7));
+    const auth = { authAccountId: SAMPLE_I105, sign };
+
+    const { fetchMultisigProposals, fetchMultisigSpec } = await importApiModule(toriiEnv);
+    const spec = await fetchMultisigSpec(SAMPLE_ACCOUNT_ALIAS, auth);
+    const proposals = await fetchMultisigProposals(
+      SAMPLE_I105,
+      { status: ['COLLECTING_SIGNATURES'], cursor: 'cursor_1', limit: 20 },
+      auth
+    );
+
+    expect(spec.status).toBe(SUCCESSFUL_FETCHING);
+    expect(proposals.status).toBe(SUCCESSFUL_FETCHING);
+    expect(sign).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    const specInit = fetchSpy.mock.calls[0]?.[1] as RequestInit;
+    const proposalsInit = fetchSpy.mock.calls[1]?.[1] as RequestInit;
+    expect(specInit.method).toBe('POST');
+    expect(JSON.parse(String(specInit.body))).toEqual({ multisig_account_alias: SAMPLE_ACCOUNT_ALIAS });
+    expect(JSON.parse(String(proposalsInit.body))).toEqual({
+      multisig_account_id: SAMPLE_I105,
+      status: ['COLLECTING_SIGNATURES'],
+      cursor: 'cursor_1',
+      limit: 20,
+    });
   });
 });
 
@@ -2479,6 +2632,92 @@ describe('Transaction API helpers', () => {
     expect(firstCall.searchParams.get('address_format')).toBe('i105');
   });
 
+  it('fetches state-root and persisted-QC evidence from their exact ledger routes', async () => {
+    const commitQc = {
+      phase: 'Commit',
+      subject_block_hash: 'hash:block',
+      parent_state_root: 'hash:parent',
+      post_state_root: 'hash:state',
+      height: 42,
+      view: 7,
+      epoch: 3,
+      mode_tag: 'sumeragi-v2',
+      highest_qc: null,
+      validator_set_hash: 'hash:validators',
+      validator_set_hash_version: 1,
+      validator_set: ['peer-a'],
+      aggregate: { signers_bitmap: '01', bls_aggregate_signature: 'cafe' },
+    };
+    const fetchSpy = vi.fn(async (input: unknown, _init?: RequestInit) => {
+      const url = input instanceof URL ? input : new URL(String(input));
+      const common = { height: 42, block_hash: 'hash:block', state_root: 'hash:state' };
+      return new Response(JSON.stringify(
+        url.pathname.includes('state-proof')
+          ? { ...common, commit_qc: commitQc }
+          : { ...common, source: 'commit_qc', commit_qc: commitQc }
+      ), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    global.fetch = fetchSpy as any;
+
+    const { fetchLedgerStateProof, fetchLedgerStateRoot } = await importApiModule(toriiEnv);
+    const [root, stateProof] = await Promise.all([
+      fetchLedgerStateRoot(42),
+      fetchLedgerStateProof(42),
+    ]);
+
+    expect(root.status).toBe(SUCCESSFUL_FETCHING);
+    expect(stateProof.status).toBe(SUCCESSFUL_FETCHING);
+    expect(fetchSpy.mock.calls.map((call) => (call[0] as URL).pathname).sort()).toEqual([
+      '/v1/ledger/state-proof/42',
+      '/v1/ledger/state/42',
+    ]);
+    expect(fetchSpy.mock.calls.every((call) => (
+      (call[1] as RequestInit).headers as Record<string, string>
+    ).Accept === 'application/json')).toBe(true);
+  });
+
+  it('runs the canonical SDK verifier over the decoded block proof', async () => {
+    const module = await importApiModule(toriiEnv);
+    const { ToriiBrowserClient } = await import('@iroha/iroha-js/torii-browser');
+    const decoded = {
+      block_height: '42',
+      entry_hash: 'not-a-valid-hash',
+      entry_root: 'not-a-valid-root',
+      entry_proof: {
+        leaf: 'not-a-valid-hash',
+        proof: { leaf_index: 0, audit_path: [] },
+      },
+      result_root: null,
+      result_proof: null,
+      fastpq_transcripts: {},
+    };
+    const proofSpy = vi
+      .spyOn(ToriiBrowserClient.prototype, 'getLedgerBlockProof')
+      .mockResolvedValue(decoded as any);
+
+    const result = await module.fetchLedgerBlockProof(42, 'a'.repeat(64));
+
+    expect(proofSpy).toHaveBeenCalledWith(42, 'a'.repeat(64));
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.proof).toBe(decoded);
+      expect(result.data.verification.valid).toBe(false);
+      expect(result.data.verification.entry_proof_valid).toBe(false);
+    }
+    proofSpy.mockRestore();
+  });
+
+  it('keeps a missing canonical block proof explicitly not-found', async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response('missing', { status: 404, headers: { 'content-type': 'text/plain' } })
+    ) as any;
+    const { fetchLedgerBlockProof } = await importApiModule(toriiEnv);
+
+    const result = await fetchLedgerBlockProof(42, 'a'.repeat(64));
+
+    expect(result.status).toBe(NOT_FOUND);
+  });
+
   it('fetchInstructionDetail requests i105 address formatting', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
@@ -2577,45 +2816,6 @@ describe('Transaction API helpers', () => {
     expect((requestInit as RequestInit)?.headers).toMatchObject({
       Accept: 'application/json',
       'Content-Type': 'application/json',
-    });
-  });
-
-  it('submitContractDeployRequest posts direct deploy payloads to Torii and parses the response', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      Response.json({
-        ok: true,
-        contract_address: 'tairac1qyqqqqqqqqqqqq95fes93ygegsv5enq9mqsz6x4lv4vp9ggff82m7',
-        dataspace: 'party',
-        deploy_nonce: 9,
-        tx_hash_hex: 'aa'.repeat(32),
-        code_hash_hex: 'bb'.repeat(32),
-        abi_hash_hex: 'cc'.repeat(32),
-      })
-    );
-    global.fetch = fetchSpy as any;
-
-    const { submitContractDeployRequest } = await importApiModule(toriiEnv);
-    const result = await submitContractDeployRequest({
-      authority: SAMPLE_I105,
-      private_key: 'ed25519:priv',
-      code_b64: 'YmluYXJ5',
-      dataspace: 'party',
-    });
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.contract_address).toBe('tairac1qyqqqqqqqqqqqq95fes93ygegsv5enq9mqsz6x4lv4vp9ggff82m7');
-      expect(result.data.deploy_nonce).toBe(9);
-    }
-
-    const [requestUrl, requestInit] = fetchSpy.mock.calls[0] ?? [];
-    expect((requestUrl as URL).pathname).toBe('/v1/contracts/deploy');
-    expect((requestInit as RequestInit)?.method).toBe('POST');
-    expect(JSON.parse(String((requestInit as RequestInit)?.body))).toEqual({
-      authority: SAMPLE_I105,
-      private_key: 'ed25519:priv',
-      code_b64: 'YmluYXJ5',
-      dataspace: 'party',
     });
   });
 

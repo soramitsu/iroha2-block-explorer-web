@@ -13,19 +13,74 @@ const notifications = vi.hoisted(() => ({
   error: vi.fn(),
 }));
 
-const apiMocks = vi.hoisted(() => ({
-  submitContractDeployRequest: vi.fn(),
+const compilerMocks = vi.hoisted(() => ({
+  compilerUrl: 'https://compiler.example' as string | null,
+  compileKotodamaStudioSource: vi.fn(),
 }));
 
 vi.mock('@/shared/ui/composables/notifications', () => ({
   useNotifications: () => notifications,
 }));
 
-vi.mock('@/shared/api', () => ({
-  submitContractDeployRequest: apiMocks.submitContractDeployRequest,
+vi.mock('@/shared/lib/kotodama-studio-compiler-config', () => ({
+  getKotodamaCompilerUrl: () => compilerMocks.compilerUrl,
+}));
+
+vi.mock('@/shared/lib/kotodama-studio-deploy', () => ({
+  compileKotodamaStudioSource: compilerMocks.compileKotodamaStudioSource,
 }));
 
 const STORAGE_KEY = 'kotodama_studio_graph_document_v2';
+
+function createMemoryStorage(): Storage {
+  const values = new Map<string, string>();
+  return {
+    get length() {
+      return values.size;
+    },
+    clear() {
+      values.clear();
+    },
+    getItem(key: string) {
+      return values.get(key) ?? null;
+    },
+    key(index: number) {
+      return [...values.keys()][index] ?? null;
+    },
+    removeItem(key: string) {
+      values.delete(key);
+    },
+    setItem(key: string, value: string) {
+      values.set(key, String(value));
+    },
+  };
+}
+
+function createCompileResult(codeHashHex = 'aa'.repeat(32)) {
+  return {
+    artifactLabel: '.to bundle',
+    artifactB64: 'AQIDBA==',
+    codeHashHex,
+    abiHashHex: 'bb'.repeat(32),
+    compilerFingerprint: 'kotodama_lang/current-rust',
+    diagnostics: [],
+    warnings: [],
+    manifest: { seiyaku_name: 'StudioGraph' },
+    sourceMap: [],
+    budgetReport: [],
+    summary: { states: [], entrypoints: [], triggers: [] },
+  };
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
 
 const ContractGraphCanvasStub = defineComponent({
   name: 'ContractGraphCanvas',
@@ -108,17 +163,20 @@ function factory() {
 
 describe('KotodamaStudio', () => {
   beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
     notifications.success.mockClear();
     notifications.error.mockClear();
-    apiMocks.submitContractDeployRequest.mockReset();
+    compilerMocks.compilerUrl = 'https://compiler.example';
+    compilerMocks.compileKotodamaStudioSource.mockReset().mockResolvedValue(createCompileResult());
     localStorage.clear();
   });
 
   afterEach(() => {
     localStorage.clear();
+    vi.unstubAllGlobals();
   });
 
-  it('renders graph-generated source and local compile details', async () => {
+  it('renders graph-generated source and canonical Rust compile details', async () => {
     const wrapper = factory();
     await settle();
 
@@ -129,60 +187,163 @@ describe('KotodamaStudio', () => {
     await wrapper.get('[data-test="studio-compile"]').trigger('click');
     await settle();
 
-    expect(wrapper.get('[data-test="studio-compile-mode"]').text()).toBe('graph-local-browser');
+    expect(wrapper.get('[data-test="studio-compile-mode"]').text()).toBe('canonical-rust-service');
     expect(wrapper.get('[data-test="studio-deploy"]').attributes('disabled')).toBeDefined();
-    expect(notifications.success).toHaveBeenCalledWith('Contract bundle compiled locally.');
+    expect(compilerMocks.compileKotodamaStudioSource).toHaveBeenCalledWith(expect.objectContaining({
+      compilerUrl: 'https://compiler.example',
+      source: expect.stringContaining('seiyaku StablecoinSimple'),
+    }));
+    expect(notifications.success).toHaveBeenCalledWith('Contract bundle compiled by the canonical Rust service.');
   });
 
-  it('requires a private key before enabling direct deploy', async () => {
+  it('fails closed when no trusted compiler service URL is configured', async () => {
+    compilerMocks.compilerUrl = null;
+    const wrapper = factory();
+    await settle();
+
+    expect(wrapper.get('[data-test="studio-compile"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.get('[data-test="studio-compile-panel"]').text())
+      .toContain('Compilation is disabled until an operator configures a trusted canonical Rust compiler service URL.');
+    expect(compilerMocks.compileKotodamaStudioSource).not.toHaveBeenCalled();
+  });
+
+  it('keeps deployment visibly unavailable without accepting a signing credential', async () => {
+    const wrapper = factory();
+    await settle();
+
+    expect(wrapper.get('[data-test="studio-deploy"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.get('[data-test="studio-deployment-unavailable"]').text())
+      .toContain('does not provide an approved browser signing and submission API');
+    expect(wrapper.find('input[type="password"]').exists()).toBe(false);
+
+    await wrapper.get('[data-test="studio-compile"]').trigger('click');
+    await settle();
+
+    expect(wrapper.get('[data-test="studio-deploy"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('input[type="password"]').exists()).toBe(false);
+  });
+
+  it('renders canonical Rust source diagnostics at their graph location', async () => {
+    compilerMocks.compileKotodamaStudioSource.mockResolvedValue({
+      artifactLabel: '.to bundle',
+      artifactB64: '',
+      codeHashHex: '',
+      abiHashHex: '',
+      compilerFingerprint: '',
+      diagnostics: [{
+        code: 'EK_PARSE',
+        severity: 'error',
+        phase: 'parse',
+        message: 'Unexpected token',
+        primary_span: {
+          source: 'studio.ko',
+          start: { line: 3, column: 5 },
+          end: { line: 3, column: 6 },
+          byte_range: { start: 10, end: 11 },
+        },
+        labels: [],
+        notes: [],
+        help: null,
+        fix: null,
+      }],
+      warnings: [],
+      manifest: null,
+      sourceMap: [],
+      budgetReport: [],
+      summary: { states: [], entrypoints: [], triggers: [] },
+    });
     const wrapper = factory();
     await settle();
 
     await wrapper.get('[data-test="studio-compile"]').trigger('click');
     await settle();
 
-    expect(wrapper.get('[data-test="studio-deploy"]').attributes('disabled')).toBeDefined();
-
-    await wrapper.get('[data-test="studio-direct-deploy-private-key"]').setValue('ed25519:priv');
-    await settle();
-
-    expect(wrapper.get('[data-test="studio-deploy"]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.get('[data-test="studio-semantic-diagnostics"]').text())
+      .toContain('Line 3, column 5: Unexpected token');
+    expect(notifications.error).toHaveBeenCalledWith('The canonical Rust compiler found problems.');
+    expect(wrapper.find('[data-test="studio-direct-deploy-private-key"]').exists()).toBe(false);
   });
 
-  it('submits graph compile artifacts directly to Torii and clears the private key', async () => {
-    apiMocks.submitContractDeployRequest.mockResolvedValue({
-      ok: true,
-      statusCode: 200,
-      data: {
-        ok: true,
-        contract_address: 'tairac1qyqqqqqqqqqqqq95fes93ygegsv5enq9mqsz6x4lv4vp9ggff82m7',
-        dataspace: 'stable',
-        deploy_nonce: 2,
-        tx_hash_hex: '0xdirect123',
-        code_hash_hex: 'aa'.repeat(32),
-        abi_hash_hex: 'bb'.repeat(32),
-      },
-    });
-
+  it('surfaces compiler-service transport failures separately from source diagnostics', async () => {
+    compilerMocks.compileKotodamaStudioSource.mockRejectedValue(
+      new Error('Kotodama compiler service failed (503): unavailable')
+    );
     const wrapper = factory();
     await settle();
 
     await wrapper.get('[data-test="studio-compile"]').trigger('click');
     await settle();
-    await wrapper.get('[data-test="studio-direct-deploy-private-key"]').setValue('ed25519:priv');
+
+    expect(wrapper.get('[data-test="studio-compile-panel"]').text())
+      .toContain('Kotodama compiler service failed (503): unavailable');
+    expect(notifications.error)
+      .toHaveBeenCalledWith('Kotodama compiler service failed (503): unavailable');
+    expect(wrapper.find('[data-test="studio-compile-mode"]').exists()).toBe(false);
+  });
+
+  it('discards a compiler response when the graph is edited while the request is awaiting', async () => {
+    const pendingCompile = createDeferred<ReturnType<typeof createCompileResult>>();
+    compilerMocks.compileKotodamaStudioSource.mockReturnValueOnce(pendingCompile.promise);
+    const wrapper = factory();
     await settle();
 
-    await wrapper.get('[data-test="studio-deploy"]').trigger('click');
+    await wrapper.get('[data-test="studio-compile"]').trigger('click');
+    await flushPromises();
+    expect(compilerMocks.compileKotodamaStudioSource).toHaveBeenCalledTimes(1);
+
+    await findFieldControl(wrapper, 'Contract title').setValue('EditedWhileCompiling');
+    await settle();
+    pendingCompile.resolve(createCompileResult('11'.repeat(32)));
     await settle();
 
-    expect(apiMocks.submitContractDeployRequest).toHaveBeenCalledWith({
-      authority: 'operator@stable.main',
-      private_key: 'ed25519:priv',
-      code_b64: expect.any(String),
-      dataspace: 'stable',
-    });
-    expect(notifications.success).toHaveBeenCalledWith('Deploy submitted: 0xdirect123');
-    expect((wrapper.get('[data-test="studio-direct-deploy-private-key"]').element as HTMLInputElement).value).toBe('');
+    expect(wrapper.find('[data-test="studio-compile-mode"]').exists()).toBe(false);
+    expect(wrapper.get('[data-test="studio-compile-panel"]').text()).not.toContain('11'.repeat(32));
+    expect(notifications.success).not.toHaveBeenCalled();
+  });
+
+  it('keeps the newest compile authoritative when responses arrive out of order', async () => {
+    const firstCompile = createDeferred<ReturnType<typeof createCompileResult>>();
+    const secondCompile = createDeferred<ReturnType<typeof createCompileResult>>();
+    compilerMocks.compileKotodamaStudioSource
+      .mockReturnValueOnce(firstCompile.promise)
+      .mockReturnValueOnce(secondCompile.promise);
+    const wrapper = factory();
+    await settle();
+
+    await wrapper.get('[data-test="studio-compile"]').trigger('click');
+    await flushPromises();
+    await findFieldControl(wrapper, 'Contract title').setValue('NewerSource');
+    await settle();
+    await wrapper.get('[data-test="studio-compile"]').trigger('click');
+    await flushPromises();
+
+    secondCompile.resolve(createCompileResult('22'.repeat(32)));
+    await settle();
+    expect(wrapper.get('[data-test="studio-compile-panel"]').text()).toContain('22'.repeat(32));
+
+    firstCompile.resolve(createCompileResult('11'.repeat(32)));
+    await settle();
+    expect(wrapper.get('[data-test="studio-compile-panel"]').text()).toContain('22'.repeat(32));
+    expect(wrapper.get('[data-test="studio-compile-panel"]').text()).not.toContain('11'.repeat(32));
+    expect(notifications.success).toHaveBeenCalledTimes(1);
+  });
+
+  it('discards a response when the configured compiler service changes during the request', async () => {
+    const pendingCompile = createDeferred<ReturnType<typeof createCompileResult>>();
+    compilerMocks.compileKotodamaStudioSource.mockReturnValueOnce(pendingCompile.promise);
+    const wrapper = factory();
+    await settle();
+
+    await wrapper.get('[data-test="studio-compile"]').trigger('click');
+    await flushPromises();
+    compilerMocks.compilerUrl = 'https://new-compiler.example';
+    pendingCompile.resolve(createCompileResult('33'.repeat(32)));
+    await settle();
+
+    expect(wrapper.find('[data-test="studio-compile-mode"]').exists()).toBe(false);
+    expect(wrapper.get('[data-test="studio-compile-panel"]').text()).not.toContain('33'.repeat(32));
+    expect(wrapper.find('.kotodama-studio__loading').exists()).toBe(false);
+    expect(notifications.success).not.toHaveBeenCalled();
   });
 
   it('switches templates and updates generated source from inspector edits', async () => {
@@ -308,14 +469,10 @@ describe('KotodamaStudio', () => {
     expect(wrapper.get('[data-test="graph-diagnostic-count"]').text()).toBe('2');
   });
 
-  it('persists v2 graph state without private-key persistence', async () => {
+  it('persists v2 graph state without a browser credential surface', async () => {
     const wrapper = factory();
     await settle();
 
-    await wrapper.get('[data-test="studio-compile"]').trigger('click');
-    await settle();
-    await wrapper.get('[data-test="studio-direct-deploy-private-key"]').setValue('ed25519:super-secret');
-    await settle();
     await wrapper.get('[data-test="studio-template-asset_ops"]').trigger('click');
     await settle();
 
@@ -323,6 +480,6 @@ describe('KotodamaStudio', () => {
     expect(storedDocument).toBeTruthy();
     expect(storedDocument).toContain('"version": 2');
     expect(storedDocument).toContain('"title": "AssetOps"');
-    expect(storedDocument).not.toContain('ed25519:super-secret');
+    expect(wrapper.find('input[type="password"]').exists()).toBe(false);
   });
 });

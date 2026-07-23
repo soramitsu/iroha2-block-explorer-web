@@ -61,7 +61,10 @@ describe('HomePage', () => {
     expect(pushSpy).toHaveBeenNthCalledWith(1, { name: 'blocks-details', params: { heightOrHash: '12345' } });
 
     await tags[1].trigger('click');
-    expect(pushSpy).toHaveBeenNthCalledWith(2, { name: 'transaction-details', params: { hash: '0xabc123' } });
+    expect(pushSpy).toHaveBeenNthCalledWith(2, {
+      name: 'search-results',
+      query: { q: '0301b76be6d3dead32484180986523173082d770bc4fd954760d0a74a434624f' },
+    });
 
     await tags[2].trigger('click');
     expect(pushSpy).toHaveBeenNthCalledWith(3, { name: 'account-details', params: { id: sampleAccountId } });

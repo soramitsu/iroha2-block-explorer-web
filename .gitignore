@@ -33,6 +33,7 @@ public/config.json
 !.env.example
 !.env.*.example
 *.local
+.mochi/
 
 # Editor directories and files
 .vscode/*

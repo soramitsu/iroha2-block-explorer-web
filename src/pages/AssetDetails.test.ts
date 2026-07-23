@@ -13,7 +13,7 @@ const routeState = ref({
 });
 
 const setupStateQueue = vi.hoisted((): any[] => []);
-const assetDetailsStates = vi.hoisted(() => ({
+const assetDetailsStates = vi.hoisted((): any => ({
   asset: {
     isLoading: false,
     data: {
@@ -85,6 +85,12 @@ describe('AssetDetails', () => {
       params: { id: SAMPLE_ASSET_ALIAS },
     };
     setupStateQueue.splice(0);
+    assetDetailsStates.asset.snapshot = {
+      status: 'ready',
+      data: assetDetailsStates.asset.data,
+      isRefreshing: false,
+      refreshError: null,
+    };
     setupStateQueue.push(assetDetailsStates.asset, assetDetailsStates.assets);
   });
 
@@ -126,5 +132,40 @@ describe('AssetDetails', () => {
     await flushPromises();
 
     expect(wrapper.text()).not.toContain(i18n.global.t('searchUnsupported'));
+  });
+
+  it('renders an explicit not-found state and hides the holder controls', async () => {
+    setupStateQueue.splice(0, setupStateQueue.length, {
+      isLoading: false,
+      data: undefined,
+      snapshot: { status: 'not-found' },
+      refetch: vi.fn(),
+    });
+
+    const wrapper = factory();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Asset definition not found');
+    expect(wrapper.find('input').exists()).toBe(false);
+  });
+
+  it('does not retry a terminal error until the user activates retry', async () => {
+    const refetch = vi.fn();
+    setupStateQueue.splice(0, setupStateQueue.length, {
+      isLoading: false,
+      data: undefined,
+      snapshot: {
+        status: 'error',
+        problem: { kind: 'network', message: 'offline' },
+      },
+      refetch,
+    });
+
+    const wrapper = factory();
+    await flushPromises();
+
+    expect(refetch).not.toHaveBeenCalled();
+    await wrapper.get('[data-test="resource-retry"]').trigger('click');
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

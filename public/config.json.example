@@ -1,5 +1,6 @@
 {
   "toriiBaseUrl": "https://nexus.mof3.sora.org:18080",
+  "kotodamaCompilerUrl": "https://compiler.example",
   "sorafsPublicBaseUrl": "https://taira.sora.org",
   "toriiEconometricsEndpointsEnabled": true,
   "toriiFailoverEnabled": true,

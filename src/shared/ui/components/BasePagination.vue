@@ -142,7 +142,10 @@ const shouldShowDropdown = computed(
 </script>
 
 <template>
-  <div class="base-pagination">
+  <nav
+    class="base-pagination"
+    aria-label="Pagination"
+  >
     <div
       v-if="props.totalItems"
       class="base-pagination__item"
@@ -166,42 +169,56 @@ const shouldShowDropdown = computed(
       class="base-pagination__item"
     >
       <div class="base-pagination__item-numbers">
-        <span
+        <template
           v-for="(item, i) in displayNumbers"
-          :key="i"
-          class="base-pagination__item-numbers-number"
-          :data-active="isPageActive(item)"
-          :data-ellipsis="!Number.isInteger(item) || null"
-          :role="Number.isInteger(item) ? 'button' : undefined"
-          :aria-pressed="Number.isInteger(item) ? !!isPageActive(item) : undefined"
-          :tabindex="Number.isInteger(item) ? 0 : -1"
-          @click="Number.isInteger(item) && setPage(Number(item))"
-          @keydown.enter.space="Number.isInteger(item) && setPage(Number(item))"
+          :key="`${i}-${item}`"
         >
-          {{ item }}
-        </span>
+          <button
+            v-if="Number.isInteger(item)"
+            type="button"
+            class="base-pagination__item-numbers-number"
+            :data-active="isPageActive(item)"
+            :aria-current="isPageActive(item) ? 'page' : undefined"
+            :aria-label="`Page ${item}`"
+            @click="setPage(Number(item))"
+          >
+            {{ item }}
+          </button>
+          <span
+            v-else
+            class="base-pagination__item-numbers-number"
+            data-ellipsis
+            aria-hidden="true"
+          >
+            {{ item }}
+          </span>
+        </template>
       </div>
 
       <div class="base-pagination__arrows">
-        <ArrowIcon
+        <button
+          type="button"
           data-testid="prev"
-          role="button"
-          tabindex="0"
+          aria-label="Previous page"
           :aria-disabled="!canGoPrev"
+          :disabled="!canGoPrev"
           @click="goPrev"
-          @keydown.enter.space="goPrev"
-        />
-        <ArrowIcon
+        >
+          <ArrowIcon aria-hidden="true" />
+        </button>
+        <button
+          type="button"
           data-testid="next"
-          role="button"
-          tabindex="0"
+          aria-label="Next page"
           :aria-disabled="!canGoNext"
+          :disabled="!canGoNext"
           @click="goNext"
-          @keydown.enter.space="goNext"
-        />
+        >
+          <ArrowIcon aria-hidden="true" />
+        </button>
       </div>
     </div>
-  </div>
+  </nav>
 </template>
 
 <style scoped lang="scss">
@@ -235,6 +252,10 @@ const shouldShowDropdown = computed(
       user-select: none;
 
       &-number {
+        padding: 0;
+        border: 0;
+        font: inherit;
+        background: transparent;
         @include tpg-s5-bold;
         color: theme-color('content-secondary');
         min-width: size(3);
@@ -290,7 +311,7 @@ const shouldShowDropdown = computed(
     display: flex;
     gap: size(0.5);
 
-    & > svg {
+    & > button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -304,18 +325,24 @@ const shouldShowDropdown = computed(
       cursor: pointer;
       transition: all 180ms ease;
 
-      &[data-testid='prev'] {
+      &[data-testid='prev'] svg {
         transform: rotateY(180deg);
       }
 
-      &:hover:not([aria-disabled='true']) {
+      &:hover:not(:disabled) {
         color: theme-color('content-primary');
         background: theme-color('background-hover');
       }
 
-      &[aria-disabled='true'] {
+      &:disabled {
         opacity: 0.35;
         cursor: default;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
       }
     }
   }

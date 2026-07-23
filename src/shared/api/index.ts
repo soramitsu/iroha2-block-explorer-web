@@ -29,7 +29,9 @@ import type {
   SoracloudAgentAutonomyStatusQuery,
   ZkAttachmentSearchParams,
   ZkProverReportSearchParams,
-  SubmitVerifiedContractSource} from '@/shared/api/schemas';
+  SubmitVerifiedContractSource,
+  MultisigProposalStatus,
+} from '@/shared/api/schemas';
 import {
   Account,
   Paginated,
@@ -93,10 +95,18 @@ import {
   CountResponse,
   NexusDataspacesAccountSummary,
   NexusPublicStatus,
-  ContractDeployResponse,
   ContractCodeView,
   ContractVerifiedSourceJobResponse,
-  SubmitContractDeployRequest
+  ContractActivity,
+  ContractActivityResponse,
+  ContractEvent,
+  ContractEventResponse,
+  LedgerStateRoot,
+  LedgerStateProof,
+  AccountPermissionsResponse,
+  AccountHistoryResponse,
+  MultisigSpecResponse,
+  MultisigProposalsQueryResponse,
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
 import { computed, readonly, ref } from 'vue';
@@ -106,9 +116,20 @@ import { transformErrorResponse } from '@/shared/utils/transform-error-response'
 import type { SuccessfulFetching } from '@/shared/api/consts';
 import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 import { getRuntimeConfig } from '@/shared/runtime-config';
-import { normalizeToriiAccountSelectorLiteral } from '@/shared/lib/account-literal';
-import { ToriiBrowserClient, ToriiBrowserHttpError } from '@iroha/iroha-js/torii-browser';
+import { normalizeAccountIdLiteral, normalizeToriiAccountSelectorLiteral } from '@/shared/lib/account-literal';
+import {
+  ToriiBrowserClient,
+  ToriiBrowserHttpError,
+  ToriiBrowserStreamGapError,
+} from '@iroha/iroha-js/torii-browser';
+import type {
+  ToriiBlockProofs,
+  ToriiBlockProofVerification,
+  ToriiBrowserCanonicalRequestOptions,
+  ToriiSseEvent,
+} from '@iroha/iroha-js/torii-browser';
 export { appendSearchParams } from './query';
+export { ToriiBrowserStreamGapError };
 
 const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim();
 const defaultOrigin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -616,6 +637,8 @@ export function buildToriiWsUrl(path: string): string {
 
 type GetResult<T> = { status: SuccessfulFetching, data: T } | { status: 'error', response: Response };
 type ResultWithStatus<T> = { status: SuccessfulFetching, data: T } | ErrorResponse;
+export type PermissionAwareResult<T> = ResultWithStatus<T> | { status: 'permission-denied', error: Error };
+export type ToriiCanonicalRequestAuth = Pick<ToriiBrowserCanonicalRequestOptions, 'authAccountId' | 'sign'>;
 interface ConflictResult<T> { status: 'conflict', data: T }
 
 const TORII_API_PREFIXES = [
@@ -900,9 +923,31 @@ async function toriiSdkFetch(input: RequestInfo | URL, init?: RequestInit): Prom
   }
 }
 
-function toriiSdkClient(): ToriiBrowserClient {
+async function toriiSdkStreamFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  try {
+    const response = await fetch(input, {
+      ...init,
+      cache: 'no-store',
+    });
+
+    if (!response.ok && FAILOVER_STATUSES.has(response.status)) {
+      trackToriiFailure(`HTTP ${response.status}`);
+    } else if (response.ok && (toriiAvailabilityState.value !== 'healthy' || toriiFailureCountState.value > 0)) {
+      markToriiHealthy();
+    }
+
+    return response;
+  } catch (error) {
+    if (!init?.signal?.aborted) {
+      trackToriiFailure(error instanceof Error ? error.message : String(error));
+    }
+    throw error;
+  }
+}
+
+function toriiSdkClient(fetchImpl = toriiSdkFetch): ToriiBrowserClient {
   return new ToriiBrowserClient(getToriiBaseUrl(), {
-    fetchImpl: toriiSdkFetch,
+    fetchImpl,
     defaultHeaders: toriiRequiredHeaders(),
   });
 }
@@ -916,6 +961,27 @@ async function parseToriiSdkResult<T>(
     return { status: SUCCESSFUL_FETCHING, data: schema.parse(payload) };
   } catch (error) {
     if (error instanceof ToriiBrowserHttpError) {
+      return await transformErrorResponse(error.response);
+    }
+    throw error;
+  }
+}
+
+async function parsePermissionAwareToriiSdkResult<T>(
+  request: (client: ToriiBrowserClient) => Promise<unknown>,
+  schema: ZodType<T>
+): Promise<PermissionAwareResult<T>> {
+  try {
+    const payload = await request(toriiSdkClient());
+    return { status: SUCCESSFUL_FETCHING, data: schema.parse(payload) };
+  } catch (error) {
+    if (error instanceof ToriiBrowserHttpError) {
+      if (error.status === 401 || error.status === 403) {
+        return {
+          status: 'permission-denied',
+          error: new Error(error.bodyText || `Torii denied this read with status ${error.status}`),
+        };
+      }
       return await transformErrorResponse(error.response);
     }
     throw error;
@@ -940,6 +1006,84 @@ export async function fetchAccount(id: string): Promise<ResultWithStatus<Account
   return await parseToriiSdkResult(
     (client) => client.getExplorerAccount(normalizedId, { address_format: I105_ADDRESS_FORMAT }),
     Account
+  );
+}
+
+export type AccountPermissionsSearchParams = PaginationParams;
+
+export interface AccountHistorySearchParams extends PaginationParams {
+  asset_id?: string
+}
+
+export async function fetchAccountPermissions(
+  id: string,
+  params: AccountPermissionsSearchParams
+): Promise<PermissionAwareResult<AccountPermissionsResponse>> {
+  const normalizedId = normalizeToriiAccountSelectorLiteral(id) ?? id.trim();
+  return await parsePermissionAwareToriiSdkResult(
+    (client) => client.listAccountPermissions(normalizedId, {
+      ...toLimitOffsetParams(params),
+      countMode: 'exact',
+    }),
+    AccountPermissionsResponse
+  );
+}
+
+export async function fetchAccountHistory(
+  id: string,
+  params: AccountHistorySearchParams
+): Promise<PermissionAwareResult<AccountHistoryResponse>> {
+  const normalizedId = normalizeToriiAccountSelectorLiteral(id) ?? id.trim();
+  return await parsePermissionAwareToriiSdkResult(
+    (client) => client.listAccountHistory(normalizedId, {
+      ...toLimitOffsetParams(params),
+      countMode: 'exact',
+      assetId: params.asset_id?.trim() || undefined,
+    }),
+    AccountHistoryResponse
+  );
+}
+
+export interface MultisigProposalsSearchParams {
+  status?: MultisigProposalStatus[]
+  cursor?: string | null
+  limit?: number
+}
+
+export async function fetchMultisigSpec(
+  id: string,
+  auth: ToriiCanonicalRequestAuth
+): Promise<PermissionAwareResult<MultisigSpecResponse>> {
+  const normalizedId = normalizeToriiAccountSelectorLiteral(id) ?? id.trim();
+  const selector = normalizeAccountIdLiteral(normalizedId)
+    ? { multisigAccountId: normalizedId }
+    : { multisigAccountAlias: normalizedId };
+  return await parsePermissionAwareToriiSdkResult(
+    (client) => client.getMultisigSpec(selector, auth),
+    MultisigSpecResponse
+  );
+}
+
+export async function fetchMultisigProposals(
+  id: string,
+  params: MultisigProposalsSearchParams,
+  auth: ToriiCanonicalRequestAuth
+): Promise<PermissionAwareResult<MultisigProposalsQueryResponse>> {
+  const normalizedId = normalizeToriiAccountSelectorLiteral(id) ?? id.trim();
+  const selector = normalizeAccountIdLiteral(normalizedId)
+    ? { multisigAccountId: normalizedId }
+    : { multisigAccountAlias: normalizedId };
+  return await parsePermissionAwareToriiSdkResult(
+    (client) => client.queryMultisigProposals(
+      {
+        ...selector,
+        status: params.status,
+        cursor: params.cursor,
+        limit: params.limit,
+      },
+      auth
+    ),
+    MultisigProposalsQueryResponse
   );
 }
 
@@ -1060,6 +1204,47 @@ export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<R
 
 export async function fetchBlock(heightOrHash: number | string): Promise<ResultWithStatus<Block>> {
   return await parseToriiSdkResult((client) => client.getExplorerBlock(heightOrHash), Block);
+}
+
+export interface TransactionBlockEvidence {
+  proof: ToriiBlockProofs
+  verification: ToriiBlockProofVerification
+}
+
+export async function fetchLedgerBlockProof(
+  blockHeight: number,
+  transactionHash: string
+): Promise<ResultWithStatus<TransactionBlockEvidence>> {
+  try {
+    const proof = await toriiSdkClient().getLedgerBlockProof(blockHeight, transactionHash);
+    const { verifyBlockProofs } = await import('@iroha/iroha-js/norito');
+    return {
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        proof,
+        verification: verifyBlockProofs(proof),
+      },
+    };
+  } catch (error) {
+    if (error instanceof ToriiBrowserHttpError) {
+      return await transformErrorResponse(error.response);
+    }
+    throw error;
+  }
+}
+
+export async function fetchLedgerStateRoot(blockHeight: number): Promise<ResultWithStatus<LedgerStateRoot>> {
+  return await parseToriiSdkResult(
+    (client) => client.getLedgerStateRoot(blockHeight),
+    LedgerStateRoot
+  );
+}
+
+export async function fetchLedgerStateProof(blockHeight: number): Promise<ResultWithStatus<LedgerStateProof>> {
+  return await parseToriiSdkResult(
+    (client) => client.getLedgerStateProof(blockHeight),
+    LedgerStateProof
+  );
 }
 
 export async function fetchNetworkMetrics(): Promise<ResultWithStatus<NetworkMetrics>> {
@@ -1256,6 +1441,99 @@ export async function fetchInstructions(
   );
 }
 
+export interface ContractActivityFilters {
+  authority?: string
+  contract_address?: string
+  contract_alias?: string
+  contract_entrypoint?: string
+  since_timestamp_ms?: number
+  until_timestamp_ms?: number
+  result_ok?: boolean
+}
+
+export interface ContractActivitySearchParams extends PaginationParams, ContractActivityFilters {}
+
+export interface ContractEventFilters {
+  authority?: string
+  contract_address?: string
+  contract_alias?: string
+  module?: string
+  event_kind?: string
+  participant?: string
+  asset_id?: string
+  provenance?: 'emitted' | 'derived'
+  since_timestamp_ms?: number
+  until_timestamp_ms?: number
+  result_ok?: boolean
+}
+
+export interface ContractEventSearchParams extends PaginationParams, ContractEventFilters {}
+
+function contractEventSdkOptions(params: ContractEventFilters) {
+  return {
+    authority: params.authority,
+    contractAddress: params.contract_address,
+    contractAlias: params.contract_alias,
+    module: params.module,
+    eventKind: params.event_kind,
+    participant: params.participant,
+    assetId: params.asset_id,
+    provenance: params.provenance,
+    sinceTimestampMs: params.since_timestamp_ms,
+    untilTimestampMs: params.until_timestamp_ms,
+    resultOk: params.result_ok,
+  };
+}
+
+export async function fetchContractActivity(
+  params: ContractActivitySearchParams
+): Promise<ResultWithStatus<ContractActivityResponse>> {
+  return await parseToriiSdkResult(
+    (client) => client.listContractActivity({
+      ...toLimitOffsetParams(params),
+      countMode: 'exact',
+      authority: params.authority,
+      contractAddress: params.contract_address,
+      contractAlias: params.contract_alias,
+      contractEntrypoint: params.contract_entrypoint,
+      sinceTimestampMs: params.since_timestamp_ms,
+      untilTimestampMs: params.until_timestamp_ms,
+      resultOk: params.result_ok,
+    }),
+    ContractActivityResponse
+  );
+}
+
+export async function fetchContractEvents(
+  params: ContractEventSearchParams
+): Promise<ResultWithStatus<ContractEventResponse>> {
+  return await parseToriiSdkResult(
+    (client) => client.listContractEvents({
+      ...toLimitOffsetParams(params),
+      countMode: 'exact',
+      ...contractEventSdkOptions(params),
+    }),
+    ContractEventResponse
+  );
+}
+
+export type ContractEventStreamMessage = Omit<ToriiSseEvent<unknown>, 'data'> & { data: ContractEvent };
+
+export async function* streamContractEvents(
+  filters: ContractEventFilters,
+  signal?: AbortSignal
+): AsyncGenerator<ContractEventStreamMessage, void, unknown> {
+  for await (const event of toriiSdkClient(toriiSdkStreamFetch).streamContractEvents<unknown>({
+    ...contractEventSdkOptions(filters),
+    signal,
+  })) {
+    yield {
+      ...event,
+      data: ContractEvent.parse(event.data),
+    };
+  }
+}
+
 export async function fetchLatestInstructions(
   params?: Omit<InstructionsSearchParams, 'page'>
 ): Promise<ResultWithStatus<LatestInstructionsResponse>> {
@@ -1354,31 +1632,6 @@ export async function submitVerifiedContractSource(
     data: null,
     error: new Error(text || `Request failed with status ${response.status}`),
   };
-}
-
-export type SubmitContractDeployResult =
-  | { ok: true, statusCode: number, data: ContractDeployResponse }
-  | { ok: false, statusCode: number, data: ContractDeployResponse | null, error: Error | null };
-
-export async function submitContractDeployRequest(
-  payload: SubmitContractDeployRequest
-): Promise<SubmitContractDeployResult> {
-  const normalized = SubmitContractDeployRequest.parse(payload);
-  try {
-    const data = ContractDeployResponse.parse(
-      await toriiSdkClient().deployContract(normalized as unknown as Record<string, unknown>)
-    );
-    return { ok: true, statusCode: 200, data };
-  } catch (error) {
-    if (!(error instanceof ToriiBrowserHttpError)) throw error;
-    const { data, text } = await parseTypedResponse(error.response, ContractDeployResponse);
-    return {
-      ok: false,
-      statusCode: error.status,
-      data,
-      error: data ? null : new Error(text || error.bodyText || `Request failed with status ${error.status}`),
-    };
-  }
 }
 
 export async function fetchNexusDataspacesAccountSummary(

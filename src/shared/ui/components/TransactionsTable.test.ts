@@ -6,12 +6,30 @@ import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import * as api from '@/shared/api';
 import type * as SharedApiModule from '@/shared/api';
 import type * as VueUse from '@vueuse/core';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, reactive, ref } from 'vue';
 
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 
 const eventSourceData = ref<string | null>(null);
 const windowScrollY = ref(0);
+const routeQuery = reactive<Record<string, string | undefined>>({});
+const routePage = ref(1);
+const routePageSize = ref(10);
+
+vi.mock('@/shared/ui/composables/useListRouteQuery', () => ({
+  useListRouteQuery: () => ({
+    route: reactive({ query: routeQuery }),
+    page: routePage,
+    pageSize: routePageSize,
+    updateListQuery: vi.fn(async (patch: Record<string, string | number | null | undefined>) => {
+      routePage.value = 1;
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === null || value === undefined || value === '') delete routeQuery[key];
+        else routeQuery[key] = String(value);
+      }
+    }),
+  }),
+}));
 
 const BaseTableStub = defineComponent({
   name: 'BaseTable',
@@ -134,6 +152,9 @@ describe('TransactionsTable', () => {
     fetchTransactionsMock.mockReset();
     eventSourceData.value = null;
     windowScrollY.value = 0;
+    routePage.value = 1;
+    routePageSize.value = 10;
+    for (const key of Object.keys(routeQuery)) delete routeQuery[key];
     // Ensure stream code-path is exercised.
     (window as any).EventSource = class EventSource {};
 

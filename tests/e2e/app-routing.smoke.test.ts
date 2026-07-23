@@ -70,6 +70,7 @@ describe('App routing smoke test', () => {
     while (mountedWrappers.length > 0) {
       mountedWrappers.pop()?.unmount();
     }
+    vi.restoreAllMocks();
   });
 
   it('shows the bare home layout without header or BasePageLayout wrapper', async () => {
@@ -78,6 +79,9 @@ describe('App routing smoke test', () => {
     expect(wrapper.find('[data-test="home-page-stub"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="header-stub"]').exists()).toBe(false);
     expect(wrapper.find('[data-test="layout-stub"]').exists()).toBe(false);
+    expect(wrapper.get('.app__skip-link').attributes('href')).toBe('#main-content');
+    expect(wrapper.get('#main-content').element.tagName).toBe('MAIN');
+    expect(wrapper.get('#main-content').attributes('tabindex')).toBe('-1');
   }, 20000);
 
   it('wraps non-home routes with the header and page layout', async () => {
@@ -94,5 +98,20 @@ describe('App routing smoke test', () => {
     expect(wrapper.find('[data-test="header-stub"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="layout-stub"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="soracloud-page-stub"]').exists()).toBe(true);
+  }, 20000);
+
+  it('focuses main content only when the route path changes', async () => {
+    const { wrapper, router } = await mountAppAt('/blocks');
+    mountedWrappers.push(wrapper);
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+
+    await router.push({ path: '/blocks', query: { page: '2' } });
+    await flushPromises();
+    expect(focus).not.toHaveBeenCalled();
+
+    await router.push('/');
+    await flushPromises();
+    expect(focus).toHaveBeenCalledOnce();
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
   }, 20000);
 });

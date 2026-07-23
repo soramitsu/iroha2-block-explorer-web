@@ -4,8 +4,6 @@ import AccountsList from './AccountsList.vue';
 import { i18n } from '@/shared/lib/localization';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
-const navigationPushSpy = vi.fn().mockResolvedValue(undefined);
-
 const setupState = {
   isLoading: false,
   data: {
@@ -22,11 +20,17 @@ vi.mock('@/shared/utils/setup-async-data', () => ({
   setupAsyncData: vi.fn(() => setupState),
 }));
 
-vi.mock('@/shared/ui/composables/useExplorerScopeNavigation', () => ({
-  useScopedExplorerNavigation: () => ({
-    push: navigationPushSpy,
-  }),
-}));
+vi.mock('@/shared/ui/composables/useListRouteQuery', async () => {
+  const { ref } = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    useListRouteQuery: () => ({
+      route: { query: {} },
+      page: ref(1),
+      pageSize: ref(10),
+      updateListQuery: vi.fn(),
+    }),
+  };
+});
 
 const BaseContentBlockStub = {
   props: ['title'],
@@ -67,7 +71,6 @@ describe('AccountsList', () => {
   beforeEach(() => {
     setupState.data.data.items = [];
     setupState.data.data.pagination.total_items = 0;
-    navigationPushSpy.mockClear();
   });
 
   const factory = () =>
@@ -126,22 +129,21 @@ describe('AccountsList', () => {
     expect(hash.attributes('data-link')).toBe(`/accounts/${encodeURIComponent(canonicalAccountId)}`);
   });
 
-  it('navigates row clicks with the canonical i105 account id', async () => {
-    setupState.data.data.items = [
-      {
-        id: 'legacy-account-id',
-        i105_address: canonicalAccountIdAlt,
-        owned_domains: 1,
-        owned_assets: 0,
-        owned_nfts: 0,
-      },
-    ];
+  it('uses an explicit canonical account link instead of a clickable table row', async () => {
+    setupState.data.data.items = [{
+      id: 'legacy-account-id',
+      i105_address: canonicalAccountIdAlt,
+      owned_domains: 1,
+      owned_assets: 0,
+      owned_nfts: 0,
+    }];
     setupState.data.data.pagination.total_items = 1;
 
     const wrapper = factory();
     await flushPromises();
-    await wrapper.get('.row-button').trigger('click');
 
-    expect(navigationPushSpy).toHaveBeenCalledWith(`/accounts/${encodeURIComponent(canonicalAccountIdAlt)}`);
+    expect(wrapper.get('.base-hash-stub').attributes('data-link')).toBe(
+      `/accounts/${encodeURIComponent(canonicalAccountIdAlt)}`
+    );
   });
 });

@@ -5,8 +5,10 @@ import {
   ConnectSessionClosedError,
   ConnectSignRequestError,
   createConnectAppSession,
+  createConnectCanonicalRequestAuth,
   createConnectSessionPreview as createUpstreamConnectSessionPreview,
   rewriteConnectUriProtocol,
+  TORII_CANONICAL_REQUEST_DOMAIN_TAG,
 } from '@iroha/iroha-js/connect-browser';
 import { blake2b } from '@noble/hashes/blake2.js';
 import type { BrowserConnectSessionPreview as ConnectSessionPreview } from '@iroha/iroha-js/connect-browser';
@@ -18,7 +20,9 @@ export {
   ConnectSessionClosedError,
   ConnectSignRequestError,
   createConnectAppSession,
+  createConnectCanonicalRequestAuth,
   rewriteConnectUriProtocol,
+  TORII_CANONICAL_REQUEST_DOMAIN_TAG,
 };
 
 export type {
@@ -26,6 +30,7 @@ export type {
   BrowserConnectApproval as ConnectApproval,
   BrowserConnectAppSessionOptions as ConnectAppSessionOptions,
   BrowserConnectBinaryLike as ConnectBinaryLike,
+  BrowserConnectCanonicalRequestAuth as ConnectCanonicalRequestAuth,
   BrowserConnectPermissions as ConnectPermissions,
 } from '@iroha/iroha-js/connect-browser';
 export type { ConnectSessionPreview };

@@ -1,21 +1,45 @@
 <template>
   <div class="app">
-    <RouterView
+    <a
+      class="app__skip-link"
+      href="#main-content"
+    >Skip to main content</a>
+
+    <main
       v-if="isHomeRoute"
-      :key="routerViewKey"
-    />
+      id="main-content"
+      ref="mainContent"
+      class="app__main"
+      tabindex="-1"
+    >
+      <RouterView :key="routerViewKey" />
+    </main>
 
     <template v-else-if="isFullBleedRoute">
       <TheHeader />
-      <RouterView :key="routerViewKey" />
+      <div
+        id="main-content"
+        ref="mainContent"
+        class="app__main app__main--full-bleed"
+        tabindex="-1"
+      >
+        <RouterView :key="routerViewKey" />
+      </div>
     </template>
 
     <template v-else>
       <TheHeader />
 
-      <BasePageLayout>
-        <RouterView :key="routerViewKey" />
-      </BasePageLayout>
+      <main
+        id="main-content"
+        ref="mainContent"
+        class="app__main"
+        tabindex="-1"
+      >
+        <BasePageLayout>
+          <RouterView :key="routerViewKey" />
+        </BasePageLayout>
+      </main>
     </template>
 
     <NotificationsInstance />
@@ -23,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import NotificationsInstance from '@/shared/ui/components/NotificationsInstance.vue';
 import BasePageLayout from '@/shared/ui/components/BasePageLayout.vue';
@@ -32,6 +56,7 @@ import { getToriiBaseUrl, setRouteScopedToriiBaseUrl } from '@/shared/api';
 import { parseExplorerScopeFromRoute } from '@/shared/lib/explorer-scope';
 
 const route = useRoute();
+const mainContent = ref<HTMLElement | null>(null);
 
 watch(
   () => route.fullPath,
@@ -40,6 +65,15 @@ watch(
     setRouteScopedToriiBaseUrl(scope?.torii ?? null);
   },
   { immediate: true }
+);
+
+watch(
+  () => route.path,
+  async (path, previousPath) => {
+    if (previousPath === undefined || path === previousPath) return;
+    await nextTick();
+    mainContent.value?.focus({ preventScroll: true });
+  }
 );
 
 const routerViewKey = computed(() => `torii:${getToriiBaseUrl()}`);
@@ -143,6 +177,45 @@ html[lang='egy'] body {
   overflow-x: hidden;
   z-index: 0;
   position: relative;
+}
+
+.app {
+  &__skip-link {
+    position: fixed;
+    top: size(1);
+    inset-inline-start: size(1);
+    z-index: 1000;
+    padding: size(1) size(1.5);
+    border-radius: size(1);
+    color: theme-color('content-primary');
+    background: theme-color('surface');
+    @include shadow-notification;
+    transform: translateY(calc(-100% - #{size(2)}));
+
+    &:focus-visible {
+      transform: translateY(0);
+    }
+  }
+
+  &__main:focus {
+    outline: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
 }
 
 * {

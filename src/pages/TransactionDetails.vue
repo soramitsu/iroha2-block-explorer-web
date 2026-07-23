@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, reactive, ref, watch } from 'vue';
 import * as http from '@/shared/api';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
@@ -11,7 +11,6 @@ import TimeIcon from '@/shared/ui/icons/clock.svg';
 import { TransactionStatus } from '@/entities/transaction';
 import { getLocalTime, getUTCTime } from '@/shared/lib/time';
 import { parseMetadata } from '@/shared/ui/utils/json';
-import InstructionsTable from '@/shared/ui/components/InstructionsTable.vue';
 import ContextTooltip from '@/shared/ui/components/ContextTooltip.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
@@ -19,11 +18,12 @@ import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { formatTransactionRejectionReason } from '@/shared/api/rejection-reason';
 import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
-import ContractCodeViewPanel from '@/shared/ui/components/ContractCodeViewPanel.vue';
 import type { Instruction } from '@/shared/api/schemas';
-import { collectInstructionFallback } from '@/shared/lib/instruction-fallback';
-import { selectPrimaryContractViewInstruction } from '@/shared/lib/contract-view';
-import { fetchAllTransactionInstructions } from '@/shared/lib/transaction-instructions';
+import BaseResourceState from '@/shared/ui/components/BaseResourceState.vue';
+
+const InstructionsTable = defineAsyncComponent(() => import('@/shared/ui/components/InstructionsTable.vue'));
+const ContractCodeViewPanel = defineAsyncComponent(() => import('@/shared/ui/components/ContractCodeViewPanel.vue'));
+const TransactionEvidencePanel = defineAsyncComponent(() => import('@/shared/ui/components/TransactionEvidencePanel.vue'));
 
 const router = useRouter();
 const navigation = useScopedExplorerNavigation();
@@ -48,7 +48,7 @@ const txHash = computed(() => {
 
 const transactionScope = useParamScope(txHash, (value) => setupAsyncData(() => http.fetchTransaction(value)));
 
-const isTransactionLoading = computed(() => transactionScope.value.expose.isLoading);
+const transactionSnapshot = computed(() => transactionScope.value.expose.snapshot);
 const transaction = computed(() =>
   transactionScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
     ? transactionScope.value.expose.data.data
@@ -100,10 +100,11 @@ const smartContractInstructionState = reactive({
   isLoading: false,
   error: '',
   items: [] as Instruction[],
+  primary: null as Instruction | null,
 });
 
 const primarySmartContractInstruction = computed(() =>
-  selectPrimaryContractViewInstruction(smartContractInstructionState.items, transaction.value?.executable)
+  smartContractInstructionState.primary
 );
 
 async function loadSmartContractInstructions() {
@@ -111,6 +112,7 @@ async function loadSmartContractInstructions() {
     smartContractInstructionState.isLoading = false;
     smartContractInstructionState.error = '';
     smartContractInstructionState.items = [];
+    smartContractInstructionState.primary = null;
     return;
   }
 
@@ -118,26 +120,27 @@ async function loadSmartContractInstructions() {
   smartContractInstructionState.error = '';
 
   try {
-    let instructions = await fetchAllTransactionInstructions({
+    const [{ fetchAllTransactionInstructions }, { selectPrimaryContractViewInstruction }] = await Promise.all([
+      import('@/shared/lib/transaction-instructions'),
+      import('@/shared/lib/contract-view'),
+    ]);
+    const instructions = await fetchAllTransactionInstructions({
       transactionHash: txHash.value,
       fetchInstructions: http.fetchInstructions,
       perPage: 128,
     });
 
-    if (!instructions.length) {
-      instructions = await collectInstructionFallback({
-        transactionHash: txHash.value,
-        fetchInstructionDetail: http.fetchInstructionDetail,
-        maxProbe: 128,
-      });
-    }
-
     smartContractInstructionState.items = instructions;
+    smartContractInstructionState.primary = selectPrimaryContractViewInstruction(
+      instructions,
+      transaction.value?.executable
+    );
     if (!instructions.length) {
       smartContractInstructionState.error = '';
     }
   } catch {
     smartContractInstructionState.items = [];
+    smartContractInstructionState.primary = null;
     smartContractInstructionState.error = 'unknown';
   } finally {
     smartContractInstructionState.isLoading = false;
@@ -204,14 +207,18 @@ watch(
         </BaseButton>
       </template>
       <template #default>
-        <div
-          v-if="isTransactionLoading"
-          class="transaction-details__info_loading"
+        <BaseResourceState
+          :snapshot="transactionSnapshot"
+          loading-label="Loading transaction"
+          not-found-label="Transaction not found"
+          error-label="Transaction could not be loaded"
+          retry-label="Retry transaction"
+          @retry="transactionScope.expose.refetch()"
         >
-          <BaseLoading />
-        </div>
-        <div v-else-if="transaction">
-          <div class="transaction-details__info">
+          <div
+            v-if="transaction"
+            class="transaction-details__info"
+          >
             <div class="transaction-details__info-row">
               <DataField
                 :title="$t('transactions.transactionHash')"
@@ -281,7 +288,7 @@ watch(
               />
             </div>
           </div>
-        </div>
+        </BaseResourceState>
       </template>
     </BaseContentBlock>
     <BaseContentBlock
@@ -388,6 +395,11 @@ watch(
         </div>
       </template>
     </BaseContentBlock>
+    <TransactionEvidencePanel
+      v-if="transaction"
+      :block-height="transaction.block"
+      :transaction-hash="transaction.hash"
+    />
   </div>
 </template>
 
