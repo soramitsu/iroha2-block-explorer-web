@@ -411,6 +411,63 @@ describe('NodesTelemetry', () => {
     expect(kpiValues[1]?.text()).toBe('1');
   });
 
+  it('exposes twelve peer columns and spans unsupported rows across the full table', async () => {
+    peersTelemetry.peers.value = [
+      {
+        info: {
+          url: 'https://node-a',
+          connected: true,
+          telemetry_unsupported: false,
+          config: {
+            public_key: 'ed0120...',
+            queue_capacity: 10,
+            network_block_gossip_size: 10,
+            network_block_gossip_period: { ms: 1000 },
+            network_tx_gossip_size: 10,
+            network_tx_gossip_period: { ms: 1000 },
+          },
+          location: { lat: 0, lon: 0, country: 'United States', city: 'New York' },
+          connected_peers: [],
+        },
+        status: {
+          url: 'https://node-a',
+          block: 8,
+          commit_time: { ms: 500 },
+          avg_commit_time: { ms: 600 },
+          queue_size: 3,
+          uptime: { ms: 1000 },
+        },
+      },
+      {
+        info: {
+          url: 'https://node-b',
+          connected: false,
+          telemetry_unsupported: true,
+          config: null,
+          location: null,
+          connected_peers: null,
+        },
+        status: null,
+      },
+    ];
+
+    const wrapper = factory();
+    await flushPromises();
+
+    const headers = wrapper.findAll('[role="columnheader"]');
+    expect(headers).toHaveLength(12);
+    expect(headers[0].attributes('aria-label')).toBe('Connection status');
+
+    const supportedRow = wrapper
+      .findAll('.nodes-telemetry-page__list-row[role="presentation"]')
+      .find((row) => row.find('[role="cell"]').exists());
+    expect(supportedRow?.findAll('[role="cell"]')).toHaveLength(12);
+
+    const unsupportedCell = wrapper.get('.nodes-telemetry-page__list-row_unsupported[role="cell"]');
+    expect(unsupportedCell.attributes('aria-colspan')).toBe('12');
+    expect(unsupportedCell.get('a').text()).toBe('https://node-b');
+  });
+
   it('supports interactive map mode with node selection and tooltip', async () => {
     peersTelemetry.peers.value = [
       {

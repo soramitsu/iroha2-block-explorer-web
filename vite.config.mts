@@ -59,6 +59,13 @@ export default defineConfig(({ mode }) => {
       // Node 22 emits a warning when localStorage is touched without an explicit backing file.
       // Passing a deterministic temp file keeps Vitest output clean.
       execArgv: [`--localstorage-file=${vitestLocalStorageFile}`],
+      // Keep SDK typed arrays in Vitest's jsdom realm. Externalizing the file:
+      // dependency creates foreign-realm Uint8Arrays that fail strict key checks.
+      server: {
+        deps: {
+          inline: [/@iroha\/iroha-js/],
+        },
+      },
     },
     build: {
       // to not overlap with the `/assets` route in the app

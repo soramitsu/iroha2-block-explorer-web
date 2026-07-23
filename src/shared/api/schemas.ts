@@ -196,20 +196,32 @@ export const AccountHistoryItem = z
   .strict();
 export type AccountHistoryItem = z.infer<typeof AccountHistoryItem>;
 
-export const AccountHistoryResponse = CountedListEnvelope.extend({
+const AccountHistoryIndexResponse = CountedListEnvelope.extend({
   items: AccountHistoryItem.array(),
   indexed_height: z.number().int().nonnegative(),
   indexed_block_hash: z.string().min(1).nullable(),
   query_source: z.literal('account_history_index'),
-}).superRefine((value, ctx) => {
-  if (value.count_mode === 'exact' && value.total === undefined) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['total'],
-      message: 'Exact counted-list responses must include total',
-    });
-  }
-});
+}).strict();
+
+const AccountHistoryFanoutResponse = CountedListEnvelope.extend({
+  items: AccountHistoryItem.array(),
+  query_source: z.literal('account_history_fanout'),
+}).strict();
+
+export const AccountHistoryResponse = z
+  .discriminatedUnion('query_source', [
+    AccountHistoryIndexResponse,
+    AccountHistoryFanoutResponse,
+  ])
+  .superRefine((value, ctx) => {
+    if (value.count_mode === 'exact' && value.total === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['total'],
+        message: 'Exact counted-list responses must include total',
+      });
+    }
+  });
 export type AccountHistoryResponse = z.infer<typeof AccountHistoryResponse>;
 
 export const ContractActivity = z

@@ -539,6 +539,10 @@ describe('Explorer payload schemas', () => {
     });
 
     expect(parsed.items[0]?.amount).toBe('100000000000000000001.000000000000000001');
+    expect(parsed.query_source).toBe('account_history_index');
+    if (parsed.query_source !== 'account_history_index') {
+      throw new Error('Expected a single-route account-history index response');
+    }
     expect(parsed.indexed_height).toBe(42);
     expect(() =>
       AccountHistoryResponse.parse({
@@ -546,6 +550,74 @@ describe('Explorer payload schemas', () => {
         items: [{ ...parsed.items[0], amount: 10 }],
       })
     ).toThrow();
+  });
+
+  it('accepts exact and bounded multi-route account-history fanout envelopes', () => {
+    const exact = AccountHistoryResponse.parse({
+      items: [],
+      total: 0,
+      has_more: false,
+      count_mode: 'exact',
+      query_source: 'account_history_fanout',
+    });
+    const bounded = AccountHistoryResponse.parse({
+      items: [],
+      has_more: true,
+      count_mode: 'bounded',
+      query_source: 'account_history_fanout',
+    });
+
+    expect(exact.query_source).toBe('account_history_fanout');
+    expect('indexed_height' in exact).toBe(false);
+    expect(bounded.total).toBeUndefined();
+    expect(bounded.has_more).toBe(true);
+  });
+
+  it.each([
+    {
+      name: 'single-route response without required index metadata',
+      response: {
+        items: [],
+        total: 0,
+        has_more: false,
+        count_mode: 'exact',
+        query_source: 'account_history_index',
+      },
+    },
+    {
+      name: 'fanout response carrying single-route index metadata',
+      response: {
+        items: [],
+        total: 0,
+        has_more: false,
+        count_mode: 'exact',
+        indexed_height: 42,
+        indexed_block_hash: 'cd'.repeat(32),
+        query_source: 'account_history_fanout',
+      },
+    },
+  ])('rejects $name', ({ response }) => {
+    expect(() => AccountHistoryResponse.parse(response)).toThrow();
+  });
+
+  it.each([
+    {
+      query_source: 'account_history_index',
+      indexed_height: 42,
+      indexed_block_hash: 'cd'.repeat(32),
+    },
+    {
+      query_source: 'account_history_fanout',
+    },
+  ])('requires exact $query_source responses to include total', (source) => {
+    expect(() =>
+      AccountHistoryResponse.parse({
+        items: [],
+        has_more: false,
+        count_mode: 'exact',
+        ...source,
+      })
+    ).toThrow(/total/u);
   });
 
   it('parses strict multisig specs and decoded proposal instructions', () => {

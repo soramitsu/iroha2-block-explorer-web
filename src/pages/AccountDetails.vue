@@ -444,21 +444,29 @@ const assetsSection = computed(() => {
               :breakpoint="960"
             >
               <template #header>
-                <div class="account-details__personal-owned-list-row">
-                  <span class="h-sm">{{ $t('name') }}</span>
-                  <span class="h-sm">{{ $t('value') }}</span>
+                <div
+                  class="account-details__personal-owned-list-row"
+                  role="presentation"
+                >
+                  <span class="h-sm" role="columnheader">{{ $t('name') }}</span>
+                  <span class="h-sm" role="columnheader">{{ $t('value') }}</span>
                 </div>
               </template>
 
               <template #row="{ item }">
-                <div class="account-details__personal-owned-list-row">
-                  <BaseLink
-                    :to="`/assets/${encodeURIComponent(item.definition_id.toString())}`"
-                    monospace
-                  >
-                    {{ accountAssetDefinitionName(item) }}
-                  </BaseLink>
-                  <span class="row-text-monospace">{{ item.value }}</span>
+                <div
+                  class="account-details__personal-owned-list-row"
+                  role="presentation"
+                >
+                  <div role="cell">
+                    <BaseLink
+                      :to="`/assets/${encodeURIComponent(item.definition_id.toString())}`"
+                      monospace
+                    >
+                      {{ accountAssetDefinitionName(item) }}
+                    </BaseLink>
+                  </div>
+                  <span class="row-text-monospace" role="cell">{{ item.value }}</span>
                 </div>
               </template>
 
@@ -490,19 +498,27 @@ const assetsSection = computed(() => {
               :breakpoint="960"
             >
               <template #header>
-                <div class="account-details__personal-owned-nft-list-row">
-                  <span class="h-sm">{{ $t('name') }}</span>
+                <div
+                  class="account-details__personal-owned-nft-list-row"
+                  role="presentation"
+                >
+                  <span class="h-sm" role="columnheader">{{ $t('name') }}</span>
                 </div>
               </template>
 
               <template #row="{ item }">
-                <div class="account-details__personal-owned-nft-list-row">
-                  <BaseLink
-                    :to="`/nfts/${encodeURIComponent(item.id.toString())}`"
-                    monospace
-                  >
-                    {{ item.id.toString() }}
-                  </BaseLink>
+                <div
+                  class="account-details__personal-owned-nft-list-row"
+                  role="presentation"
+                >
+                  <div role="cell">
+                    <BaseLink
+                      :to="`/nfts/${encodeURIComponent(item.id.toString())}`"
+                      monospace
+                    >
+                      {{ item.id.toString() }}
+                    </BaseLink>
+                  </div>
                 </div>
               </template>
 
@@ -529,23 +545,31 @@ const assetsSection = computed(() => {
               :breakpoint="960"
             >
               <template #header>
-                <div class="account-details__personal-owned-list-row">
-                  <span class="h-sm">{{ $t('id') }}</span>
-                  <span class="h-sm">{{ $t('value') }}</span>
-                  <span class="h-sm">{{ $t('assets.heldQuantity') }}</span>
+                <div
+                  class="account-details__personal-owned-list-row"
+                  role="presentation"
+                >
+                  <span class="h-sm" role="columnheader">{{ $t('id') }}</span>
+                  <span class="h-sm" role="columnheader">{{ $t('value') }}</span>
+                  <span class="h-sm" role="columnheader">{{ $t('assets.heldQuantity') }}</span>
                 </div>
               </template>
 
               <template #row="{ item }">
-                <div class="account-details__personal-owned-list-row">
-                  <BaseLink
-                    :to="`/rwas/${encodeURIComponent(item.id)}`"
-                    monospace
-                  >
-                    {{ item.id }}
-                  </BaseLink>
-                  <span class="row-text-monospace">{{ item.quantity.toString() }}</span>
-                  <span class="row-text-monospace">{{ item.held_quantity.toString() }}</span>
+                <div
+                  class="account-details__personal-owned-list-row"
+                  role="presentation"
+                >
+                  <div role="cell">
+                    <BaseLink
+                      :to="`/rwas/${encodeURIComponent(item.id)}`"
+                      monospace
+                    >
+                      {{ item.id }}
+                    </BaseLink>
+                  </div>
+                  <span class="row-text-monospace" role="cell">{{ item.quantity.toString() }}</span>
+                  <span class="row-text-monospace" role="cell">{{ item.held_quantity.toString() }}</span>
                 </div>
               </template>
 
@@ -597,23 +621,31 @@ const assetsSection = computed(() => {
               :breakpoint="960"
             >
               <template #header>
-                <div class="account-details__personal-owned-list-row">
-                  <span class="h-sm">{{ $t('id') }}</span>
-                  <span class="h-sm">{{ $t('assets.assets') }}</span>
-                  <span class="h-sm">{{ $t('accounts.accounts') }}</span>
+                <div
+                  class="account-details__personal-owned-list-row"
+                  role="presentation"
+                >
+                  <span class="h-sm" role="columnheader">{{ $t('id') }}</span>
+                  <span class="h-sm" role="columnheader">{{ $t('assets.assets') }}</span>
+                  <span class="h-sm" role="columnheader">{{ $t('accounts.accounts') }}</span>
                 </div>
               </template>
 
               <template #row="{ item }">
-                <div class="account-details__personal-owned-list-row">
-                  <BaseLink
-                    :to="`/domains/${item.id}`"
-                    monospace
-                  >
-                    {{ item.id }}
-                  </BaseLink>
-                  <span class="row-text-monospace">{{ item.assets }}</span>
-                  <span class="row-text-monospace">{{ item.accounts }}</span>
+                <div
+                  class="account-details__personal-owned-list-row"
+                  role="presentation"
+                >
+                  <div role="cell">
+                    <BaseLink
+                      :to="`/domains/${item.id}`"
+                      monospace
+                    >
+                      {{ item.id }}
+                    </BaseLink>
+                  </div>
+                  <span class="row-text-monospace" role="cell">{{ item.assets }}</span>
+                  <span class="row-text-monospace" role="cell">{{ item.accounts }}</span>
                 </div>
               </template>
 

@@ -440,14 +440,21 @@ watch(
       :pagination-breakpoint="1700"
     >
       <template #row="{ item }">
-        <div class="transactions-table__row">
+        <div
+          class="transactions-table__row"
+          role="presentation"
+        >
           <TransactionStatus
             type="tooltip"
             class="transactions-table__icon"
             :committed="item.status === 'Committed'"
+            role="cell"
           />
 
-          <div class="transactions-table__column transactions-table__column-hash">
+          <div
+            class="transactions-table__column transactions-table__column-hash"
+            role="cell"
+          >
             <div class="transactions-table__label">
               {{ $t('transactions.transactionID') }}
             </div>
@@ -467,10 +474,14 @@ watch(
             </time>
           </div>
 
-          <div class="transactions-table__columns">
+          <div
+            class="transactions-table__columns"
+            role="presentation"
+          >
             <div
               v-if="props.showAuthority"
               class="transactions-table__column transactions-table__column-authority"
+              role="cell"
             >
               <div class="transactions-table__label">
                 {{ $t('accounts.accountId') }}
@@ -486,6 +497,7 @@ watch(
             <div
               v-if="props.showBlock"
               class="transactions-table__column-block"
+              role="cell"
             >
               <div class="transactions-table__label">
                 {{ $t('transactions.block') }}
@@ -499,7 +511,10 @@ watch(
               </BaseLink>
             </div>
 
-            <div class="transactions-table__column">
+            <div
+              class="transactions-table__column"
+              role="cell"
+            >
               <div class="transactions-table__label">
                 {{ $t('transactions.executable') }}
               </div>

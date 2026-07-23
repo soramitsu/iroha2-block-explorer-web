@@ -266,18 +266,26 @@ const domainAssetsSection = computed(() => {
             :breakpoint="960"
           >
             <template #header>
-              <div class="domain-details__native-assets-list-row">
-                <span class="h-sm">{{ $t('name') }}</span>
-                <span class="h-sm">{{ $t('mintable') }}</span>
+              <div
+                class="domain-details__native-assets-list-row"
+                role="presentation"
+              >
+                <span class="h-sm" role="columnheader">{{ $t('name') }}</span>
+                <span class="h-sm" role="columnheader">{{ $t('mintable') }}</span>
               </div>
             </template>
 
             <template #row="{ item }">
-              <div class="domain-details__native-assets-list-row">
-                <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
-                  {{ domainAssetDefinitionName(item) }}
-                </BaseLink>
-                <span class="row-text">{{ item.mintable }}</span>
+              <div
+                class="domain-details__native-assets-list-row"
+                role="presentation"
+              >
+                <div role="cell">
+                  <BaseLink :to="`/assets/${encodeURIComponent(item.id.toString())}`">
+                    {{ domainAssetDefinitionName(item) }}
+                  </BaseLink>
+                </div>
+                <span class="row-text" role="cell">{{ item.mintable }}</span>
               </div>
             </template>
 
@@ -309,16 +317,24 @@ const domainAssetsSection = computed(() => {
             :breakpoint="960"
           >
             <template #header>
-              <div class="domain-details__native-nfts-list-row">
-                <span class="h-sm">{{ $t('name') }}</span>
+              <div
+                class="domain-details__native-nfts-list-row"
+                role="presentation"
+              >
+                <span class="h-sm" role="columnheader">{{ $t('name') }}</span>
               </div>
             </template>
 
             <template #row="{ item }">
-              <div class="domain-details__native-nfts-list-row">
-                <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
-                  {{ nftDisplayName(item) }}
-                </BaseLink>
+              <div
+                class="domain-details__native-nfts-list-row"
+                role="presentation"
+              >
+                <div role="cell">
+                  <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
+                    {{ nftDisplayName(item) }}
+                  </BaseLink>
+                </div>
               </div>
             </template>
 
@@ -377,19 +393,27 @@ const domainAssetsSection = computed(() => {
             :breakpoint="960"
           >
             <template #header>
-              <div class="domain-details__accounts-row">
-                <span class="h-sm">{{ $t('accounts.accountId') }}</span>
+              <div
+                class="domain-details__accounts-row"
+                role="presentation"
+              >
+                <span class="h-sm" role="columnheader">{{ $t('accounts.accountId') }}</span>
               </div>
             </template>
 
             <template #row="{ item }">
-              <div class="domain-details__accounts-row">
-                <BaseHash
-                  :hash="accountDisplayId(item)"
-                  :link="accountLink(item)"
-                  :type="domainAccountsHashType"
-                  copy
-                />
+              <div
+                class="domain-details__accounts-row"
+                role="presentation"
+              >
+                <div role="cell">
+                  <BaseHash
+                    :hash="accountDisplayId(item)"
+                    :link="accountLink(item)"
+                    :type="domainAccountsHashType"
+                    copy
+                  />
+                </div>
               </div>
             </template>
 

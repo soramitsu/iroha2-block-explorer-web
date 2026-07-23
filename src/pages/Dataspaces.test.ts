@@ -123,6 +123,19 @@ describe('Dataspaces overview page', () => {
     expect(wrapper.findAll('[data-test^="row-"]')).toHaveLength(3);
   });
 
+  it('exposes all six visual columns through table header and cell roles', async () => {
+    (api.fetchNexusPublicStatus as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      status: SUCCESSFUL_FETCHING,
+      data: statusPayload,
+    });
+
+    const wrapper = factory();
+    await flushPromises();
+
+    expect(wrapper.findAll('[role="columnheader"]')).toHaveLength(6);
+    expect(wrapper.findAll('[data-test^="row-"]')[0].findAll('[role="cell"]')).toHaveLength(6);
+  });
+
   it('sorts dataspaces by id, aggregates lanes, and routes to the representative detail lane on row click', async () => {
     (api.fetchNexusPublicStatus as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       status: SUCCESSFUL_FETCHING,

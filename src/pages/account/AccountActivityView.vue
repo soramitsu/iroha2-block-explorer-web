@@ -55,7 +55,7 @@ const rowKey = (item: AccountHistoryItem) => item.id;
 
 <template>
   <BaseContentBlock
-    title="Indexed activity"
+    title="Account activity"
     class="account-activity"
   >
     <template #default>
@@ -116,10 +116,11 @@ const rowKey = (item: AccountHistoryItem) => item.id;
 
       <template v-else-if="history">
         <div
-          class="account-activity__index-evidence row-text"
+          v-if="history.query_source === 'account_history_index'"
+          class="account-activity__provenance row-text"
           data-test="activity-index-evidence"
         >
-          <span>Source: <strong>{{ history.query_source }}</strong></span>
+          <span>Source: <strong>{{ history.query_source }}</strong> (single route)</span>
           <span>
             Indexed height:
             <BaseLink
@@ -130,6 +131,14 @@ const rowKey = (item: AccountHistoryItem) => item.id;
             </BaseLink>
           </span>
           <span>Indexed block hash: <code>{{ history.indexed_block_hash ?? 'not provided' }}</code></span>
+        </div>
+        <div
+          v-else
+          class="account-activity__provenance row-text"
+          data-test="activity-fanout-provenance"
+        >
+          <span>Source: <strong>{{ history.query_source }}</strong> (multiple Nexus routes)</span>
+          <span>Torii merged this page across multiple readable routes; no single index checkpoint applies.</span>
         </div>
 
         <label class="account-activity__filter">
@@ -163,26 +172,32 @@ const rowKey = (item: AccountHistoryItem) => item.id;
           :breakpoint="1180"
         >
           <template #header>
-            <div class="account-activity__row account-activity__row_header">
-              <span>Activity</span>
-              <span>Source / direction</span>
-              <span>Entities</span>
-              <span>Value / status</span>
+            <div
+              class="account-activity__row account-activity__row_header"
+              role="presentation"
+            >
+              <span role="columnheader">Activity</span>
+              <span role="columnheader">Source / direction</span>
+              <span role="columnheader">Entities</span>
+              <span role="columnheader">Value / status</span>
             </div>
           </template>
 
           <template #row="{ item }">
-            <div class="account-activity__row">
-              <div>
+            <div
+              class="account-activity__row"
+              role="presentation"
+            >
+              <div role="cell">
                 <strong>{{ item.type }}</strong>
                 <code>{{ item.id }}</code>
                 <span>{{ item.timestamp_ms === undefined ? 'Timestamp not provided' : `${item.timestamp_ms} ms` }}</span>
               </div>
-              <div>
+              <div role="cell">
                 <span>{{ item.source }}</span>
                 <span>{{ item.direction }}</span>
               </div>
-              <div>
+              <div role="cell">
                 <BaseLink
                   v-if="item.counterparty_account_id"
                   :to="`/accounts/${encodeURIComponent(item.counterparty_account_id)}`"
@@ -200,7 +215,7 @@ const rowKey = (item: AccountHistoryItem) => item.id;
                 <code v-if="item.asset_id">{{ item.asset_id }}</code>
                 <code v-if="item.operation_id">{{ item.operation_id }}</code>
               </div>
-              <div>
+              <div role="cell">
                 <span
                   v-if="item.amount !== undefined"
                   class="row-text-monospace"
@@ -251,7 +266,7 @@ const rowKey = (item: AccountHistoryItem) => item.id;
 
 .account-activity {
   &__notice,
-  &__index-evidence,
+  &__provenance,
   &__filter,
   &__state {
     margin: size(2) size(4);
@@ -271,7 +286,7 @@ const rowKey = (item: AccountHistoryItem) => item.id;
     gap: size(2);
   }
 
-  &__index-evidence {
+  &__provenance {
     display: flex;
     flex-wrap: wrap;
     gap: size(1) size(3);

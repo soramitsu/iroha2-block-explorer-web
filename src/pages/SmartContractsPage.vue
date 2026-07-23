@@ -165,18 +165,24 @@
           @click:row="openDeployment"
         >
           <template #header>
-            <div class="smart-contracts-page__row smart-contracts-page__row--deployments">
-              <span class="h-sm">Contract</span>
-              <span class="h-sm">Code hash</span>
-              <span class="h-sm">Deployer</span>
-              <span class="h-sm">Block</span>
-              <span class="h-sm">Created</span>
-              <span class="h-sm">Transaction</span>
+            <div
+              class="smart-contracts-page__row smart-contracts-page__row--deployments"
+              role="presentation"
+            >
+              <span class="h-sm" role="columnheader">Contract</span>
+              <span class="h-sm" role="columnheader">Code hash</span>
+              <span class="h-sm" role="columnheader">Deployer</span>
+              <span class="h-sm" role="columnheader">Block</span>
+              <span class="h-sm" role="columnheader">Created</span>
+              <span class="h-sm" role="columnheader">Transaction</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="smart-contracts-page__row smart-contracts-page__row--deployments">
-              <div>
+            <div
+              class="smart-contracts-page__row smart-contracts-page__row--deployments"
+              role="presentation"
+            >
+              <div role="cell">
                 <BaseHash
                   :hash="item.contractAddress"
                   :type="addressHashType"
@@ -184,27 +190,39 @@
                 />
                 <small v-if="item.contractAlias">{{ item.contractAlias }}</small>
               </div>
-              <BaseHash
-                :hash="item.codeHash ?? '—'"
-                :type="hashType"
-                :copy="Boolean(item.codeHash)"
-              />
-              <BaseHash
-                :hash="item.authority"
-                :link="contractAccountPath(item.authority) ?? undefined"
-                :type="hashType"
-                copy
-              />
-              <BaseLink :to="`/blocks/${item.block}`">
-                {{ item.block }}
-              </BaseLink>
-              <time :datetime="item.createdAt.toISOString()">{{ defaultFormat(item.createdAt) }}</time>
-              <BaseHash
-                :hash="item.transactionHash"
-                :link="transactionPath(item.transactionHash)"
-                :type="hashType"
-                copy
-              />
+              <div role="cell">
+                <BaseHash
+                  :hash="item.codeHash ?? '—'"
+                  :type="hashType"
+                  :copy="Boolean(item.codeHash)"
+                />
+              </div>
+              <div role="cell">
+                <BaseHash
+                  :hash="item.authority"
+                  :link="contractAccountPath(item.authority) ?? undefined"
+                  :type="hashType"
+                  copy
+                />
+              </div>
+              <div role="cell">
+                <BaseLink :to="`/blocks/${item.block}`">
+                  {{ item.block }}
+                </BaseLink>
+              </div>
+              <div role="cell">
+                <time :datetime="item.createdAt.toISOString()">
+                  {{ defaultFormat(item.createdAt) }}
+                </time>
+              </div>
+              <div role="cell">
+                <BaseHash
+                  :hash="item.transactionHash"
+                  :link="transactionPath(item.transactionHash)"
+                  :type="hashType"
+                  copy
+                />
+              </div>
             </div>
           </template>
         </BaseTable>
@@ -233,18 +251,24 @@
           container-class="smart-contracts-page__container"
         >
           <template #header>
-            <div class="smart-contracts-page__row smart-contracts-page__row--activity">
-              <span class="h-sm">Contract / entrypoint</span>
-              <span class="h-sm">Authority</span>
-              <span class="h-sm">Result</span>
-              <span class="h-sm">Timestamp</span>
-              <span class="h-sm">Transaction</span>
-              <span class="h-sm">Decoded call data</span>
+            <div
+              class="smart-contracts-page__row smart-contracts-page__row--activity"
+              role="presentation"
+            >
+              <span class="h-sm" role="columnheader">Contract / entrypoint</span>
+              <span class="h-sm" role="columnheader">Authority</span>
+              <span class="h-sm" role="columnheader">Result</span>
+              <span class="h-sm" role="columnheader">Timestamp</span>
+              <span class="h-sm" role="columnheader">Transaction</span>
+              <span class="h-sm" role="columnheader">Decoded call data</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="smart-contracts-page__row smart-contracts-page__row--activity">
-              <div class="smart-contracts-page__stack">
+            <div
+              class="smart-contracts-page__row smart-contracts-page__row--activity"
+              role="presentation"
+            >
+              <div class="smart-contracts-page__stack" role="cell">
                 <BaseHash
                   :hash="item.contract_address"
                   :type="addressHashType"
@@ -252,47 +276,56 @@
                 />
                 <small>{{ item.contract_alias ?? 'No alias' }} · {{ item.contract_entrypoint ?? 'Unknown entrypoint' }}</small>
               </div>
-              <BaseHash
-                v-if="item.authority"
-                :hash="item.authority"
-                :link="contractAccountPath(item.authority) ?? undefined"
-                :type="hashType"
-                copy
-              />
-              <span v-else>—</span>
+              <div role="cell">
+                <BaseHash
+                  v-if="item.authority"
+                  :hash="item.authority"
+                  :link="contractAccountPath(item.authority) ?? undefined"
+                  :type="hashType"
+                  copy
+                />
+                <span v-else>—</span>
+              </div>
               <span
                 class="smart-contracts-page__result"
                 :class="item.result_ok ? 'smart-contracts-page__result--ok' : 'smart-contracts-page__result--failed'"
+                role="cell"
               >
                 {{ item.result_ok ? 'Succeeded' : 'Failed' }}
               </span>
-              <time
-                v-if="item.timestamp_ms !== undefined"
-                :datetime="new Date(item.timestamp_ms).toISOString()"
-              >
-                {{ defaultFormat(new Date(item.timestamp_ms)) }}
-              </time>
-              <span v-else>—</span>
-              <BaseHash
-                :hash="item.entrypoint_hash"
-                :link="transactionPath(item.entrypoint_hash)"
-                :type="hashType"
-                copy
-              />
-              <details v-if="item.contract_payload !== undefined || item.fee_payment !== undefined">
-                <summary>View decoded data</summary>
-                <div class="smart-contracts-page__decoded">
-                  <section v-if="item.contract_payload !== undefined">
-                    <strong>Contract payload</strong>
-                    <BaseJson :value="jsonRecord(item.contract_payload)" />
-                  </section>
-                  <section v-if="item.fee_payment !== undefined">
-                    <strong>Fee payment</strong>
-                    <BaseJson :value="jsonRecord(item.fee_payment)" />
-                  </section>
-                </div>
-              </details>
-              <span v-else>—</span>
+              <div role="cell">
+                <time
+                  v-if="item.timestamp_ms !== undefined"
+                  :datetime="new Date(item.timestamp_ms).toISOString()"
+                >
+                  {{ defaultFormat(new Date(item.timestamp_ms)) }}
+                </time>
+                <span v-else>—</span>
+              </div>
+              <div role="cell">
+                <BaseHash
+                  :hash="item.entrypoint_hash"
+                  :link="transactionPath(item.entrypoint_hash)"
+                  :type="hashType"
+                  copy
+                />
+              </div>
+              <div role="cell">
+                <details v-if="item.contract_payload !== undefined || item.fee_payment !== undefined">
+                  <summary>View decoded data</summary>
+                  <div class="smart-contracts-page__decoded">
+                    <section v-if="item.contract_payload !== undefined">
+                      <strong>Contract payload</strong>
+                      <BaseJson :value="jsonRecord(item.contract_payload)" />
+                    </section>
+                    <section v-if="item.fee_payment !== undefined">
+                      <strong>Fee payment</strong>
+                      <BaseJson :value="jsonRecord(item.fee_payment)" />
+                    </section>
+                  </div>
+                </details>
+                <span v-else>—</span>
+              </div>
             </div>
           </template>
         </BaseTable>
@@ -427,19 +460,25 @@
             container-class="smart-contracts-page__container"
           >
             <template #header>
-              <div class="smart-contracts-page__row smart-contracts-page__row--events">
-                <span class="h-sm">Event</span>
-                <span class="h-sm">Contract</span>
-                <span class="h-sm">Participants / assets</span>
-                <span class="h-sm">Result</span>
-                <span class="h-sm">Block</span>
-                <span class="h-sm">Transaction</span>
-                <span class="h-sm">Decoded event data</span>
+              <div
+                class="smart-contracts-page__row smart-contracts-page__row--events"
+                role="presentation"
+              >
+                <span class="h-sm" role="columnheader">Event</span>
+                <span class="h-sm" role="columnheader">Contract</span>
+                <span class="h-sm" role="columnheader">Participants / assets</span>
+                <span class="h-sm" role="columnheader">Result</span>
+                <span class="h-sm" role="columnheader">Block</span>
+                <span class="h-sm" role="columnheader">Transaction</span>
+                <span class="h-sm" role="columnheader">Decoded event data</span>
               </div>
             </template>
             <template #row="{ item }">
-              <div class="smart-contracts-page__row smart-contracts-page__row--events">
-                <div class="smart-contracts-page__stack">
+              <div
+                class="smart-contracts-page__row smart-contracts-page__row--events"
+                role="presentation"
+              >
+                <div class="smart-contracts-page__stack" role="cell">
                   <BaseHash
                     :hash="item.event_id"
                     :type="hashType"
@@ -453,7 +492,7 @@
                     {{ defaultFormat(new Date(item.timestamp_ms)) }}
                   </time>
                 </div>
-                <div class="smart-contracts-page__stack">
+                <div class="smart-contracts-page__stack" role="cell">
                   <BaseHash
                     :hash="item.contract_address"
                     :type="addressHashType"
@@ -467,7 +506,7 @@
                     :type="hashType"
                   />
                 </div>
-                <div class="smart-contracts-page__related">
+                <div class="smart-contracts-page__related" role="cell">
                   <template
                     v-for="participant in item.participants ?? []"
                     :key="`participant:${participant}`"
@@ -497,10 +536,11 @@
                 <span
                   class="smart-contracts-page__result"
                   :class="item.result_ok ? 'smart-contracts-page__result--ok' : 'smart-contracts-page__result--failed'"
+                  role="cell"
                 >
                   {{ item.result_ok ? 'Succeeded' : 'Failed' }}
                 </span>
-                <div class="smart-contracts-page__stack">
+                <div class="smart-contracts-page__stack" role="cell">
                   <BaseLink :to="`/blocks/${item.block_height}`">
                     {{ item.block_height }}
                   </BaseLink>
@@ -510,32 +550,36 @@
                     copy
                   />
                 </div>
-                <BaseHash
-                  :hash="item.tx_hash_hex"
-                  :link="transactionPath(item.tx_hash_hex)"
-                  :type="hashType"
-                  copy
-                />
-                <details
-                  v-if="item.payload !== undefined || item.numeric_fields !== undefined || item.fee_payment !== undefined"
-                >
-                  <summary>View decoded data</summary>
-                  <div class="smart-contracts-page__decoded">
-                    <section v-if="item.payload !== undefined">
-                      <strong>Payload</strong>
-                      <BaseJson :value="jsonRecord(item.payload)" />
-                    </section>
-                    <section v-if="item.numeric_fields !== undefined">
-                      <strong>Numeric fields</strong>
-                      <BaseJson :value="jsonRecord(item.numeric_fields)" />
-                    </section>
-                    <section v-if="item.fee_payment !== undefined">
-                      <strong>Fee payment</strong>
-                      <BaseJson :value="jsonRecord(item.fee_payment)" />
-                    </section>
-                  </div>
-                </details>
-                <span v-else>—</span>
+                <div role="cell">
+                  <BaseHash
+                    :hash="item.tx_hash_hex"
+                    :link="transactionPath(item.tx_hash_hex)"
+                    :type="hashType"
+                    copy
+                  />
+                </div>
+                <div role="cell">
+                  <details
+                    v-if="item.payload !== undefined || item.numeric_fields !== undefined || item.fee_payment !== undefined"
+                  >
+                    <summary>View decoded data</summary>
+                    <div class="smart-contracts-page__decoded">
+                      <section v-if="item.payload !== undefined">
+                        <strong>Payload</strong>
+                        <BaseJson :value="jsonRecord(item.payload)" />
+                      </section>
+                      <section v-if="item.numeric_fields !== undefined">
+                        <strong>Numeric fields</strong>
+                        <BaseJson :value="jsonRecord(item.numeric_fields)" />
+                      </section>
+                      <section v-if="item.fee_payment !== undefined">
+                        <strong>Fee payment</strong>
+                        <BaseJson :value="jsonRecord(item.fee_payment)" />
+                      </section>
+                    </div>
+                  </details>
+                  <span v-else>—</span>
+                </div>
               </div>
             </template>
           </BaseTable>

@@ -445,14 +445,19 @@ watch(
         <div
           class="instructions-table__row"
           :class="{ 'instructions-table__row_with-value': props.showValue }"
+          role="presentation"
         >
           <TransactionStatus
             type="tooltip"
             class="instructions-table__icon"
             :committed="item.transaction_status === 'Committed'"
+            role="cell"
           />
 
-          <div class="instructions-table__column">
+          <div
+            class="instructions-table__column"
+            role="cell"
+          >
             <div class="instructions-table__label">
               {{ $t('transactions.transactionID') }}
             </div>
@@ -472,10 +477,14 @@ watch(
             </time>
           </div>
 
-          <div class="instructions-table__columns">
+          <div
+            class="instructions-table__columns"
+            role="presentation"
+          >
             <div
               v-if="shouldShowKind"
               class="instructions-table__column"
+              role="cell"
             >
               <div class="instructions-table__label">
                 {{ $t('kind') }}
@@ -487,7 +496,10 @@ watch(
               >{{ getInstructionKindLabel(item) }}</span>
             </div>
 
-            <div class="instructions-table__column">
+            <div
+              class="instructions-table__column"
+              role="cell"
+            >
               <div class="instructions-table__label">
                 {{ $t('entity') }}
               </div>
@@ -505,7 +517,10 @@ watch(
               >{{ getInstructionPrimaryEntity(item)?.value ?? '—' }}</span>
             </div>
 
-            <div class="instructions-table__column-block">
+            <div
+              class="instructions-table__column-block"
+              role="cell"
+            >
               <div class="instructions-table__label">
                 {{ $t('transactions.block') }}
               </div>
@@ -522,6 +537,7 @@ watch(
           <div
             v-if="props.showValue"
             class="instructions-table__column-value"
+            role="cell"
           >
             <div class="instructions-table__label">
               {{ $t('value') }}
@@ -546,7 +562,10 @@ watch(
             </div>
           </div>
 
-          <div class="instructions-table__actions">
+          <div
+            class="instructions-table__actions"
+            role="cell"
+          >
             <button
               class="instructions-table__action-button"
               type="button"

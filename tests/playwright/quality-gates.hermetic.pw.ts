@@ -259,4 +259,44 @@ test.describe('hermetic Explorer quality gates', () => {
       { domain: 'treasury.universal', page: '2', pageSize: '20' }
     )).toBe(true);
   });
+
+  test('uses a multi-column table on desktop and a card list on mobile', async ({ page }, testInfo) => {
+    await installHermeticApi(page, (url) => {
+      if (url.pathname !== '/v1/explorer/accounts') return null;
+      const pageNumber = Number(url.searchParams.get('page') ?? 1);
+      const perPage = Number(url.searchParams.get('per_page') ?? 10);
+      return {
+        body: {
+          pagination: { page: pageNumber, per_page: perPage, total_pages: 1, total_items: 1 },
+          items: [{
+            id: ACCOUNT,
+            compressed_address: null,
+            network_prefix: 0,
+            metadata: {},
+            owned_assets: 2,
+            owned_nfts: 1,
+            owned_domains: 1,
+          }],
+        },
+      };
+    });
+
+    await page.goto('/accounts');
+
+    const explorerTable = page.locator('.accounts-list-page .base-table');
+    if (testInfo.project.name === 'mobile-chromium') {
+      await expect(explorerTable).not.toHaveAttribute('role', 'table');
+      await expect(explorerTable.getByRole('list')).toHaveCount(1);
+      await expect(explorerTable.getByRole('listitem')).toHaveCount(1);
+      await expect(explorerTable.getByRole('columnheader')).toHaveCount(0);
+      await expect(explorerTable.getByRole('cell')).toHaveCount(0);
+      return;
+    }
+
+    await expect(explorerTable).toHaveAttribute('role', 'table');
+    await expect(explorerTable.getByRole('columnheader')).toHaveCount(3);
+    const dataRow = explorerTable.locator('.content-row--with-hover');
+    await expect(dataRow.getByRole('cell')).toHaveCount(3);
+    await expect(dataRow.getByRole('link')).toHaveCount(1);
+  });
 });

@@ -50,46 +50,63 @@
           container-class="zk-telemetry-page__table"
         >
           <template #header>
-            <div class="zk-telemetry-page__row zk-telemetry-page__row--header">
-              <span>{{ $t('zkTelemetry.stream.columns.event') }}</span>
-              <span>{{ $t('zkTelemetry.stream.columns.backend') }}</span>
-              <span>{{ $t('zkTelemetry.stream.columns.proofHash') }}</span>
-              <span>{{ $t('zkTelemetry.stream.columns.callHash') }}</span>
-              <span>{{ $t('zkTelemetry.stream.columns.envelopeHash') }}</span>
-              <span>{{ $t('zkTelemetry.stream.columns.observedAt') }}</span>
+            <div
+              class="zk-telemetry-page__row zk-telemetry-page__row--header"
+              role="presentation"
+            >
+              <span role="columnheader">{{ $t('zkTelemetry.stream.columns.event') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.stream.columns.backend') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.stream.columns.proofHash') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.stream.columns.callHash') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.stream.columns.envelopeHash') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.stream.columns.observedAt') }}</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="zk-telemetry-page__row">
-              <span :class="['zk-telemetry-page__status', `zk-telemetry-page__status--${item.event === 'ProofVerified' ? 'ok' : 'failed'}`]">
+            <div
+              class="zk-telemetry-page__row"
+              role="presentation"
+            >
+              <span
+                :class="['zk-telemetry-page__status', `zk-telemetry-page__status--${item.event === 'ProofVerified' ? 'ok' : 'failed'}`]"
+                role="cell"
+              >
                 {{ formatStreamEvent(item.event) }}
               </span>
-              <span class="row-text">{{ item.backend }}</span>
-              <BaseHash
-                v-if="item.proof_hash"
-                :hash="item.proof_hash"
-                :type="hashType"
-                copy
-              />
-              <span v-else>—</span>
-              <BaseHash
-                v-if="item.call_hash"
-                :hash="item.call_hash"
-                :type="hashType"
-                copy
-              />
-              <span v-else>—</span>
-              <BaseHash
-                v-if="item.envelope_hash"
-                :hash="item.envelope_hash"
-                :type="hashType"
-                copy
-              />
-              <span v-else>—</span>
-              <TimeStamp
-                :value="item.observed_at"
-                inverted
-              />
+              <span class="row-text" role="cell">{{ item.backend }}</span>
+              <div role="cell">
+                <BaseHash
+                  v-if="item.proof_hash"
+                  :hash="item.proof_hash"
+                  :type="hashType"
+                  copy
+                />
+                <span v-else>—</span>
+              </div>
+              <div role="cell">
+                <BaseHash
+                  v-if="item.call_hash"
+                  :hash="item.call_hash"
+                  :type="hashType"
+                  copy
+                />
+                <span v-else>—</span>
+              </div>
+              <div role="cell">
+                <BaseHash
+                  v-if="item.envelope_hash"
+                  :hash="item.envelope_hash"
+                  :type="hashType"
+                  copy
+                />
+                <span v-else>—</span>
+              </div>
+              <div role="cell">
+                <TimeStamp
+                  :value="item.observed_at"
+                  inverted
+                />
+              </div>
             </div>
           </template>
         </BaseTable>
@@ -135,38 +152,50 @@
           container-class="zk-telemetry-page__table"
         >
           <template #header>
-            <div class="zk-telemetry-page__row zk-telemetry-page__row--header">
-              <span>{{ $t('zkTelemetry.attachments.columns.id') }}</span>
-              <span>{{ $t('zkTelemetry.attachments.columns.contentType') }}</span>
-              <span>{{ $t('zkTelemetry.attachments.columns.size') }}</span>
-              <span>{{ $t('zkTelemetry.attachments.columns.created') }}</span>
-              <span>{{ $t('zkTelemetry.attachments.columns.tenant') }}</span>
-              <span>{{ $t('zkTelemetry.attachments.columns.actions') }}</span>
+            <div
+              class="zk-telemetry-page__row zk-telemetry-page__row--header"
+              role="presentation"
+            >
+              <span role="columnheader">{{ $t('zkTelemetry.attachments.columns.id') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.attachments.columns.contentType') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.attachments.columns.size') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.attachments.columns.created') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.attachments.columns.tenant') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.attachments.columns.actions') }}</span>
             </div>
           </template>
 
           <template #row="{ item }">
-            <div class="zk-telemetry-page__row">
-              <BaseHash
-                :hash="item.id"
-                :type="hashType"
-                copy
-              />
-              <span class="row-text">{{ item.content_type }}</span>
-              <span class="row-text">{{ formatBytes(item.size) }}</span>
-              <TimeStamp
-                :value="msToDate(item.created_ms)"
-                inverted
-              />
-              <span class="row-text">{{ item.tenant ?? '—' }}</span>
-              <a
-                class="zk-telemetry-page__link"
-                :href="attachmentDownloadUrl(item.id)"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {{ $t('zkTelemetry.attachments.download') }}
-              </a>
+            <div
+              class="zk-telemetry-page__row"
+              role="presentation"
+            >
+              <div role="cell">
+                <BaseHash
+                  :hash="item.id"
+                  :type="hashType"
+                  copy
+                />
+              </div>
+              <span class="row-text" role="cell">{{ item.content_type }}</span>
+              <span class="row-text" role="cell">{{ formatBytes(item.size) }}</span>
+              <div role="cell">
+                <TimeStamp
+                  :value="msToDate(item.created_ms)"
+                  inverted
+                />
+              </div>
+              <span class="row-text" role="cell">{{ item.tenant ?? '—' }}</span>
+              <div role="cell">
+                <a
+                  class="zk-telemetry-page__link"
+                  :href="attachmentDownloadUrl(item.id)"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {{ $t('zkTelemetry.attachments.download') }}
+                </a>
+              </div>
             </div>
           </template>
         </BaseTable>
@@ -213,34 +242,47 @@
           container-class="zk-telemetry-page__table"
         >
           <template #header>
-            <div class="zk-telemetry-page__row zk-telemetry-page__row--header">
-              <span>{{ $t('zkTelemetry.reports.columns.id') }}</span>
-              <span>{{ $t('zkTelemetry.reports.columns.status') }}</span>
-              <span>{{ $t('zkTelemetry.reports.columns.processed') }}</span>
-              <span>{{ $t('zkTelemetry.reports.columns.latency') }}</span>
-              <span>{{ $t('zkTelemetry.reports.columns.contentType') }}</span>
-              <span>{{ $t('zkTelemetry.reports.columns.tags') }}</span>
-              <span>{{ $t('zkTelemetry.reports.columns.error') }}</span>
+            <div
+              class="zk-telemetry-page__row zk-telemetry-page__row--header"
+              role="presentation"
+            >
+              <span role="columnheader">{{ $t('zkTelemetry.reports.columns.id') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.reports.columns.status') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.reports.columns.processed') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.reports.columns.latency') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.reports.columns.contentType') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.reports.columns.tags') }}</span>
+              <span role="columnheader">{{ $t('zkTelemetry.reports.columns.error') }}</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="zk-telemetry-page__row">
-              <BaseHash
-                :hash="item.id"
-                :type="hashType"
-                copy
-              />
-              <span :class="['zk-telemetry-page__status', `zk-telemetry-page__status--${item.ok ? 'ok' : 'failed'}`]">
+            <div
+              class="zk-telemetry-page__row"
+              role="presentation"
+            >
+              <div role="cell">
+                <BaseHash
+                  :hash="item.id"
+                  :type="hashType"
+                  copy
+                />
+              </div>
+              <span
+                :class="['zk-telemetry-page__status', `zk-telemetry-page__status--${item.ok ? 'ok' : 'failed'}`]"
+                role="cell"
+              >
                 {{ item.ok ? $t('zkTelemetry.reports.statusOk') : $t('zkTelemetry.reports.statusFailed') }}
               </span>
-              <TimeStamp
-                :value="msToDate(item.processed_ms)"
-                inverted
-              />
-              <span class="row-text">{{ formatLatency(item.latency_ms) }}</span>
-              <span class="row-text">{{ item.content_type }}</span>
-              <span class="row-text">{{ formatTags(item.zk1_tags) }}</span>
-              <span class="row-text">{{ item.error ?? '—' }}</span>
+              <div role="cell">
+                <TimeStamp
+                  :value="msToDate(item.processed_ms)"
+                  inverted
+                />
+              </div>
+              <span class="row-text" role="cell">{{ formatLatency(item.latency_ms) }}</span>
+              <span class="row-text" role="cell">{{ item.content_type }}</span>
+              <span class="row-text" role="cell">{{ formatTags(item.zk1_tags) }}</span>
+              <span class="row-text" role="cell">{{ item.error ?? '—' }}</span>
             </div>
           </template>
         </BaseTable>

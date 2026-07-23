@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import type { LedgerStateProof, LedgerStateRoot } from '@/shared/api/schemas';
+import type { Block, LedgerStateProof, LedgerStateRoot } from '@/shared/api/schemas';
 import type { TransactionBlockEvidence } from '@/shared/api';
 import * as http from '@/shared/api';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
@@ -10,6 +10,7 @@ import DataField from '@/shared/ui/components/DataField.vue';
 import {
   loadTransactionEvidence,
   stateEvidenceAgreement,
+  verifyTransactionBlockEvidence,
   type TransactionEvidenceBundle,
 } from '@/shared/lib/transaction-evidence';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
@@ -21,19 +22,54 @@ const props = defineProps<{
 
 type EvidenceBundle = TransactionEvidenceBundle<
   TransactionBlockEvidence,
+  Block,
   LedgerStateRoot,
   LedgerStateProof
 >;
 
 const evidenceResource = setupAsyncData<EvidenceBundle>(() => loadTransactionEvidence({
   fetchBlockProof: () => http.fetchLedgerBlockProof(props.blockHeight, props.transactionHash),
+  fetchReferenceBlock: () => http.fetchBlock(props.blockHeight),
   fetchStateRoot: () => http.fetchLedgerStateRoot(props.blockHeight),
   fetchStateProof: () => http.fetchLedgerStateProof(props.blockHeight),
 }));
 
 const stateAgreement = computed(() => (
-  evidenceResource.data ? stateEvidenceAgreement(evidenceResource.data) : null
+  evidenceResource.data
+    ? stateEvidenceAgreement(evidenceResource.data, props.blockHeight)
+    : null
 ));
+
+const blockVerification = computed(() => (
+  evidenceResource.data
+    ? verifyTransactionBlockEvidence(
+        {
+          blockProof: evidenceResource.data.blockProof,
+          referenceBlock: evidenceResource.data.referenceBlock,
+          requestedTransactionHash: props.transactionHash,
+          requestedBlockHeight: props.blockHeight,
+        }
+      )
+    : null
+));
+
+type BlockVerificationClaim = 'verified' | 'failed' | 'incomplete';
+
+const blockVerificationClaim = computed<BlockVerificationClaim | null>(() => {
+  const verification = blockVerification.value;
+  const evidence = evidenceResource.data;
+  if (!verification || evidence?.blockProof.status !== 'available') return null;
+
+  if (
+    !verification.pathVerificationValid
+    || !verification.transactionHashMatches
+    || !verification.proofHeightMatches
+  ) {
+    return 'failed';
+  }
+  if (evidence.referenceBlock.status !== 'available') return 'incomplete';
+  return verification.valid ? 'verified' : 'failed';
+});
 
 const rawBlockProof = computed(() => {
   const part = evidenceResource.data?.blockProof;
@@ -77,8 +113,11 @@ watch(
         class="transaction-evidence__body"
       >
         <p class="transaction-evidence__scope row-text">
-          Merkle inclusion paths are checked locally. State roots and quorum certificates are
-          displayed exactly as this node supplied them; this browser does not verify their BLS aggregate signature.
+          Transaction-entry inclusion and its identity against the requested transaction and
+          reference block are checked locally. An execution-result path is checked only against the
+          result root supplied in the same proof; that root is not independently anchored here.
+          State roots and quorum certificates are displayed exactly as this node supplied them;
+          this browser does not verify their BLS aggregate signature.
         </p>
 
         <section
@@ -92,13 +131,18 @@ watch(
             <span
               v-if="evidenceResource.data.blockProof.status === 'available'"
               class="transaction-evidence__claim"
-              :class="evidenceResource.data.blockProof.data.verification.valid
+              data-test="block-proof-claim"
+              :class="blockVerificationClaim === 'verified'
                 ? 'transaction-evidence__claim--verified'
-                : 'transaction-evidence__claim--failed'"
+                : blockVerificationClaim === 'failed'
+                  ? 'transaction-evidence__claim--failed'
+                  : 'transaction-evidence__claim--provided'"
             >
-              {{ evidenceResource.data.blockProof.data.verification.valid
-                ? 'Locally verified'
-                : 'Local verification failed' }}
+              {{ blockVerificationClaim === 'verified'
+                ? 'Transaction entry locally verified'
+                : blockVerificationClaim === 'failed'
+                  ? 'Local verification failed'
+                  : 'Local verification incomplete' }}
             </span>
           </div>
 
@@ -109,18 +153,46 @@ watch(
           >
             <DataField
               title="Entrypoint path"
-              :value="evidenceResource.data.blockProof.data.verification.entry_hash_matches
-                && evidenceResource.data.blockProof.data.verification.entry_proof_valid
-                ? 'Locally verified'
+              :value="evidenceResource.data.blockProof.data.pathVerification.entry_hash_matches
+                && evidenceResource.data.blockProof.data.pathVerification.entry_proof_valid
+                ? 'Internally valid against proof entry root'
                 : 'Verification failed'"
             />
             <DataField
               title="Execution-result path"
-              :value="evidenceResource.data.blockProof.data.verification.result_proof_valid === null
+              :value="evidenceResource.data.blockProof.data.pathVerification.result_proof_valid === null
                 ? 'Not present in this proof'
-                : evidenceResource.data.blockProof.data.verification.result_proof_valid
-                  ? 'Locally verified'
+                : evidenceResource.data.blockProof.data.pathVerification.result_proof_valid
+                  ? 'Internally valid against node-provided result root'
                   : 'Verification failed'"
+            />
+            <DataField
+              title="Requested transaction"
+              :value="blockVerification?.transactionHashMatches
+                ? 'Matches proof entry'
+                : 'Does not match proof entry'"
+            />
+            <DataField
+              title="Proof block height"
+              :value="blockVerification?.proofHeightMatches
+                ? 'Matches requested height'
+                : 'Does not match requested height'"
+            />
+            <DataField
+              title="Reference block height"
+              :value="evidenceResource.data.referenceBlock.status !== 'available'
+                ? 'Could not be checked'
+                : blockVerification?.referenceBlockHeightMatches
+                  ? 'Matches requested height'
+                  : 'Does not match requested height'"
+            />
+            <DataField
+              title="Transactions root binding"
+              :value="evidenceResource.data.referenceBlock.status !== 'available'
+                ? 'Could not be checked'
+                : blockVerification?.entryRootMatches
+                  ? 'Matches reference block'
+                  : 'Does not match reference block'"
             />
             <DataField
               title="Entrypoint root"
@@ -147,6 +219,45 @@ watch(
             role="alert"
           >
             Block proof request failed: {{ evidenceResource.data.blockProof.problem.message }}
+          </p>
+
+          <div
+            v-if="evidenceResource.data.referenceBlock.status === 'available'"
+            class="transaction-evidence__grid transaction-evidence__reference"
+            data-test="reference-block-available"
+          >
+            <DataField
+              title="Reference block height"
+              :value="evidenceResource.data.referenceBlock.data.height"
+            />
+            <DataField
+              title="Reference block hash"
+              :hash="evidenceResource.data.referenceBlock.data.hash"
+              copy
+            />
+            <DataField
+              title="Reference transactions root"
+              :hash="evidenceResource.data.referenceBlock.data.transactions_hash ?? undefined"
+              :value="evidenceResource.data.referenceBlock.data.transactions_hash
+                ? undefined
+                : 'No transactions root'"
+              copy
+            />
+          </div>
+          <p
+            v-else-if="evidenceResource.data.referenceBlock.status === 'unavailable'"
+            class="transaction-evidence__message row-text"
+            data-test="reference-block-unavailable"
+          >
+            The reference block is unavailable, so this proof cannot be bound to block metadata.
+          </p>
+          <p
+            v-else
+            class="transaction-evidence__message transaction-evidence__message--error row-text"
+            data-test="reference-block-error"
+            role="alert"
+          >
+            Reference-block request failed: {{ evidenceResource.data.referenceBlock.problem.message }}
           </p>
 
           <details v-if="rawBlockProof">
@@ -270,8 +381,8 @@ watch(
             role="status"
           >
             {{ stateAgreement
-              ? 'The node-provided state-root and certificate responses agree byte-for-byte.'
-              : 'Warning: the node-provided state-root and certificate responses disagree.' }}
+              ? 'The node-provided state-root and state-proof envelopes identify the requested block and have identical block hashes and state roots.'
+              : 'Warning: the node-provided state-root and state-proof envelopes do not identify the same requested block and state root.' }}
           </p>
         </section>
       </div>
@@ -355,6 +466,10 @@ watch(
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
     gap: size(3);
+  }
+
+  &__reference {
+    margin-block-start: size(3);
   }
 
   &__message {

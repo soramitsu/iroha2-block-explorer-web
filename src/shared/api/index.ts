@@ -1208,7 +1208,7 @@ export async function fetchBlock(heightOrHash: number | string): Promise<ResultW
 
 export interface TransactionBlockEvidence {
   proof: ToriiBlockProofs
-  verification: ToriiBlockProofVerification
+  pathVerification: ToriiBlockProofVerification
 }
 
 export async function fetchLedgerBlockProof(
@@ -1222,7 +1222,7 @@ export async function fetchLedgerBlockProof(
       status: SUCCESSFUL_FETCHING,
       data: {
         proof,
-        verification: verifyBlockProofs(proof),
+        pathVerification: verifyBlockProofs(proof),
       },
     };
   } catch (error) {

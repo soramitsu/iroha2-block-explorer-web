@@ -210,23 +210,29 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
           :breakpoint="1200"
         >
           <template #header>
-            <div class="asset-details__assets-table-list-row">
-              <span class="h-sm">{{ $t('name') }}</span>
-              <span class="h-sm">{{ $t('domain') }}</span>
-              <span class="h-sm">{{ $t('accountId') }}</span>
-              <span class="h-sm">{{ $t('value') }}</span>
+            <div
+              class="asset-details__assets-table-list-row"
+              role="presentation"
+            >
+              <span class="h-sm" role="columnheader">{{ $t('name') }}</span>
+              <span class="h-sm" role="columnheader">{{ $t('domain') }}</span>
+              <span class="h-sm" role="columnheader">{{ $t('accountId') }}</span>
+              <span class="h-sm" role="columnheader">{{ $t('value') }}</span>
             </div>
           </template>
 
           <template #row="{ item }">
-            <div class="asset-details__assets-table-list-row">
-              <div class="row-text">
+            <div
+              class="asset-details__assets-table-list-row"
+              role="presentation"
+            >
+              <div class="row-text" role="cell">
                 <BaseLink :to="`/assets/${encodeURIComponent(item.definition_id.toString())}`">
                   {{ assetInstanceDefinitionName(item) }}
                 </BaseLink>
               </div>
 
-              <div class="row-text">
+              <div class="row-text" role="cell">
                 <BaseLink
                   v-if="assetInstanceDefinitionDomain(item)"
                   :to="`/domains/${assetInstanceDefinitionDomain(item)}`"
@@ -239,7 +245,7 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
                 >-</span>
               </div>
 
-              <div class="row-text">
+              <div class="row-text" role="cell">
                 <BaseHash
                   :type="accountIdType"
                   :hash="item.account_id.toString()"
@@ -248,7 +254,7 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
                 />
               </div>
 
-              <span class="row-text-monospace">
+              <span class="row-text-monospace" role="cell">
                 {{ item.value }}
               </span>
             </div>

@@ -300,6 +300,24 @@ describe('InstructionsTable', () => {
       return wrapper;
     })();
 
+  it('exposes each dynamic instruction field as a cell and keeps the action button interactive', async () => {
+    const fullWrapper = factory();
+    await flushPromises();
+
+    const fullRow = fullWrapper.get('.instructions-table__row');
+    expect(fullRow.attributes('role')).toBe('presentation');
+    expect(fullRow.findAll('[role="cell"]')).toHaveLength(7);
+    expect(fullRow.get('.instructions-table__actions[role="cell"] button').text()).toBe('View details');
+
+    const compactWrapper = factory({ showValue: false });
+    await flushPromises();
+
+    const compactRow = compactWrapper.get('.instructions-table__row');
+    expect(compactRow.findAll('[role="cell"]')).toHaveLength(6);
+    expect(compactRow.find('.instructions-table__column-value').exists()).toBe(false);
+    expect(compactRow.get('.instructions-table__actions[role="cell"] button').text()).toBe('View details');
+  });
+
   it('fetches and displays instruction details when action is clicked', async () => {
     const wrapper = factory();
     await flushPromises();

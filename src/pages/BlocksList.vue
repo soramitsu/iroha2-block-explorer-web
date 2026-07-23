@@ -28,42 +28,54 @@
       container-class="blocks-list-page__container"
     >
       <template #header>
-        <div class="blocks-list-page__row">
-          <span class="h-sm cell" />
-          <span class="h-sm cell">{{ $t('blocks.height') }}</span>
-          <span class="h-sm cell">{{ $t('blocks.age') }}</span>
-          <span class="h-sm cell">{{ $t('blocks.hash') }}</span>
-          <span class="h-sm cell">{{ $t('transactions.transactions') }}</span>
+        <div
+          class="blocks-list-page__row"
+          role="presentation"
+        >
+          <span
+            class="h-sm cell"
+            role="columnheader"
+            :aria-label="$t('transactions.status')"
+          />
+          <span class="h-sm cell" role="columnheader">{{ $t('blocks.height') }}</span>
+          <span class="h-sm cell" role="columnheader">{{ $t('blocks.age') }}</span>
+          <span class="h-sm cell" role="columnheader">{{ $t('blocks.hash') }}</span>
+          <span class="h-sm cell" role="columnheader">{{ $t('transactions.transactions') }}</span>
         </div>
       </template>
 
       <template #row="{ item }">
-        <div class="blocks-list-page__row">
-          <span class="row-text">{{ item.transactions_hash ? '◉' : 'O' }}</span>
-          <BaseLink
-            :to="`/blocks/${item.height}`"
-            class="cell"
-            monospace
-          >
-            {{ item.height }}
-          </BaseLink>
+        <div
+          class="blocks-list-page__row"
+          role="presentation"
+        >
+          <span class="row-text" role="cell">{{ item.transactions_hash ? '◉' : 'O' }}</span>
+          <div class="cell" role="cell">
+            <BaseLink
+              :to="`/blocks/${item.height}`"
+              monospace
+            >
+              {{ item.height }}
+            </BaseLink>
+          </div>
 
-          <div class="blocks-list-page__row-time cell">
+          <div class="blocks-list-page__row-time cell" role="cell">
             <TimeStamp
               :value="item.created_at"
               inverted
             />
           </div>
 
-          <BaseHash
-            :hash="item.hash"
-            :link="`/blocks/${item.hash}`"
-            :type="hashType"
-            copy
-            class="cell"
-          />
+          <div class="cell" role="cell">
+            <BaseHash
+              :hash="item.hash"
+              :link="`/blocks/${item.hash}`"
+              :type="hashType"
+              copy
+            />
+          </div>
 
-          <div class="cell row-text-monospace">
+          <div class="cell row-text-monospace" role="cell">
             {{ $t('blocks.totalAndRejectedTransactions', [item.transactions_total, item.transactions_rejected]) }}
           </div>
         </div>

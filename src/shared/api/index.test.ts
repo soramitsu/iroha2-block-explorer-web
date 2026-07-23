@@ -1145,6 +1145,34 @@ describe('Account read-only surface API helpers', () => {
     }
   });
 
+  it('accepts a multi-route account-history fanout envelope without index metadata', async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          items: [],
+          total: 0,
+          has_more: false,
+          count_mode: 'exact',
+          query_source: 'account_history_fanout',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as any;
+
+    const { fetchAccountHistory } = await importApiModule(toriiEnv);
+    const result = await fetchAccountHistory(SAMPLE_I105, {
+      page: 1,
+      per_page: 10,
+    });
+
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.query_source).toBe('account_history_fanout');
+      expect('indexed_height' in result.data).toBe(false);
+      expect(result.data.total).toBe(0);
+    }
+  });
+
   it('uses canonical signed multisig selectors for IDs and aliases without mutation controls', async () => {
     const fetchSpy = vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = input instanceof URL ? input : new URL(String(input));
@@ -2676,7 +2704,7 @@ describe('Transaction API helpers', () => {
     ).Accept === 'application/json')).toBe(true);
   });
 
-  it('runs the canonical SDK verifier over the decoded block proof', async () => {
+  it('reports the canonical SDK path verification separately from request binding', async () => {
     const module = await importApiModule(toriiEnv);
     const { ToriiBrowserClient } = await import('@iroha/iroha-js/torii-browser');
     const decoded = {
@@ -2701,8 +2729,8 @@ describe('Transaction API helpers', () => {
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.proof).toBe(decoded);
-      expect(result.data.verification.valid).toBe(false);
-      expect(result.data.verification.entry_proof_valid).toBe(false);
+      expect(result.data.pathVerification.valid).toBe(false);
+      expect(result.data.pathVerification.entry_proof_valid).toBe(false);
     }
     proofSpy.mockRestore();
   });

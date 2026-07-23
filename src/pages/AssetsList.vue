@@ -331,36 +331,41 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
         container-class="assets-list-page__container"
       >
         <template #header>
-          <div class="assets-list-page__row">
-            <span class="h-sm cell">{{ $t('sorafs.columns.alias') }}</span>
-            <span class="h-sm cell">{{ $t('id') }}</span>
-            <span class="h-sm cell">{{ $t('mintable') }}</span>
+          <div
+            class="assets-list-page__row"
+            role="presentation"
+          >
+            <span class="h-sm cell" role="columnheader">{{ $t('sorafs.columns.alias') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('id') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('mintable') }}</span>
           </div>
         </template>
 
         <template #row="{ item }">
-          <div class="assets-list-page__row">
-            <BaseLink
-              v-if="item.alias"
-              :to="`/assets/${encodeURIComponent(item.id.toString())}`"
-              class="cell"
-            >
-              {{ item.alias }}
-            </BaseLink>
-            <span
-              v-else
-              class="cell"
-            >-</span>
+          <div
+            class="assets-list-page__row"
+            role="presentation"
+          >
+            <div class="cell" role="cell">
+              <BaseLink
+                v-if="item.alias"
+                :to="`/assets/${encodeURIComponent(item.id.toString())}`"
+              >
+                {{ item.alias }}
+              </BaseLink>
+              <span v-else>-</span>
+            </div>
 
-            <BaseHash
-              :hash="item.id.toString()"
-              :link="`/assets/${encodeURIComponent(item.id.toString())}`"
-              :type="hashType"
-              copy
-              class="cell"
-            />
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.id.toString()"
+                :link="`/assets/${encodeURIComponent(item.id.toString())}`"
+                :type="hashType"
+                copy
+              />
+            </div>
 
-            <span class="cell row-text">
+            <span class="cell row-text" role="cell">
               {{ item.mintable }}
             </span>
           </div>
@@ -431,45 +436,51 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
         :breakpoint="1200"
       >
         <template #header>
-          <div class="assets-instances-list-page__row">
-            <span class="h-sm cell">{{ $t('sorafs.columns.alias') }}</span>
-            <span class="h-sm cell">{{ $t('id') }}</span>
-            <span class="h-sm cell">{{ $t('accountId') }}</span>
-            <span class="h-sm cell">{{ $t('value') }}</span>
+          <div
+            class="assets-instances-list-page__row"
+            role="presentation"
+          >
+            <span class="h-sm cell" role="columnheader">{{ $t('sorafs.columns.alias') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('id') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('accountId') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('value') }}</span>
           </div>
         </template>
 
         <template #row="{ item }">
-          <div class="assets-instances-list-page__row">
-            <BaseLink
-              v-if="item.asset_alias"
-              :to="`/assets/${encodeURIComponent(item.definition_id.toString())}`"
-              class="cell"
-            >
-              {{ item.asset_alias }}
-            </BaseLink>
-            <span
-              v-else
-              class="cell"
-            >-</span>
+          <div
+            class="assets-instances-list-page__row"
+            role="presentation"
+          >
+            <div class="cell" role="cell">
+              <BaseLink
+                v-if="item.asset_alias"
+                :to="`/assets/${encodeURIComponent(item.definition_id.toString())}`"
+              >
+                {{ item.asset_alias }}
+              </BaseLink>
+              <span v-else>-</span>
+            </div>
 
-            <BaseHash
-              :hash="item.definition_id.toString()"
-              :link="`/assets/${encodeURIComponent(item.definition_id.toString())}`"
-              :type="hashType"
-              copy
-              class="cell"
-            />
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.definition_id.toString()"
+                :link="`/assets/${encodeURIComponent(item.definition_id.toString())}`"
+                :type="hashType"
+                copy
+              />
+            </div>
 
-            <BaseHash
-              :hash="item.account_id.toString()"
-              :link="`/accounts/${item.account_id.toString()}`"
-              :type="hashType"
-              copy
-              class="cell"
-            />
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.account_id.toString()"
+                :link="`/accounts/${item.account_id.toString()}`"
+                :type="hashType"
+                copy
+              />
+            </div>
 
-            <span class="row-text-monospace cell">{{ item.value.toString() }}</span>
+            <span class="row-text-monospace cell" role="cell">{{ item.value.toString() }}</span>
           </div>
         </template>
 
@@ -555,47 +566,56 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
         :breakpoint="1200"
       >
         <template #header>
-          <div class="rwas-list-page__row">
-            <span class="h-sm cell">{{ $t('id') }}</span>
-            <span class="h-sm cell">{{ $t('domain') }}</span>
-            <span class="h-sm cell">{{ $t('assets.ownedBy') }}</span>
-            <span class="h-sm cell">{{ $t('value') }}</span>
-            <span class="h-sm cell">{{ $t('assets.heldQuantity') }}</span>
+          <div
+            class="rwas-list-page__row"
+            role="presentation"
+          >
+            <span class="h-sm cell" role="columnheader">{{ $t('id') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('domain') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('assets.ownedBy') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('value') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('assets.heldQuantity') }}</span>
           </div>
         </template>
 
         <template #row="{ item }">
-          <div class="rwas-list-page__row">
-            <BaseHash
-              :hash="item.id"
-              :link="`/rwas/${encodeURIComponent(item.id)}`"
-              :type="hashType"
-              copy
-              class="cell"
-            />
+          <div
+            class="rwas-list-page__row"
+            role="presentation"
+          >
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.id"
+                :link="`/rwas/${encodeURIComponent(item.id)}`"
+                :type="hashType"
+                copy
+              />
+            </div>
 
-            <BaseLink
-              v-if="getRwaDomain(item.id)"
-              :to="`/domains/${getRwaDomain(item.id)}`"
-              class="cell"
-            >
-              {{ getRwaDomain(item.id) }}
-            </BaseLink>
-            <span
-              v-else
-              class="cell row-text-monospace"
-            >-</span>
+            <div class="cell" role="cell">
+              <BaseLink
+                v-if="getRwaDomain(item.id)"
+                :to="`/domains/${getRwaDomain(item.id)}`"
+              >
+                {{ getRwaDomain(item.id) }}
+              </BaseLink>
+              <span
+                v-else
+                class="row-text-monospace"
+              >-</span>
+            </div>
 
-            <BaseHash
-              :hash="item.owned_by.toString()"
-              :link="`/accounts/${item.owned_by}`"
-              :type="hashType"
-              copy
-              class="cell"
-            />
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.owned_by.toString()"
+                :link="`/accounts/${item.owned_by}`"
+                :type="hashType"
+                copy
+              />
+            </div>
 
-            <span class="row-text-monospace cell">{{ item.quantity.toString() }}</span>
-            <span class="row-text-monospace cell">{{ item.held_quantity.toString() }}</span>
+            <span class="row-text-monospace cell" role="cell">{{ item.quantity.toString() }}</span>
+            <span class="row-text-monospace cell" role="cell">{{ item.held_quantity.toString() }}</span>
           </div>
         </template>
 
@@ -685,28 +705,34 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
         container-class="nfts-list-page__container"
       >
         <template #header>
-          <div class="nfts-list-page__row">
-            <span class="h-sm cell">{{ $t('name') }}</span>
-            <span class="h-sm cell">{{ $t('assets.ownedBy') }}</span>
+          <div
+            class="nfts-list-page__row"
+            role="presentation"
+          >
+            <span class="h-sm cell" role="columnheader">{{ $t('name') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('assets.ownedBy') }}</span>
           </div>
         </template>
 
         <template #row="{ item }">
-          <div class="nfts-list-page__row">
-            <BaseLink
-              :to="`/nfts/${encodeURIComponent(item.id.toString())}`"
-              class="cell"
-            >
-              {{ item.id.toString() }}
-            </BaseLink>
+          <div
+            class="nfts-list-page__row"
+            role="presentation"
+          >
+            <div class="cell" role="cell">
+              <BaseLink :to="`/nfts/${encodeURIComponent(item.id.toString())}`">
+                {{ item.id.toString() }}
+              </BaseLink>
+            </div>
 
-            <BaseHash
-              :hash="item.owned_by.toString()"
-              :link="`/accounts/${item.owned_by}`"
-              :type="hashType"
-              class="cell"
-              copy
-            />
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.owned_by.toString()"
+                :link="`/accounts/${item.owned_by}`"
+                :type="hashType"
+                copy
+              />
+            </div>
           </div>
         </template>
 

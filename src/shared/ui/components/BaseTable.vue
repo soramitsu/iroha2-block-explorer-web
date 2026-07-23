@@ -1,7 +1,7 @@
 <template>
   <div
     class="base-table"
-    role="table"
+    :role="rendersDesktopRows ? 'table' : undefined"
     :aria-busy="props.loading"
   >
     <div
@@ -12,12 +12,7 @@
         class="content-row"
         role="row"
       >
-        <div
-          class="base-table__semantic-cell"
-          role="columnheader"
-        >
-          <slot name="header" />
-        </div>
+        <slot name="header" />
       </div>
     </div>
     <div
@@ -62,15 +57,10 @@
           @keydown.enter="emit('click:row', item)"
           @keydown.space.prevent="emit('click:row', item)"
         >
-          <div
-            class="base-table__semantic-cell"
-            role="cell"
-          >
-            <slot
-              name="row"
-              :item
-            />
-          </div>
+          <slot
+            name="row"
+            :item
+          />
         </div>
 
         <div
@@ -165,12 +155,6 @@ const rendersDesktopRows = computed(() => width.value >= props.breakpoint || !sl
       width: size(3.5);
       height: size(3.5);
     }
-  }
-
-  // Preserve the consumer-provided CSS grid as the visual row while retaining
-  // the table cell in the accessibility tree.
-  &__semantic-cell {
-    display: contents;
   }
 
   &__mobile-card {

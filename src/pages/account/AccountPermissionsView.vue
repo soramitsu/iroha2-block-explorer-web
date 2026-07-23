@@ -130,16 +130,26 @@ const totalItems = computed(() => response.value?.total ?? 0);
           :breakpoint="760"
         >
           <template #header>
-            <div class="account-permissions__row account-permissions__row_header">
-              <span>Permission</span>
-              <span>Exact payload</span>
+            <div
+              class="account-permissions__row account-permissions__row_header"
+              role="presentation"
+            >
+              <span role="columnheader">Permission</span>
+              <span role="columnheader">Exact payload</span>
             </div>
           </template>
 
           <template #row="{ item }">
-            <div class="account-permissions__row">
-              <strong>{{ item.name }}</strong>
-              <pre>{{ JSON.stringify(item.payload, null, 2) }}</pre>
+            <div
+              class="account-permissions__row"
+              role="presentation"
+            >
+              <div role="cell">
+                <strong>{{ item.name }}</strong>
+              </div>
+              <div role="cell">
+                <pre>{{ JSON.stringify(item.payload, null, 2) }}</pre>
+              </div>
             </div>
           </template>
 

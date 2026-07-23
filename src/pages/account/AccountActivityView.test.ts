@@ -30,9 +30,11 @@ const BaseTableStub = defineComponent({
   },
   emits: ['update:page', 'update:page-size'],
   template: `
-    <div class="base-table-stub" :data-total="total">
-      <slot name="header" />
-      <div v-for="item in items" :key="item.id" class="base-table-row">
+    <div class="base-table-stub" role="table" :data-total="total">
+      <div role="row">
+        <slot name="header" />
+      </div>
+      <div v-for="item in items" :key="item.id" class="base-table-row" role="row">
         <slot name="row" :item="item" />
       </div>
     </div>
@@ -62,6 +64,19 @@ function historyResponse(items: Record<string, unknown>[]) {
       indexed_height: 42,
       indexed_block_hash: 'f'.repeat(64),
       query_source: 'account_history_index',
+    },
+  };
+}
+
+function fanoutHistoryResponse(items: Record<string, unknown>[]) {
+  return {
+    status: 'ok',
+    data: {
+      items,
+      total: items.length,
+      has_more: false,
+      count_mode: 'exact',
+      query_source: 'account_history_fanout',
     },
   };
 }
@@ -130,13 +145,24 @@ describe('AccountActivityView', () => {
       per_page: 20,
       asset_id: 'rose#wonderland',
     });
+    expect(wrapper.get('h2').text()).toBe('Account activity');
     expect(wrapper.get('[data-test="activity-index-evidence"]').text()).toContain('account_history_index');
+    expect(wrapper.find('a[href="/blocks/42"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="activity-fanout-provenance"]').exists()).toBe(false);
     expect(wrapper.text()).toContain(EXACT_AMOUNT);
     expect(wrapper.text()).toContain('1725000000123 ms');
     expect(wrapper.find(`a[href="/accounts/${encodeURIComponent(COUNTERPARTY)}"]`).exists()).toBe(true);
     expect(wrapper.find('a[href="/assets/rose%23wonderland"]').exists()).toBe(true);
     expect(wrapper.find(`a[href="/transactions/${'a'.repeat(64)}"]`).exists()).toBe(true);
     expect(wrapper.get('.base-table-stub').attributes('data-total')).toBe('1');
+    expect(wrapper.findAll('[role="columnheader"]').map((header) => header.text())).toEqual([
+      'Activity',
+      'Source / direction',
+      'Entities',
+      'Value / status',
+    ]);
+    expect(wrapper.findAll('[role="cell"]')).toHaveLength(4);
+    expect(wrapper.findAll('.account-activity__row[role="presentation"]')).toHaveLength(2);
 
     await wrapper.get('[data-test="activity-asset-filter"]').setValue('  tea#wonderland  ');
     await flushPromises();
@@ -146,6 +172,30 @@ describe('AccountActivityView', () => {
       activity_per_page: '20',
     });
     expect(router.currentRoute.value.query.activity_page).toBeUndefined();
+  });
+
+  it('renders multi-route fanout provenance without inventing index evidence', async () => {
+    apiMocks.fetchAccountHistory.mockResolvedValue(
+      fanoutHistoryResponse([
+        {
+          id: 'history-fanout-1',
+          source: 'asset_transfer',
+          type: 'TRANSFER',
+          status: 'COMMITTED',
+          direction: 'INCOMING',
+          account_id: ACCOUNT,
+        },
+      ])
+    );
+
+    const { wrapper } = await factory();
+
+    const provenance = wrapper.get('[data-test="activity-fanout-provenance"]');
+    expect(provenance.text()).toContain('account_history_fanout');
+    expect(provenance.text()).toContain('multiple Nexus routes');
+    expect(provenance.text()).toContain('no single index checkpoint');
+    expect(wrapper.find('[data-test="activity-index-evidence"]').exists()).toBe(false);
+    expect(wrapper.find('a[href^="/blocks/"]').exists()).toBe(false);
   });
 
   it.each([

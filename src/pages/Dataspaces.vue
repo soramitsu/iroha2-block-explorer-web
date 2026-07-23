@@ -100,33 +100,33 @@
           @click:row="openDataspace"
         >
           <template #header>
-            <span class="dataspaces-page__cell dataspaces-page__cell--header">
+            <span class="dataspaces-page__cell dataspaces-page__cell--header" role="columnheader">
               {{ $t('dataspaces.dataspace') }}
             </span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric">
+            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric" role="columnheader">
               {{ $t('dataspaces.lane') }}
             </span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric">
+            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric" role="columnheader">
               {{ $t('dataspaces.faultToleranceShort') }}
             </span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric">
+            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric" role="columnheader">
               {{ $t('dataspaces.backlog') }}
             </span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric">
+            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric" role="columnheader">
               {{ $t('dataspaces.ageSlots') }}
             </span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric">
+            <span class="dataspaces-page__cell dataspaces-page__cell--header dataspaces-page__cell--numeric" role="columnheader">
               {{ $t('dataspaces.lifetimeTxServed') }}
             </span>
           </template>
 
           <template #row="{ item }">
-            <span class="dataspaces-page__cell row-text">{{ dataspaceLabel(item) }}</span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text">{{ item.lane_summary }}</span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text">{{ item.fault_tolerance }}</span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text">{{ item.backlog }}</span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text">{{ item.age_slots }}</span>
-            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text">{{ item.tx_served }}</span>
+            <span class="dataspaces-page__cell row-text" role="cell">{{ dataspaceLabel(item) }}</span>
+            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text" role="cell">{{ item.lane_summary }}</span>
+            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text" role="cell">{{ item.fault_tolerance }}</span>
+            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text" role="cell">{{ item.backlog }}</span>
+            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text" role="cell">{{ item.age_slots }}</span>
+            <span class="dataspaces-page__cell dataspaces-page__cell--numeric row-text" role="cell">{{ item.tx_served }}</span>
           </template>
 
           <template #mobile-card="{ item }">

@@ -164,26 +164,34 @@
               :loading="locksPending"
             >
               <template #header>
-                <div class="governance-page__locks-row governance-page__locks-row--header">
-                  <span>{{ $t('governance.lookup.lockOwner') }}</span>
-                  <span>{{ $t('governance.lookup.lockAmount') }}</span>
-                  <span>{{ $t('governance.lookup.lockDirection') }}</span>
-                  <span>{{ $t('governance.lookup.lockExpiry') }}</span>
-                  <span>{{ $t('governance.lookup.lockDuration') }}</span>
+                <div
+                  class="governance-page__locks-row governance-page__locks-row--header"
+                  role="presentation"
+                >
+                  <span role="columnheader">{{ $t('governance.lookup.lockOwner') }}</span>
+                  <span role="columnheader">{{ $t('governance.lookup.lockAmount') }}</span>
+                  <span role="columnheader">{{ $t('governance.lookup.lockDirection') }}</span>
+                  <span role="columnheader">{{ $t('governance.lookup.lockExpiry') }}</span>
+                  <span role="columnheader">{{ $t('governance.lookup.lockDuration') }}</span>
                 </div>
               </template>
               <template #row="{ item }">
-                <div class="governance-page__locks-row">
-                  <BaseLink
-                    :to="`/accounts/${item.accountId}`"
-                    monospace
-                  >
-                    {{ item.accountId }}
-                  </BaseLink>
-                  <span class="row-text-monospace">{{ item.amount.toString() }}</span>
-                  <span class="row-text">{{ resolveDirectionLabel(item.direction) }}</span>
-                  <span class="row-text">{{ item.expiry_height }}</span>
-                  <span class="row-text">{{ item.duration_blocks }}</span>
+                <div
+                  class="governance-page__locks-row"
+                  role="presentation"
+                >
+                  <div role="cell">
+                    <BaseLink
+                      :to="`/accounts/${item.accountId}`"
+                      monospace
+                    >
+                      {{ item.accountId }}
+                    </BaseLink>
+                  </div>
+                  <span class="row-text-monospace" role="cell">{{ item.amount.toString() }}</span>
+                  <span class="row-text" role="cell">{{ resolveDirectionLabel(item.direction) }}</span>
+                  <span class="row-text" role="cell">{{ item.expiry_height }}</span>
+                  <span class="row-text" role="cell">{{ item.duration_blocks }}</span>
                 </div>
               </template>
             </BaseTable>

@@ -38,25 +38,32 @@
       container-class="accounts-list-page__container"
     >
       <template #header>
-        <div class="accounts-list-page__row">
-          <span class="h-sm cell">{{ $t('accounts.address') }}</span>
-          <span class="h-sm">{{ $t('domains.domains') }}</span>
-          <span class="h-sm">{{ $t('assets.assets') }}</span>
+        <div
+          class="accounts-list-page__row"
+          role="presentation"
+        >
+          <span class="h-sm cell" role="columnheader">{{ $t('accounts.address') }}</span>
+          <span class="h-sm" role="columnheader">{{ $t('domains.domains') }}</span>
+          <span class="h-sm" role="columnheader">{{ $t('assets.assets') }}</span>
         </div>
       </template>
 
       <template #row="{ item }">
-        <div class="accounts-list-page__row">
-          <BaseHash
-            :hash="accountDisplayId(item)"
-            :link="accountLink(item)"
-            :type="hashType"
-            copy
-            class="cell"
-          />
+        <div
+          class="accounts-list-page__row"
+          role="presentation"
+        >
+          <div class="cell" role="cell">
+            <BaseHash
+              :hash="accountDisplayId(item)"
+              :link="accountLink(item)"
+              :type="hashType"
+              copy
+            />
+          </div>
 
-          <span class="row-text-monospace">{{ item.owned_domains }}</span>
-          <span class="row-text-monospace">{{ item.owned_assets + item.owned_nfts }}</span>
+          <span class="row-text-monospace" role="cell">{{ item.owned_domains }}</span>
+          <span class="row-text-monospace" role="cell">{{ item.owned_assets + item.owned_nfts }}</span>
         </div>
       </template>
 

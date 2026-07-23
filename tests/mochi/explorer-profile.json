@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "iroha_revision": "54d49e1374b9f93bb93d2726ebbe3cb6617b37fc",
+  "iroha_revision": "a457d6b60846923441fea549edcae30626c5e939",
   "profile": "single-peer",
   "profile_slug": "single-peer",
   "chain_id": "iroha-explorer-e2e-v1",

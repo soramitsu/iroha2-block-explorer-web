@@ -13,32 +13,39 @@
       container-class="domains-list-page__container"
     >
       <template #header>
-        <div class="domains-list-page__row">
-          <span class="h-sm cell">{{ $t('name') }}</span>
-          <span class="h-sm">{{ $t('domains.ownedBy') }}</span>
-          <span class="h-sm">{{ $t('domains.totalAccounts') }}</span>
-          <span class="h-sm">{{ $t('domains.totalAssets') }}</span>
+        <div
+          class="domains-list-page__row"
+          role="presentation"
+        >
+          <span class="h-sm cell" role="columnheader">{{ $t('name') }}</span>
+          <span class="h-sm" role="columnheader">{{ $t('domains.ownedBy') }}</span>
+          <span class="h-sm" role="columnheader">{{ $t('domains.totalAccounts') }}</span>
+          <span class="h-sm" role="columnheader">{{ $t('domains.totalAssets') }}</span>
         </div>
       </template>
 
       <template #row="{ item }">
-        <div class="domains-list-page__row">
-          <BaseLink
-            :to="`/domains/${item.id}`"
-            class="cell"
-          >
-            {{ item.id }}
-          </BaseLink>
+        <div
+          class="domains-list-page__row"
+          role="presentation"
+        >
+          <div class="cell" role="cell">
+            <BaseLink :to="`/domains/${item.id}`">
+              {{ item.id }}
+            </BaseLink>
+          </div>
 
-          <BaseHash
-            :hash="item.owned_by.toString()"
-            :link="`/accounts/${item.owned_by}`"
-            :type="hashType"
-            copy
-          />
+          <div role="cell">
+            <BaseHash
+              :hash="item.owned_by.toString()"
+              :link="`/accounts/${item.owned_by}`"
+              :type="hashType"
+              copy
+            />
+          </div>
 
-          <span class="row-text-monospace">{{ item.accounts }}</span>
-          <span class="row-text-monospace">{{ item.assets + item.nfts }}</span>
+          <span class="row-text-monospace" role="cell">{{ item.accounts }}</span>
+          <span class="row-text-monospace" role="cell">{{ item.assets + item.nfts }}</span>
         </div>
       </template>
 

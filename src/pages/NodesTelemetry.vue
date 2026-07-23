@@ -2671,19 +2671,26 @@ const sumeragiChainSnapshot = computed(() => {
         :breakpoint="1440"
       >
         <template #header>
-          <div class="nodes-telemetry-page__list-row">
-            <span class="h-sm cell" />
-            <span class="h-sm cell">{{ $t('telemetry.publicUrl') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.location') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.publicKey') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.connectedPeers') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.blocksGossiping') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.tnxsGossiping') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.block') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.commitTime') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.avgCommitTime') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.queue') }}</span>
-            <span class="h-sm cell">{{ $t('telemetry.uptime') }}</span>
+          <div
+            class="nodes-telemetry-page__list-row"
+            role="presentation"
+          >
+            <span
+              class="h-sm cell"
+              role="columnheader"
+              :aria-label="$t('telemetry.connectionStatus')"
+            />
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.publicUrl') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.location') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.publicKey') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.connectedPeers') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.blocksGossiping') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.tnxsGossiping') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.block') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.commitTime') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.avgCommitTime') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.queue') }}</span>
+            <span class="h-sm cell" role="columnheader">{{ $t('telemetry.uptime') }}</span>
           </div>
         </template>
 
@@ -2691,6 +2698,8 @@ const sumeragiChainSnapshot = computed(() => {
           <div
             v-if="item.info && item.info.telemetry_unsupported"
             class="nodes-telemetry-page__list-row_unsupported row-text cell"
+            role="cell"
+            aria-colspan="12"
           >
             <BaseLink :to="item.info.url">
               {{ item.info.url }}
@@ -2700,23 +2709,27 @@ const sumeragiChainSnapshot = computed(() => {
           <div
             v-else-if="item.info && item.status"
             class="nodes-telemetry-page__list-row"
+            role="presentation"
           >
             <span
               class="nodes-telemetry-page__list-row-status row-text cell"
               :data-connected="item.info.connected"
+              role="cell"
             >◉</span>
 
-            <BaseHash
-              :hash="item.info.url"
-              :link="item.info.url"
-              copy
-              class="cell"
-              type="medium"
-            />
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.info.url"
+                :link="item.info.url"
+                copy
+                type="medium"
+              />
+            </div>
 
             <div
               class="row-text cell nodes-telemetry-page__list-row-location"
               :class="{ 'nodes-telemetry-page__list-row-value_empty': !item.info.location }"
+              role="cell"
             >
               <template v-if="item.info.location">
                 <span>{{ item.info.location.country }}</span>
@@ -2725,63 +2738,60 @@ const sumeragiChainSnapshot = computed(() => {
               <span v-else>Unknown</span>
             </div>
 
-            <BaseHash
-              v-if="item.info.config"
-              :hash="item.info.config.public_key"
-              type="medium"
-              copy
-              class="row-text-monospace cell"
-            />
-            <span
-              v-else
-              class="row-text cell"
-            >Unknown</span>
+            <div class="row-text cell" role="cell">
+              <BaseHash
+                v-if="item.info.config"
+                :hash="item.info.config.public_key"
+                type="medium"
+                copy
+                class="row-text-monospace"
+              />
+              <span v-else>Unknown</span>
+            </div>
 
-            <span class="row-text-monospace cell">
+            <span class="row-text-monospace cell" role="cell">
               {{ item.info.connected_peers ? formatNumber(item.info.connected_peers.length) : '-' }}
             </span>
 
             <div
-              v-if="item.info.config && item.info.config.network_block_gossip_size"
               class="nodes-telemetry-page__list-row-gossip row-text-monospace cell"
+              role="cell"
             >
-              <span>{{ item.info.config.network_block_gossip_size }}</span>
-              <ContextTooltip
-                v-if="item.info.config.network_block_gossip_period?.ms"
-                :message="
-                  $t('telemetry.networkGossipDetails', [
-                    item.info.config.network_block_gossip_size,
-                    item.info.config.network_block_gossip_period.ms,
-                  ])
-                "
-              />
+              <template v-if="item.info.config && item.info.config.network_block_gossip_size">
+                <span>{{ item.info.config.network_block_gossip_size }}</span>
+                <ContextTooltip
+                  v-if="item.info.config.network_block_gossip_period?.ms"
+                  :message="
+                    $t('telemetry.networkGossipDetails', [
+                      item.info.config.network_block_gossip_size,
+                      item.info.config.network_block_gossip_period.ms,
+                    ])
+                  "
+                />
+              </template>
+              <span v-else>-</span>
             </div>
-            <span
-              v-else
-              class="row-text cell"
-            >-</span>
 
             <div
-              v-if="item.info.config && item.info.config.network_tx_gossip_size"
               class="nodes-telemetry-page__list-row-gossip row-text-monospace cell"
+              role="cell"
             >
-              <span>{{ item.info.config.network_tx_gossip_size }}</span>
-              <ContextTooltip
-                v-if="item.info.config.network_tx_gossip_period?.ms"
-                :message="
-                  $t('telemetry.networkGossipDetails', [
-                    item.info.config.network_tx_gossip_size,
-                    item.info.config.network_tx_gossip_period.ms,
-                  ])
-                "
-              />
+              <template v-if="item.info.config && item.info.config.network_tx_gossip_size">
+                <span>{{ item.info.config.network_tx_gossip_size }}</span>
+                <ContextTooltip
+                  v-if="item.info.config.network_tx_gossip_period?.ms"
+                  :message="
+                    $t('telemetry.networkGossipDetails', [
+                      item.info.config.network_tx_gossip_size,
+                      item.info.config.network_tx_gossip_period.ms,
+                    ])
+                  "
+                />
+              </template>
+              <span v-else>-</span>
             </div>
-            <span
-              v-else
-              class="row-text cell"
-            >-</span>
 
-            <div class="cell nodes-telemetry-page__list-row-block">
+            <div class="cell nodes-telemetry-page__list-row-block" role="cell">
               <BaseLink
                 monospace
                 :to="`/blocks/${item.status.block}`"
@@ -2796,35 +2806,39 @@ const sumeragiChainSnapshot = computed(() => {
               </span>
             </div>
 
-            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.commit_time.ms) }}</span>
-            <span class="row-text-monospace cell">
+            <span class="row-text-monospace cell" role="cell">{{ formatTimestamp(item.status.commit_time.ms) }}</span>
+            <span class="row-text-monospace cell" role="cell">
               {{ item.status.avg_commit_time ? formatTimestamp(item.status.avg_commit_time.ms) : '-' }}
             </span>
-            <span class="row-text-monospace cell">
+            <span class="row-text-monospace cell" role="cell">
               {{ formatQueueUsage(item.status.queue_size, item.info.config?.queue_capacity) }}
             </span>
-            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.uptime.ms) }}</span>
+            <span class="row-text-monospace cell" role="cell">{{ formatTimestamp(item.status.uptime.ms) }}</span>
           </div>
           <div
             v-else-if="item.info"
             class="nodes-telemetry-page__list-row"
+            role="presentation"
           >
             <span
               class="nodes-telemetry-page__list-row-status row-text cell"
               :data-connected="item.info.connected"
+              role="cell"
             >◉</span>
 
-            <BaseHash
-              :hash="item.info.url"
-              :link="item.info.url"
-              copy
-              class="cell"
-              type="medium"
-            />
+            <div class="cell" role="cell">
+              <BaseHash
+                :hash="item.info.url"
+                :link="item.info.url"
+                copy
+                type="medium"
+              />
+            </div>
 
             <div
               class="row-text cell nodes-telemetry-page__list-row-location"
               :class="{ 'nodes-telemetry-page__list-row-value_empty': !item.info.location }"
+              role="cell"
             >
               <template v-if="item.info.location">
                 <span>{{ item.info.location.country }}</span>
@@ -2833,83 +2847,81 @@ const sumeragiChainSnapshot = computed(() => {
               <span v-else>Unknown</span>
             </div>
 
-            <BaseHash
-              v-if="item.info.config"
-              :hash="item.info.config.public_key"
-              type="medium"
-              copy
-              class="row-text-monospace cell"
-            />
-            <span
-              v-else
-              class="row-text cell"
-            >Unknown</span>
+            <div class="row-text cell" role="cell">
+              <BaseHash
+                v-if="item.info.config"
+                :hash="item.info.config.public_key"
+                type="medium"
+                copy
+                class="row-text-monospace"
+              />
+              <span v-else>Unknown</span>
+            </div>
 
-            <span class="row-text-monospace cell">
+            <span class="row-text-monospace cell" role="cell">
               {{ item.info.connected_peers ? formatNumber(item.info.connected_peers.length) : '-' }}
             </span>
 
             <div
-              v-if="item.info.config && item.info.config.network_block_gossip_size"
               class="nodes-telemetry-page__list-row-gossip row-text-monospace cell"
+              role="cell"
             >
-              <span>{{ item.info.config.network_block_gossip_size }}</span>
-              <ContextTooltip
-                v-if="item.info.config.network_block_gossip_period?.ms"
-                :message="
-                  $t('telemetry.networkGossipDetails', [
-                    item.info.config.network_block_gossip_size,
-                    item.info.config.network_block_gossip_period.ms,
-                  ])
-                "
-              />
+              <template v-if="item.info.config && item.info.config.network_block_gossip_size">
+                <span>{{ item.info.config.network_block_gossip_size }}</span>
+                <ContextTooltip
+                  v-if="item.info.config.network_block_gossip_period?.ms"
+                  :message="
+                    $t('telemetry.networkGossipDetails', [
+                      item.info.config.network_block_gossip_size,
+                      item.info.config.network_block_gossip_period.ms,
+                    ])
+                  "
+                />
+              </template>
+              <span v-else>-</span>
             </div>
-            <span
-              v-else
-              class="row-text cell"
-            >-</span>
 
             <div
-              v-if="item.info.config && item.info.config.network_tx_gossip_size"
               class="nodes-telemetry-page__list-row-gossip row-text-monospace cell"
+              role="cell"
             >
-              <span>{{ item.info.config.network_tx_gossip_size }}</span>
-              <ContextTooltip
-                v-if="item.info.config.network_tx_gossip_period?.ms"
-                :message="
-                  $t('telemetry.networkGossipDetails', [
-                    item.info.config.network_tx_gossip_size,
-                    item.info.config.network_tx_gossip_period.ms,
-                  ])
-                "
-              />
+              <template v-if="item.info.config && item.info.config.network_tx_gossip_size">
+                <span>{{ item.info.config.network_tx_gossip_size }}</span>
+                <ContextTooltip
+                  v-if="item.info.config.network_tx_gossip_period?.ms"
+                  :message="
+                    $t('telemetry.networkGossipDetails', [
+                      item.info.config.network_tx_gossip_size,
+                      item.info.config.network_tx_gossip_period.ms,
+                    ])
+                  "
+                />
+              </template>
+              <span v-else>-</span>
             </div>
-            <span
-              v-else
-              class="row-text cell"
-            >-</span>
 
-            <span class="row-text-monospace cell">-</span>
-            <span class="row-text-monospace cell">-</span>
-            <span class="row-text-monospace cell">-</span>
-            <span class="row-text-monospace cell">
+            <span class="row-text-monospace cell" role="cell">-</span>
+            <span class="row-text-monospace cell" role="cell">-</span>
+            <span class="row-text-monospace cell" role="cell">-</span>
+            <span class="row-text-monospace cell" role="cell">
               {{ formatQueueUsage(null, item.info.config?.queue_capacity) }}
             </span>
-            <span class="row-text-monospace cell">-</span>
+            <span class="row-text-monospace cell" role="cell">-</span>
           </div>
           <div
             v-else-if="item.status"
             class="nodes-telemetry-page__list-row"
+            role="presentation"
           >
-            <span class="nodes-telemetry-page__list-row-status row-text cell">◉</span>
-            <span class="row-text cell">{{ item.status.url }}</span>
-            <span class="row-text cell">Unknown</span>
-            <span class="row-text cell">Unknown</span>
-            <span class="row-text cell">-</span>
-            <span class="row-text cell">-</span>
-            <span class="row-text cell">-</span>
+            <span class="nodes-telemetry-page__list-row-status row-text cell" role="cell">◉</span>
+            <span class="row-text cell" role="cell">{{ item.status.url }}</span>
+            <span class="row-text cell" role="cell">Unknown</span>
+            <span class="row-text cell" role="cell">Unknown</span>
+            <span class="row-text cell" role="cell">-</span>
+            <span class="row-text cell" role="cell">-</span>
+            <span class="row-text cell" role="cell">-</span>
 
-            <div class="cell nodes-telemetry-page__list-row-block">
+            <div class="cell nodes-telemetry-page__list-row-block" role="cell">
               <BaseLink
                 monospace
                 :to="`/blocks/${item.status.block}`"
@@ -2924,12 +2936,12 @@ const sumeragiChainSnapshot = computed(() => {
               </span>
             </div>
 
-            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.commit_time.ms) }}</span>
-            <span class="row-text-monospace cell">
+            <span class="row-text-monospace cell" role="cell">{{ formatTimestamp(item.status.commit_time.ms) }}</span>
+            <span class="row-text-monospace cell" role="cell">
               {{ item.status.avg_commit_time ? formatTimestamp(item.status.avg_commit_time.ms) : '-' }}
             </span>
-            <span class="row-text-monospace cell">{{ formatQueueUsage(item.status.queue_size, null) }}</span>
-            <span class="row-text-monospace cell">{{ formatTimestamp(item.status.uptime.ms) }}</span>
+            <span class="row-text-monospace cell" role="cell">{{ formatQueueUsage(item.status.queue_size, null) }}</span>
+            <span class="row-text-monospace cell" role="cell">{{ formatTimestamp(item.status.uptime.ms) }}</span>
           </div>
         </template>
 

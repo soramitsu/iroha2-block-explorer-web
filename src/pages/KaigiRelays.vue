@@ -60,25 +60,31 @@
           @click:row="handleRowClick"
         >
           <template #header>
-            <div class="kaigi-relays-page__row">
-              <span class="cell">{{ $t('kaigi.relayId') }}</span>
-              <span class="cell">{{ $t('kaigi.domain') }}</span>
-              <span class="cell">{{ $t('kaigi.bandwidthClass') }}</span>
-              <span class="cell">{{ $t('kaigi.status') }}</span>
-              <span class="cell">{{ $t('kaigi.lastReported') }}</span>
+            <div
+              class="kaigi-relays-page__row"
+              role="presentation"
+            >
+              <span class="cell" role="columnheader">{{ $t('kaigi.relayId') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.domain') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.bandwidthClass') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.status') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.lastReported') }}</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="kaigi-relays-page__row">
-              <span class="cell">{{ item.relay_id }}</span>
-              <span class="cell">{{ item.domain }}</span>
-              <span class="cell">{{ item.bandwidth_class }}</span>
-              <span class="cell">
+            <div
+              class="kaigi-relays-page__row"
+              role="presentation"
+            >
+              <span class="cell" role="cell">{{ item.relay_id }}</span>
+              <span class="cell" role="cell">{{ item.domain }}</span>
+              <span class="cell" role="cell">{{ item.bandwidth_class }}</span>
+              <span class="cell" role="cell">
                 <span
                   :class="['status-pill', statusClass(item.status)]"
                 >{{ formatStatus(item.status) }}</span>
               </span>
-              <span class="cell">
+              <span class="cell" role="cell">
                 <TimeStamp
                   v-if="item.reported_at_ms !== null"
                   :value="new Date(item.reported_at_ms)"
@@ -106,21 +112,27 @@
           :disable-pagination="true"
         >
           <template #header>
-            <div class="kaigi-relays-page__row">
-              <span class="cell">{{ $t('kaigi.domain') }}</span>
-              <span class="cell">{{ $t('kaigi.registrationsTotal') }}</span>
-              <span class="cell">{{ $t('kaigi.manifestUpdatesTotal') }}</span>
-              <span class="cell">{{ $t('kaigi.failoversTotal') }}</span>
-              <span class="cell">{{ $t('kaigi.healthReportsTotal') }}</span>
+            <div
+              class="kaigi-relays-page__row"
+              role="presentation"
+            >
+              <span class="cell" role="columnheader">{{ $t('kaigi.domain') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.registrationsTotal') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.manifestUpdatesTotal') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.failoversTotal') }}</span>
+              <span class="cell" role="columnheader">{{ $t('kaigi.healthReportsTotal') }}</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="kaigi-relays-page__row">
-              <span class="cell">{{ item.domain }}</span>
-              <span class="cell">{{ item.registrations_total }}</span>
-              <span class="cell">{{ item.manifest_updates_total }}</span>
-              <span class="cell">{{ item.failovers_total }}</span>
-              <span class="cell">{{ item.health_reports_total }}</span>
+            <div
+              class="kaigi-relays-page__row"
+              role="presentation"
+            >
+              <span class="cell" role="cell">{{ item.domain }}</span>
+              <span class="cell" role="cell">{{ item.registrations_total }}</span>
+              <span class="cell" role="cell">{{ item.manifest_updates_total }}</span>
+              <span class="cell" role="cell">{{ item.failovers_total }}</span>
+              <span class="cell" role="cell">{{ item.health_reports_total }}</span>
             </div>
           </template>
         </BaseTable>

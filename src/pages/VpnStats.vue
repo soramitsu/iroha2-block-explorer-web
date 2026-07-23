@@ -106,18 +106,24 @@
           container-class="vpn-stats-page__countries-table"
         >
           <template #header>
-            <div class="vpn-stats-page__countries-row vpn-stats-page__countries-row--header">
-              <span>{{ $t('vpn.country') }}</span>
-              <span>{{ $t('vpn.peers') }}</span>
-              <span>{{ $t('vpn.connectedPeers') }}</span>
+            <div
+              class="vpn-stats-page__countries-row vpn-stats-page__countries-row--header"
+              role="presentation"
+            >
+              <span role="columnheader">{{ $t('vpn.country') }}</span>
+              <span role="columnheader">{{ $t('vpn.peers') }}</span>
+              <span role="columnheader">{{ $t('vpn.connectedPeers') }}</span>
             </div>
           </template>
 
           <template #row="{ item }">
-            <div class="vpn-stats-page__countries-row">
-              <span class="row-text">{{ item.country }}</span>
-              <span class="row-text">{{ formatNumber(item.peerCount) }}</span>
-              <span class="row-text">{{ formatNumber(item.connectedCount) }}</span>
+            <div
+              class="vpn-stats-page__countries-row"
+              role="presentation"
+            >
+              <span class="row-text" role="cell">{{ item.country }}</span>
+              <span class="row-text" role="cell">{{ formatNumber(item.peerCount) }}</span>
+              <span class="row-text" role="cell">{{ formatNumber(item.connectedCount) }}</span>
             </div>
           </template>
         </BaseTable>

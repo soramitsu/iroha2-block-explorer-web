@@ -66,13 +66,16 @@
           @click:row="selectManifest"
         >
           <template #header>
-            <div class="sorafs-registry-page__row sorafs-registry-page__row--header">
-              <span>{{ $t('sorafs.columns.digest') }}</span>
-              <span>{{ $t('sorafs.columns.status') }}</span>
-              <span>{{ $t('sorafs.columns.alias') }}</span>
-              <span>{{ $t('sorafs.columns.chunker') }}</span>
-              <span>{{ $t('sorafs.columns.submittedBy') }}</span>
-              <span>{{ $t('sorafs.columns.successor') }}</span>
+            <div
+              class="sorafs-registry-page__row sorafs-registry-page__row--header"
+              role="presentation"
+            >
+              <span role="columnheader">{{ $t('sorafs.columns.digest') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.status') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.alias') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.chunker') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.submittedBy') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.successor') }}</span>
             </div>
           </template>
 
@@ -82,33 +85,41 @@
                 'sorafs-registry-page__row',
                 selectedManifestId === item.digest_hex ? 'sorafs-registry-page__row--selected' : null,
               ]"
+              role="presentation"
             >
-              <BaseHash
-                :hash="item.digest_hex"
-                type="medium"
-                copy
-              />
+              <div role="cell">
+                <BaseHash
+                  :hash="item.digest_hex"
+                  type="medium"
+                  copy
+                />
+              </div>
 
-              <span :class="['sorafs-status-pill', `sorafs-status-pill--${item.status.state}`]">
+              <span
+                :class="['sorafs-status-pill', `sorafs-status-pill--${item.status.state}`]"
+                role="cell"
+              >
                 {{ $t(`sorafs.manifestStatus.${item.status.state}`) }}
               </span>
 
-              <span class="row-text-monospace">
+              <span class="row-text-monospace" role="cell">
                 {{ item.alias?.name ?? '—' }}
               </span>
 
-              <span class="row-text">
+              <span class="row-text" role="cell">
                 {{ item.chunker.namespace }}.{{ item.chunker.name }}@{{ item.chunker.semver }}
               </span>
 
-              <BaseLink
-                :to="`/accounts/${item.submitted_by}`"
-                monospace
-              >
-                {{ item.submitted_by }}
-              </BaseLink>
+              <div role="cell">
+                <BaseLink
+                  :to="`/accounts/${item.submitted_by}`"
+                  monospace
+                >
+                  {{ item.submitted_by }}
+                </BaseLink>
+              </div>
 
-              <span class="row-text">
+              <span class="row-text" role="cell">
                 {{ sorafsSuccessorLabel(item.lineage?.immediate_successor) }}
               </span>
             </div>
@@ -660,33 +671,45 @@
           container-class="sorafs-registry-page__table"
         >
           <template #header>
-            <div class="sorafs-registry-page__row sorafs-registry-page__row--header">
-              <span>{{ $t('sorafs.columns.alias') }}</span>
-              <span>{{ $t('sorafs.columns.namespace') }}</span>
-              <span>{{ $t('sorafs.columns.manifest') }}</span>
-              <span>{{ $t('sorafs.columns.boundBy') }}</span>
-              <span>{{ $t('sorafs.columns.expiry') }}</span>
+            <div
+              class="sorafs-registry-page__row sorafs-registry-page__row--header"
+              role="presentation"
+            >
+              <span role="columnheader">{{ $t('sorafs.columns.alias') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.namespace') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.manifest') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.boundBy') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.expiry') }}</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="sorafs-registry-page__row">
-              <span class="row-text">{{ item.alias }}</span>
-              <span class="row-text">{{ item.namespace }}</span>
-              <BaseHash
-                :hash="item.manifest_digest_hex"
-                type="short"
-                copy
-              />
-              <BaseLink
-                :to="`/accounts/${item.bound_by}`"
-                monospace
-              >
-                {{ item.bound_by }}
-              </BaseLink>
-              <TimeStamp
-                :value="sorafsEpochToDate(item.expiry_epoch)"
-                inverted
-              />
+            <div
+              class="sorafs-registry-page__row"
+              role="presentation"
+            >
+              <span class="row-text" role="cell">{{ item.alias }}</span>
+              <span class="row-text" role="cell">{{ item.namespace }}</span>
+              <div role="cell">
+                <BaseHash
+                  :hash="item.manifest_digest_hex"
+                  type="short"
+                  copy
+                />
+              </div>
+              <div role="cell">
+                <BaseLink
+                  :to="`/accounts/${item.bound_by}`"
+                  monospace
+                >
+                  {{ item.bound_by }}
+                </BaseLink>
+              </div>
+              <div role="cell">
+                <TimeStamp
+                  :value="sorafsEpochToDate(item.expiry_epoch)"
+                  inverted
+                />
+              </div>
             </div>
           </template>
         </BaseTable>
@@ -728,34 +751,49 @@
           container-class="sorafs-registry-page__table"
         >
           <template #header>
-            <div class="sorafs-registry-page__row sorafs-registry-page__row--header">
-              <span>{{ $t('sorafs.columns.orderId') }}</span>
-              <span>{{ $t('sorafs.columns.manifest') }}</span>
-              <span>{{ $t('sorafs.columns.status') }}</span>
-              <span>{{ $t('sorafs.columns.deadline') }}</span>
-              <span>{{ $t('sorafs.columns.providers') }}</span>
+            <div
+              class="sorafs-registry-page__row sorafs-registry-page__row--header"
+              role="presentation"
+            >
+              <span role="columnheader">{{ $t('sorafs.columns.orderId') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.manifest') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.status') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.deadline') }}</span>
+              <span role="columnheader">{{ $t('sorafs.columns.providers') }}</span>
             </div>
           </template>
           <template #row="{ item }">
-            <div class="sorafs-registry-page__row">
-              <BaseHash
-                :hash="item.order_id_hex"
-                type="short"
-                copy
-              />
-              <BaseHash
-                :hash="item.manifest_digest_hex"
-                type="short"
-                copy
-              />
-              <span :class="['sorafs-status-pill', `sorafs-status-pill--${item.status.state}`]">
+            <div
+              class="sorafs-registry-page__row"
+              role="presentation"
+            >
+              <div role="cell">
+                <BaseHash
+                  :hash="item.order_id_hex"
+                  type="short"
+                  copy
+                />
+              </div>
+              <div role="cell">
+                <BaseHash
+                  :hash="item.manifest_digest_hex"
+                  type="short"
+                  copy
+                />
+              </div>
+              <span
+                :class="['sorafs-status-pill', `sorafs-status-pill--${item.status.state}`]"
+                role="cell"
+              >
                 {{ $t(`sorafs.replicationStatus.${item.status.state}`) }}
               </span>
-              <TimeStamp
-                :value="sorafsEpochToDate(item.deadline_epoch)"
-                inverted
-              />
-              <span class="row-text">{{ item.providers.length }}</span>
+              <div role="cell">
+                <TimeStamp
+                  :value="sorafsEpochToDate(item.deadline_epoch)"
+                  inverted
+                />
+              </div>
+              <span class="row-text" role="cell">{{ item.providers.length }}</span>
             </div>
           </template>
         </BaseTable>

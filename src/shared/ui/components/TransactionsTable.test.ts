@@ -178,12 +178,13 @@ describe('TransactionsTable', () => {
     }
   });
 
-  const factory = () => {
+  const factory = (props: Partial<InstanceType<typeof TransactionsTable>['$props']> = {}) => {
     const wrapper = mount(TransactionsTable, {
       props: {
         hashType: 'short',
         showBlock: true,
         showAuthority: true,
+        ...props,
       },
       global: {
         plugins: [i18n],
@@ -205,6 +206,24 @@ describe('TransactionsTable', () => {
     mountedWrappers.push(wrapper);
     return wrapper;
   };
+
+  it('exposes optional transaction columns as distinct cells without replacing link semantics', async () => {
+    const fullWrapper = factory();
+    await flushPromises();
+
+    const fullRow = fullWrapper.get('.transactions-table__row');
+    expect(fullRow.attributes('role')).toBe('presentation');
+    expect(fullRow.findAll('[role="cell"]')).toHaveLength(5);
+    expect(fullRow.get('.transactions-table__column-block[role="cell"] a').text()).toBe('10');
+
+    const compactWrapper = factory({ showBlock: false, showAuthority: false });
+    await flushPromises();
+
+    const compactRow = compactWrapper.get('.transactions-table__row');
+    expect(compactRow.findAll('[role="cell"]')).toHaveLength(3);
+    expect(compactRow.find('.transactions-table__column-block').exists()).toBe(false);
+    expect(compactRow.find('.transactions-table__column-authority').exists()).toBe(false);
+  });
 
   it('does not auto-refetch on stream updates when not on the latest page', async () => {
     const wrapper = factory();

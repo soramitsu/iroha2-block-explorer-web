@@ -67,9 +67,12 @@ pnpm dev --host 0.0.0.0 --port 5173
 
 ### Deterministic Mochi integration chain
 
-The Explorer pins its local integration network in `tests/mochi/explorer-profile.json`. The
-wrapper refuses to start against a different sibling Iroha revision, so an upstream bump must be
-reviewed together with the profile pin.
+The Explorer pins its local integration network in `tests/mochi/explorer-profile.json`. That one
+revision governs the sibling Torii/Mochi runtime and sibling `@iroha/iroha-js` browser SDK.
+The wrapper refuses to start against a different sibling Iroha revision, so an upstream bump must
+be reviewed together with the profile pin and a fresh Explorer typecheck/build.
+It also gives the debug peer runtime a 32 MiB worker-stack floor; set `RUST_MIN_STACK` explicitly
+to override that floor for a constrained or instrumented environment.
 The wrapper also loads `tests/mochi/explorer-local.toml`, which enables Torii's native CORS policy
 only for the explicit loopback Vite/Playwright origins used by this repository.
 

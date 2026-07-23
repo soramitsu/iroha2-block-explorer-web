@@ -50,6 +50,7 @@ describe('pinned Mochi Explorer profile', () => {
   it('builds a local-only environment without discarding caller variables', () => {
     expect(buildMochiEnvironment(profile, '/work/explorer', { CI: 'true' })).toMatchObject({
       CI: 'true',
+      RUST_MIN_STACK: '33554432',
       MOCHI_CONFIG: '/work/explorer/tests/mochi/explorer-local.toml',
       MOCHI_WORKSPACE_ROOT: '/work/explorer',
       MOCHI_PROFILE: 'single-peer',
@@ -57,6 +58,14 @@ describe('pinned Mochi Explorer profile', () => {
       MOCHI_CHAIN_ID: 'explorer-chain',
       MOCHI_START_TIMEOUT_SECONDS: '60',
       MOCHI_PYTHON: process.platform === 'darwin' ? '/usr/bin/python3' : 'python3',
+    });
+  });
+
+  it('preserves an explicit Rust worker-stack size for the upstream runtime', () => {
+    expect(buildMochiEnvironment(profile, '/work/explorer', {
+      RUST_MIN_STACK: '67108864',
+    })).toMatchObject({
+      RUST_MIN_STACK: '67108864',
     });
   });
 

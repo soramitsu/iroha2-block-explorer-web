@@ -65,8 +65,13 @@ export function resolveMochiPython(platform, environment = {}) {
 }
 
 export function buildMochiEnvironment(profile, workspaceRoot, baseEnvironment = process.env) {
+  const rustMinStack = typeof baseEnvironment.RUST_MIN_STACK === 'string'
+    && baseEnvironment.RUST_MIN_STACK.trim() !== ''
+    ? baseEnvironment.RUST_MIN_STACK
+    : String(32 * 1024 * 1024);
   return {
     ...baseEnvironment,
+    RUST_MIN_STACK: rustMinStack,
     MOCHI_CONFIG: join(workspaceRoot, 'tests/mochi/explorer-local.toml'),
     MOCHI_WORKSPACE_ROOT: workspaceRoot,
     MOCHI_PROFILE: profile.profile,

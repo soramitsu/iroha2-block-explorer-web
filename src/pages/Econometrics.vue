@@ -1488,11 +1488,14 @@ const issuanceNetSparkline = computed(() => {
             @click:row="(asset) => startCompute(asset.id)"
           >
             <template #header>
-              <div class="econometrics-page__asset-row econometrics-page__asset-row--header">
-                <span class="h-sm cell">{{ $t('econometrics.assetDefinition') }}</span>
-                <span class="h-sm cell">{{ $t('assets.assets') }}</span>
-                <span class="h-sm cell">{{ $t('econometrics.totalSupplyDefinition') }}</span>
-                <span class="h-sm cell">{{ $t('assets.filters.ownerLabel') }}</span>
+              <div
+                class="econometrics-page__asset-row econometrics-page__asset-row--header"
+                role="presentation"
+              >
+                <span class="h-sm cell" role="columnheader">{{ $t('econometrics.assetDefinition') }}</span>
+                <span class="h-sm cell" role="columnheader">{{ $t('assets.assets') }}</span>
+                <span class="h-sm cell" role="columnheader">{{ $t('econometrics.totalSupplyDefinition') }}</span>
+                <span class="h-sm cell" role="columnheader">{{ $t('assets.filters.ownerLabel') }}</span>
               </div>
             </template>
 
@@ -1502,8 +1505,9 @@ const issuanceNetSparkline = computed(() => {
                   'econometrics-page__asset-row',
                   selectedAssetDefinitionId === item.id ? 'econometrics-page__asset-row--selected' : null,
                 ]"
+                role="presentation"
               >
-                <div class="econometrics-page__asset-definition cell">
+                <div class="econometrics-page__asset-definition cell" role="cell">
                   <span
                     v-if="item.alias"
                     class="econometrics-page__asset-alias row-text"
@@ -1512,11 +1516,11 @@ const issuanceNetSparkline = computed(() => {
                   </span>
                   <span class="row-text-monospace">{{ item.id }}</span>
                 </div>
-                <span class="row-text-monospace cell">{{ item.assets }}</span>
-                <span class="row-text-monospace cell">{{
+                <span class="row-text-monospace cell" role="cell">{{ item.assets }}</span>
+                <span class="row-text-monospace cell" role="cell">{{
                   item.total_quantity ? item.total_quantity.toString() : $t('none')
                 }}</span>
-                <span class="row-text-monospace cell">{{ item.owned_by }}</span>
+                <span class="row-text-monospace cell" role="cell">{{ item.owned_by }}</span>
               </div>
             </template>
           </BaseTable>
@@ -1736,24 +1740,31 @@ const issuanceNetSparkline = computed(() => {
               @click:row="(holder) => openHolderAccount(holder.account)"
             >
               <template #header>
-                <div class="econometrics-page__holders-row">
-                  <span class="h-sm cell">{{ $t('accountId') }}</span>
-                  <span class="h-sm cell">{{ $t('value') }}</span>
-                  <span class="h-sm cell">{{ $t('econometrics.share') }}</span>
+                <div
+                  class="econometrics-page__holders-row"
+                  role="presentation"
+                >
+                  <span class="h-sm cell" role="columnheader">{{ $t('accountId') }}</span>
+                  <span class="h-sm cell" role="columnheader">{{ $t('value') }}</span>
+                  <span class="h-sm cell" role="columnheader">{{ $t('econometrics.share') }}</span>
                 </div>
               </template>
 
               <template #row="{ item }">
-                <div class="econometrics-page__holders-row">
-                  <BaseHash
-                    :hash="item.account"
-                    :link="`/accounts/${item.account}`"
-                    type="short"
-                    copy
-                    class="cell"
-                  />
-                  <span class="row-text-monospace cell">{{ item.balance.toString() }}</span>
-                  <span class="row-text-monospace cell">{{ formatPercent(item.share) }}</span>
+                <div
+                  class="econometrics-page__holders-row"
+                  role="presentation"
+                >
+                  <div class="cell" role="cell">
+                    <BaseHash
+                      :hash="item.account"
+                      :link="`/accounts/${item.account}`"
+                      type="short"
+                      copy
+                    />
+                  </div>
+                  <span class="row-text-monospace cell" role="cell">{{ item.balance.toString() }}</span>
+                  <span class="row-text-monospace cell" role="cell">{{ formatPercent(item.share) }}</span>
                 </div>
               </template>
             </BaseTable>
@@ -1768,35 +1779,41 @@ const issuanceNetSparkline = computed(() => {
               container-class="econometrics-page__velocity-table"
             >
               <template #header>
-                <div class="econometrics-page__velocity-row econometrics-page__velocity-row--header">
-                  <span>{{ $t('econometrics.window') }}</span>
-                  <span>{{ $t('econometrics.transferMatched') }}</span>
-                  <span>{{ $t('econometrics.transferAmount') }}</span>
-                  <span>{{ $t('econometrics.turnover') }}</span>
-                  <span>{{ $t('econometrics.velocity') }}</span>
-                  <span>{{ $t('econometrics.transferPerDay') }}</span>
-                  <span>{{ $t('econometrics.uniqueSenders') }}</span>
-                  <span>{{ $t('econometrics.uniqueReceivers') }}</span>
-                  <span>{{ $t('econometrics.coverageShort') }}</span>
+                <div
+                  class="econometrics-page__velocity-row econometrics-page__velocity-row--header"
+                  role="presentation"
+                >
+                  <span role="columnheader">{{ $t('econometrics.window') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.transferMatched') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.transferAmount') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.turnover') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.velocity') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.transferPerDay') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.uniqueSenders') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.uniqueReceivers') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.coverageShort') }}</span>
                 </div>
               </template>
               <template #row="{ item }">
-                <div class="econometrics-page__velocity-row">
-                  <span class="row-text-monospace">{{ formatWindowLabel(item.key) }}</span>
-                  <span class="row-text-monospace">{{ item.transfers }}</span>
-                  <span class="row-text-monospace">
+                <div
+                  class="econometrics-page__velocity-row"
+                  role="presentation"
+                >
+                  <span class="row-text-monospace" role="cell">{{ formatWindowLabel(item.key) }}</span>
+                  <span class="row-text-monospace" role="cell">{{ item.transfers }}</span>
+                  <span class="row-text-monospace" role="cell">
                     {{ item.amount ? item.amount.toString() : $t('none') }}
                     <span
                       v-if="item.amountParsed + item.amountMissing > 0"
                       class="econometrics-page__sub"
                     >({{ item.amountParsed }}/{{ item.amountParsed + item.amountMissing }})</span>
                   </span>
-                  <span class="row-text-monospace">{{ formatPercent(item.turnover) }}</span>
-                  <span class="row-text-monospace">{{ formatRatio(item.velocityPerDay, 6) }}</span>
-                  <span class="row-text-monospace">{{ formatRatio(item.transfersPerDay, 3) }}</span>
-                  <span class="row-text-monospace">{{ item.uniqueSenders }}</span>
-                  <span class="row-text-monospace">{{ item.uniqueReceivers }}</span>
-                  <span class="row-text-monospace">{{ item.complete ? $t('econometrics.coverageComplete') : $t('econometrics.coverageSampled') }}</span>
+                  <span class="row-text-monospace" role="cell">{{ formatPercent(item.turnover) }}</span>
+                  <span class="row-text-monospace" role="cell">{{ formatRatio(item.velocityPerDay, 6) }}</span>
+                  <span class="row-text-monospace" role="cell">{{ formatRatio(item.transfersPerDay, 3) }}</span>
+                  <span class="row-text-monospace" role="cell">{{ item.uniqueSenders }}</span>
+                  <span class="row-text-monospace" role="cell">{{ item.uniqueReceivers }}</span>
+                  <span class="row-text-monospace" role="cell">{{ item.complete ? $t('econometrics.coverageComplete') : $t('econometrics.coverageSampled') }}</span>
                 </div>
               </template>
 
@@ -1895,33 +1912,39 @@ const issuanceNetSparkline = computed(() => {
               container-class="econometrics-page__issuance-table"
             >
               <template #header>
-                <div class="econometrics-page__issuance-row econometrics-page__issuance-row--header">
-                  <span>{{ $t('econometrics.window') }}</span>
-                  <span>{{ $t('econometrics.minted') }}</span>
-                  <span>{{ $t('econometrics.burned') }}</span>
-                  <span>{{ $t('econometrics.netIssuance') }}</span>
-                  <span>{{ $t('econometrics.coverageShort') }}</span>
+                <div
+                  class="econometrics-page__issuance-row econometrics-page__issuance-row--header"
+                  role="presentation"
+                >
+                  <span role="columnheader">{{ $t('econometrics.window') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.minted') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.burned') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.netIssuance') }}</span>
+                  <span role="columnheader">{{ $t('econometrics.coverageShort') }}</span>
                 </div>
               </template>
               <template #row="{ item }">
-                <div class="econometrics-page__issuance-row">
-                  <span class="row-text-monospace">{{ formatWindowLabel(item.key) }}</span>
-                  <span class="row-text-monospace">
+                <div
+                  class="econometrics-page__issuance-row"
+                  role="presentation"
+                >
+                  <span class="row-text-monospace" role="cell">{{ formatWindowLabel(item.key) }}</span>
+                  <span class="row-text-monospace" role="cell">
                     {{ formatMaybeBigNumber(item.minted) }}
                     <span
                       v-if="item.mintAmountParsed + item.mintAmountMissing > 0"
                       class="econometrics-page__sub"
                     >({{ item.mintAmountParsed }}/{{ item.mintAmountParsed + item.mintAmountMissing }})</span>
                   </span>
-                  <span class="row-text-monospace">
+                  <span class="row-text-monospace" role="cell">
                     {{ formatMaybeBigNumber(item.burned) }}
                     <span
                       v-if="item.burnAmountParsed + item.burnAmountMissing > 0"
                       class="econometrics-page__sub"
                     >({{ item.burnAmountParsed }}/{{ item.burnAmountParsed + item.burnAmountMissing }})</span>
                   </span>
-                  <span class="row-text-monospace">{{ formatMaybeBigNumber(item.net) }}</span>
-                  <span class="row-text-monospace">{{ item.complete ? $t('econometrics.coverageComplete') : $t('econometrics.coverageSampled') }}</span>
+                  <span class="row-text-monospace" role="cell">{{ formatMaybeBigNumber(item.net) }}</span>
+                  <span class="row-text-monospace" role="cell">{{ item.complete ? $t('econometrics.coverageComplete') : $t('econometrics.coverageSampled') }}</span>
                 </div>
               </template>
 
