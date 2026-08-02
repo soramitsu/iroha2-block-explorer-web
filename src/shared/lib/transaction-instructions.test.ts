@@ -5,6 +5,7 @@ import { fetchAllTransactionInstructions } from './transaction-instructions';
 
 const SAMPLE_I105 =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
+const FRAMED_SHA256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 
 function makeInstruction(index: number): Instruction {
   return {
@@ -17,6 +18,7 @@ function makeInstruction(index: number): Instruction {
     block: 1,
     box: {
       encoded: `0x${index.toString(16).padStart(2, '0')}`,
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Register',
         payload: {},

@@ -14,6 +14,7 @@ const ASSET_ID = `${ASSET_DEFINITION}#${MULTISIG_ACCOUNT}`;
 const DOMAIN = 'wonderland.universal';
 const NFT = `looking_glass$${DOMAIN}`;
 const EXACT_AMOUNT = '90071992547409931234567890.000000000000000001';
+const FRAMED_SHA256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 const LIVE_TRANSFER_INSTRUCTION =
   'TlJUMAAAhip9dwddTSP/bBJh2wJ4EQDSAQAAAAAAABQKMDTp3Yu+Ag8OaXJvaGEudHJhbnNmZXLAA7gBAAAAAAAATlJUMAAApBdMeNY0H4+Y/Cra6O1nuQCQAQAAAAAAAOy4mMbcuTFWAgIAAACKA6oCggIBAAAA/AEBAQICAPUBAwAAAAAAAABOSiEAAAAAAAAAAQABhAExAb0BZQH/ASQBcwHNAacBpwEHAcEBgAH3AcEB5AH2AcQBzAGVASABPQFuAXoBJwFLAYUBswHtAW8BbAE1AgEATkohAAAAAAAAAAEAAbQBJgHPAXIBUQE3Af8B5gEzAbkB7gFJAXQBIAGoAYIB2gGYAW0BNgGxAfMBgQGPASEBkQFsAdUBtQH9AUoB/QIBAE5KIQAAAAAAAAABAAHHAeIB8QH8AZMBSQHvAZ8BkgG6AYEBeAFSAa4BbQGBAV0B2wGyAWABgQHUAWsBrQHiATMBSwERATwBHwF/AWUCAQAgAW4BFQFrAVABEAHmAUUB+AGDAesBgwEZAUYBuAGNAbgEAAAAAA0HAwAAAKCGAQQAAAAATwAAAABKIQAAAAAAAAABAAH9AVUB7wEWAZIB1QGPAYcBkwEvAVkBgAEhAbEB1gEWATkBRwGAAQgBIwHlAb4BuQF0AcoBiAEEAZoByAGaAfc=';
 
@@ -22,6 +23,7 @@ function explorerInstruction(kind: string, variant: string, value: unknown) {
     kind,
     box: {
       encoded: '0x01',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind,
         payload: { variant, value },
@@ -213,6 +215,7 @@ describe('instruction presentation registry', () => {
         kind: 'Transfer',
         box: {
           encoded: '',
+          framed_sha256: FRAMED_SHA256,
           json: { kind: 'Transfer', payload: { source: ASSET_ID, object: '1', destination: ACCOUNT } },
         },
       })
@@ -222,6 +225,7 @@ describe('instruction presentation registry', () => {
         kind: 'Transfer',
         box: {
           encoded: '',
+          framed_sha256: FRAMED_SHA256,
           json: {
             kind: 'Transfer',
             payload: { variant: 'Asset', value: { source: ASSET_ID, object: '1', destination: ACCOUNT }, extra: true },

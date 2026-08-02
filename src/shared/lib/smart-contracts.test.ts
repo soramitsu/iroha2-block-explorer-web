@@ -4,6 +4,7 @@ import type { Instruction } from '@/shared/api/schemas';
 
 const SAMPLE_I105 =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
+const FRAMED_SHA256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 
 function makeInstruction(overrides: Partial<Instruction> = {}): Instruction {
   return {
@@ -16,6 +17,7 @@ function makeInstruction(overrides: Partial<Instruction> = {}): Instruction {
     block: 88,
     box: {
       encoded: '0x01',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'ActivateContractInstance',
         payload: {
@@ -49,6 +51,7 @@ describe('extractActivateContractInstancePayload', () => {
       kind: 'Custom',
       box: {
         encoded: '0x02',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'Custom',
           payload: {
@@ -98,6 +101,7 @@ describe('extractSmartContractDeployment', () => {
     const instruction = makeInstruction({
       box: {
         encoded: '0x03',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'ActivateContractInstance',
           payload: {

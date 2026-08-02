@@ -9,6 +9,7 @@ import type { Instruction } from '@/shared/api/schemas';
 
 const SAMPLE_I105 =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
+const FRAMED_SHA256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 
 function makeInstruction(overrides: Partial<Instruction> = {}): Instruction {
   return {
@@ -21,6 +22,7 @@ function makeInstruction(overrides: Partial<Instruction> = {}): Instruction {
     block: 77,
     box: {
       encoded: '0x01',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Register',
         payload: {},
@@ -162,6 +164,7 @@ function makeRegisterBytesInstruction(
     index: options.index ?? 0,
     box: {
       encoded: '0xbytes',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'RegisterSmartContractBytes',
         payload: {
@@ -179,6 +182,7 @@ function makeManifestInstruction(codeHash: string, index = 1): Instruction {
     index,
     box: {
       encoded: '0xmanifest',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'RegisterSmartContractCode',
         payload: {
@@ -226,6 +230,7 @@ function makeActivationInstruction(codeHash: string, index = 2): Instruction {
     index,
     box: {
       encoded: '0xactivate',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'ActivateContractInstance',
         payload: {
@@ -245,6 +250,7 @@ describe('resolveContractViewInstructionKind', () => {
       kind: 'RegisterSmartContractBytes',
       box: {
         encoded: '0x01',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'RegisterSmartContractBytes',
           payload: {
@@ -262,6 +268,7 @@ describe('resolveContractViewInstructionKind', () => {
       kind: 'Custom',
       box: {
         encoded: '0x02',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'Custom',
           wire_id: 'iroha_data_model::isi::smart_contract_code::RegisterSmartContractCode',
@@ -283,6 +290,7 @@ describe('resolveContractViewInstructionKind', () => {
       kind: 'Transfer',
       box: {
         encoded: '0x03',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'Transfer',
           payload: {
@@ -311,6 +319,7 @@ describe('selectPrimaryContractViewInstruction', () => {
       kind: 'Transfer',
       box: {
         encoded: '0x06',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'Transfer',
           payload: {},

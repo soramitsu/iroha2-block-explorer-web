@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { i18n } from '@/shared/lib/localization';
-import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 import TracingWorkspace from './TracingWorkspace.vue';
 
 const ACCOUNT_ALICE =
@@ -142,6 +142,19 @@ function buildTransferInstruction(source: string, destination: string, overrides
   });
 }
 
+function buildCapacityError(retryAfterSeconds = 1) {
+  return {
+    status: UNKNOWN_ERROR,
+    error: new Error(JSON.stringify({
+      code: 'query_validation_failed',
+      message: 'Query execution capacity limit',
+      details: {
+        retry_after_seconds: retryAfterSeconds,
+      },
+    })),
+  };
+}
+
 async function settle() {
   await flushPromises();
   await new Promise<void>((resolve) => {
@@ -217,6 +230,127 @@ describe('TracingWorkspace', () => {
       })
     );
     expect((apiMocks.fetchInstructions.mock.calls[0]?.[0] as Record<string, unknown>)?.transaction_status).toBeUndefined();
+  });
+
+  it('retries a canonical transient-capacity response and preserves the successful scan', async () => {
+    vi.useFakeTimers();
+    let wrapper: ReturnType<typeof factory> | undefined;
+
+    try {
+      routeState.query = {
+        seed_type: 'account',
+        seed_value: ACCOUNT_ALICE,
+      };
+      apiMocks.fetchInstructions
+        .mockResolvedValueOnce(buildCapacityError())
+        .mockResolvedValueOnce({
+          status: SUCCESSFUL_FETCHING,
+          data: {
+            items: [buildInstruction({ transaction_hash: '0xafter-capacity' })],
+            pagination: { total_pages: 1 },
+          },
+        });
+
+      wrapper = factory();
+      await flushPromises();
+
+      expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(1);
+      expect(wrapper.find('.tracing-page__error').exists()).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1_000);
+      await flushPromises();
+
+      expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(2);
+      expect(wrapper.text()).toContain('0xafter-capacity');
+      expect(wrapper.get('.tracing-page__status').text()).toContain('Requests: 2');
+      expect(wrapper.find('.tracing-page__error').exists()).toBe(false);
+    } finally {
+      wrapper?.unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  it('paces sequential block scans instead of issuing a zero-delay request burst', async () => {
+    vi.useFakeTimers();
+    let wrapper: ReturnType<typeof factory> | undefined;
+
+    try {
+      routeState.query = {
+        seed_type: 'account',
+        seed_value: ACCOUNT_ALICE,
+      };
+      apiMocks.fetchBlocks.mockResolvedValue({
+        status: SUCCESSFUL_FETCHING,
+        data: {
+          items: [{ height: 2 }],
+        },
+      });
+
+      wrapper = factory();
+      await flushPromises();
+
+      expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(1);
+      expect(apiMocks.fetchInstructions).toHaveBeenLastCalledWith(
+        expect.objectContaining({ block: 2 })
+      );
+
+      await vi.advanceTimersByTimeAsync(124);
+      await flushPromises();
+      expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await flushPromises();
+      expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(2);
+      expect(apiMocks.fetchInstructions).toHaveBeenLastCalledWith(
+        expect.objectContaining({ block: 1 })
+      );
+    } finally {
+      wrapper?.unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  it('bounds capacity retries, surfaces exhaustion, and keeps the cursor resumable', async () => {
+    vi.useFakeTimers();
+    let wrapper: ReturnType<typeof factory> | undefined;
+
+    try {
+      routeState.query = {
+        seed_type: 'account',
+        seed_value: ACCOUNT_ALICE,
+      };
+      apiMocks.fetchInstructions.mockResolvedValue(buildCapacityError());
+
+      wrapper = factory();
+      await flushPromises();
+      await vi.advanceTimersByTimeAsync(5_000);
+      await flushPromises();
+
+      expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(4);
+      expect(wrapper.get('.tracing-page__error').text()).toContain('Failed to fetch trace data');
+      expect(wrapper.get('.tracing-page__status').text()).toContain('Active cursors: 1');
+
+      apiMocks.fetchInstructions.mockResolvedValue({
+        status: SUCCESSFUL_FETCHING,
+        data: {
+          items: [],
+          pagination: { total_pages: 1 },
+        },
+      });
+      const resumeButton = wrapper
+        .findAll('.base-button-stub')
+        .find((button) => button.text().includes('Resume'));
+      expect(resumeButton).toBeDefined();
+      await resumeButton!.trigger('click');
+      await flushPromises();
+
+      expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(5);
+      expect(wrapper.find('.tracing-page__error').exists()).toBe(false);
+      expect(wrapper.get('.tracing-page__status').text()).toContain('Active cursors: 0');
+    } finally {
+      wrapper?.unmount();
+      vi.useRealTimers();
+    }
   });
 
   it('updates route query from seed draft form', async () => {

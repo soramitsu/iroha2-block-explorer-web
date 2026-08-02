@@ -1186,6 +1186,7 @@ const InstructionBoxStructured = z
 const InstructionBox = z
   .object({
     encoded: z.string().optional().default(''),
+    framed_sha256: z.string().regex(/^0x[0-9a-f]{64}$/u),
     json: InstructionBoxStructured,
   })
   .strict();

@@ -7,6 +7,7 @@ import {
 
 const SAMPLE_I105 =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
+const FRAMED_SHA256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 
 function encodeBase64(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes));
@@ -50,6 +51,7 @@ function makeInstruction(): Instruction {
     block: 77,
     box: {
       encoded: '0xworker',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'RegisterSmartContractBytes',
         payload: {

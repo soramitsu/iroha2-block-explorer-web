@@ -13,6 +13,7 @@ const SAMPLE_ACCOUNT_ALIAS = 'treasury@banking.retail';
 const SAMPLE_ASSET_DEFINITION_ID = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
 const SAMPLE_ASSET_ALIAS = 'usd#issuer.main';
 const SAMPLE_ASSET_ID = `${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_I105}`;
+const SAMPLE_FRAMED_INSTRUCTION_SHA256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 const TORII_API_VERSION_HEADER = 'x-iroha-api-version';
 const TORII_API_VERSION = '1.1';
 
@@ -1415,6 +1416,7 @@ describe('Explorer latest/health API helpers', () => {
             created_at: '2026-03-05T06:00:01Z',
             box: {
               encoded: '',
+              framed_sha256: SAMPLE_FRAMED_INSTRUCTION_SHA256,
               json: {
                 kind: 'Mint',
                 payload: {
@@ -2554,6 +2556,7 @@ describe('Instruction API helpers', () => {
             kind: 'Log',
             box: {
               encoded: '0x01',
+              framed_sha256: SAMPLE_FRAMED_INSTRUCTION_SHA256,
               json: {
                 kind: 'Log',
                 payload: {
@@ -2583,6 +2586,7 @@ describe('Instruction API helpers', () => {
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.items).toHaveLength(1);
       expect(result.data.items[0].box.encoded).toBe('0x01');
+      expect(result.data.items[0].box.framed_sha256).toBe(SAMPLE_FRAMED_INSTRUCTION_SHA256);
       expect(result.data.items[0].box.json.kind).toBe('Log');
     }
   });
@@ -2755,6 +2759,7 @@ describe('Transaction API helpers', () => {
         kind: 'Log',
         box: {
           encoded: '',
+          framed_sha256: SAMPLE_FRAMED_INSTRUCTION_SHA256,
           json: {
             kind: 'Log',
             payload: {

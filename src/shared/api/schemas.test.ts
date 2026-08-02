@@ -58,6 +58,7 @@ const deprecatedCompressedAccountId = 'sora5AbCDeFG1234XYZ9876qwerty';
 const validAssetDefinitionId = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
 const validAssetDefinitionAlias = 'usd#issuer.main';
 const validAssetId = `${validAssetDefinitionId}#${validAccountId}`;
+const validFramedInstructionSha256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 
 const baseInstruction = {
   authority: validAccountId,
@@ -76,6 +77,7 @@ describe('Instruction schema', () => {
         kind: 'Register',
         box: {
           encoded: '0x01',
+          framed_sha256: validFramedInstructionSha256,
           json: {
             Register: {
               object: { type: 'Domain', id: 'wonderland' },
@@ -93,6 +95,7 @@ describe('Instruction schema', () => {
       kind: 'Transfer',
       box: {
         encoded: '0x02',
+        framed_sha256: validFramedInstructionSha256,
         json: {
           kind: 'Transfer',
           payload: { object: validAssetId, source: validAccountId, destination: validAccountIdAlt },
@@ -103,6 +106,7 @@ describe('Instruction schema', () => {
     });
 
     expect(parsed.box.json.kind).toBe('Transfer');
+    expect(parsed.box.framed_sha256).toBe(validFramedInstructionSha256);
     expect(parsed.box.json.payload).toEqual({
       object: validAssetId,
       source: validAccountId,
@@ -112,12 +116,42 @@ describe('Instruction schema', () => {
     expect(parsed.box.json.encoded).toBe('0xdeadbeef');
   });
 
+  it('rejects missing or malformed canonical framed-instruction digests', () => {
+    const instruction = {
+      ...baseInstruction,
+      kind: 'Transfer',
+      box: {
+        encoded: '0x02',
+        json: {
+          kind: 'Transfer',
+          payload: { object: validAssetId, source: validAccountId, destination: validAccountIdAlt },
+        },
+      },
+    };
+
+    expect(() => Instruction.parse(instruction)).toThrow();
+    for (const framedSha256 of [
+      validFramedInstructionSha256.slice(2),
+      '0xC7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43',
+      '0xc7e4',
+    ]) {
+      expect(() => Instruction.parse({
+        ...instruction,
+        box: {
+          ...instruction.box,
+          framed_sha256: framedSha256,
+        },
+      })).toThrow();
+    }
+  });
+
   it('accepts instruction payloads that use r#box instead of box', () => {
     const parsed = Instruction.parse({
       ...baseInstruction,
       kind: 'Log',
       'r#box': {
         encoded: '0x03',
+        framed_sha256: validFramedInstructionSha256,
         json: {
           kind: 'Log',
           payload: {
@@ -140,6 +174,7 @@ describe('Instruction schema', () => {
         kind: 'Transfer',
         box: {
           scale: '0x04',
+          framed_sha256: validFramedInstructionSha256,
           json: {
             kind: 'Transfer',
             payload: { object: validAssetId, source: validAccountId, destination: validAccountIdAlt },
@@ -156,6 +191,7 @@ describe('Instruction schema', () => {
       kind: 'SubmitOfflineToOnlineTransfer',
       box: {
         encoded: '0x05',
+        framed_sha256: validFramedInstructionSha256,
         json: {
           kind: 'Custom',
           payload: {
@@ -855,6 +891,7 @@ describe('Explorer payload schemas', () => {
           kind: 'Register',
           box: {
             encoded: '0x01',
+            framed_sha256: validFramedInstructionSha256,
             json: {
               kind: 'Register',
               payload: {

@@ -7,7 +7,7 @@ import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import BaseTabs from '@/shared/ui/components/BaseTabs.vue';
 import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
-import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 import * as http from '@/shared/api';
 import type { Instruction, TransactionStatus } from '@/shared/api/schemas';
 import { formatTransactionRejectionReason } from '@/shared/api/rejection-reason';
@@ -38,6 +38,13 @@ const { t } = useI18n();
 const notifications = useNotifications();
 
 const SCAN_PAGE_SIZE = 200;
+const SCAN_REQUEST_PACING_MS = 125;
+const SCAN_CAPACITY_MAX_RETRIES = 3;
+const SCAN_CAPACITY_RETRY_BASE_MS = 500;
+const SCAN_CAPACITY_RETRY_MAX_MS = 4_000;
+
+type TraceInstructionsParams = NonNullable<Parameters<typeof http.fetchInstructions>[0]>;
+type TraceInstructionsResponse = Awaited<ReturnType<typeof http.fetchInstructions>>;
 
 interface GraphNodeContextPayload {
   nodeId: string | null
@@ -720,6 +727,72 @@ async function fetchLatestBlockHeight() {
   return latest?.height ?? 0;
 }
 
+function canonicalCapacityRetryAfterMs(response: TraceInstructionsResponse): number | null {
+  if (response.status !== UNKNOWN_ERROR) return null;
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(response.error.message);
+  } catch {
+    return null;
+  }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+
+  const envelope = payload as {
+    code?: unknown
+    message?: unknown
+    details?: unknown
+  };
+  if (
+    typeof envelope.code !== 'string' ||
+    envelope.code.length === 0 ||
+    typeof envelope.message !== 'string' ||
+    !envelope.details ||
+    typeof envelope.details !== 'object' ||
+    Array.isArray(envelope.details)
+  ) {
+    return null;
+  }
+
+  const retryAfterSeconds = (envelope.details as { retry_after_seconds?: unknown }).retry_after_seconds;
+  if (
+    typeof retryAfterSeconds !== 'number' ||
+    !Number.isFinite(retryAfterSeconds) ||
+    !Number.isInteger(retryAfterSeconds) ||
+    retryAfterSeconds <= 0
+  ) {
+    return null;
+  }
+
+  return Math.min(Math.ceil(retryAfterSeconds * 1_000), SCAN_CAPACITY_RETRY_MAX_MS);
+}
+
+function waitForScanDelay(delayMs: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
+async function fetchTraceInstructions(params: TraceInstructionsParams): Promise<TraceInstructionsResponse> {
+  let retryIndex = 0;
+
+  while (true) {
+    const response = await http.fetchInstructions(params);
+    state.requests += 1;
+    if (response.status === SUCCESSFUL_FETCHING) return response;
+
+    const retryAfterMs = canonicalCapacityRetryAfterMs(response);
+    if (retryAfterMs === null || retryIndex >= SCAN_CAPACITY_MAX_RETRIES) return response;
+
+    const exponentialDelayMs = SCAN_CAPACITY_RETRY_BASE_MS * (2 ** retryIndex);
+    await waitForScanDelay(Math.min(
+      SCAN_CAPACITY_RETRY_MAX_MS,
+      Math.max(retryAfterMs, exponentialDelayMs)
+    ));
+    retryIndex += 1;
+  }
+}
+
 async function ingestTransactionSeed(seedHash: string) {
   const txResponse = await http.fetchTransaction(seedHash);
   if (txResponse.status === SUCCESSFUL_FETCHING) {
@@ -729,7 +802,7 @@ async function ingestTransactionSeed(seedHash: string) {
   let page = 1;
   let totalPages = 1;
   do {
-    const response = await http.fetchInstructions({
+    const response = await fetchTraceInstructions({
       page,
       per_page: SCAN_PAGE_SIZE,
       transaction_hash: seedHash,
@@ -745,6 +818,7 @@ async function ingestTransactionSeed(seedHash: string) {
     await hydrateRejectedReasons();
     refreshGraphSnapshots();
     page += 1;
+    if (page <= totalPages) await waitForScanDelay(SCAN_REQUEST_PACING_MS);
   } while (page <= totalPages);
 }
 
@@ -785,32 +859,25 @@ async function bootstrapFromSeed(seed: TraceSeed) {
   }
 }
 
-function waitForScanYield() {
-  return new Promise<void>((resolve) => {
-    setTimeout(resolve, 0);
-  });
-}
-
 async function scanCursor(cursor: TraceCursor): Promise<void> {
   if (cursor.exhausted || cursor.block < 1) {
     markCursorCompleted(cursor);
     return;
   }
 
-  const response = await http.fetchInstructions({
+  const response = await fetchTraceInstructions({
     page: cursor.page,
     per_page: SCAN_PAGE_SIZE,
     account: cursor.accountId,
     block: cursor.block,
     kind: 'Transfer',
   });
-  state.requests += 1;
   if (response.status !== SUCCESSFUL_FETCHING) {
     state.error = t('tracing.fetchError');
     state.paused = true;
-    markCursorCompleted(cursor);
     return;
   }
+  state.error = '';
 
   for (const instruction of response.data.items) {
     state.scannedInstructions += 1;
@@ -842,7 +909,9 @@ async function runScanLoop() {
     const cursor = cursors.value.find((item) => !item.exhausted);
     if (!cursor) break;
     await scanCursor(cursor);
-    await waitForScanYield();
+    if (!state.paused && cursors.value.some((item) => !item.exhausted)) {
+      await waitForScanDelay(SCAN_REQUEST_PACING_MS);
+    }
   }
   state.running = false;
 }

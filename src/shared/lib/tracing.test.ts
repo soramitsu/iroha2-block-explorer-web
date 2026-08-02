@@ -102,6 +102,7 @@ describe('tracing helpers', () => {
       block: 10,
       box: {
         encoded: '0x01',
+        framed_sha256: '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43',
         json: {
           kind: 'Transfer',
           payload: {
