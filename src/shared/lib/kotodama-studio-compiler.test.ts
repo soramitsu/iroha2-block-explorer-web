@@ -1,9 +1,12 @@
-import { readFileSync, realpathSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { compileKotodamaProgram } from './kotodama-studio-compiler';
 
-const IROHA_JS_ROOT = path.resolve(process.cwd(), '../iroha/javascript/iroha_js');
+const INSTALLED_IROHA_JS_ROOT = path.resolve(
+  process.cwd(),
+  'node_modules/@iroha/iroha-js'
+);
 const SOURCE = 'seiyaku Demo { view fn ping() -> int { return 1; } }';
 
 function compilerFailureResponse() {
@@ -28,42 +31,40 @@ function compilerFailureResponse() {
 }
 
 describe('current Iroha Kotodama compiler package boundary', () => {
-  it('installs the exact sibling Iroha source as a dependency-aware file package', () => {
+  it('installs the package boundary selected by the exact commit/subdirectory pin', () => {
     const explorerPackage = JSON.parse(
       readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')
     ) as { dependencies: Record<string, string> };
-    const installedRoot = realpathSync(path.resolve(
-      process.cwd(),
-      'node_modules/@iroha/iroha-js'
-    ));
+    const profile = JSON.parse(
+      readFileSync(path.resolve(process.cwd(), 'tests/mochi/explorer-profile.json'), 'utf8')
+    ) as { iroha_revision: string };
     const installedPackage = JSON.parse(
-      readFileSync(path.join(installedRoot, 'package.json'), 'utf8')
-    ) as { dependencies: Record<string, string> };
-    const sourceDeclaration = readFileSync(
-      path.join(IROHA_JS_ROOT, 'kotodama-compiler.d.ts'),
-      'utf8'
-    );
+      readFileSync(path.join(INSTALLED_IROHA_JS_ROOT, 'package.json'), 'utf8')
+    ) as { name: string, dependencies: Record<string, string> };
     const installedDeclaration = readFileSync(
-      path.join(installedRoot, 'kotodama-compiler.d.ts'),
+      path.join(INSTALLED_IROHA_JS_ROOT, 'kotodama-compiler.d.ts'),
       'utf8'
     );
 
     expect(explorerPackage.dependencies['@iroha/iroha-js'])
-      .toBe('file:../iroha/javascript/iroha_js');
+      .toBe(
+        `github:hyperledger-iroha/iroha#${profile.iroha_revision}&path:javascript/iroha_js`
+      );
+    expect(installedPackage.name).toBe('@iroha/iroha-js');
     expect(installedPackage.dependencies['@scure/bip39']).toBe('^2.2.0');
-    expect(installedDeclaration).toBe(sourceDeclaration);
+    expect(installedDeclaration).toContain('compileKotodamaProgram');
   });
 
   it('uses the current browser export with no independent compiler or retired aliases', () => {
     const packageJson = JSON.parse(
-      readFileSync(path.join(IROHA_JS_ROOT, 'package.json'), 'utf8')
+      readFileSync(path.join(INSTALLED_IROHA_JS_ROOT, 'package.json'), 'utf8')
     ) as { exports: Record<string, Record<string, string>> };
     const declaration = readFileSync(
-      path.join(IROHA_JS_ROOT, 'kotodama-compiler.d.ts'),
+      path.join(INSTALLED_IROHA_JS_ROOT, 'kotodama-compiler.d.ts'),
       'utf8'
     );
     const browserSource = readFileSync(
-      path.join(IROHA_JS_ROOT, 'src/kotodamaCompiler/browser.js'),
+      path.join(INSTALLED_IROHA_JS_ROOT, 'dist/kotodamaCompiler/browser.js'),
       'utf8'
     );
 

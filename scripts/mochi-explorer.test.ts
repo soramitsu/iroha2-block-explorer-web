@@ -22,6 +22,14 @@ const profile = {
   },
 };
 
+const canonicalDirectoryOperations = {
+  lstatSyncFn: vi.fn(() => ({
+    isDirectory: () => true,
+    isSymbolicLink: () => false,
+  })),
+  realpathSyncFn: vi.fn((candidate: string) => candidate),
+};
+
 describe('pinned Mochi Explorer profile', () => {
   it('accepts the complete deterministic profile and freezes its seed assertions', () => {
     const parsed = validateMochiProfile(profile);
@@ -37,8 +45,36 @@ describe('pinned Mochi Explorer profile', () => {
   });
 
   it('resolves the sibling checkout unless an explicit checkout is supplied', () => {
-    expect(resolveIrohaRoot('/work/explorer', undefined)).toBe('/work/iroha');
-    expect(resolveIrohaRoot('/work/explorer', '/pinned/iroha')).toBe('/pinned/iroha');
+    expect(resolveIrohaRoot('/work/explorer', undefined, canonicalDirectoryOperations)).toBe('/work/iroha');
+    expect(resolveIrohaRoot('/work/explorer', '/pinned/iroha', canonicalDirectoryOperations)).toBe(
+      '/pinned/iroha'
+    );
+  });
+
+  it('rejects relative, non-normalized, missing, and symbolic checkout roots', () => {
+    expect(() => resolveIrohaRoot('/work/explorer', '../iroha', canonicalDirectoryOperations)).toThrow(
+      /absolute normalized/
+    );
+    expect(() => resolveIrohaRoot('/work/explorer', '/work/../iroha', canonicalDirectoryOperations)).toThrow(
+      /absolute normalized/
+    );
+    expect(() => resolveIrohaRoot('/work/explorer', '/missing/iroha', {
+      ...canonicalDirectoryOperations,
+      lstatSyncFn: () => {
+        throw new Error('missing');
+      },
+    })).toThrow(/existing real directory/);
+    expect(() => resolveIrohaRoot('/work/explorer', '/linked/iroha', {
+      lstatSyncFn: () => ({
+        isDirectory: () => false,
+        isSymbolicLink: () => true,
+      }),
+      realpathSyncFn: (candidate: string) => candidate,
+    })).toThrow(/real directory/);
+    expect(() => resolveIrohaRoot('/work/explorer', '/aliased/iroha', {
+      ...canonicalDirectoryOperations,
+      realpathSyncFn: () => '/real/iroha',
+    })).toThrow(/must not traverse symbolic links/);
   });
 
   it('selects one explicit platform interpreter without silent retries', () => {
@@ -70,21 +106,33 @@ describe('pinned Mochi Explorer profile', () => {
   });
 
   it('accepts only the exact pinned upstream revision', () => {
-    const matching = vi.fn().mockReturnValue({ status: 0, stdout: `${'a'.repeat(40)}\n`, stderr: '' });
+    const matching = vi.fn((_command: string, args: string[]) =>
+      args[0] === 'rev-parse'
+        ? { status: 0, stdout: `${'a'.repeat(40)}\n`, stderr: '' }
+        : { status: 0, stdout: '', stderr: '' }
+    );
     expect(verifyPinnedIrohaRevision('/iroha', 'a'.repeat(40), matching)).toBe('a'.repeat(40));
     const mismatching = vi.fn().mockReturnValue({ status: 0, stdout: `${'b'.repeat(40)}\n`, stderr: '' });
     expect(() => verifyPinnedIrohaRevision('/iroha', 'a'.repeat(40), mismatching)).toThrow(/mismatch/);
+    const dirty = vi.fn()
+      .mockReturnValueOnce({ status: 0, stdout: `${'a'.repeat(40)}\n`, stderr: '' })
+      .mockReturnValueOnce({ status: 0, stdout: ' M scripts/mochi_local_sandbox.sh\n', stderr: '' });
+    expect(() => verifyPinnedIrohaRevision('/iroha', 'a'.repeat(40), dirty)).toThrow(
+      /must be clean/
+    );
   });
 
   it('delegates an allowed command to the upstream helper after the revision check', () => {
     const runner = vi.fn()
       .mockReturnValueOnce({ status: 0, stdout: `${'a'.repeat(40)}\n`, stderr: '' })
+      .mockReturnValueOnce({ status: 0, stdout: '', stderr: '' })
       .mockReturnValueOnce({ status: 0 });
     expect(runMochiCommand('status', {
       workspaceRoot: '/work/explorer',
       irohaRoot: '/work/iroha',
       profile,
       runner,
+      irohaRootOperations: canonicalDirectoryOperations,
       environment: { TEST_SENTINEL: 'yes' },
     })).toBe(0);
     expect(runner).toHaveBeenLastCalledWith(

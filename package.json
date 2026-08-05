@@ -1,6 +1,9 @@
 {
   "name": "iroha2-block-explorer-web",
   "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": "24.19.0"
+  },
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +12,8 @@
     "build": "run-s typecheck build:vite",
     "build:vite": "vite build",
     "check:bundle": "node ./scripts/check-bundle-budget.mjs",
+    "check:iroha-pin": "node ./scripts/check-iroha-pin.mjs",
+    "check:node-version": "node ./scripts/check-node-version.mjs",
     "check:roadmap": "node ./scripts/check-roadmap.mjs",
     "mochi:up": "node ./scripts/mochi-explorer.mjs up",
     "mochi:down": "node ./scripts/mochi-explorer.mjs down",

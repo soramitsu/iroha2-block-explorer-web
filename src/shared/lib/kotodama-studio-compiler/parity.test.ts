@@ -1,8 +1,11 @@
-import { readFileSync, realpathSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const IROHA_ROOT = realpathSync(path.resolve(process.cwd(), '../iroha'));
+const INSTALLED_IROHA_JS_ROOT = path.resolve(
+  process.cwd(),
+  'node_modules/@iroha/iroha-js'
+);
 
 describe('canonical Rust Kotodama parity boundary', () => {
   it('keeps fixture refresh rooted in the exact sibling Iroha Rust compiler', () => {
@@ -18,24 +21,18 @@ describe('canonical Rust Kotodama parity boundary', () => {
     expect(refreshScript).not.toContain('compileKotodamaStudioProgram');
   });
 
-  it('binds the Node adapter to the canonical Rust host instead of a JavaScript compiler', () => {
+  it('binds the installed Node adapter to its native compiler seam', () => {
     const packageIndex = readFileSync(
-      path.join(IROHA_ROOT, 'javascript/iroha_js/src/kotodamaCompiler/index.js'),
+      path.join(INSTALLED_IROHA_JS_ROOT, 'dist/kotodamaCompiler/index.js'),
       'utf8'
     );
     const nativeBridge = readFileSync(
-      path.join(IROHA_ROOT, 'javascript/iroha_js/src/kotodamaCompiler/nativeBridge.js'),
-      'utf8'
-    );
-    const hostSource = readFileSync(
-      path.join(IROHA_ROOT, 'crates/iroha_js_host/src/lib.rs'),
+      path.join(INSTALLED_IROHA_JS_ROOT, 'dist/kotodamaCompiler/nativeBridge.js'),
       'utf8'
     );
 
     expect(packageIndex).toContain('compileKotodamaWithNativeBinding');
     expect(nativeBridge).toContain('native.compileKotodama(request)');
-    expect(hostSource).toMatch(/pub async fn compile_kotodama[\s\S]*tokio::task::spawn_blocking/u);
-    expect(hostSource).toContain('CompilerOptions');
   });
 
   it('keeps Explorer production code as a package facade with no compiler implementation', () => {

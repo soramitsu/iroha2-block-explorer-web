@@ -1,16 +1,19 @@
-FROM node:24-alpine AS builder
+FROM node:24.19.0-alpine AS builder
 
 WORKDIR /app
 
 RUN corepack enable
 
-COPY pnpm-lock.yaml package.json ./
-RUN pnpm fetch
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY scripts/check-iroha-pin.mjs scripts/check-iroha-pin.mjs
+COPY tests/mochi/explorer-profile.json tests/mochi/explorer-profile.json
+RUN node scripts/check-iroha-pin.mjs
+RUN pnpm fetch --frozen-lockfile
 
 COPY src src
 COPY public public
 COPY *.json *.ts *.cjs *.mts *.html ./
-RUN pnpm install
+RUN pnpm install --offline --frozen-lockfile
 RUN pnpm build
 
 FROM caddy:2-alpine

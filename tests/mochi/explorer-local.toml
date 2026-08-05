@@ -11,5 +11,5 @@ allowed_origins = [
   "http://localhost:5173",
 ]
 allowed_methods = ["GET", "POST", "OPTIONS"]
-allowed_headers = ["accept", "content-type", "x-iroha-api-version"]
+allowed_headers = ["accept", "content-type"]
 exposed_headers = ["etag", "location", "retry-after"]

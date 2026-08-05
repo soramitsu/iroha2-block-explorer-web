@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
@@ -53,8 +53,33 @@ export function loadMochiProfile(path = DEFAULT_PROFILE_PATH) {
   return validateMochiProfile(JSON.parse(readFileSync(path, 'utf8')));
 }
 
-export function resolveIrohaRoot(workspaceRoot, override) {
-  return override ? resolve(override) : resolve(workspaceRoot, '../iroha');
+export function resolveIrohaRoot(
+  workspaceRoot,
+  override,
+  { lstatSyncFn = lstatSync, realpathSyncFn = realpathSync } = {}
+) {
+  const candidate = override === undefined ? resolve(workspaceRoot, '../iroha') : override;
+  if (typeof candidate !== 'string' || candidate.trim() === '') {
+    throw new Error('Iroha checkout root must be a non-empty absolute canonical path');
+  }
+  if (!isAbsolute(candidate) || normalize(candidate) !== candidate) {
+    throw new Error('Iroha checkout root must be an absolute normalized path');
+  }
+  let stats;
+  try {
+    stats = lstatSyncFn(candidate);
+  } catch (error) {
+    throw new Error(`Iroha checkout root must be an existing real directory: ${candidate}`, {
+      cause: error,
+    });
+  }
+  if (!stats.isDirectory() || stats.isSymbolicLink()) {
+    throw new Error(`Iroha checkout root must be a real directory: ${candidate}`);
+  }
+  if (realpathSyncFn(candidate) !== candidate) {
+    throw new Error(`Iroha checkout root must not traverse symbolic links: ${candidate}`);
+  }
+  return candidate;
 }
 
 export function resolveMochiPython(platform, environment = {}) {
@@ -83,17 +108,33 @@ export function buildMochiEnvironment(profile, workspaceRoot, baseEnvironment = 
 }
 
 export function verifyPinnedIrohaRevision(irohaRoot, expectedRevision, runner = spawnSync) {
-  const result = runner('git', ['rev-parse', 'HEAD'], {
+  const gitOptions = {
     cwd: irohaRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  if (result.status !== 0) {
-    throw new Error(`Unable to resolve the sibling Iroha revision: ${String(result.stderr ?? '').trim()}`);
+  };
+  const revisionResult = runner('git', ['rev-parse', 'HEAD'], gitOptions);
+  if (revisionResult.status !== 0) {
+    throw new Error(
+      `Unable to resolve the sibling Iroha revision: ${String(revisionResult.stderr ?? '').trim()}`
+    );
   }
-  const actual = String(result.stdout ?? '').trim();
+  const actual = String(revisionResult.stdout ?? '').trim();
   if (actual !== expectedRevision) {
     throw new Error(`Pinned Iroha revision mismatch: expected ${expectedRevision}, found ${actual}`);
+  }
+  const statusResult = runner(
+    'git',
+    ['status', '--porcelain=v1', '--untracked-files=all'],
+    gitOptions
+  );
+  if (statusResult.status !== 0) {
+    throw new Error(
+      `Unable to inspect the pinned Iroha checkout: ${String(statusResult.stderr ?? '').trim()}`
+    );
+  }
+  if (String(statusResult.stdout ?? '').trim() !== '') {
+    throw new Error('Pinned Iroha checkout must be clean with no tracked or untracked changes');
   }
   return actual;
 }
@@ -102,7 +143,11 @@ export function runMochiCommand(command, options = {}) {
   if (!ALLOWED_COMMANDS.has(command)) throw new Error(`Unsupported Mochi command: ${command}`);
   const workspaceRoot = options.workspaceRoot ?? EXPLORER_WORKSPACE_ROOT;
   const profile = options.profile ?? loadMochiProfile(options.profilePath);
-  const irohaRoot = resolveIrohaRoot(workspaceRoot, options.irohaRoot ?? process.env.IROHA_REPO_ROOT);
+  const irohaRoot = resolveIrohaRoot(
+    workspaceRoot,
+    options.irohaRoot ?? process.env.IROHA_REPO_ROOT,
+    options.irohaRootOperations
+  );
   const runner = options.runner ?? spawnSync;
   verifyPinnedIrohaRevision(irohaRoot, profile.iroha_revision, runner);
   const helper = join(irohaRoot, 'scripts/mochi_local_sandbox.sh');

@@ -27,6 +27,10 @@ function jsonResponse(value: unknown, status = 200) {
   });
 }
 
+function hasHeader(headers: Record<string, string>, expectedName: string): boolean {
+  return Object.keys(headers).some((name) => name.toLowerCase() === expectedName);
+}
+
 describe('Mochi Explorer seed verification', () => {
   it('accepts only loopback Torii URLs and strips non-authoritative URL state', () => {
     expect(localToriiBaseUrl('http://localhost:8080/base/?probe=1#x').toString()).toBe(
@@ -63,6 +67,9 @@ describe('Mochi Explorer seed verification', () => {
       '/v1/explorer/transactions',
     ]);
     expect(fetchImpl.mock.calls.every(([, init]) => init.headers.Accept === 'application/json')).toBe(true);
+    expect(fetchImpl.mock.calls.every(([, init]) => (
+      !hasHeader(init.headers, 'x-iroha-api-version')
+    ))).toBe(true);
   });
 
   it('rejects unready sessions, wrong chains, missing resources, and undersized seeds', async () => {

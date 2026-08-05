@@ -113,7 +113,6 @@ function emittedChunkName(file) {
 export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
   const checkedBudgets = validateBundleBudgets(budgets);
   const measurements = [];
-  const failures = [];
   const entryClosures = new Map();
 
   for (const [source, limit] of Object.entries(checkedBudgets.entry_gzip_bytes)) {
@@ -123,7 +122,6 @@ export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
     entryClosures.set(entryKey, keys);
     const actual = sumGzipBytes(distDir, assetFilesForKeys(manifest, keys));
     measurements.push({ kind: 'entry', name: source, actual, limit });
-    if (actual > limit) failures.push({ kind: 'entry', name: source, actual, limit });
   }
 
   const initialKeys = new Set([...entryClosures.values()].flatMap((keys) => [...keys]));
@@ -133,7 +131,6 @@ export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
     const incrementalKeys = new Set([...routeKeys].filter((key) => !initialKeys.has(key)));
     const actual = sumGzipBytes(distDir, assetFilesForKeys(manifest, incrementalKeys));
     measurements.push({ kind: 'route', name: source, actual, limit });
-    if (actual > limit) failures.push({ kind: 'route', name: source, actual, limit });
   }
 
   const matchedChunkBudgetKeys = new Set();
@@ -147,7 +144,6 @@ export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
     const limit = configuredLimit ?? checkedBudgets.default_chunk_gzip_bytes;
     const actual = gzipBytes(distDir, item.file);
     measurements.push({ kind: 'chunk', name, actual, limit });
-    if (actual > limit) failures.push({ kind: 'chunk', name, actual, limit });
   }
 
 
@@ -159,7 +155,6 @@ export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
     const limit = configuredLimit ?? checkedBudgets.default_chunk_gzip_bytes;
     const actual = gzipBytes(distDir, file);
     measurements.push({ kind: 'chunk', name, actual, limit });
-    if (actual > limit) failures.push({ kind: 'chunk', name, actual, limit });
   }
 
   for (const name of Object.keys(checkedBudgets.chunk_gzip_bytes)) {
@@ -168,6 +163,9 @@ export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
     }
   }
 
+  const failures = measurements
+    .filter(({ actual, limit }) => actual > limit)
+    .map((measurement) => ({ ...measurement }));
   return { measurements, failures };
 }
 

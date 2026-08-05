@@ -3,21 +3,15 @@
 def pipeline = new org.js.AppPipeline(
     packageManager:     'pnpm',
     buildCmds:          [
-        'corepack enable',
-        'pnpm install --frozen-lockfile',
-        'pnpm check:roadmap',
-        'pnpm lint',
-        'pnpm test:unit',
-        'pnpm typecheck',
-        'pnpm build:vite',
-        'pnpm check:bundle',
-        'PLAYWRIGHT_REUSE_BUILD=1 pnpm test:playwright:hermetic',
-        'if [ "${RUN_LIVE_MOCHI_E2E:-0}" = "1" ]; then PLAYWRIGHT_REUSE_BUILD=1 pnpm test:playwright:mochi; else echo "Live Mochi E2E not requested; set RUN_LIVE_MOCHI_E2E=1 to enable it."; fi',
+        'sh scripts/bootstrap-exact-toolchain.sh node scripts/run-ci-gates.mjs',
     ],
     steps:              this,
     test:               false,
     dockerImageName:    'iroha2/iroha2-block-explorer-web',
-    buildDockerImage:   'mcr.microsoft.com/playwright:v1.58.2-noble',
+    // This digest retains Playwright 1.58.2 Chromium and its Noble system dependencies. The
+    // published image contains Node 24.13.0, so a shell bootstrap installs and verifies the
+    // SHA-256-pinned Node 24.19.0 runtime before that image's Node executes repository code.
+    buildDockerImage:   'mcr.microsoft.com/playwright:v1.58.2-noble@sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d',
     dockerRegistryCred: 'bot-iroha2-rw',
     sonarProjectName:   'iroha2-block-explorer-web',
     sonarProjectKey:    'jp.co.soramitsu:iroha2-block-explorer-web',

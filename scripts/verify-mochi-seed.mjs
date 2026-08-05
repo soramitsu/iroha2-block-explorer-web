@@ -46,7 +46,6 @@ export async function verifyExplorerMochiSeed({ profile, session, fetchImpl = fe
   const baseUrl = localToriiBaseUrl(session.torii_url);
   const headers = {
     Accept: 'application/json',
-    'x-iroha-api-version': '1.1',
   };
   const request = (path) => fetchImpl(new URL(path, baseUrl), { cache: 'no-store', headers });
   const [healthResponse, domainResponse, transactionsResponse] = await Promise.all([

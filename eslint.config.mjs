@@ -57,7 +57,17 @@ const legacyConfig = {
 
 export default [
   {
-    ignores: ['node_modules', 'dist', 'dist-ts', '.venv', '.venv/**', '.venv-*', '.venv-*/**'],
+    ignores: [
+      'node_modules',
+      'dist',
+      'dist-ts',
+      '.mochi',
+      '.mochi/**',
+      '.venv',
+      '.venv/**',
+      '.venv-*',
+      '.venv-*/**',
+    ],
   },
   ...compat.extends('alloy', 'alloy/typescript'),
   ...compat.config(vueRecommendedConfig),
