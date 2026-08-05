@@ -17,9 +17,8 @@ const RuntimeConfigSchema = z
     toriiRequestTimeoutMs: z.number().int().min(1).optional(),
     toriiRequestRetryCount: z.number().int().min(0).optional(),
     toriiRequestRetryBaseDelayMs: z.number().int().min(0).optional(),
-    toriiApiVersionHeaderEnabled: z.boolean().optional(),
   })
-  .passthrough();
+  .strict();
 
 export type RuntimeConfig = z.infer<typeof RuntimeConfigSchema>;
 

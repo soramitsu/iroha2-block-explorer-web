@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import BaseHash from './BaseHash.vue';
 import { i18n } from '@/shared/lib/localization';
 
-const SAMPLE_I105 = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const SAMPLE_I105 = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const SAMPLE_I105_MODERN = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_LEGACY = 'ed01204164BF554923ECE1FD412D241036D863A6AE430476C898248B8237D77534CFC4@genesis';
 let toriiBaseUrl = 'https://nexus.mof3.sora.org:18080';
@@ -19,18 +19,18 @@ test.each([
   ],
   [
     { hash: SAMPLE_I105, type: 'medium' as const },
-    'sorauﾛ1Npﾃ...ﾙFvｵE9LBLB',
+    'sorauﾛ1Pﾉｳ...jﾑKﾋTCW2PV',
   ],
   [
     { hash: SAMPLE_I105, type: 'short' as const },
-    'sora...LBLB',
+    'sora...W2PV',
   ],
   [
     {
       hash: SAMPLE_I105,
       type: 'two-line' as const,
     },
-    'sora...<br>LBLB',
+    'sora...<br>W2PV',
   ],
   [
     {

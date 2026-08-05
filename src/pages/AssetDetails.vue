@@ -16,7 +16,7 @@ import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
-import { getAssetDefinitionDisplayName, getAssetDefinitionDomain } from '@/shared/lib/asset-definition-id';
+import { getAssetDefinitionDisplayName } from '@/shared/lib/asset-definition-id';
 import { useI18n } from 'vue-i18n';
 import type { Asset, AssetSearchParams } from '@/shared/api/schemas';
 import { parseOptionalFilter } from '@/shared/lib/optional-filter';
@@ -49,11 +49,11 @@ const asset = computed(() =>
 );
 const assetDefinitionId = computed(() => asset.value?.id ?? assetDefinitionSelector.value);
 const assetDefinitionName = computed(() => getAssetDefinitionDisplayName(asset.value ?? assetDefinitionSelector.value));
-const assetDefinitionDomain = computed(() => getAssetDefinitionDomain(asset.value ?? assetDefinitionSelector.value));
+const assetDefinitionDomain = computed(() => asset.value?.owning_domain ?? null);
 
 const listState = reactive({
-  page: 1,
-  per_page: 10,
+  cursor: null as string | null,
+  limit: 10,
 });
 const holderFilter = ref('');
 const holderFilterState = computed(() =>
@@ -63,35 +63,35 @@ const parsedHolderFilter = computed<string | undefined>(() => holderFilterState.
 const holderFilterError = computed(() => holderFilterState.value.error);
 
 watch(
-  () => listState.per_page,
+  () => listState.limit,
   () => {
-    listState.page = 1;
+    listState.cursor = null;
   }
 );
 
 watch(assetDefinitionSelector, () => {
-  listState.page = 1;
+  listState.cursor = null;
 });
 
-watch(parsedHolderFilter, () => {
-  listState.page = 1;
+watch(holderFilter, () => {
+  listState.cursor = null;
 });
 
 const assetsListScope = useParamScope(
   () => {
-    if (!asset.value) return null;
+    if (!asset.value || holderFilterError.value) return null;
 
     const payload: AssetSearchParams = {
-      page: listState.page,
-      per_page: listState.per_page,
+      cursor: listState.cursor,
+      limit: listState.limit,
       definition: assetDefinitionId.value,
       ...(parsedHolderFilter.value ? { owned_by: parsedHolderFilter.value } : {}),
     };
 
     return {
       key: JSON.stringify({
-        page: listState.page,
-        per_page: listState.per_page,
+        cursor: listState.cursor,
+        limit: listState.limit,
         definition: assetDefinitionId.value,
         owned_by: parsedHolderFilter.value ?? null,
       }),
@@ -102,31 +102,32 @@ const assetsListScope = useParamScope(
 );
 
 const isLoadingAssets = computed(() => !!assetsListScope.value?.expose.isLoading);
-const totalAssets = computed(() =>
+const assetsPagination = computed(() =>
   assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? assetsListScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? assetsListScope.value.expose.data.data.pagination
+    : null
 );
 const assets = computed(() =>
   assetsListScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetsListScope.value.expose.data.data.items : []
 );
+const isInitialTerminalEmptyAssetsPage = computed(() =>
+  listState.cursor === null
+  && !holderFilter.value.trim()
+  && !isLoadingAssets.value
+  && assets.value.length === 0
+  && assetsPagination.value?.has_more === false
+  && assetsPagination.value.next_cursor === null
+);
 
 const assetInstanceRowKey = (item: Asset) => item.id;
 const assetInstanceDefinitionName = (item: Asset) => getAssetDefinitionDisplayName(item);
-const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(item);
 </script>
 
 <template>
   <div class="asset-details">
-    <BaseContentBlock
-      :title="$t('assets.asset', [assetDefinitionName])"
-      class="asset-details__information"
-    >
+    <BaseContentBlock :title="$t('assets.asset', [assetDefinitionName])" class="asset-details__information">
       <template #header-action>
-        <BaseButton
-          line
-          :to="`/econometrics?asset=${encodeURIComponent(assetDefinitionId.toString())}`"
-        >
+        <BaseButton line :to="`/econometrics?asset=${encodeURIComponent(assetDefinitionId.toString())}`">
           {{ $t('econometrics.nav') }}
         </BaseButton>
       </template>
@@ -155,10 +156,7 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
                 :value="assetDefinitionDomain ?? '-'"
                 :link="assetDefinitionDomain ? `/domains/${assetDefinitionDomain}` : undefined"
               />
-              <DataField
-                :title="$t('mintable')"
-                :value="asset.mintable"
-              />
+              <DataField :title="$t('mintable')" :value="asset.mintable" />
               <DataField
                 :title="$t('metadata')"
                 :metadata="{ display: 'short' }"
@@ -170,50 +168,36 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
       </template>
     </BaseContentBlock>
 
-    <BaseContentBlock
-      v-if="asset"
-      :title="$t('assets.assetHolders')"
-      class="asset-details__assets-table"
-    >
+    <BaseContentBlock v-if="asset" :title="$t('assets.assetHolders')" class="asset-details__assets-table">
       <template #default>
         <div class="asset-details__filters">
           <label>
             <span class="label">{{ $t('assets.filters.holderLabel') }}</span>
-            <input
-              v-model="holderFilter"
-              type="text"
-              :placeholder="$t('assets.filters.holderPlaceholder')"
-            >
-            <small
-              v-if="holderFilterError"
-              class="asset-details__filters-error"
-            >
+            <input v-model="holderFilter" type="text" :placeholder="$t('assets.filters.holderPlaceholder')" />
+            <small v-if="holderFilterError" class="asset-details__filters-error">
               {{ holderFilterError }}
             </small>
           </label>
         </div>
         <span
-          v-if="asset && !isLoadingAssets && totalAssets === 0"
+          v-if="isInitialTerminalEmptyAssetsPage"
           class="asset-details__assets-table_empty row-text"
-        >{{
-          $t('assets.assetDoesntContainAnyInstances')
-        }}</span>
+          >{{ $t('assets.assetDoesntContainAnyInstances') }}</span
+        >
         <BaseTable
           v-else
-          v-model:page="listState.page"
-          v-model:page-size="listState.per_page"
+          v-model:cursor="listState.cursor"
+          v-model:page-size="listState.limit"
           :loading="isLoadingAssets"
-          :total="totalAssets"
+          pagination-mode="cursor"
+          :cursor-pagination="assetsPagination"
           :items="assets"
           :row-key="assetInstanceRowKey"
           container-class="asset-details__assets-table-list"
           :breakpoint="1200"
         >
           <template #header>
-            <div
-              class="asset-details__assets-table-list-row"
-              role="presentation"
-            >
+            <div class="asset-details__assets-table-list-row" role="presentation">
               <span class="h-sm" role="columnheader">{{ $t('name') }}</span>
               <span class="h-sm" role="columnheader">{{ $t('domain') }}</span>
               <span class="h-sm" role="columnheader">{{ $t('accountId') }}</span>
@@ -222,10 +206,7 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
           </template>
 
           <template #row="{ item }">
-            <div
-              class="asset-details__assets-table-list-row"
-              role="presentation"
-            >
+            <div class="asset-details__assets-table-list-row" role="presentation">
               <div class="row-text" role="cell">
                 <BaseLink :to="`/assets/${encodeURIComponent(item.definition_id.toString())}`">
                   {{ assetInstanceDefinitionName(item) }}
@@ -233,16 +214,10 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
               </div>
 
               <div class="row-text" role="cell">
-                <BaseLink
-                  v-if="assetInstanceDefinitionDomain(item)"
-                  :to="`/domains/${assetInstanceDefinitionDomain(item)}`"
-                >
-                  {{ assetInstanceDefinitionDomain(item) }}
+                <BaseLink v-if="assetDefinitionDomain" :to="`/domains/${assetDefinitionDomain}`">
+                  {{ assetDefinitionDomain }}
                 </BaseLink>
-                <span
-                  v-else
-                  class="row-text-monospace"
-                >-</span>
+                <span v-else class="row-text-monospace">-</span>
               </div>
 
               <div class="row-text" role="cell">
@@ -271,16 +246,10 @@ const assetInstanceDefinitionDomain = (item: Asset) => getAssetDefinitionDomain(
 
               <div class="asset-details__assets-table-mobile-list-row-data row-text">
                 <span class="h-sm">{{ $t('domain') }}</span>
-                <BaseLink
-                  v-if="assetInstanceDefinitionDomain(item)"
-                  :to="`/domains/${assetInstanceDefinitionDomain(item)}`"
-                >
-                  {{ assetInstanceDefinitionDomain(item) }}
+                <BaseLink v-if="assetDefinitionDomain" :to="`/domains/${assetDefinitionDomain}`">
+                  {{ assetDefinitionDomain }}
                 </BaseLink>
-                <span
-                  v-else
-                  class="row-text-monospace"
-                >-</span>
+                <span v-else class="row-text-monospace">-</span>
               </div>
 
               <div class="asset-details__assets-table-mobile-list-row-data row-text">

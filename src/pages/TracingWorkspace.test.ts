@@ -8,7 +8,7 @@ import TracingWorkspace from './TracingWorkspace.vue';
 const ACCOUNT_ALICE =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const ACCOUNT_BOB =
-  'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+  'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const ACCOUNT_CAROL = 'reserve@settlement.main';
 const ACCOUNT_DAVE = 'maker@treasury.main';
 const ACCOUNT_ALIAS = 'treasury@banking.retail';

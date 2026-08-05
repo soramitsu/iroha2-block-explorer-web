@@ -16,7 +16,7 @@ import { Instruction } from '@/shared/api/schemas';
 const SAMPLE_I105 =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_I105_ALT =
-  'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+  'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const SAMPLE_I105_THIRD = 'reserve@settlement.main';
 const SAMPLE_ACCOUNT_ALIAS = 'alice@wonderland';
 const SAMPLE_ASSET_ALIAS = 'usd#issuer.main';

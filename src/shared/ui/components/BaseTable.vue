@@ -76,8 +76,15 @@
       </template>
     </div>
 
+    <BaseCursorPagination
+      v-if="!props.disablePagination && props.paginationMode === 'cursor'"
+      v-model:cursor="cursor"
+      v-model:page-size="pageSize"
+      :pagination="props.cursorPagination"
+      :items="props.items.length"
+    />
     <BasePagination
-      v-if="!props.disablePagination"
+      v-else-if="!props.disablePagination"
       v-model:page="page"
       v-model:page-size="pageSize"
       :total-items="props.total"
@@ -94,12 +101,15 @@ import { computed, useSlots } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import BaseLoading from './BaseLoading.vue';
 import BasePagination from '@/shared/ui/components/BasePagination.vue';
-import type { Pagination } from '@/shared/api/schemas';
+import BaseCursorPagination from '@/shared/ui/components/BaseCursorPagination.vue';
+import type { CursorPagination, Pagination } from '@/shared/api/schemas';
 
 interface Props {
   loading: boolean
   total?: number
   payloadPagination?: Pagination | null
+  cursorPagination?: CursorPagination | null
+  paginationMode?: 'numbered' | 'cursor'
   disablePagination?: boolean
   paginationBreakpoint?: number
   items: T[]
@@ -121,11 +131,14 @@ const props = withDefaults(defineProps<Props>(), {
   rowKey: undefined,
   total: 0,
   payloadPagination: null,
+  cursorPagination: null,
+  paginationMode: 'numbered',
   paginationBreakpoint: 960,
 });
 
 const page = defineModel<number>('page', { default: 1 });
 const pageSize = defineModel<number>('pageSize', { default: 10 });
+const cursor = defineModel<string | null>('cursor', { default: null });
 
 const { width } = useWindowSize();
 const slots = useSlots();

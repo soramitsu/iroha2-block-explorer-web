@@ -1,3 +1,5 @@
+import { AccountAddress } from '@iroha/iroha-js/browser';
+
 const BASE58_ALPHABET = [
   '1',
   '2',
@@ -150,17 +152,17 @@ const MODERN_I105_ACCOUNT_ID_RE = new RegExp(`^(?:sora|test|dev|n[0-9]{1,5})(?:$
 const ACCOUNT_ID_SENTINEL_RE = /^(sora|test|dev|n[0-9]{1,5})(.*)$/u;
 
 export interface AccountAliasLiteral {
-  literal: string
-  label: string
-  domain: string | null
-  dataspace: string
+  literal: string;
+  label: string;
+  domain: string | null;
+  dataspace: string;
 }
 
 function normalizeAliasSegment(segment: string): string | null {
   const trimmed = segment.trim();
   if (!trimmed || trimmed !== segment) return null;
   if (ACCOUNT_ALIAS_FORBIDDEN_SEGMENT_CHARS_RE.test(trimmed)) return null;
-  if ([...trimmed].some(char => char === '.' || char === ':')) return null;
+  if ([...trimmed].some((char) => char === '.' || char === ':')) return null;
   if (containsControlCharacters(trimmed)) return null;
   return trimmed.toLowerCase();
 }
@@ -180,7 +182,7 @@ function decodeHexBytes(value: string): Uint8Array | null {
   return bytes;
 }
 
-function readVarUint(bytes: Uint8Array, offset: number): { value: number, nextOffset: number } | null {
+function readVarUint(bytes: Uint8Array, offset: number): { value: number; nextOffset: number } | null {
   let value = 0;
   let shift = 0;
   let index = offset;
@@ -197,16 +199,12 @@ function readVarUint(bytes: Uint8Array, offset: number): { value: number, nextOf
   return null;
 }
 
-function decodeCanonicalPublicKeyMultihash(
-  value: string
-): { digestFunction: number, payload: Uint8Array } | null {
+function decodeCanonicalPublicKeyMultihash(value: string): { digestFunction: number; payload: Uint8Array } | null {
   const trimmed = value.trim();
   if (!trimmed || trimmed !== value) return null;
 
-  const [prefix, hexLiteral] = trimmed.includes(':')
-    ? trimmed.split(':', 2)
-    : [null, trimmed];
-  const expectedDigest = prefix === null ? null : ALGORITHM_PREFIX_TO_DIGEST.get(prefix.toLowerCase()) ?? null;
+  const [prefix, hexLiteral] = trimmed.includes(':') ? trimmed.split(':', 2) : [null, trimmed];
+  const expectedDigest = prefix === null ? null : (ALGORITHM_PREFIX_TO_DIGEST.get(prefix.toLowerCase()) ?? null);
   if (prefix !== null && expectedDigest === null) return null;
 
   const bytes = decodeHexBytes(hexLiteral ?? '');
@@ -372,13 +370,7 @@ function expandHrp(value: string): number[] {
 }
 
 function bech32Polymod(values: Iterable<number>): number {
-  const generators = [
-    0x3b6a_57b2,
-    0x2650_8e6d,
-    0x1ea1_19fa,
-    0x3d42_33dd,
-    0x2a14_62b3,
-  ];
+  const generators = [0x3b6a_57b2, 0x2650_8e6d, 0x1ea1_19fa, 0x3d42_33dd, 0x2a14_62b3];
   let checksum = 1;
   for (const value of values) {
     const top = checksum >>> 25;
@@ -468,7 +460,11 @@ export function renderCanonicalPublicKeyLiteralFromAccountIdLiteral(value: strin
   if (expectedChecksum.length !== checksumDigits.length) return null;
   if (expectedChecksum.some((digit, index) => digit !== checksumDigits[index])) return null;
 
-  if (canonical.length < 4 || canonical[0] !== ACCOUNT_ADDRESS_HEADER_SINGLE_KEY_V1 || canonical[1] !== ACCOUNT_CONTROLLER_SINGLE_KEY_TAG) {
+  if (
+    canonical.length < 4 ||
+    canonical[0] !== ACCOUNT_ADDRESS_HEADER_SINGLE_KEY_V1 ||
+    canonical[1] !== ACCOUNT_CONTROLLER_SINGLE_KEY_TAG
+  ) {
     return null;
   }
 
@@ -488,9 +484,16 @@ export function renderCanonicalPublicKeyLiteralFromAccountIdLiteral(value: strin
 export function normalizeAccountIdLiteral(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
+  if (trimmed !== value) return null;
   if (NORITO_LITERAL_RE.test(trimmed)) return null;
   if (trimmed.includes('@') || trimmed.includes('#') || trimmed.includes('$') || trimmed.includes(':')) return null;
-  return MODERN_I105_ACCOUNT_ID_RE.test(trimmed) ? trimmed : null;
+  if (!MODERN_I105_ACCOUNT_ID_RE.test(trimmed)) return null;
+  try {
+    const { address, chainDiscriminant } = AccountAddress.parseEncoded(trimmed);
+    return address.toI105(chainDiscriminant) === trimmed ? trimmed : null;
+  } catch {
+    return null;
+  }
 }
 
 export function parseAccountAliasLiteral(value: string): AccountAliasLiteral | null {
@@ -506,7 +509,7 @@ export function parseAccountAliasLiteral(value: string): AccountAliasLiteral | n
   const label = normalizeAliasSegment(labelPart);
   if (!label) return null;
 
-  const dotCount = [...right].filter(char => char === '.').length;
+  const dotCount = [...right].filter((char) => char === '.').length;
   if (dotCount > 1) return null;
 
   if (dotCount === 1) {
@@ -563,7 +566,7 @@ export function isAccountSelectorLiteral(value: string): boolean {
 }
 
 export function normalizeEncodedAccountLiteral(value: string): string | null {
-  return normalizeAccountIdLiteral(value);
+  return normalizeAccountIdLiteral(value.trim());
 }
 
 export function normalizeLooseAccountLiteral(value: string): string | null {

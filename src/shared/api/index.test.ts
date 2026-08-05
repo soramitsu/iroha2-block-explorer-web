@@ -6,19 +6,20 @@ import { appendSearchParams } from '@/shared/api/query';
 import { NOT_FOUND, SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
-const SAMPLE_I105_ALT = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const SAMPLE_I105_ALT = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const SAMPLE_I105_MODERN = 'sorauﾛ1NfｷgﾉﾓﾉBｦKﾌﾘﾒoﾇﾂﾛrG81ﾋjWﾎﾕVncwﾌSｱ3pﾘﾋﾉhUS9Q76';
 const SAMPLE_I105_TEST_MODERN = 'testuﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_ACCOUNT_ALIAS = 'treasury@banking.retail';
 const SAMPLE_ASSET_DEFINITION_ID = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
 const SAMPLE_ASSET_ALIAS = 'usd#issuer.main';
 const SAMPLE_ASSET_ID = `${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_I105}`;
+const SAMPLE_RWA_ID = `${'00'.repeat(31)}01$commodities.main`;
+const SAMPLE_PARENT_RWA_ID = `${'ff'.repeat(32)}$commodities.main`;
 const SAMPLE_FRAMED_INSTRUCTION_SHA256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 const TORII_API_VERSION_HEADER = 'x-iroha-api-version';
-const TORII_API_VERSION = '1.1';
 
 const eventSourceStore = vi.hoisted(() => ({
-  instances: [] as Array<{ source: unknown, data: Ref<string | null>, status: Ref<string> }>,
+  instances: [] as Array<{ source: unknown; data: Ref<string | null>; status: Ref<string> }>,
 }));
 
 const runtimeConfigState = vi.hoisted((): { value: Record<string, unknown> } => ({
@@ -329,6 +330,13 @@ describe('API url builders', () => {
     expect(insecureModule.buildToriiWsUrl('/telemetry/metrics')).toBe('ws://torii.example:8080/v1/telemetry/metrics');
   });
 
+  it('does not expose retired address-format preference state', async () => {
+    const module = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    expect(module).not.toHaveProperty('getToriiAddressFormatPreference');
+    expect(module).not.toHaveProperty('useToriiAddressFormatPreference');
+  });
+
   it('setToriiBaseUrl overrides Torii and explorer bases', async () => {
     const storage = window.localStorage as any;
     const module = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -409,7 +417,7 @@ describe('API url builders', () => {
       async (input: unknown) =>
         new Response(
           JSON.stringify({
-            pagination: { page: 1, per_page: 1, total_pages: 1, total_items: 0 },
+            pagination: { limit: 1, next_cursor: null, has_more: false },
             items: [],
           }),
           { status: 200, headers: { 'content-type': 'application/json' } }
@@ -417,7 +425,7 @@ describe('API url builders', () => {
     );
     global.fetch = fetchSpy as any;
 
-    const result = await module.fetchAccounts({ page: 1, per_page: 1 });
+    const result = await module.fetchAccounts({ limit: 1 });
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     const requestedUrl = fetchSpy.mock.calls[0]?.[0];
     const requestedUrlString = requestedUrl instanceof URL ? requestedUrl.toString() : String(requestedUrl);
@@ -442,11 +450,10 @@ describe('API url builders', () => {
       if (attempts === 1) return new Response('bad gateway', { status: 502 });
       return new Response(
         JSON.stringify({
-          pagination: { page: 1, per_page: 1, total_pages: 1, total_items: 1 },
+          pagination: { limit: 1, next_cursor: null, has_more: false },
           items: [
             {
               id: SAMPLE_I105,
-              compressed_address: '34mSYnCXkCzHXm31UDHh7SJfGvC4QPEhwim8z7sys2iHqXpCwCQkjL8KHvkFLSs1vZdJcb37r',
               network_prefix: 0,
               metadata: {},
               owned_assets: 0,
@@ -461,7 +468,7 @@ describe('API url builders', () => {
 
     const module = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
     const availability = module.useToriiAvailability();
-    const result = await module.fetchAccounts({ page: 1, per_page: 1 });
+    const result = await module.fetchAccounts({ limit: 1 });
 
     expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(attempts).toBe(2);
@@ -486,11 +493,10 @@ describe('API url builders', () => {
       if (attempts === 1) throw new Error('simulated network error');
       return new Response(
         JSON.stringify({
-          pagination: { page: 1, per_page: 1, total_pages: 1, total_items: 1 },
+          pagination: { limit: 1, next_cursor: null, has_more: false },
           items: [
             {
               id: SAMPLE_I105,
-              compressed_address: '34mSYnCXkCzHXm31UDHh7SJfGvC4QPEhwim8z7sys2iHqXpCwCQkjL8KHvkFLSs1vZdJcb37r',
               network_prefix: 0,
               metadata: {},
               owned_assets: 0,
@@ -505,7 +511,7 @@ describe('API url builders', () => {
 
     const module = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
     module.setToriiBaseUrl('https://torii.example', { persist: false });
-    const result = await module.fetchAccounts({ page: 1, per_page: 1 });
+    const result = await module.fetchAccounts({ limit: 1 });
 
     expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(attempts).toBe(2);
@@ -599,22 +605,24 @@ describe('API url builders', () => {
     const module = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
     const switched = await module.retryToriiFailover();
     const peerCall = fetchSpy.mock.calls.find(([input]) => String(input) === 'https://torii.example/peers');
-    const healthCall = fetchSpy.mock.calls.find(([input]) => String(input) === 'https://fresh.example/v1/explorer/health');
+    const healthCall = fetchSpy.mock.calls.find(
+      ([input]) => String(input) === 'https://fresh.example/v1/explorer/health'
+    );
 
     expect(switched).toBe(true);
     expect(module.getToriiBaseUrl()).toBe('https://fresh.example');
     expect(peerCall?.[1]).toMatchObject({
       headers: {
         Accept: 'application/json',
-        [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
       },
     });
     expect(healthCall?.[1]).toMatchObject({
       headers: {
         Accept: 'application/json',
-        [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
       },
     });
+    expect((peerCall?.[1]?.headers as Record<string, string>)[TORII_API_VERSION_HEADER]).toBeUndefined();
+    expect((healthCall?.[1]?.headers as Record<string, string>)[TORII_API_VERSION_HEADER]).toBeUndefined();
   });
 
   it('does not auto-probe built-in preset nodes during failover', async () => {
@@ -689,11 +697,10 @@ describe('Explorer accounts API helpers', () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+        pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
             id: validAccountId,
-            compressed_address: '34mSYnCXkCzHXm31UDHh7SJfGvC4QPEhwim8z7sys2iHqXpCwCQkjL8KHvkFLSs1vZdJcb37r',
             network_prefix: 0,
             metadata: {},
             owned_assets: 0,
@@ -706,39 +713,40 @@ describe('Explorer accounts API helpers', () => {
     global.fetch = fetchSpy as any;
 
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
-    const result = await fetchAccounts({ page: 1, per_page: 10, domain: 'wonderland' });
+    const result = await fetchAccounts({ limit: 10, domain: 'wonderland' });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     const firstOptions = fetchSpy.mock.calls[0]?.[1] as RequestInit;
     expect(firstCall).toBeInstanceOf(URL);
     expect(firstCall.pathname).toBe('/v1/explorer/accounts');
-    expect(firstCall.searchParams.get('page')).toBe('1');
-    expect(firstCall.searchParams.get('per_page')).toBe('10');
+    expect(firstCall.searchParams.get('limit')).toBe('10');
+    expect(firstCall.searchParams.has('page')).toBe(false);
+    expect(firstCall.searchParams.has('per_page')).toBe(false);
     expect(firstCall.searchParams.get('domain')).toBe('wonderland');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(firstOptions).toMatchObject({
       cache: 'no-store',
       headers: {
         Accept: 'application/json',
-        [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
       },
     });
+    expect((firstOptions.headers as Record<string, string>)[TORII_API_VERSION_HEADER]).toBeUndefined();
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
   });
 
-  it('can omit the Torii API version header from runtime config', async () => {
-    runtimeConfigState.value = { toriiApiVersionHeaderEnabled: false };
+  it('does not revive the retired Torii API version header from legacy runtime config', async () => {
+    runtimeConfigState.value = { toriiApiVersionHeaderEnabled: true };
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 0 },
+        pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [],
       }),
     });
     global.fetch = fetchSpy as any;
 
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
-    const result = await fetchAccounts({ page: 1, per_page: 10 });
+    const result = await fetchAccounts({ limit: 10 });
 
     const firstOptions = fetchSpy.mock.calls[0]?.[1] as RequestInit;
     expect(firstOptions).toMatchObject({
@@ -751,16 +759,15 @@ describe('Explorer accounts API helpers', () => {
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
   });
 
-  it('fetchAccounts accepts nullable optional address fields from Torii account listings', async () => {
+  it('fetchAccounts accepts the exact required account fields from Torii listings', async () => {
     const validAccountId = SAMPLE_I105;
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+        pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
             id: validAccountId,
-            compressed_address: null,
             network_prefix: 753,
             metadata: {},
             owned_assets: 0,
@@ -773,7 +780,7 @@ describe('Explorer accounts API helpers', () => {
     global.fetch = fetchSpy as any;
 
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
-    const result = await fetchAccounts({ page: 1, per_page: 10 });
+    const result = await fetchAccounts({ limit: 10 });
 
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
@@ -782,12 +789,152 @@ describe('Explorer accounts API helpers', () => {
     }
   });
 
+  it('adapts every world-backed collection to cursor and limit without retired page parameters', async () => {
+    const fetchSpy = vi.fn(async (input: unknown) => {
+      const url = input as URL;
+      return {
+        ok: true,
+        json: async () => ({
+          pagination: {
+            limit: Number(url.searchParams.get('limit')),
+            next_cursor: null,
+            has_more: false,
+          },
+          items: [],
+        }),
+      };
+    });
+    global.fetch = fetchSpy as any;
+
+    const api = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+    await api.fetchAccounts({ limit: 10, domain: 'wonderland' });
+    await api.fetchDomains({ limit: 10, owned_by: SAMPLE_I105 });
+    await api.fetchAssets({ limit: 10 });
+    await api.fetchNFTs({ limit: 10, domain: 'wonderland', owned_by: SAMPLE_I105 });
+    await api.fetchRwas({ limit: 10, domain: 'wonderland', owned_by: SAMPLE_I105 });
+    await api.fetchAssetDefinitions({ limit: 10, domain: 'wonderland' });
+
+    const urls = fetchSpy.mock.calls.map(([input]) => input as URL);
+    expect(urls.map((url) => url.pathname)).toEqual([
+      '/v1/explorer/accounts',
+      '/v1/explorer/domains',
+      '/v1/explorer/assets',
+      '/v1/explorer/nfts',
+      '/v1/explorer/rwas',
+      '/v1/explorer/asset-definitions',
+    ]);
+    for (const url of urls) {
+      expect(url.searchParams.get('limit')).toBe('10');
+      expect(url.searchParams.has('page')).toBe(false);
+      expect(url.searchParams.has('per_page')).toBe(false);
+    }
+    expect(urls[5]?.searchParams.get('owning_domain')).toBe('wonderland');
+    expect(urls[5]?.searchParams.has('domain')).toBe(false);
+  });
+
+  it('fetches consecutive cursor pages without inventing totals or numbered metadata', async () => {
+    const account = (id: string) => ({
+      id,
+      network_prefix: 0,
+      metadata: {},
+      owned_assets: 0,
+      owned_nfts: 0,
+      owned_domains: 0,
+    });
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          pagination: { limit: 2, next_cursor: 'cursor-1', has_more: true },
+          items: [account(SAMPLE_I105), account(SAMPLE_I105_ALT)],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          pagination: { limit: 2, next_cursor: null, has_more: false },
+          items: [account(SAMPLE_I105_ALT), account(SAMPLE_I105)],
+        }),
+      });
+    global.fetch = fetchSpy as any;
+
+    const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+    const first = await fetchAccounts({ limit: 2 });
+    expect(first.status).toBe(SUCCESSFUL_FETCHING);
+    if (first.status !== SUCCESSFUL_FETCHING) throw new Error('expected first cursor page');
+    const second = await fetchAccounts({ cursor: first.data.pagination.next_cursor, limit: 2 });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    const firstUrl = fetchSpy.mock.calls[0]?.[0] as URL;
+    const secondUrl = fetchSpy.mock.calls[1]?.[0] as URL;
+    expect(firstUrl.searchParams.get('limit')).toBe('2');
+    expect(firstUrl.searchParams.has('cursor')).toBe(false);
+    expect(secondUrl.searchParams.get('limit')).toBe('2');
+    expect(secondUrl.searchParams.get('cursor')).toBe('cursor-1');
+    expect(first.data.pagination).toEqual({ limit: 2, next_cursor: 'cursor-1', has_more: true });
+    expect(Object.keys(first.data.pagination)).not.toContain('total_items');
+    expect(second.status).toBe(SUCCESSFUL_FETCHING);
+    if (second.status === SUCCESSFUL_FETCHING) {
+      expect(second.data.pagination).toEqual({ limit: 2, next_cursor: null, has_more: false });
+      expect(second.data.items.map((item) => item.id)).toEqual([SAMPLE_I105_ALT, SAMPLE_I105]);
+    }
+  });
+
+  it('rejects a cursor response that repeats the request cursor', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        pagination: { limit: 2, next_cursor: 'cursor-1', has_more: true },
+        items: [],
+      }),
+    }) as any;
+    const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    await expect(fetchAccounts({ cursor: 'cursor-1', limit: 2 })).rejects.toThrow('cursor did not advance');
+  });
+
+  it.each([
+    { next_cursor: null, has_more: true },
+    { next_cursor: 'cursor-1', has_more: false },
+  ])('rejects inconsistent continuation metadata: %o', async (pagination) => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ pagination: { limit: 2, ...pagination }, items: [] }),
+    }) as any;
+    const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    await expect(fetchAccounts({ limit: 2 })).rejects.toThrow('has_more must match next_cursor availability');
+  });
+
+  it.each([{ limit: 0 }, { limit: 101 }, { limit: 2, cursor: 'not=padded' }])(
+    'rejects invalid cursor pagination before issuing a request: %o',
+    async (params) => {
+      const fetchSpy = vi.fn();
+      global.fetch = fetchSpy as any;
+      const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+      await expect(fetchAccounts(params)).rejects.toThrow();
+      expect(fetchSpy).not.toHaveBeenCalled();
+    }
+  );
+
+  it('returns an upstream cursor-page error without fabricating an empty page', async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response('cursor backend unavailable', { status: 503 })) as any;
+    const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    const result = await fetchAccounts({ limit: 2 });
+
+    expect(result.status).toBe(UNKNOWN_ERROR);
+    if (result.status === UNKNOWN_ERROR) expect(result.error.message).toBe('cursor backend unavailable');
+    expect(result).not.toHaveProperty('data');
+  });
+
   it('fetchAccount URL-encodes account selectors and returns canonical i105 data', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         id: SAMPLE_I105,
-        compressed_address: 'sora5AbCDeFG1234XYZ9876qwerty',
         network_prefix: 753,
         metadata: {},
         owned_assets: 0,
@@ -803,7 +950,7 @@ describe('Explorer accounts API helpers', () => {
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall).toBeInstanceOf(URL);
     expect(firstCall.pathname).toBe('/v1/explorer/accounts/treasury%40banking.retail');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.id).toBe(SAMPLE_I105);
@@ -816,7 +963,6 @@ describe('Explorer accounts API helpers', () => {
       ok: true,
       json: async () => ({
         id: SAMPLE_I105_TEST_MODERN,
-        compressed_address: null,
         network_prefix: 369,
         metadata: {},
         owned_assets: 1,
@@ -831,7 +977,7 @@ describe('Explorer accounts API helpers', () => {
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe(`/v1/explorer/accounts/${encodeURIComponent(SAMPLE_I105_TEST_MODERN)}`);
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.id).toBe(SAMPLE_I105_TEST_MODERN);
@@ -844,7 +990,6 @@ describe('Explorer accounts API helpers', () => {
       ok: true,
       json: async () => ({
         id: SAMPLE_I105_MODERN,
-        compressed_address: null,
         network_prefix: 753,
         metadata: {},
         owned_assets: 1,
@@ -859,7 +1004,7 @@ describe('Explorer accounts API helpers', () => {
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe(`/v1/explorer/accounts/${encodeURIComponent(SAMPLE_I105_MODERN)}`);
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.id).toBe(SAMPLE_I105_MODERN);
@@ -871,28 +1016,28 @@ describe('Explorer accounts API helpers', () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
+        pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
-            asset: SAMPLE_ASSET_DEFINITION_ID,
+            id: `${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_I105_TEST_MODERN}`,
+            definition_id: SAMPLE_ASSET_DEFINITION_ID,
             account_id: SAMPLE_I105_TEST_MODERN,
-            asset_name: null,
-            asset_alias: null,
-            quantity: '25000',
-            scope: 'global',
+            asset_name: 'usd',
+            asset_alias: SAMPLE_ASSET_ALIAS,
+            value: '25000',
           },
         ],
-        total: 1,
       }),
     });
     global.fetch = fetchSpy as any;
 
     const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
-    const result = await fetchAssets({ page: 1, per_page: 10, owned_by: SAMPLE_I105_TEST_MODERN });
+    const result = await fetchAssets({ limit: 10, owned_by: SAMPLE_I105_TEST_MODERN });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall.pathname).toBe(`/v1/accounts/${encodeURIComponent(SAMPLE_I105_TEST_MODERN)}/assets`);
+    expect(firstCall.pathname).toBe('/v1/explorer/assets');
     expect(firstCall.searchParams.get('limit')).toBe('10');
-    expect(firstCall.searchParams.get('offset')).toBe('0');
+    expect(firstCall.searchParams.get('owned_by')).toBe(SAMPLE_I105_TEST_MODERN);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.items[0]?.definition_id).toBe(SAMPLE_ASSET_DEFINITION_ID);
@@ -904,28 +1049,28 @@ describe('Explorer accounts API helpers', () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
+        pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
-            asset: SAMPLE_ASSET_DEFINITION_ID,
+            id: `${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_I105_MODERN}`,
+            definition_id: SAMPLE_ASSET_DEFINITION_ID,
             account_id: SAMPLE_I105_MODERN,
-            asset_name: null,
-            asset_alias: null,
-            quantity: '25000',
-            scope: 'global',
+            asset_name: 'usd',
+            asset_alias: SAMPLE_ASSET_ALIAS,
+            value: '25000',
           },
         ],
-        total: 1,
       }),
     });
     global.fetch = fetchSpy as any;
 
     const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://taira.sora.org/v1/explorer' });
-    const result = await fetchAssets({ page: 1, per_page: 10, owned_by: SAMPLE_I105_MODERN });
+    const result = await fetchAssets({ limit: 10, owned_by: SAMPLE_I105_MODERN });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall.pathname).toBe(`/v1/accounts/${encodeURIComponent(SAMPLE_I105_MODERN)}/assets`);
+    expect(firstCall.pathname).toBe('/v1/explorer/assets');
     expect(firstCall.searchParams.get('limit')).toBe('10');
-    expect(firstCall.searchParams.get('offset')).toBe('0');
+    expect(firstCall.searchParams.get('owned_by')).toBe(SAMPLE_I105_MODERN);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.items[0]?.definition_id).toBe(SAMPLE_ASSET_DEFINITION_ID);
@@ -933,74 +1078,202 @@ describe('Explorer accounts API helpers', () => {
     }
   });
 
-  it('uses the per-definition holders route when filtering assets by definition', async () => {
+  it('keeps definition filters on the cursor-native Explorer assets route', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
+        pagination: { limit: 5, next_cursor: null, has_more: false },
         items: [
           {
-            asset: SAMPLE_ASSET_DEFINITION_ID,
-            asset_alias: SAMPLE_ASSET_ALIAS,
+            id: SAMPLE_ASSET_ID,
+            definition_id: SAMPLE_ASSET_DEFINITION_ID,
             account_id: SAMPLE_I105,
-            quantity: '77',
-            scope: 'global',
+            asset_name: 'usd',
+            asset_alias: SAMPLE_ASSET_ALIAS,
+            value: '77',
           },
         ],
-        total: 1,
       }),
     });
     global.fetch = fetchSpy as any;
 
     const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
-    const result = await fetchAssets({ page: 2, per_page: 5, definition: SAMPLE_ASSET_DEFINITION_ID });
+    const result = await fetchAssets({ limit: 5, definition: SAMPLE_ASSET_DEFINITION_ID });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall.pathname).toBe(`/v1/assets/${encodeURIComponent(SAMPLE_ASSET_DEFINITION_ID)}/holders`);
+    expect(firstCall.pathname).toBe('/v1/explorer/assets');
     expect(firstCall.searchParams.get('limit')).toBe('5');
-    expect(firstCall.searchParams.get('offset')).toBe('5');
+    expect(firstCall.searchParams.get('definition')).toBe(SAMPLE_ASSET_DEFINITION_ID);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
-      expect(result.data.pagination.page).toBe(2);
+      expect(result.data.pagination).toEqual({ limit: 5, next_cursor: null, has_more: false });
       expect(result.data.items[0]?.definition_id).toBe(SAMPLE_ASSET_DEFINITION_ID);
-      expect(result.data.items[0]?.asset_alias).toBe(SAMPLE_ASSET_ALIAS);
+      expect(result.data.items[0]?.id).toBe(SAMPLE_ASSET_ID);
       expect(result.data.items[0]?.value.toString()).toBe('77');
     }
   });
 
-  it('fetchAssetDefinitions uses the v1 asset-definitions route and adapts iterable pagination', async () => {
+  it('forwards a canonical scoped asset_id and parses the current Explorer asset DTO', async () => {
+    const scopedAssetId = `${SAMPLE_ASSET_ID}#dataspace:7`;
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
+        pagination: { limit: 1, next_cursor: null, has_more: false },
+        items: [
+          {
+            id: scopedAssetId,
+            definition_id: SAMPLE_ASSET_DEFINITION_ID,
+            account_id: SAMPLE_I105,
+            asset_name: 'usd',
+            asset_alias: SAMPLE_ASSET_ALIAS,
+            value: '91',
+          },
+        ],
+      }),
+    });
+    global.fetch = fetchSpy as any;
+
+    const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+    const result = await fetchAssets({ limit: 1, asset_id: scopedAssetId });
+
+    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(firstCall.pathname).toBe('/v1/explorer/assets');
+    expect(firstCall.searchParams.get('asset_id')).toBe(scopedAssetId);
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.items[0]?.id).toBe(scopedAssetId);
+      expect(result.data.items[0]?.definition_id).toBe(SAMPLE_ASSET_DEFINITION_ID);
+      expect(result.data.items[0]?.value.toString()).toBe('91');
+    }
+  });
+
+  it('rejects a non-canonical asset_id before issuing an Explorer request', async () => {
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as any;
+
+    const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    for (const assetId of [`${SAMPLE_ASSET_ID}#dataspace:007`, `${SAMPLE_ASSET_ID}#dataspace:18446744073709551616`]) {
+      await expect(fetchAssets({ limit: 1, asset_id: assetId })).rejects.toThrow();
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid owner/account selectors before issuing Explorer requests', async () => {
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as any;
+    const api = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    const requests = [
+      api.fetchAccount('not an account'),
+      api.fetchDomains({ limit: 1, owned_by: 'not an account' }),
+      api.fetchAssets({ limit: 1, owned_by: 'not an account' }),
+      api.fetchAssetDefinitions({ limit: 1, owned_by: 'not an account' }),
+      api.fetchNFTs({ limit: 1, owned_by: 'not an account' }),
+      api.fetchRwas({ limit: 1, owned_by: 'not an account' }),
+    ];
+    for (const request of requests) {
+      await expect(request).rejects.toThrow(/Account selector/u);
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('fetchAsset consumes the authoritative Explorer detail value and alias fields', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: SAMPLE_ASSET_ID,
+        definition_id: SAMPLE_ASSET_DEFINITION_ID,
+        account_id: SAMPLE_I105,
+        asset_name: 'usd',
+        asset_alias: SAMPLE_ASSET_ALIAS,
+        value: '123.5',
+      }),
+    });
+    global.fetch = fetchSpy as any;
+
+    const { fetchAsset } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+    const result = await fetchAsset(SAMPLE_ASSET_ID);
+
+    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(firstCall.pathname).toBe(`/v1/explorer/assets/${encodeURIComponent(SAMPLE_ASSET_ID)}`);
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.value.toString()).toBe('123.5');
+      expect(result.data.asset_name).toBe('usd');
+      expect(result.data.asset_alias).toBe(SAMPLE_ASSET_ALIAS);
+    }
+  });
+
+  it('fetchAssetDefinitions uses the cursor-native Explorer route', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        pagination: { limit: 5, next_cursor: null, has_more: false },
         items: [
           {
             id: SAMPLE_ASSET_DEFINITION_ID,
-            alias: SAMPLE_ASSET_ALIAS,
+            owning_domain: 'issuer.main',
             name: 'usd',
+            description: null,
+            alias: SAMPLE_ASSET_ALIAS,
             mintable: 'Infinitely',
+            logo: null,
             metadata: {},
             owned_by: SAMPLE_I105,
+            assets: 1,
+            total_quantity: '11',
+            locked_quantity: null,
+            circulating_quantity: null,
           },
         ],
-        total: 11,
       }),
     });
     global.fetch = fetchSpy as any;
 
     const { fetchAssetDefinitions } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
-    const result = await fetchAssetDefinitions({ page: 2, per_page: 5 });
+    const result = await fetchAssetDefinitions({ limit: 5 });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall.pathname).toBe('/v1/assets/definitions');
+    expect(firstCall.pathname).toBe('/v1/explorer/asset-definitions');
     expect(firstCall.searchParams.get('limit')).toBe('5');
-    expect(firstCall.searchParams.get('offset')).toBe('5');
+    expect(firstCall.searchParams.has('offset')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
-      expect(result.data.pagination.page).toBe(2);
-      expect(result.data.pagination.per_page).toBe(5);
-      expect(result.data.pagination.total_pages).toBe(3);
-      expect(result.data.pagination.total_items).toBe(11);
+      expect(result.data.pagination).toEqual({ limit: 5, next_cursor: null, has_more: false });
+      expect(result.data.items[0]?.owning_domain).toBe('issuer.main');
+      expect(result.data.items[0]?.total_quantity.toString()).toBe('11');
       expect(result.data.items[0]?.alias).toBe(SAMPLE_ASSET_ALIAS);
     }
+  });
+
+  it('rejects incomplete Explorer asset-definition items instead of applying full-route defaults', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        pagination: { limit: 1, next_cursor: null, has_more: false },
+        items: [
+          {
+            id: SAMPLE_ASSET_DEFINITION_ID,
+            owning_domain: null,
+            name: 'usd',
+            description: null,
+            alias: null,
+            mintable: 'Infinitely',
+            logo: null,
+            metadata: {},
+            owned_by: SAMPLE_I105,
+            assets: 0,
+            locked_quantity: null,
+            circulating_quantity: null,
+          },
+        ],
+      }),
+    }) as any;
+
+    const { fetchAssetDefinitions } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    await expect(fetchAssetDefinitions({ limit: 1 })).rejects.toThrow(/total_quantity/u);
   });
 
   it('fetchAssetDefinition prefers the v1 asset-definition detail route', async () => {
@@ -1008,11 +1281,20 @@ describe('Explorer accounts API helpers', () => {
       ok: true,
       json: async () => ({
         id: SAMPLE_ASSET_DEFINITION_ID,
+        owning_domain: null,
         alias: SAMPLE_ASSET_ALIAS,
+        alias_binding: {
+          alias: SAMPLE_ASSET_ALIAS,
+          status: 'permanent',
+          bound_at_ms: 1_700_000_000_000,
+        },
         name: 'usd',
+        description: null,
         mintable: 'Infinitely',
+        logo: null,
         metadata: {},
         owned_by: SAMPLE_I105,
+        total_quantity: '11',
       }),
     });
     global.fetch = fetchSpy as any;
@@ -1026,12 +1308,15 @@ describe('Explorer accounts API helpers', () => {
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.id).toBe(SAMPLE_ASSET_DEFINITION_ID);
       expect(result.data.alias).toBe(SAMPLE_ASSET_ALIAS);
+      expect(result.data.alias_binding?.alias).toBe(SAMPLE_ASSET_ALIAS);
+      expect(result.data.owning_domain).toBeNull();
+      expect(result.data.total_quantity.toString()).toBe('11');
     }
   });
 
-  it('fetchAccount does not retry alternate address formats on format rejections', async () => {
+  it('fetchAccount surfaces detail rejections without adding unsupported format queries or retrying', async () => {
     const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('address_format `i105` must be `ih58` or `compressed`', {
+      new Response('invalid explorer account request', {
         status: 400,
         headers: { 'content-type': 'text/plain' },
       })
@@ -1043,7 +1328,7 @@ describe('Explorer accounts API helpers', () => {
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(UNKNOWN_ERROR);
   });
 });
@@ -1080,9 +1365,7 @@ describe('Account read-only surface API helpers', () => {
   });
 
   it.each([401, 403])('returns an explicit permission-denied result for HTTP %s', async (status) => {
-    global.fetch = vi.fn().mockResolvedValue(
-      new Response('private dataspace permission denied', { status })
-    ) as any;
+    global.fetch = vi.fn().mockResolvedValue(new Response('private dataspace permission denied', { status })) as any;
 
     const { fetchAccountPermissions } = await importApiModule(toriiEnv);
     const result = await fetchAccountPermissions(SAMPLE_I105, { page: 1, per_page: 10 });
@@ -1229,6 +1512,102 @@ describe('Account read-only surface API helpers', () => {
   });
 });
 
+describe('Explorer domain and NFT API helpers', () => {
+  const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
+  const nftId = 'cool-cat$gallery.main';
+
+  it('fetchDomains parses exact cursor items', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        pagination: { limit: 1, next_cursor: null, has_more: false },
+        items: [
+          {
+            id: 'gallery.main',
+            logo: null,
+            metadata: { category: 'art' },
+            owned_by: SAMPLE_I105,
+            accounts: 1,
+            assets: 2,
+            nfts: 3,
+          },
+        ],
+      }),
+    });
+    global.fetch = fetchSpy as any;
+
+    const { fetchDomains } = await importApiModule(toriiEnv);
+    const result = await fetchDomains({ limit: 1, owned_by: SAMPLE_I105 });
+
+    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(firstCall.pathname).toBe('/v1/explorer/domains');
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.items[0]?.id).toBe('gallery.main');
+      expect(result.data.items[0]?.nfts).toBe(3);
+    }
+  });
+
+  it('fetchDomain parses the same exact DTO on the detail route', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'gallery.main',
+        logo: null,
+        metadata: {},
+        owned_by: SAMPLE_I105,
+        accounts: 1,
+        assets: 2,
+        nfts: 3,
+      }),
+    });
+    global.fetch = fetchSpy as any;
+
+    const { fetchDomain } = await importApiModule(toriiEnv);
+    const result = await fetchDomain('gallery.main');
+
+    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(firstCall.pathname).toBe('/v1/explorer/domains/gallery.main');
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+  });
+
+  it('fetchNFTs parses canonical fully-qualified NFT cursor items', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        pagination: { limit: 1, next_cursor: null, has_more: false },
+        items: [{ id: nftId, owned_by: SAMPLE_I105, metadata: { rarity: 'legendary' } }],
+      }),
+    });
+    global.fetch = fetchSpy as any;
+
+    const { fetchNFTs } = await importApiModule(toriiEnv);
+    const result = await fetchNFTs({ limit: 1, domain: 'gallery.main' });
+
+    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(firstCall.pathname).toBe('/v1/explorer/nfts');
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+    if (result.status === SUCCESSFUL_FETCHING) {
+      expect(result.data.items[0]?.id).toBe(nftId);
+    }
+  });
+
+  it('fetchNFTById parses the same exact DTO on the detail route', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: nftId, owned_by: SAMPLE_I105, metadata: {} }),
+    });
+    global.fetch = fetchSpy as any;
+
+    const { fetchNFTById } = await importApiModule(toriiEnv);
+    const result = await fetchNFTById(nftId);
+
+    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
+    expect(firstCall.pathname).toBe(`/v1/explorer/nfts/${encodeURIComponent(nftId)}`);
+    expect(result.status).toBe(SUCCESSFUL_FETCHING);
+  });
+});
+
 describe('Explorer RWA API helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
@@ -1236,10 +1615,10 @@ describe('Explorer RWA API helpers', () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        pagination: { page: 2, per_page: 5, total_pages: 3, total_items: 12 },
+        pagination: { limit: 5, next_cursor: null, has_more: false },
         items: [
           {
-            id: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities',
+            id: SAMPLE_RWA_ID,
             owned_by: SAMPLE_I105,
             quantity: '10.5',
             held_quantity: '1',
@@ -1249,7 +1628,7 @@ describe('Explorer RWA API helpers', () => {
             metadata: { origin: 'AE' },
             parents: [
               {
-                rwa: 'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210$commodities',
+                rwa: SAMPLE_PARENT_RWA_ID,
                 quantity: '5',
               },
             ],
@@ -1260,15 +1639,16 @@ describe('Explorer RWA API helpers', () => {
     global.fetch = fetchSpy as any;
 
     const { fetchRwas } = await importApiModule(toriiEnv);
-    const result = await fetchRwas({ page: 2, per_page: 5, owned_by: SAMPLE_I105, domain: 'commodities' });
+    const result = await fetchRwas({ limit: 5, owned_by: SAMPLE_I105, domain: 'commodities.main' });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall).toBeInstanceOf(URL);
     expect(firstCall.pathname).toBe('/v1/explorer/rwas');
-    expect(firstCall.searchParams.get('page')).toBe('2');
-    expect(firstCall.searchParams.get('per_page')).toBe('5');
+    expect(firstCall.searchParams.get('limit')).toBe('5');
+    expect(firstCall.searchParams.has('page')).toBe(false);
+    expect(firstCall.searchParams.has('per_page')).toBe(false);
     expect(firstCall.searchParams.get('owned_by')).toBe(SAMPLE_I105);
-    expect(firstCall.searchParams.get('domain')).toBe('commodities');
+    expect(firstCall.searchParams.get('domain')).toBe('commodities.main');
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.items[0]?.quantity.toString()).toBe('10.5');
@@ -1277,21 +1657,21 @@ describe('Explorer RWA API helpers', () => {
     }
   });
 
-  it('fetchRwaById URL-encodes rwa identifiers and accepts null metadata', async () => {
+  it('fetchRwaById URL-encodes canonical identifiers and preserves required nullable status', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        id: 'lot-001$commodities',
+        id: SAMPLE_RWA_ID,
         owned_by: SAMPLE_I105,
         quantity: '2',
         held_quantity: '0',
         primary_reference: 'vault-cert-002',
         status: null,
         is_frozen: true,
-        metadata: null,
+        metadata: {},
         parents: [
           {
-            rwa: 'parent-002$commodities',
+            rwa: SAMPLE_PARENT_RWA_ID,
             quantity: '2',
           },
         ],
@@ -1300,18 +1680,18 @@ describe('Explorer RWA API helpers', () => {
     global.fetch = fetchSpy as any;
 
     const { fetchRwaById } = await importApiModule(toriiEnv);
-    const result = await fetchRwaById('lot-001$commodities');
+    const result = await fetchRwaById(SAMPLE_RWA_ID);
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall).toBeInstanceOf(URL);
-    expect(firstCall.pathname).toBe('/v1/explorer/rwas/lot-001%24commodities');
+    expect(firstCall.pathname).toBe(`/v1/explorer/rwas/${encodeURIComponent(SAMPLE_RWA_ID)}`);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
-      expect(result.data.id).toBe('lot-001$commodities');
+      expect(result.data.id).toBe(SAMPLE_RWA_ID);
       expect(result.data.metadata).toEqual({});
       expect(result.data.status).toBeNull();
       expect(result.data.is_frozen).toBe(true);
-      expect(result.data.parents[0]?.rwa).toBe('parent-002$commodities');
+      expect(result.data.parents[0]?.rwa).toBe(SAMPLE_PARENT_RWA_ID);
     }
   });
 });
@@ -1365,7 +1745,7 @@ describe('Explorer latest/health API helpers', () => {
     const firstCall = (global.fetch as any).mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe('/v1/explorer/transactions/latest');
     expect(firstCall.searchParams.get('per_page')).toBe('5');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.items).toHaveLength(1);
@@ -1437,7 +1817,7 @@ describe('Explorer latest/health API helpers', () => {
     const firstCall = (global.fetch as any).mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe('/v1/explorer/instructions/latest');
     expect(firstCall.searchParams.get('per_page')).toBe('5');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.items).toHaveLength(1);
@@ -1533,7 +1913,6 @@ describe('Telemetry API helpers', () => {
       cache: 'no-store',
       headers: {
         Accept: 'application/json',
-        [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
       },
     });
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
@@ -1642,11 +2021,11 @@ describe('Nexus dataspaces API helpers', () => {
     const { fetchNexusDataspacesAccountSummary } = await importApiModule({
       VITE_API_URL: 'https://torii.example/v1/explorer',
     });
-    const result = await fetchNexusDataspacesAccountSummary(SAMPLE_ACCOUNT_ALIAS, { address_format: 'i105' });
+    const result = await fetchNexusDataspacesAccountSummary(SAMPLE_ACCOUNT_ALIAS);
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.toString()).toBe(
-      'https://torii.example/v1/nexus/dataspaces/accounts/treasury%40banking.retail/summary?address_format=i105'
+      'https://torii.example/v1/nexus/dataspaces/accounts/treasury%40banking.retail/summary'
     );
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
@@ -1690,7 +2069,6 @@ describe('Nexus dataspaces API helpers', () => {
       cache: 'no-store',
       headers: {
         Accept: 'application/json',
-        [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
       },
     });
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
@@ -1815,7 +2193,6 @@ describe('Connect API helpers', () => {
       method: 'POST',
       headers: {
         Accept: 'application/json',
-        [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
         'Content-Type': 'application/json',
       },
     });
@@ -1864,7 +2241,6 @@ describe('Ministry agenda submission helpers', () => {
     expect((requestInit as RequestInit).method).toBe('POST');
     expect((requestInit as RequestInit).headers).toMatchObject({
       Accept: 'application/json',
-      [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
       'Content-Type': 'application/json',
     });
     expect(JSON.parse(String((requestInit as RequestInit).body))).toEqual({
@@ -1964,7 +2340,6 @@ describe('Ministry agenda submission helpers', () => {
     expect((requestInit as RequestInit).method).toBe('POST');
     expect((requestInit as RequestInit).headers).toMatchObject({
       Accept: 'application/json',
-      [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
       'Content-Type': 'application/x-norito',
     });
     expect((requestInit as RequestInit).body).toBe(signedTransaction as any);
@@ -2008,9 +2383,7 @@ describe('Ministry agenda submission helpers', () => {
     const missing = await fetchPipelineTransactionStatus('ab'.repeat(32));
     const found = await fetchPipelineTransactionStatus('ef'.repeat(32), 'global');
 
-    expect((fetchSpy.mock.calls[0]?.[0] as URL).toString()).toContain(
-      '/v1/pipeline/transactions/status?hash='
-    );
+    expect((fetchSpy.mock.calls[0]?.[0] as URL).toString()).toContain('/v1/pipeline/transactions/status?hash=');
     expect((fetchSpy.mock.calls[1]?.[0] as URL).searchParams.get('scope')).toBe('global');
     expect(missing).toEqual({
       status: SUCCESSFUL_FETCHING,
@@ -2071,9 +2444,7 @@ describe('SoraFS API helpers', () => {
     global.fetch = fetchSpy as any;
 
     const { fetchSorafsCidLookup } = await importApiModule(toriiEnv);
-    const result = await fetchSorafsCidLookup(
-      'bafyr6iatqagnbizi6jys7slqjntshcc3yybfq32ujcb6crvtvi2bw647fi'
-    );
+    const result = await fetchSorafsCidLookup('bafyr6iatqagnbizi6jys7slqjntshcc3yybfq32ujcb6crvtvi2bw647fi');
 
     expect((fetchSpy.mock.calls[0]?.[0] as URL).toString()).toBe(
       'https://torii.example/v1/sorafs/cid/bafyr6iatqagnbizi6jys7slqjntshcc3yybfq32ujcb6crvtvi2bw647fi'
@@ -2541,7 +2912,7 @@ describe('Instruction API helpers', () => {
     expect(firstCall.searchParams.get('asset_id')).toBe(sampleAssetId);
     expect(firstCall.searchParams.get('kind')).toBe('Transfer');
     expect(firstCall.searchParams.get('transaction_status')).toBe('Committed');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
   });
 
   it('fetchInstructions parses payloads using the box field name', async () => {
@@ -2581,7 +2952,7 @@ describe('Instruction API helpers', () => {
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.toString()).toContain('/v1/explorer/instructions');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.items).toHaveLength(1);
@@ -2621,10 +2992,10 @@ describe('Transaction API helpers', () => {
     expect(firstCall.searchParams.get('asset_id')).toBe(sampleAssetId);
     expect(firstCall.searchParams.get('authority')).toBe(sampleAuthority);
     expect(firstCall.searchParams.get('status')).toBe('Committed');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
   });
 
-  it('fetchTransaction requests i105 address formatting', async () => {
+  it('fetchTransaction relies on the canonical response without a retired address-format query', async () => {
     const fetchSpy = vi.fn(async (input: unknown) => {
       const url = input instanceof URL ? input : new URL(String(input));
       if (url.pathname.endsWith('/instructions')) {
@@ -2661,7 +3032,7 @@ describe('Transaction API helpers', () => {
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe('/v1/explorer/transactions/0xdeadbeef');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
   });
 
   it('fetches state-root and persisted-QC evidence from their exact ledger routes', async () => {
@@ -2683,19 +3054,19 @@ describe('Transaction API helpers', () => {
     const fetchSpy = vi.fn(async (input: unknown, _init?: RequestInit) => {
       const url = input instanceof URL ? input : new URL(String(input));
       const common = { height: 42, block_hash: 'hash:block', state_root: 'hash:state' };
-      return new Response(JSON.stringify(
-        url.pathname.includes('state-proof')
-          ? { ...common, commit_qc: commitQc }
-          : { ...common, source: 'commit_qc', commit_qc: commitQc }
-      ), { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response(
+        JSON.stringify(
+          url.pathname.includes('state-proof')
+            ? { ...common, commit_qc: commitQc }
+            : { ...common, source: 'commit_qc', commit_qc: commitQc }
+        ),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
     });
     global.fetch = fetchSpy as any;
 
     const { fetchLedgerStateProof, fetchLedgerStateRoot } = await importApiModule(toriiEnv);
-    const [root, stateProof] = await Promise.all([
-      fetchLedgerStateRoot(42),
-      fetchLedgerStateProof(42),
-    ]);
+    const [root, stateProof] = await Promise.all([fetchLedgerStateRoot(42), fetchLedgerStateProof(42)]);
 
     expect(root.status).toBe(SUCCESSFUL_FETCHING);
     expect(stateProof.status).toBe(SUCCESSFUL_FETCHING);
@@ -2703,9 +3074,11 @@ describe('Transaction API helpers', () => {
       '/v1/ledger/state-proof/42',
       '/v1/ledger/state/42',
     ]);
-    expect(fetchSpy.mock.calls.every((call) => (
-      (call[1] as RequestInit).headers as Record<string, string>
-    ).Accept === 'application/json')).toBe(true);
+    expect(
+      fetchSpy.mock.calls.every(
+        (call) => ((call[1] as RequestInit).headers as Record<string, string>).Accept === 'application/json'
+      )
+    ).toBe(true);
   });
 
   it('reports the canonical SDK path verification separately from request binding', async () => {
@@ -2723,9 +3096,7 @@ describe('Transaction API helpers', () => {
       result_proof: null,
       fastpq_transcripts: {},
     };
-    const proofSpy = vi
-      .spyOn(ToriiBrowserClient.prototype, 'getLedgerBlockProof')
-      .mockResolvedValue(decoded as any);
+    const proofSpy = vi.spyOn(ToriiBrowserClient.prototype, 'getLedgerBlockProof').mockResolvedValue(decoded as any);
 
     const result = await module.fetchLedgerBlockProof(42, 'a'.repeat(64));
 
@@ -2740,9 +3111,9 @@ describe('Transaction API helpers', () => {
   });
 
   it('keeps a missing canonical block proof explicitly not-found', async () => {
-    global.fetch = vi.fn().mockResolvedValue(
-      new Response('missing', { status: 404, headers: { 'content-type': 'text/plain' } })
-    ) as any;
+    global.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response('missing', { status: 404, headers: { 'content-type': 'text/plain' } })) as any;
     const { fetchLedgerBlockProof } = await importApiModule(toriiEnv);
 
     const result = await fetchLedgerBlockProof(42, 'a'.repeat(64));
@@ -2750,7 +3121,7 @@ describe('Transaction API helpers', () => {
     expect(result.status).toBe(NOT_FOUND);
   });
 
-  it('fetchInstructionDetail requests i105 address formatting', async () => {
+  it('fetchInstructionDetail relies on the canonical response without a retired address-format query', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -2781,7 +3152,7 @@ describe('Transaction API helpers', () => {
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe('/v1/explorer/instructions/0xdeadbeef/0');
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
   });
 
   it('fetchInstructionContractView keeps the request on the explorer API without address-format params', async () => {
@@ -2852,9 +3223,9 @@ describe('Transaction API helpers', () => {
     });
   });
 
-  it('fetchTransaction does not retry alternate address formats on format rejections', async () => {
+  it('fetchTransaction returns request rejections without retrying or adding retired query parameters', async () => {
     const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('address_format `i105` must be `ih58` or `compressed`', {
+      new Response('invalid explorer transaction request', {
         status: 400,
         headers: { 'content-type': 'text/plain' },
       })
@@ -2866,42 +3237,11 @@ describe('Transaction API helpers', () => {
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall.searchParams.get('address_format')).toBe('i105');
+    expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(UNKNOWN_ERROR);
   });
 
-  it('ignores stale compressed preference storage and still requests i105 formatting', async () => {
-    const storage = window.localStorage as any;
-    if (storage && typeof storage.setItem === 'function') {
-      storage.setItem('torii_address_format_preference_v2', JSON.stringify({ 'https://torii.example': 'compressed' }));
-    }
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        authority: sampleAuthority,
-        hash: '0xdeadbeef',
-        block: 42,
-        created_at: '2026-03-10T12:00:00Z',
-        executable: 'Instructions',
-        status: 'Committed',
-        rejection_reason: null,
-        metadata: {},
-        nonce: null,
-        signature: '0xsig',
-        time_to_live: null,
-      }),
-    });
-    global.fetch = fetchSpy as any;
-
-    const { fetchTransaction } = await importApiModule(toriiEnv);
-    await fetchTransaction('0xreloaded');
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const transactionCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(transactionCall.searchParams.get('address_format')).toBe('i105');
-  });
-
-  it('fetchTransaction does not retry with alternate formats for unrelated 400 responses', async () => {
+  it('fetchTransaction returns unrelated 400 responses without retrying', async () => {
     const fetchSpy = vi.fn().mockResolvedValue(
       new Response('invalid hash', {
         status: 400,
@@ -2917,7 +3257,7 @@ describe('Transaction API helpers', () => {
     expect(result.status).not.toBe(SUCCESSFUL_FETCHING);
   });
 
-  it('fetchTransaction does not retry with alternate formats when the response is not a format rejection', async () => {
+  it('fetchTransaction returns a missing response without retrying', async () => {
     const fetchSpy = vi.fn().mockResolvedValue(
       new Response('missing', {
         status: 404,
@@ -2954,7 +3294,6 @@ describe('Torii metrics helpers', () => {
     expect(firstCall.pathname).toBe('/metrics');
     expect(requestInit.headers).toMatchObject({
       Accept: 'text/plain',
-      [TORII_API_VERSION_HEADER]: TORII_API_VERSION,
     });
     expect(result).toEqual({
       status: SUCCESSFUL_FETCHING,

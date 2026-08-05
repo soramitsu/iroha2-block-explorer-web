@@ -29,18 +29,24 @@ describe('classifySearchQuery', () => {
 
   it('classifies RWA before the broader NFT shape', () => {
     const hash = 'AB'.repeat(32);
-    expect(classifySearchQuery(`${hash}$commodities`)).toEqual({
+    expect(classifySearchQuery(`${hash}$commodities.main`)).toEqual({
       kind: 'rwa',
-      value: `${hash.toLowerCase()}$commodities`,
+      value: `${hash.toLowerCase()}$commodities.main`,
     });
-    expect(classifySearchQuery('collectible$gallery')).toEqual({
+    expect(classifySearchQuery('collectible$gallery.main')).toEqual({
       kind: 'nft',
-      value: 'collectible$gallery',
+      value: 'collectible$gallery.main',
     });
     expect(classifySearchQuery('collectible-é$gallery.universal')).toEqual({
       kind: 'nft',
       value: 'collectible-é$gallery.universal',
     });
+  });
+
+  it('uses the authoritative NFT schema instead of accepting NFT-shaped strings', () => {
+    expect(classifySearchQuery('collectible$gallery').kind).toBe('unsupported');
+    expect(classifySearchQuery('collectible$Gallery.main').kind).toBe('unsupported');
+    expect(classifySearchQuery('collectible$gallery.main$extra').kind).toBe('unsupported');
   });
 
   it('classifies canonical accounts, assets, domains, and positive heights in order', () => {

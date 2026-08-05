@@ -205,7 +205,7 @@ const hoisted = vi.hoisted(() => ({
       last_amount: '11',
       last_asset_id: 'xor#sora',
       last_payer: 'sponsor',
-      last_payer_id: 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB',
+      last_payer_id: 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV',
       last_error: null,
     },
     nexus_staking: { lanes: [{ lane_id: 1, bonded: '5', pending_unbond: '1', slash_total: 0 }] },

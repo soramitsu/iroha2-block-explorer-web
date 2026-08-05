@@ -39,7 +39,7 @@ vi.mock('@/shared/lib/connect', async (importOriginal) => {
 
 const MULTISIG_ACCOUNT =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
-const SIGNATORY = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const SIGNATORY = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const ASSET_DEFINITION = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
 const EXACT_AMOUNT = '90071992547409931234567890.000000000000000001';
 const AUTH = { authAccountId: SIGNATORY, sign: canonicalSign };

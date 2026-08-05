@@ -68,7 +68,7 @@ describe('useExplorerInstructionsEvents', () => {
 
     expect(hoisted.listeners).toHaveLength(1);
     expect(hoisted.listeners[0]?.url).toContain('/v1/explorer/instructions/stream');
-    expect(hoisted.listeners[0]?.url).toContain('address_format=i105');
+    expect(new URL(hoisted.listeners[0]!.url).searchParams.has('address_format')).toBe(false);
 
     firstScope.stop();
     expect(hoisted.listeners).toHaveLength(1);

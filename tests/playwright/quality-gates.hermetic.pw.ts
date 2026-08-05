@@ -4,7 +4,7 @@ const HASH = '0301b76be6d3dead32484180986523173082d770bc4fd954760d0a74a434624f';
 const PARTIAL_HASH = 'a'.repeat(64);
 const FAILURE_HASH = 'b'.repeat(64);
 const ACCOUNT = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
-const DESTINATION = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const DESTINATION = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const ASSET_DEFINITION = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
 const CREATED_AT = '2026-07-21T12:00:00.000Z';
 
@@ -124,14 +124,14 @@ function requestedInstructionKind(requests: URL[], kind: string): boolean {
   ));
 }
 
-function requestedAccountsPage(
+function requestedAccountsCursor(
   requests: URL[],
-  expected: { domain: string, page: string, pageSize: string }
+  expected: { domain: string, cursor: string | null, limit: string }
 ): boolean {
   return requests.some((url) => (
     url.searchParams.get('domain') === expected.domain
-    && url.searchParams.get('page') === expected.page
-    && url.searchParams.get('per_page') === expected.pageSize
+    && url.searchParams.get('cursor') === expected.cursor
+    && url.searchParams.get('limit') === expected.limit
   ));
 }
 
@@ -213,16 +213,20 @@ test.describe('hermetic Explorer quality gates', () => {
     await expect.poll(() => requestedInstructionKind(requests, 'Register')).toBe(true);
   });
 
-  test('restores URL filters and activates pagination from the keyboard', async ({ page }) => {
+  test('restores URL filters and activates cursor pagination from the keyboard', async ({ page }) => {
     const accountRequests: URL[] = [];
     await installHermeticApi(page, (url) => {
       if (url.pathname !== '/v1/explorer/accounts') return null;
-      const pageNumber = Number(url.searchParams.get('page') ?? 1);
-      const perPage = Number(url.searchParams.get('per_page') ?? 10);
+      const cursor = url.searchParams.get('cursor');
+      const limit = Number(url.searchParams.get('limit') ?? 10);
       accountRequests.push(url);
       return {
         body: {
-          pagination: { page: pageNumber, per_page: perPage, total_pages: 3, total_items: 45 },
+          pagination: {
+            limit,
+            next_cursor: cursor === null ? 'cursor-1' : null,
+            has_more: cursor === null,
+          },
           items: [{
             id: ACCOUNT,
             compressed_address: null,
@@ -236,38 +240,37 @@ test.describe('hermetic Explorer quality gates', () => {
       };
     });
 
-    await page.goto('/accounts?domain=wonderland.universal&page=2&per_page=20');
+    await page.goto('/accounts?domain=wonderland.universal&limit=20');
     const domainFilter = page.getByLabel('Domain filter');
     await expect(domainFilter).toHaveValue('wonderland.universal');
-    await expect.poll(() => requestedAccountsPage(
+    await expect.poll(() => requestedAccountsCursor(
       accountRequests,
-      { domain: 'wonderland.universal', page: '2', pageSize: '20' }
+      { domain: 'wonderland.universal', cursor: null, limit: '20' }
     )).toBe(true);
 
     await domainFilter.fill('treasury.universal');
     await expect(page).toHaveURL(/\/accounts\?[^#]*domain=treasury\.universal/u);
-    await expect(page).not.toHaveURL(/[?&]page=2(?:&|$)/u);
+    await expect(page).not.toHaveURL(/[?&]cursor=/u);
     await page.reload();
     await expect(page.getByLabel('Domain filter')).toHaveValue('treasury.universal');
 
-    const nextPage = page.getByRole('button', { name: 'Next page' });
+    const nextPage = page.getByRole('button', { name: 'Next cursor page' });
     await nextPage.focus();
     await nextPage.press('Enter');
-    await expect(page).toHaveURL(/[?&]page=2(?:&|$)/u);
-    await expect.poll(() => requestedAccountsPage(
+    await expect(page).toHaveURL(/[?&]cursor=cursor-1(?:&|$)/u);
+    await expect.poll(() => requestedAccountsCursor(
       accountRequests,
-      { domain: 'treasury.universal', page: '2', pageSize: '20' }
+      { domain: 'treasury.universal', cursor: 'cursor-1', limit: '20' }
     )).toBe(true);
   });
 
   test('uses a multi-column table on desktop and a card list on mobile', async ({ page }, testInfo) => {
     await installHermeticApi(page, (url) => {
       if (url.pathname !== '/v1/explorer/accounts') return null;
-      const pageNumber = Number(url.searchParams.get('page') ?? 1);
-      const perPage = Number(url.searchParams.get('per_page') ?? 10);
+      const limit = Number(url.searchParams.get('limit') ?? 10);
       return {
         body: {
-          pagination: { page: pageNumber, per_page: perPage, total_pages: 1, total_items: 1 },
+          pagination: { limit, next_cursor: null, has_more: false },
           items: [{
             id: ACCOUNT,
             compressed_address: null,

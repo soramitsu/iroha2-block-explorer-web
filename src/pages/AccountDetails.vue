@@ -104,15 +104,15 @@ const displayI105Address = computed(() => {
 const accountFilterId = computed(() => displayI105Address.value ?? displayAccountId.value);
 
 const domainsListState = reactive({
-  page: 1,
-  per_page: 10,
+  cursor: null as string | null,
+  limit: 10,
   owned_by: computed(() => accountFilterId.value),
 });
 
 watch(
-  () => domainsListState.per_page,
+  () => domainsListState.limit,
   () => {
-    domainsListState.page = 1;
+    domainsListState.cursor = null;
   }
 );
 
@@ -129,10 +129,10 @@ const domainsScope = useParamScope(
 );
 
 const isDomainsLoading = computed(() => !!domainsScope.value?.expose.isLoading);
-const totalDomains = computed(() =>
+const domainsPagination = computed(() =>
   domainsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? domainsScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? domainsScope.value.expose.data.data.pagination
+    : null
 );
 const domains = computed(() =>
   domainsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? domainsScope.value.expose.data.data.items : []
@@ -145,13 +145,18 @@ const isNftsSelected = computed(() => assetsTab.value === 'nft');
 const isRwasSelected = computed(() => assetsTab.value === 'rwa');
 
 const assetsListState = reactive({
-  page: 1,
-  per_page: 10,
+  cursor: null as string | null,
+  limit: 10,
   owned_by: computed(() => accountFilterId.value),
 });
 
-watch([() => assetsListState.per_page, () => assetsTab.value], () => {
-  assetsListState.page = 1;
+watch([() => assetsListState.limit, () => assetsTab.value], () => {
+  assetsListState.cursor = null;
+});
+
+watch(accountFilterId, () => {
+  domainsListState.cursor = null;
+  assetsListState.cursor = null;
 });
 
 const assetsScope = useParamScope(
@@ -167,10 +172,10 @@ const assetsScope = useParamScope(
 );
 
 const isAssetsLoading = computed(() => !!assetsScope.value?.expose.isLoading);
-const totalAssets = computed(() =>
+const assetsPagination = computed(() =>
   assetsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? assetsScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? assetsScope.value.expose.data.data.pagination
+    : null
 );
 const assets = computed(() =>
   assetsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetsScope.value.expose.data.data.items : []
@@ -191,10 +196,10 @@ const NFTsScope = useParamScope(
 );
 
 const isNFTsLoading = computed(() => !!NFTsScope.value?.expose.isLoading);
-const totalNFTs = computed(() =>
+const NFTsPagination = computed(() =>
   NFTsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? NFTsScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? NFTsScope.value.expose.data.data.pagination
+    : null
 );
 const nfts = computed(() =>
   NFTsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? NFTsScope.value.expose.data.data.items : []
@@ -214,8 +219,8 @@ const rwasScope = useParamScope(
 );
 
 const isRwasLoading = computed(() => !!rwasScope.value?.expose.isLoading);
-const totalRwas = computed(() =>
-  rwasScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? rwasScope.value.expose.data.data.pagination.total_items : 0
+const rwasPagination = computed(() =>
+  rwasScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? rwasScope.value.expose.data.data.pagination : null
 );
 const rwas = computed(() =>
   rwasScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? rwasScope.value.expose.data.data.items : []
@@ -226,7 +231,9 @@ const isRwasListEmpty = computed(
     isRwasSelected.value &&
     !isRwasLoading.value &&
     rwasScope.value?.expose.data?.status === SUCCESSFUL_FETCHING &&
-    totalRwas.value === 0
+    assetsListState.cursor === null &&
+    rwas.value.length === 0 &&
+    rwasPagination.value?.has_more === false
 );
 
 const transactionsTab = ref<TabAccountTransactions>('transactions');
@@ -434,10 +441,11 @@ const assetsSection = computed(() => {
             }}</span>
             <BaseTable
               v-else-if="isNumericAssetsSelected"
-              v-model:page="assetsListState.page"
-              v-model:page-size="assetsListState.per_page"
+              v-model:cursor="assetsListState.cursor"
+              v-model:page-size="assetsListState.limit"
               :loading="isAssetsLoading"
-              :total="totalAssets"
+              pagination-mode="cursor"
+              :cursor-pagination="assetsPagination"
               :items="assets"
               :row-key="accountAssetRowKey"
               container-class="account-details__personal-owned-list"
@@ -488,10 +496,11 @@ const assetsSection = computed(() => {
             </BaseTable>
             <BaseTable
               v-else-if="isNftsSelected"
-              v-model:page="assetsListState.page"
-              v-model:page-size="assetsListState.per_page"
+              v-model:cursor="assetsListState.cursor"
+              v-model:page-size="assetsListState.limit"
               :loading="isNFTsLoading"
-              :total="totalNFTs"
+              pagination-mode="cursor"
+              :cursor-pagination="NFTsPagination"
               :items="nfts"
               :row-key="accountNftRowKey"
               container-class="account-details__personal-owned-nft-list"
@@ -535,10 +544,11 @@ const assetsSection = computed(() => {
             </BaseTable>
             <BaseTable
               v-else
-              v-model:page="assetsListState.page"
-              v-model:page-size="assetsListState.per_page"
+              v-model:cursor="assetsListState.cursor"
+              v-model:page-size="assetsListState.limit"
               :loading="isRwasLoading"
-              :total="totalRwas"
+              pagination-mode="cursor"
+              :cursor-pagination="rwasPagination"
               :items="rwas"
               :row-key="accountRwaRowKey"
               container-class="account-details__personal-owned-list"
@@ -611,10 +621,11 @@ const assetsSection = computed(() => {
             }}</span>
             <BaseTable
               v-else
-              v-model:page="domainsListState.page"
-              v-model:page-size="domainsListState.per_page"
+              v-model:cursor="domainsListState.cursor"
+              v-model:page-size="domainsListState.limit"
               :loading="isDomainsLoading"
-              :total="totalDomains"
+              pagination-mode="cursor"
+              :cursor-pagination="domainsPagination"
               :items="domains"
               :row-key="accountDomainRowKey"
               container-class="account-details__personal-owned-list"

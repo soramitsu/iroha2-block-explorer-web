@@ -2,7 +2,7 @@ import { computed, effectScope, getCurrentScope, onScopeDispose, ref } from 'vue
 import type { Ref } from 'vue';
 import type { EffectScope } from 'vue';
 import { useEventSource } from '@vueuse/core';
-import { buildExplorerUrl, useToriiAddressFormatPreference } from '@/shared/api';
+import { buildExplorerUrl } from '@/shared/api';
 
 interface ExplorerInstructionsEventSource {
   data: Ref<string | null>
@@ -27,12 +27,7 @@ function createEventSource(): ExplorerInstructionsEventSource {
     };
   }
 
-  const addressFormat = useToriiAddressFormatPreference();
-  const streamUrl = computed(() => {
-    const streamUrl = new URL(buildExplorerUrl('/instructions/stream'), 'http://localhost');
-    streamUrl.searchParams.set('address_format', addressFormat.value);
-    return streamUrl.toString();
-  });
+  const streamUrl = computed(() => buildExplorerUrl('/instructions/stream'));
   const { data, status, close } = useEventSource(streamUrl, [], { autoReconnect: true });
   return { data, status, close };
 }

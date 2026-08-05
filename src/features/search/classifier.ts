@@ -1,6 +1,7 @@
 import { normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
 import { normalizeAssetDefinitionSelectorLiteral } from '@/shared/lib/asset-definition-literal';
 import { normalizeRwaIdLiteral } from '@/shared/lib/rwa-id';
+import { NftIdSchema } from '@/shared/api/schemas';
 
 export type SearchClassification =
   | { kind: 'hash', value: string }
@@ -17,10 +18,8 @@ const DOMAIN_SEGMENT_RE = /^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/iu;
 const POSITIVE_BLOCK_HEIGHT_RE = /^[1-9][0-9]*$/u;
 
 function normalizeNftId(value: string): string | null {
-  const [name, domain] = value.split('$');
-  if (!name || !domain) return null;
-  if (value.indexOf('$') !== value.lastIndexOf('$')) return null;
-  return /\s|[@#$]/u.test(name) || /\s|[@#$]/u.test(domain) ? null : value;
+  const parsed = NftIdSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 function normalizeDomainId(value: string): string | null {

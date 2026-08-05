@@ -1,10 +1,32 @@
+import { canonicalizeDomainLabel } from '@iroha/iroha-js/browser';
+
 export interface RwaIdDisplay {
-  literal: string
-  hash: string
-  domain: string | null
+  literal: string;
+  hash: string;
+  domain: string | null;
 }
 
 const RWA_HASH_PATTERN = /^[0-9a-fA-F]{64}$/;
+function normalizeDomainComponent(value: string): string | null {
+  try {
+    return canonicalizeDomainLabel(value);
+  } catch {
+    return null;
+  }
+}
+
+/** Canonical `DomainId::to_string()` wire form (`domain.dataspace`). */
+export function normalizeDomainIdLiteral(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed || !trimmed.includes('.')) return null;
+
+  for (let index = trimmed.indexOf('.'); index >= 0; index = trimmed.indexOf('.', index + 1)) {
+    const domain = normalizeDomainComponent(trimmed.slice(0, index));
+    const dataspace = normalizeDomainComponent(trimmed.slice(index + 1));
+    if (domain && dataspace) return `${domain}.${dataspace}`;
+  }
+  return null;
+}
 
 function coerceLiteral(value: unknown): string {
   if (typeof value === 'string') return value.trim();
@@ -43,9 +65,10 @@ export function normalizeRwaIdLiteral(value: string): string | null {
   const { hash, domain } = describeRwaId(literal);
   if (!domain) return null;
   if (!RWA_HASH_PATTERN.test(hash)) return null;
-  if (/[#$@]/.test(domain)) return null;
+  const canonicalDomain = normalizeDomainIdLiteral(domain);
+  if (!canonicalDomain) return null;
 
-  return `${hash.toLowerCase()}$${domain}`;
+  return `${hash.toLowerCase()}$${canonicalDomain}`;
 }
 
 export function getRwaDomain(value: unknown): string | null {

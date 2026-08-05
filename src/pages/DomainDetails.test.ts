@@ -86,7 +86,7 @@ describe('DomainDetails', () => {
         data: {
           status: SUCCESSFUL_FETCHING,
           data: {
-            pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 0 },
+            pagination: { limit: 10, next_cursor: null, has_more: false },
             items: [],
           },
         },
@@ -97,7 +97,7 @@ describe('DomainDetails', () => {
         data: {
           status: SUCCESSFUL_FETCHING,
           data: {
-            pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 0 },
+            pagination: { limit: 10, next_cursor: null, has_more: false },
             items: [],
           },
         },
@@ -108,7 +108,7 @@ describe('DomainDetails', () => {
         data: {
           status: SUCCESSFUL_FETCHING,
           data: {
-            pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 0 },
+            pagination: { limit: 10, next_cursor: null, has_more: false },
             items: [],
           },
         },
@@ -141,13 +141,22 @@ describe('DomainDetails', () => {
     });
 
   it('shows an error for invalid account asset filters', async () => {
+    setupStateQueue[2].data.data.items = [
+      {
+        id: SAMPLE_ACCOUNT_ID,
+        i105_address: SAMPLE_ACCOUNT_ID,
+      },
+    ];
     const wrapper = factory();
     const accountAssetFilter = wrapper.get(`input[placeholder="${i18n.global.t('accounts.filters.assetPlaceholder')}"]`);
+
+    expect(wrapper.text()).toContain(SAMPLE_ACCOUNT_ID);
 
     await accountAssetFilter.setValue('not-a-valid-asset-id');
     await flushPromises();
 
     expect(wrapper.text()).toContain(i18n.global.t('accounts.filters.assetInvalid'));
+    expect(wrapper.text()).not.toContain(SAMPLE_ACCOUNT_ID);
   });
 
   it('clears the account asset filter error after a valid asset selector is entered', async () => {
@@ -166,15 +175,13 @@ describe('DomainDetails', () => {
 
   it('renders domain account rows with canonical i105 ids', async () => {
     const canonicalAccountId =
-      'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+      'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
     setupStateQueue[2].data.data.items = [
       {
         id: 'legacy-account-id',
         i105_address: canonicalAccountId,
       },
     ];
-    setupStateQueue[2].data.data.pagination.total_items = 1;
-
     const wrapper = factory();
     await flushPromises();
 

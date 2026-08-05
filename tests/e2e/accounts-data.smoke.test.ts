@@ -12,6 +12,14 @@ function requestedAccountsDomain(domain: string): boolean {
   return fetchAccountsMock.mock.calls.some(([params]) => params?.domain === domain);
 }
 
+function requestedAccountsCursor(cursor: string): boolean {
+  return fetchAccountsMock.mock.calls.some(([params]) => params?.cursor === cursor);
+}
+
+function accountRequestForCursor(cursor: string) {
+  return fetchAccountsMock.mock.calls.findLast(([params]) => params?.cursor === cursor)?.[0];
+}
+
 vi.mock('@/shared/api', async () => {
   const actual = await vi.importActual<typeof SharedApiModule>('@/shared/api');
   return {
@@ -49,13 +57,14 @@ const BaseTableStub = defineComponent({
   name: 'BaseTableStub',
   props: {
     items: { type: Array, default: () => [] },
-    page: { type: Number, default: 1 },
+    cursor: { type: String, default: null },
     pageSize: { type: Number, default: 10 },
-    total: { type: Number, default: 0 },
+    cursorPagination: { type: Object, default: null },
+    paginationMode: { type: String, default: 'numbered' },
     loading: { type: Boolean, default: false },
     containerClass: { type: String, default: '' },
   },
-  emits: ['update:page', 'update:pageSize', 'click:row'],
+  emits: ['update:cursor', 'update:pageSize', 'click:row'],
   template: `
     <div data-test="base-table">
       <slot name="header" />
@@ -78,6 +87,11 @@ const BaseTableStub = defineComponent({
           <slot name="mobile-card" :item="item" />
         </div>
       </div>
+      <button
+        v-if="cursorPagination?.next_cursor"
+        data-test="cursor-next"
+        @click="$emit('update:cursor', cursorPagination.next_cursor)"
+      >Next</button>
     </div>
   `,
 });
@@ -134,13 +148,15 @@ describe('Accounts data smoke', () => {
 
   beforeEach(() => {
     fetchAccountsMock.mockReset();
-    fetchAccountsMock.mockResolvedValue({
+    fetchAccountsMock.mockImplementation((params) => Promise.resolve({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: mockAccounts.length },
+        pagination: params?.cursor
+          ? { limit: 10, next_cursor: null, has_more: false }
+          : { limit: 10, next_cursor: 'YWNjb3VudHMtY3Vyc29yLTI', has_more: true },
         items: mockAccounts,
       },
-    });
+    }));
   });
 
   afterEach(() => {
@@ -156,14 +172,23 @@ describe('Accounts data smoke', () => {
 
     expect(fetchAccountsMock).toHaveBeenCalled();
     const fetchArgs = fetchAccountsMock.mock.calls.at(-1)?.[0];
-    expect(fetchArgs?.page).toBe(1);
-    expect(fetchArgs?.per_page).toBe(10);
+    expect(fetchArgs?.cursor).toBeNull();
+    expect(fetchArgs?.limit).toBe(10);
+    expect(fetchArgs).not.toHaveProperty('page');
+    expect(fetchArgs).not.toHaveProperty('per_page');
 
     const firstRow = wrapper.find('[data-test="base-table-row"]');
     expect(firstRow.exists()).toBe(true);
     expect(firstRow.text()).toContain('alice@wonderland');
     expect(firstRow.text()).toContain(String(mockAccounts[0].owned_domains));
     expect(firstRow.text()).toContain(String(mockAccounts[0].owned_assets + mockAccounts[0].owned_nfts));
+
+    await wrapper.get('[data-test="cursor-next"]').trigger('click');
+    await vi.waitFor(() => {
+      expect(requestedAccountsCursor('YWNjb3VudHMtY3Vyc29yLTI')).toBe(true);
+    });
+    const cursorCall = accountRequestForCursor('YWNjb3VudHMtY3Vyc29yLTI');
+    expect(cursorCall?.limit).toBe(10);
 
     const domainInput = wrapper.find(`input[placeholder="${i18n.global.t('accounts.filters.domainPlaceholder')}"]`);
     await domainInput.setValue('wonderland');
@@ -172,7 +197,8 @@ describe('Accounts data smoke', () => {
     });
     const domainCall = fetchAccountsMock.mock.calls.at(-1)?.[0];
     expect(domainCall?.domain).toBe('wonderland');
-    expect(domainCall?.page).toBe(1);
+    expect(domainCall?.cursor).toBeNull();
+    expect(domainCall?.limit).toBe(10);
     expect(router.currentRoute.value.query.domain).toBe('wonderland');
 
     const assetInput = wrapper.find(`input[placeholder="${i18n.global.t('accounts.filters.assetPlaceholder')}"]`);

@@ -74,8 +74,8 @@ const SAMPLE_BLOCK = '12345';
 const SAMPLE_TX_HASH = '0301b76be6d3dead32484180986523173082d770bc4fd954760d0a74a434624f';
 const SAMPLE_ACCOUNT_ID = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_ASSET_DEFINITION = 'usd#issuer.main';
-const SAMPLE_NFT_ID = 'cool-cat$gallery';
-const SAMPLE_RWA_ID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities';
+const SAMPLE_NFT_ID = 'cool-cat$gallery.main';
+const SAMPLE_RWA_ID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities.main';
 
 interface SearchSample {
   key: string

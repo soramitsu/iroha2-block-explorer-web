@@ -4,7 +4,9 @@ import {
   AccountHistoryResponse,
   AccountPermissionsResponse,
   Asset,
+  ExplorerAsset,
   AssetDefinition,
+  ExplorerAssetDefinition,
   AssetDefinitionEconometrics,
   AssetDefinitionSnapshot,
   ContractCodeView,
@@ -12,6 +14,7 @@ import {
   ConnectSessionResponse,
   ConnectStatusResponse,
   DetailedTransaction,
+  Domain,
   ExplorerHealth,
   GovernanceProposalResponse,
   Instruction,
@@ -53,11 +56,13 @@ import {
 
 const validAccountId = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const validAccountIdAlt = 'sorauﾛ1PaQｽGh1ｴ6pAﾜnqｸfJuｿMﾑVqﾏvQﾐﾚｼｾﾋaﾈｳﾊc1ｺﾊ1GGM2D';
-const validAccountIdModern = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
-const deprecatedCompressedAccountId = 'sora5AbCDeFG1234XYZ9876qwerty';
+const validAccountIdModern = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const validAssetDefinitionId = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
+const alternateAssetDefinitionId = '62Fk4FPcMuLvW5QjDGNF2a4jAmjM';
 const validAssetDefinitionAlias = 'usd#issuer.main';
 const validAssetId = `${validAssetDefinitionId}#${validAccountId}`;
+const validRwaId = `${'00'.repeat(32)}$commodities.main`;
+const validParentRwaId = `${'ff'.repeat(32)}$commodities.main`;
 const validFramedInstructionSha256 = '0xc7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43';
 
 const baseInstruction = {
@@ -135,13 +140,15 @@ describe('Instruction schema', () => {
       '0xC7e4bbea488a546f542484289d335695684a5fc6180b18b3584abd7505f1cc43',
       '0xc7e4',
     ]) {
-      expect(() => Instruction.parse({
-        ...instruction,
-        box: {
-          ...instruction.box,
-          framed_sha256: framedSha256,
-        },
-      })).toThrow();
+      expect(() =>
+        Instruction.parse({
+          ...instruction,
+          box: {
+            ...instruction.box,
+            framed_sha256: framedSha256,
+          },
+        })
+      ).toThrow();
     }
   });
 
@@ -239,45 +246,55 @@ describe('ledger evidence schemas', () => {
   };
 
   it('accepts the exact state-root and persisted-QC response shapes', () => {
-    expect(LedgerStateRoot.parse({
-      height: 42,
-      block_hash: 'hash:block',
-      state_root: 'hash:state',
-      source: 'commit_qc',
-      commit_qc: commitQc,
-    }).source).toBe('commit_qc');
+    expect(
+      LedgerStateRoot.parse({
+        height: 42,
+        block_hash: 'hash:block',
+        state_root: 'hash:state',
+        source: 'commit_qc',
+        commit_qc: commitQc,
+      }).source
+    ).toBe('commit_qc');
 
-    expect(LedgerStateProof.parse({
-      height: 42,
-      block_hash: 'hash:block',
-      state_root: 'hash:state',
-      commit_qc: commitQc,
-    }).commit_qc.aggregate.signers_bitmap).toBe('03');
+    expect(
+      LedgerStateProof.parse({
+        height: 42,
+        block_hash: 'hash:block',
+        state_root: 'hash:state',
+        commit_qc: commitQc,
+      }).commit_qc.aggregate.signers_bitmap
+    ).toBe('03');
   });
 
   it('accepts a result-root response without a QC but rejects invented sources and extra fields', () => {
-    expect(LedgerStateRoot.parse({
-      height: 42,
-      block_hash: 'hash:block',
-      state_root: 'hash:state',
-      source: 'result_merkle_root',
-      commit_qc: null,
-    }).commit_qc).toBeNull();
+    expect(
+      LedgerStateRoot.parse({
+        height: 42,
+        block_hash: 'hash:block',
+        state_root: 'hash:state',
+        source: 'result_merkle_root',
+        commit_qc: null,
+      }).commit_qc
+    ).toBeNull();
 
-    expect(() => LedgerStateRoot.parse({
-      height: 42,
-      block_hash: 'hash:block',
-      state_root: 'hash:state',
-      source: 'fallback',
-      commit_qc: null,
-    })).toThrow();
-    expect(() => LedgerStateProof.parse({
-      height: 42,
-      block_hash: 'hash:block',
-      state_root: 'hash:state',
-      commit_qc: commitQc,
-      locally_verified: true,
-    })).toThrow();
+    expect(() =>
+      LedgerStateRoot.parse({
+        height: 42,
+        block_hash: 'hash:block',
+        state_root: 'hash:state',
+        source: 'fallback',
+        commit_qc: null,
+      })
+    ).toThrow();
+    expect(() =>
+      LedgerStateProof.parse({
+        height: 42,
+        block_hash: 'hash:block',
+        state_root: 'hash:state',
+        commit_qc: commitQc,
+        locally_verified: true,
+      })
+    ).toThrow();
   });
 });
 
@@ -465,7 +482,7 @@ describe('Explorer payload schemas', () => {
   it('parses account payloads from the canonical id field', () => {
     const parsed = Account.parse({
       id: validAccountId,
-      compressed_address: deprecatedCompressedAccountId,
+      network_prefix: 0,
       metadata: {},
       owned_domains: 1,
       owned_assets: 2,
@@ -477,26 +494,48 @@ describe('Explorer payload schemas', () => {
     expect(parsed.network_prefix).toBe(0);
   });
 
-  it('accepts nullable optional address fields without dropping the canonical i105 account id', () => {
-    const parsed = Account.parse({
+  it.each([
+    ['missing network prefix', { network_prefix: undefined }],
+    ['legacy compressed address', { compressed_address: 'sora5AbCDeFG1234XYZ9876qwerty' }],
+    ['unknown field', { alias: 'alice@wonderland.main' }],
+  ])('rejects an inexact account DTO with %s', (_case, extra) => {
+    const payload = {
       id: validAccountId,
-      compressed_address: null,
       network_prefix: 753,
       metadata: {},
       owned_domains: 0,
       owned_assets: 1,
       owned_nfts: 0,
-    });
+      ...extra,
+    };
 
-    expect(parsed.id).toBe(validAccountId);
-    expect(parsed.i105_address).toBe(validAccountId);
-    expect(parsed.network_prefix).toBe(753);
+    expect(Account.safeParse(payload).success).toBe(false);
+  });
+
+  it.each([
+    ['network_prefix', -1],
+    ['network_prefix', 65_536],
+    ['network_prefix', 1.5],
+    ['owned_domains', -1],
+    ['owned_assets', 0x1_0000_0000],
+    ['owned_nfts', 1.5],
+  ])('rejects out-of-range integer field %s=%s', (field, value) => {
+    expect(
+      Account.safeParse({
+        id: validAccountId,
+        network_prefix: 753,
+        metadata: {},
+        owned_domains: 0,
+        owned_assets: 1,
+        owned_nfts: 0,
+        [field]: value,
+      }).success
+    ).toBe(false);
   });
 
   it('parses live mixed Base58 + kana i105 account ids from Torii account listings', () => {
     const parsed = Account.parse({
       id: validAccountIdModern,
-      compressed_address: null,
       network_prefix: 753,
       metadata: { 'iroha:created_via': 'implicit' },
       owned_domains: 0,
@@ -763,33 +802,30 @@ describe('Explorer payload schemas', () => {
     expect(parsed.proposal?.kind.payload.abi_version).toBe('2');
   });
 
-  it('falls back to the account id when Torii returns null for all address variants', () => {
-    const parsed = Account.parse({
-      id: validAccountId,
-      compressed_address: null,
-      metadata: {},
-      owned_domains: 1,
-      owned_assets: 2,
-      owned_nfts: 3,
-    });
-
-    expect(parsed.id).toBe(validAccountId);
-    expect(parsed.i105_address).toBe(validAccountId);
-    expect(parsed.network_prefix).toBe(0);
+  it('rejects account response ids that require whitespace normalization', () => {
+    expect(
+      Account.safeParse({
+        id: ` ${validAccountId}`,
+        network_prefix: 0,
+        metadata: {},
+        owned_domains: 1,
+        owned_assets: 2,
+        owned_nfts: 3,
+      }).success
+    ).toBe(false);
   });
 
-  it('keeps canonical i105 output even when deprecated compressed data is present on the wire', () => {
-    const parsed = Account.parse({
-      id: validAccountId,
-      compressed_address: deprecatedCompressedAccountId,
-      metadata: {},
-      owned_domains: 1,
-      owned_assets: 2,
-      owned_nfts: 3,
-    });
-
-    expect(parsed.id).toBe(validAccountId);
-    expect(parsed.i105_address).toBe(validAccountId);
+  it('requires account metadata to contain JSON values', () => {
+    expect(
+      Account.safeParse({
+        id: validAccountId,
+        network_prefix: 0,
+        metadata: { invalid: undefined },
+        owned_domains: 1,
+        owned_assets: 2,
+        owned_nfts: 3,
+      }).success
+    ).toBe(false);
   });
 
   it('parses explorer health payloads', () => {
@@ -1475,7 +1511,7 @@ describe('Explorer payload schemas', () => {
 
   it('parses NFTs that expose metadata under the latest Torii key', () => {
     const parsed = NFT.parse({
-      id: 'cool-cat$gallery',
+      id: 'cool-cat$gallery.main',
       owned_by: validAccountId,
       metadata: { rarity: 'legendary' },
     });
@@ -1483,91 +1519,349 @@ describe('Explorer payload schemas', () => {
     expect(parsed.metadata).toEqual({ rarity: 'legendary' });
   });
 
-  it('parses RWAs with quantity fields, parent refs, and null metadata/status defaults', () => {
+  it.each([
+    ['unqualified domain', 'cool-cat$gallery'],
+    ['leading whitespace', ' cool-cat$gallery.main'],
+    ['noncanonical domain case', 'cool-cat$Gallery.main'],
+    ['invalid NFT name', 'cool cat$gallery.main'],
+  ])('rejects a noncanonical NFT response id with %s', (_case, id) => {
+    expect(NFT.safeParse({ id, owned_by: validAccountId, metadata: {} }).success).toBe(false);
+  });
+
+  it('rejects unknown and missing NFT response fields', () => {
+    expect(
+      NFT.safeParse({ id: 'cool-cat$gallery.main', owned_by: validAccountId, metadata: {}, content: {} }).success
+    ).toBe(false);
+    expect(NFT.safeParse({ id: 'cool-cat$gallery.main', owned_by: validAccountId }).success).toBe(false);
+  });
+
+  it('parses the exact RWA DTO with canonical parent references', () => {
     const parsed = RWA.parse({
-      id: 'lot-001$commodities',
+      id: validRwaId,
       owned_by: validAccountId,
       quantity: '42.5',
       held_quantity: '2.5',
       primary_reference: 'vault://receipts/2',
       status: null,
       is_frozen: true,
-      metadata: null,
+      metadata: { warehouse: 'east' },
       parents: [
         {
-          rwa: 'parent-001$commodities',
+          rwa: validParentRwaId,
           quantity: '40',
         },
       ],
     });
 
-    expect(parsed.id).toBe('lot-001$commodities');
+    expect(parsed.id).toBe(validRwaId);
     expect(parsed.quantity.toString()).toBe('42.5');
     expect(parsed.held_quantity.toString()).toBe('2.5');
     expect(parsed.status).toBeNull();
     expect(parsed.is_frozen).toBe(true);
-    expect(parsed.metadata).toEqual({});
+    expect(parsed.metadata).toEqual({ warehouse: 'east' });
     expect(parsed.parents).toHaveLength(1);
-    expect(parsed.parents[0]?.rwa).toBe('parent-001$commodities');
+    expect(parsed.parents[0]?.rwa).toBe(validParentRwaId);
     expect(parsed.parents[0]?.quantity.toString()).toBe('40');
   });
 
-  it('accepts Limited mintability labels from Torii', () => {
+  it.each([
+    ['missing status', { status: undefined }],
+    ['missing metadata', { metadata: undefined }],
+    ['null metadata', { metadata: null }],
+    ['missing parents', { parents: undefined }],
+    ['null parents', { parents: null }],
+    ['unknown field', { controller: validAccountId }],
+  ])('rejects an inexact RWA DTO with %s', (_case, replacement) => {
+    expect(
+      RWA.safeParse({
+        id: validRwaId,
+        owned_by: validAccountId,
+        quantity: '1',
+        held_quantity: '0',
+        primary_reference: 'vault://receipts/2',
+        status: null,
+        is_frozen: false,
+        metadata: {},
+        parents: [],
+        ...replacement,
+      }).success
+    ).toBe(false);
+  });
+
+  it.each([
+    ['non-hex hash', `${'0'.repeat(63)}g$commodities.main`],
+    ['uppercase hash', `${'FF'.repeat(32)}$commodities.main`],
+    ['short hash', `01$commodities.main`],
+    ['unqualified domain', `${'ff'.repeat(32)}$commodities`],
+    ['noncanonical domain', `${'ff'.repeat(32)}$Commodities.main`],
+    ['surrounding whitespace', ` ${validRwaId}`],
+  ])('rejects a noncanonical RWA response id with %s', (_case, id) => {
+    expect(
+      RWA.safeParse({
+        id,
+        owned_by: validAccountId,
+        quantity: '1',
+        held_quantity: '0',
+        primary_reference: 'vault://receipts/2',
+        status: 'active',
+        is_frozen: false,
+        metadata: {},
+        parents: [],
+      }).success
+    ).toBe(false);
+  });
+
+  it('rejects invalid RWA status names and extra parent fields', () => {
+    const base = {
+      id: validRwaId,
+      owned_by: validAccountId,
+      quantity: '1',
+      held_quantity: '0',
+      primary_reference: 'vault://receipts/2',
+      is_frozen: false,
+      metadata: {},
+    };
+
+    expect(RWA.safeParse({ ...base, status: 'in review', parents: [] }).success).toBe(false);
+    expect(
+      RWA.safeParse({
+        ...base,
+        status: null,
+        parents: [{ rwa: validParentRwaId, quantity: '1', contribution: '1' }],
+      }).success
+    ).toBe(false);
+  });
+
+  it('parses exact domain DTO counts at u32 boundaries', () => {
+    const parsed = Domain.parse({
+      id: 'gallery.main',
+      logo: null,
+      metadata: {},
+      owned_by: validAccountId,
+      accounts: 0,
+      assets: 0xffff_ffff,
+      nfts: 1,
+    });
+
+    expect(parsed.id).toBe('gallery.main');
+    expect(parsed.assets).toBe(0xffff_ffff);
+  });
+
+  it.each([
+    ['unqualified id', { id: 'gallery' }],
+    ['noncanonical id', { id: 'Gallery.main' }],
+    ['whitespace id', { id: ' gallery.main' }],
+    ['negative count', { accounts: -1 }],
+    ['fractional count', { assets: 1.5 }],
+    ['overflow count', { nfts: 0x1_0000_0000 }],
+    ['unknown field', { alias: 'gallery' }],
+  ])('rejects an inexact domain DTO with %s', (_case, replacement) => {
+    expect(
+      Domain.safeParse({
+        id: 'gallery.main',
+        logo: null,
+        metadata: {},
+        owned_by: validAccountId,
+        accounts: 0,
+        assets: 0,
+        nfts: 0,
+        ...replacement,
+      }).success
+    ).toBe(false);
+  });
+
+  it('parses the full asset-definition record and preserves detail-only alias binding data', () => {
+    const exactAlias = 'USD#Issuer.Main';
     const parsed = AssetDefinition.parse({
       id: validAssetDefinitionId,
-      alias: validAssetDefinitionAlias,
-      name: 'usd',
+      owning_domain: 'issuer.main',
+      alias: exactAlias,
+      alias_binding: {
+        alias: exactAlias,
+        status: 'permanent',
+        bound_at_ms: 1_700_000_000_000,
+      },
+      name: 'USD',
+      description: null,
       mintable: 'Limited(42)',
       logo: null,
       metadata: {},
       owned_by: validAccountId,
-      assets: 2,
       total_quantity: '200',
-      locked_quantity: null,
-      circulating_quantity: null,
     });
 
     expect(parsed.mintable).toBe('Limited(42)');
+    expect(parsed.owning_domain).toBe('issuer.main');
+    expect(parsed.alias).toBe(exactAlias);
+    expect(parsed.alias_binding?.alias).toBe(exactAlias);
+    expect(parsed.name).toBe('USD');
+    expect(parsed.total_quantity.toString()).toBe('200');
+    expect(parsed.assets).toBeNull();
+    expect(parsed.locked_quantity).toBeNull();
+    expect(parsed.circulating_quantity).toBeNull();
+  });
+
+  it('parses nullable ownership and alias fields on the full asset-definition route', () => {
+    const parsed = AssetDefinition.parse({
+      id: validAssetDefinitionId,
+      owning_domain: null,
+      alias: null,
+      name: 'usd',
+      description: null,
+      mintable: 'Infinitely',
+      logo: null,
+      metadata: {},
+      owned_by: validAccountId,
+      total_quantity: '0',
+    });
+
+    expect(parsed.owning_domain).toBeNull();
+    expect(parsed.alias).toBeNull();
+    expect(parsed.alias_binding).toBeNull();
+    expect(parsed.total_quantity.toString()).toBe('0');
+  });
+
+  it('parses the exact current Explorer asset-definition DTO', () => {
+    const parsed = ExplorerAssetDefinition.parse({
+      id: validAssetDefinitionId,
+      owning_domain: 'issuer.main',
+      name: 'usd',
+      description: 'United States dollar',
+      alias: validAssetDefinitionAlias,
+      mintable: 'Infinitely',
+      logo: null,
+      metadata: {},
+      owned_by: validAccountId,
+      assets: 2,
+      total_quantity: '12',
+      locked_quantity: null,
+      circulating_quantity: '9',
+    });
+
+    expect(parsed.owning_domain).toBe('issuer.main');
+    expect(parsed.assets).toBe(2);
+    expect(parsed.total_quantity.toString()).toBe('12');
+    expect(parsed.locked_quantity).toBeNull();
+    expect(parsed.circulating_quantity?.toString()).toBe('9');
     expect(parsed.alias).toBe(validAssetDefinitionAlias);
     expect(parsed.name).toBe('usd');
-    expect(parsed.total_quantity).not.toBeNull();
-    expect(parsed.total_quantity!.toString()).toBe('200');
-    expect(parsed.locked_quantity).toBeNull();
-    expect(parsed.circulating_quantity).toBeNull();
   });
 
-  it('parses asset definitions when Torii omits supply fields', () => {
-    const parsed = AssetDefinition.parse({
+  it('preserves valid on-chain alias spelling and enforces asset text/domain bounds', () => {
+    const payload = {
       id: validAssetDefinitionId,
-      alias: validAssetDefinitionAlias,
+      owning_domain: 'issuer.main',
+      name: 'USD',
+      description: 'Settlement asset',
+      alias: 'USD#Issuer.Main',
       mintable: 'Infinitely',
       logo: null,
       metadata: {},
       owned_by: validAccountId,
-    });
+      assets: 0,
+      total_quantity: '0',
+      locked_quantity: null,
+      circulating_quantity: null,
+    };
 
-    expect(parsed.assets).toBe(0);
-    expect(parsed.total_quantity).toBeNull();
-    expect(parsed.locked_quantity).toBeNull();
-    expect(parsed.circulating_quantity).toBeNull();
-    expect(parsed.alias).toBe(validAssetDefinitionAlias);
+    expect(ExplorerAssetDefinition.parse(payload).alias).toBe('USD#Issuer.Main');
+    expect(ExplorerAssetDefinition.safeParse({ ...payload, owning_domain: 'Issuer.main' }).success).toBe(false);
+    expect(ExplorerAssetDefinition.safeParse({ ...payload, name: ' '.repeat(4) }).success).toBe(false);
+    expect(ExplorerAssetDefinition.safeParse({ ...payload, name: 'a'.repeat(129) }).success).toBe(false);
+    expect(ExplorerAssetDefinition.safeParse({ ...payload, description: '  ' }).success).toBe(false);
+    expect(ExplorerAssetDefinition.safeParse({ ...payload, alias: 'EUR#Issuer.Main' }).success).toBe(false);
+    expect(
+      ExplorerAssetDefinition.safeParse({
+        ...payload,
+        id: `${validAssetDefinitionId.slice(0, -1)}b`,
+      }).success
+    ).toBe(false);
   });
 
-  it('parses asset definitions when Torii returns null asset counters', () => {
-    const parsed = AssetDefinition.parse({
+  it.each([
+    'id',
+    'owning_domain',
+    'name',
+    'description',
+    'alias',
+    'mintable',
+    'logo',
+    'metadata',
+    'owned_by',
+    'assets',
+    'total_quantity',
+    'locked_quantity',
+    'circulating_quantity',
+  ])('rejects an Explorer asset-definition DTO missing required field %s', (field) => {
+    const payload: Record<string, unknown> = {
       id: validAssetDefinitionId,
-      alias: validAssetDefinitionAlias,
+      owning_domain: null,
+      name: 'usd',
+      description: null,
+      alias: null,
       mintable: 'Infinitely',
       logo: null,
-      assets: null,
-      total_quantity: '12',
       metadata: {},
       owned_by: validAccountId,
-    });
+      assets: 0,
+      total_quantity: '0',
+      locked_quantity: null,
+      circulating_quantity: null,
+    };
+    delete payload[field];
 
-    expect(parsed.assets).toBe(0);
-    expect(parsed.total_quantity?.toString()).toBe('12');
-    expect(parsed.alias).toBe(validAssetDefinitionAlias);
+    expect(() => ExplorerAssetDefinition.parse(payload)).toThrow();
+  });
+
+  it.each(['Limited(1)', 'Limited(4294967295)'])('accepts exact bounded mintability %s', (mintable) => {
+    expect(
+      ExplorerAssetDefinition.safeParse({
+        id: validAssetDefinitionId,
+        owning_domain: null,
+        name: 'usd',
+        description: null,
+        alias: null,
+        mintable,
+        logo: null,
+        metadata: {},
+        owned_by: validAccountId,
+        assets: 0,
+        total_quantity: '0',
+        locked_quantity: null,
+        circulating_quantity: null,
+      }).success
+    ).toBe(true);
+  });
+
+  it.each([
+    'Limited(0)',
+    'Limited(00)',
+    'Limited(01)',
+    'Limited(-1)',
+    'Limited(+1)',
+    'Limited(1.5)',
+    'Limited()',
+    'Limited(junk)',
+    'Limited(4294967296)',
+    ' limited(1)',
+  ])('rejects noncanonical mintability %s', (mintable) => {
+    expect(
+      ExplorerAssetDefinition.safeParse({
+        id: validAssetDefinitionId,
+        owning_domain: null,
+        name: 'usd',
+        description: null,
+        alias: null,
+        mintable,
+        logo: null,
+        metadata: {},
+        owned_by: validAccountId,
+        assets: 0,
+        total_quantity: '0',
+        locked_quantity: null,
+        circulating_quantity: null,
+      }).success
+    ).toBe(false);
   });
 
   it('parses asset-definition econometrics payloads', () => {
@@ -1666,6 +1960,122 @@ describe('Explorer payload schemas', () => {
     expect(parsed.asset_name).toBe('usd');
     expect(parsed.asset_alias).toBe(validAssetDefinitionAlias);
     expect(parsed.value.toString()).toBe('13');
+  });
+
+  it('parses the exact current Explorer asset DTO including dataspace-scoped ids', () => {
+    const scopedAssetId = `${validAssetId}#dataspace:7`;
+    const parsed = ExplorerAsset.parse({
+      id: scopedAssetId,
+      definition_id: validAssetDefinitionId,
+      account_id: validAccountId,
+      asset_name: 'usd',
+      asset_alias: validAssetDefinitionAlias,
+      value: '13',
+    });
+
+    expect(parsed.id).toBe(scopedAssetId);
+    expect(parsed.definition_id).toBe(validAssetDefinitionId);
+    expect(parsed.account_id).toBe(validAccountId);
+    expect(parsed.value.toString()).toBe('13');
+    expect(parsed.asset_name).toBe('usd');
+    expect(parsed.asset_alias).toBe(validAssetDefinitionAlias);
+    expect(parsed.scope).toBe('dataspace:7');
+  });
+
+  it('preserves exact asset alias spelling and rejects noncanonical response ids', () => {
+    const payload = {
+      id: validAssetId,
+      definition_id: validAssetDefinitionId,
+      account_id: validAccountId,
+      asset_name: 'USD',
+      asset_alias: 'USD#Issuer.Main',
+      value: '13',
+    };
+
+    expect(ExplorerAsset.parse(payload).asset_alias).toBe('USD#Issuer.Main');
+    expect(ExplorerAsset.safeParse({ ...payload, id: ` ${validAssetId}` }).success).toBe(false);
+    expect(ExplorerAsset.safeParse({ ...payload, asset_name: '' }).success).toBe(false);
+    expect(ExplorerAsset.safeParse({ ...payload, definition_id: alternateAssetDefinitionId }).success).toBe(false);
+    expect(ExplorerAsset.safeParse({ ...payload, account_id: validAccountIdAlt }).success).toBe(false);
+    expect(ExplorerAsset.safeParse({ ...payload, account_id: 'sora1' }).success).toBe(false);
+    expect(ExplorerAsset.safeParse({ ...payload, asset_alias: 'EUR#Issuer.Main' }).success).toBe(false);
+    expect(ExplorerAsset.safeParse({ ...payload, id: `${validAssetId}#dataspace:007` }).success).toBe(false);
+    expect(ExplorerAsset.safeParse({ ...payload, id: `${validAssetId}#dataspace:18446744073709551616` }).success).toBe(
+      false
+    );
+  });
+
+  it('accepts canonical Quantity strings through the full signed 512-bit positive domain', () => {
+    const maximum = ((1n << 511n) - 1n).toString();
+    const parsed = ExplorerAsset.parse({
+      id: validAssetId,
+      definition_id: validAssetDefinitionId,
+      account_id: validAccountId,
+      asset_name: 'usd',
+      asset_alias: validAssetDefinitionAlias,
+      value: maximum,
+    });
+
+    expect(parsed.value.toFixed()).toBe(maximum);
+    expect(
+      RWA.parse({
+        id: validRwaId,
+        owned_by: validAccountId,
+        quantity: '0.0000000000000000000000000001',
+        held_quantity: '0',
+        primary_reference: 'vault://receipts/3',
+        status: null,
+        is_frozen: false,
+        metadata: {},
+        parents: [],
+      }).quantity.toFixed()
+    ).toBe('0.0000000000000000000000000001');
+  });
+
+  it.each([
+    { label: 'JSON number', value: 13 },
+    { label: 'negative quantity', value: '-1' },
+    { label: 'leading zero', value: '01' },
+    { label: 'explicit plus sign', value: '+1' },
+    { label: 'trailing fractional zero', value: '1.0' },
+    { label: 'scale above 28', value: `0.${'0'.repeat(28)}1` },
+    { label: 'mantissa above the signed domain', value: (1n << 511n).toString() },
+  ])('rejects a noncanonical Explorer Quantity: $label', ({ value }) => {
+    expect(() =>
+      ExplorerAsset.parse({
+        id: validAssetId,
+        definition_id: validAssetDefinitionId,
+        account_id: validAccountId,
+        asset_name: 'usd',
+        asset_alias: validAssetDefinitionAlias,
+        value,
+      })
+    ).toThrow();
+  });
+
+  it('accepts the signed Numeric minimum for issuance net and rejects values below it', () => {
+    const minimum = -(1n << 511n);
+    const payload = {
+      definition_id: validAssetDefinitionId,
+      computed_at_ms: 1_700_000_000_000,
+      velocity_windows: [],
+      issuance_windows: [],
+      issuance_series: [{ bucket_start_ms: 1_699_995_000_000, minted: '0', burned: '0', net: minimum.toString() }],
+    };
+
+    expect(AssetDefinitionEconometrics.parse(payload).issuance_series[0]?.net.toFixed()).toBe(minimum.toString());
+    expect(() =>
+      AssetDefinitionEconometrics.parse({
+        ...payload,
+        issuance_series: [{ ...payload.issuance_series[0], net: (minimum - 1n).toString() }],
+      })
+    ).toThrow();
+    expect(() =>
+      AssetDefinitionEconometrics.parse({
+        ...payload,
+        issuance_series: [{ ...payload.issuance_series[0], net: '-0' }],
+      })
+    ).toThrow();
   });
 
   it('parses v1 account-asset and holder payloads into the shared asset shape', () => {

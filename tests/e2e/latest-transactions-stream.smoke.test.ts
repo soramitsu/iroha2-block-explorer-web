@@ -10,7 +10,7 @@ import { LATEST_TRANSACTIONS_CACHE_KEY } from '@/widgets/latest-transactions/mod
 import type LatestTransactionsComponent from '@/widgets/latest-transactions/LatestTransactions.vue';
 
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
-const SAMPLE_I105_ALT = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const SAMPLE_I105_ALT = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 
 const originalEventSource = globalThis.EventSource;
 globalThis.EventSource = class MockEventSource {

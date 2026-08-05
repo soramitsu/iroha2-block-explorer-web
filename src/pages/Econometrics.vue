@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import BigNumber from 'bignumber.js';
@@ -13,7 +13,7 @@ import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import DataField from '@/shared/ui/components/DataField.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
-import { NOT_FOUND, SUCCESSFUL_FETCHING } from '@/shared/api/consts';
+import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { getRuntimeConfig } from '@/shared/runtime-config';
 import {
   concentrationTopN,
@@ -213,8 +213,8 @@ const maxTransfersToScan = ref(2000);
 const maxIssuanceToScan = ref(2000);
 
 const assetDefinitionsState = reactive({
-  page: 1,
-  per_page: 50,
+  cursor: null as string | null,
+  limit: 50,
 });
 
 const assetDefinitionsFilters = reactive({
@@ -228,37 +228,40 @@ const parsedOwnerFilter = computed<string | undefined>(() => ownerFilterState.va
 const ownerFilterError = computed(() => ownerFilterState.value.error);
 
 watch(
-  () => [assetDefinitionsState.per_page, assetDefinitionsFilters.domain, parsedOwnerFilter.value] as const,
+  () => [assetDefinitionsState.limit, assetDefinitionsFilters.domain, assetDefinitionsFilters.owner] as const,
   () => {
-    assetDefinitionsState.page = 1;
+    assetDefinitionsState.cursor = null;
   }
 );
 
 const assetDefinitionsQuery = computed(() => ({
-  page: assetDefinitionsState.page,
-  per_page: assetDefinitionsState.per_page,
+  cursor: assetDefinitionsState.cursor,
+  limit: assetDefinitionsState.limit,
   domain: assetDefinitionsFilters.domain.trim() || undefined,
   owned_by: parsedOwnerFilter.value,
 }));
 
 const assetDefinitionsScope = useParamScope(
-  () => ({
-    key: JSON.stringify({
-      page: assetDefinitionsQuery.value.page,
-      per_page: assetDefinitionsQuery.value.per_page,
-      domain: assetDefinitionsQuery.value.domain ?? null,
-      owned_by: assetDefinitionsQuery.value.owned_by ?? null,
-    }),
-    payload: assetDefinitionsQuery.value,
-  }),
+  () => {
+    if (ownerFilterError.value) return null;
+    return {
+      key: JSON.stringify({
+        cursor: assetDefinitionsQuery.value.cursor,
+        limit: assetDefinitionsQuery.value.limit,
+        domain: assetDefinitionsQuery.value.domain ?? null,
+        owned_by: assetDefinitionsQuery.value.owned_by ?? null,
+      }),
+      payload: assetDefinitionsQuery.value,
+    };
+  },
   ({ payload }) => setupAsyncData(() => http.fetchAssetDefinitions(payload))
 );
 
 const isAssetDefinitionsLoading = computed(() => !!assetDefinitionsScope.value?.expose.isLoading);
-const totalAssetDefinitions = computed(() =>
+const assetDefinitionsPagination = computed(() =>
   assetDefinitionsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? assetDefinitionsScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? assetDefinitionsScope.value.expose.data.data.pagination
+    : null
 );
 const assetDefinitions = computed(() =>
   assetDefinitionsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetDefinitionsScope.value.expose.data.data.items : []
@@ -290,11 +293,10 @@ const state = reactive({
   burnsMatched: 0,
 });
 
-const result = ref<EconometricsResult | null>(null);
+const result = shallowRef<EconometricsResult | null>(null);
 let runNonce = 0;
-// Optional Torii-computed aggregates. When disabled, we fall back to client-side scans.
-const supportsSnapshotEndpoint = ref(getRuntimeConfig().toriiEconometricsEndpointsEnabled !== false);
-const supportsEconometricsEndpoint = ref(getRuntimeConfig().toriiEconometricsEndpointsEnabled !== false);
+// Client-side scans are an explicit operator mode, never an error fallback.
+const econometricsEndpointsEnabled = getRuntimeConfig().toriiEconometricsEndpointsEnabled !== false;
 
 const canCompute = computed(() => !!parsedAssetDefinitionId.value && !assetInputError.value);
 const isInitialLoading = computed(() => state.isLoading && !result.value);
@@ -315,6 +317,19 @@ function formatRatio(ratio: number | null, digits = 6): string {
 function formatMaybeBigNumber(value: { toString: () => string } | null): string {
   if (!value) return t('none');
   return value.toString();
+}
+
+function holderMetricTitle(key: string, holderResult: EconometricsResult): string {
+  const title = t(key);
+  return holderResult.holdersComplete ? title : `${title} (${t('econometrics.coverageSampled')})`;
+}
+
+function formatHolderCoverage(holderResult: EconometricsResult): string {
+  if (holderResult.holdersComplete) {
+    const total = holderResult.holdersTotalCount ?? holderResult.holdersCount;
+    return `${holderResult.holdersCount}/${total} (${t('econometrics.coverageComplete')})`;
+  }
+  return `${t('econometrics.coverageSampled')}: ${t('table.scanSample', [holderResult.holdersCount])}`;
 }
 
 function formatDate(value: Date | null): string {
@@ -395,32 +410,44 @@ async function fetchAssetHolders(
   localNonce: number
 ) {
   const holders: Array<{ account: string, balance: BigNumber }> = [];
-  let page = 1;
-  let totalItems: number | null = null;
-  let totalPages = 1;
+  let cursor: string | null = null;
+  let exhausted = false;
+  let truncated = false;
+  const visitedCursors = new Set<string>();
 
-  while (holders.length < opts.maxItems && page <= totalPages) {
+  while (holders.length < opts.maxItems && !exhausted) {
     if (localNonce !== runNonce) break;
-    const res = await http.fetchAssets({ page, per_page: opts.perPage, definition });
+    const res = await http.fetchAssets({ cursor, limit: opts.perPage, definition });
     if (res.status !== SUCCESSFUL_FETCHING) {
       throw new Error(t('econometrics.fetchError'));
     }
 
     const { items, pagination } = res.data;
-    totalItems = pagination.total_items;
-    totalPages = pagination.total_pages;
     for (const item of items) {
+      if (holders.length >= opts.maxItems) {
+        truncated = true;
+        break;
+      }
       holders.push({ account: item.account_id, balance: item.value });
-      if (holders.length >= opts.maxItems) break;
     }
     if (localNonce === runNonce) {
       state.holdersFetched = holders.length;
-      state.holdersTotal = totalItems;
+      state.holdersTotal = null;
     }
-    page += 1;
+    if (!pagination.has_more) {
+      exhausted = true;
+      continue;
+    }
+    const nextCursor = pagination.next_cursor;
+    if (nextCursor === null || visitedCursors.has(nextCursor)) {
+      throw new Error(t('econometrics.fetchError'));
+    }
+    visitedCursors.add(nextCursor);
+    cursor = nextCursor;
   }
 
-  return { holders, totalItems, complete: totalItems !== null ? holders.length >= totalItems : false };
+  const complete = exhausted && !truncated;
+  return { holders, totalItems: complete ? holders.length : null, complete };
 }
 
 function normalizeInstructionTotalPages(totalPages: number): number {
@@ -951,7 +978,7 @@ async function buildDistributionFromHolderScan(definition: string, localNonce: n
   const { holders, totalItems, complete } = await fetchAssetHolders(
     definition,
     {
-      perPage: 200,
+      perPage: 100,
       maxItems: maxHoldersToScan.value,
     },
     localNonce
@@ -1031,50 +1058,47 @@ function computeHolderChurn(
   };
 }
 
+function explorerReadError(response: unknown): Error {
+  if (isRecord(response) && response.error instanceof Error) return response.error;
+  return new Error(t('econometrics.fetchError'));
+}
+
 async function fetchHolderSnapshot(definition: string) {
-  let snapshotRes: Awaited<ReturnType<typeof http.fetchAssetDefinitionSnapshot>> | { status: typeof NOT_FOUND } = {
-    status: NOT_FOUND,
-  };
+  if (!econometricsEndpointsEnabled) return null;
 
-  if (!supportsSnapshotEndpoint.value) return snapshotRes;
-
-  try {
-    snapshotRes = await http.fetchAssetDefinitionSnapshot(definition);
-  } catch {
-    snapshotRes = { status: NOT_FOUND };
-    supportsSnapshotEndpoint.value = false;
-  }
-
-  return snapshotRes;
+  const response = await http.fetchAssetDefinitionSnapshot(definition);
+  if (response.status !== SUCCESSFUL_FETCHING) throw explorerReadError(response);
+  return response.data;
 }
 
 function resolveDefinitionSupplies(definitionRes: Awaited<ReturnType<typeof http.fetchAssetDefinition>>) {
-  const definitionDto = definitionRes.status === SUCCESSFUL_FETCHING ? definitionRes.data : null;
+  if (definitionRes.status !== SUCCESSFUL_FETCHING) throw explorerReadError(definitionRes);
+  const definitionDto = definitionRes.data;
   return {
-    assetDefinitionId: definitionDto?.id ?? null,
-    assetDefinitionAlias: definitionDto?.alias ?? null,
-    definitionTotalSupply: definitionDto?.total_quantity ?? null,
-    definitionLockedSupply: definitionDto?.locked_quantity ?? null,
-    definitionCirculatingSupply: definitionDto?.circulating_quantity ?? null,
+    assetDefinitionId: definitionDto.id,
+    assetDefinitionAlias: definitionDto.alias ?? null,
+    definitionTotalSupply: definitionDto.total_quantity,
+    definitionLockedSupply: definitionDto.locked_quantity ?? null,
+    definitionCirculatingSupply: definitionDto.circulating_quantity ?? null,
   };
 }
 
 async function resolveHolderData(
   definition: string,
   localNonce: number,
-  snapshotRes: Awaited<ReturnType<typeof http.fetchAssetDefinitionSnapshot>> | { status: typeof NOT_FOUND }
+  snapshot: Awaited<ReturnType<typeof fetchHolderSnapshot>>
 ) {
-  if (snapshotRes.status === SUCCESSFUL_FETCHING) return buildDistributionFromSnapshot(snapshotRes.data);
+  if (snapshot) return buildDistributionFromSnapshot(snapshot);
   return buildDistributionFromHolderScan(definition, localNonce);
 }
 
 function syncSnapshotHolderProgress(
-  snapshotRes: Awaited<ReturnType<typeof http.fetchAssetDefinitionSnapshot>> | { status: typeof NOT_FOUND },
+  snapshot: Awaited<ReturnType<typeof fetchHolderSnapshot>>,
   localNonce: number
 ) {
-  if (snapshotRes.status !== SUCCESSFUL_FETCHING || localNonce !== runNonce) return;
-  state.holdersFetched = snapshotRes.data.holders_total;
-  state.holdersTotal = snapshotRes.data.holders_total;
+  if (!snapshot || localNonce !== runNonce) return;
+  state.holdersFetched = snapshot.holders_total;
+  state.holdersTotal = snapshot.holders_total;
 }
 
 function resolveVelocitySupply(preferredSupply: BigNumber | null, holdersTotalSupply: BigNumber): BigNumber {
@@ -1090,15 +1114,12 @@ async function loadHolderDistribution(definition: string, nowMs: number, localNo
     definitionRes
   );
 
-  const snapshotRes = await fetchHolderSnapshot(definition);
+  const snapshot = await fetchHolderSnapshot(definition);
   if (localNonce !== runNonce) return null;
-  if (definitionRes.status === SUCCESSFUL_FETCHING && snapshotRes.status === NOT_FOUND) {
-    supportsSnapshotEndpoint.value = false;
-  }
 
-  const holderData = await resolveHolderData(definition, localNonce, snapshotRes);
+  const holderData = await resolveHolderData(definition, localNonce, snapshot);
   if (!holderData || localNonce !== runNonce) return null;
-  syncSnapshotHolderProgress(snapshotRes, localNonce);
+  syncSnapshotHolderProgress(snapshot, localNonce);
 
   const preferredVelocitySupply = definitionCirculatingSupply ?? definitionTotalSupply;
   const velocitySupply = resolveVelocitySupply(preferredVelocitySupply, holderData.holdersTotalSupply);
@@ -1199,64 +1220,47 @@ async function loadActivityBundle(args: {
   let activityComputedAt: Date | null = null;
 
   state.stage = 'activity';
-  try {
-    const activityRes = supportsEconometricsEndpoint.value
-      ? await http.fetchAssetDefinitionEconometrics(args.definition)
-      : ({ status: NOT_FOUND } as const);
+  if (econometricsEndpointsEnabled) {
+    const activityRes = await http.fetchAssetDefinitionEconometrics(args.definition);
     if (args.localNonce !== runNonce) return null;
-    if (activityRes.status === NOT_FOUND) {
-      supportsEconometricsEndpoint.value = false;
-    }
+    if (activityRes.status !== SUCCESSFUL_FETCHING) throw explorerReadError(activityRes);
 
-    if (activityRes.status === SUCCESSFUL_FETCHING) {
-      activityComputedAt = new Date(activityRes.data.computed_at_ms);
-      velocityWindows = mapVelocityWindowsFromActivity(activityRes.data.velocity_windows, args.velocitySupply);
-      issuanceWindows = mapIssuanceWindowsFromActivity(activityRes.data.issuance_windows);
-      issuanceSeries = activityRes.data.issuance_series
-        .slice()
-        .sort((a, b) => a.bucket_start_ms - b.bucket_start_ms)
-        .map((point) => ({
-          bucketStartMs: point.bucket_start_ms,
-          minted: point.minted,
-          burned: point.burned,
-          net: point.net,
-        }));
-    }
-  } catch {
-    // ignore and fall back to client-side scans
+    activityComputedAt = new Date(activityRes.data.computed_at_ms);
+    velocityWindows = mapVelocityWindowsFromActivity(activityRes.data.velocity_windows, args.velocitySupply);
+    issuanceWindows = mapIssuanceWindowsFromActivity(activityRes.data.issuance_windows);
+    issuanceSeries = activityRes.data.issuance_series
+      .slice()
+      .sort((a, b) => a.bucket_start_ms - b.bucket_start_ms)
+      .map((point) => ({
+        bucketStartMs: point.bucket_start_ms,
+        minted: point.minted,
+        burned: point.burned,
+        net: point.net,
+      }));
   }
 
   if (args.localNonce !== runNonce) return null;
 
   if (!velocityWindows) {
     state.stage = 'transfers';
-    try {
-      const transferStats = await fetchVelocityWindows({
-        definitionId: args.definition,
-        supplyDenom: args.velocitySupply,
-        nowMs: args.nowMs,
-        localNonce: args.localNonce,
-      });
-      if (args.localNonce !== runNonce) return null;
-      velocityWindows = transferStats.windows;
-    } catch {
-      velocityWindows = null;
-    }
+    const transferStats = await fetchVelocityWindows({
+      definitionId: args.definition,
+      supplyDenom: args.velocitySupply,
+      nowMs: args.nowMs,
+      localNonce: args.localNonce,
+    });
+    if (args.localNonce !== runNonce) return null;
+    velocityWindows = transferStats.windows;
   }
 
   if (args.localNonce !== runNonce) return null;
 
   if (!issuanceWindows || !issuanceSeries) {
     state.stage = 'issuance';
-    try {
-      const issuance = await fetchIssuance(args.definition, args.nowMs, args.localNonce);
-      if (args.localNonce !== runNonce) return null;
-      issuanceWindows = issuance.windows;
-      issuanceSeries = issuance.series;
-    } catch {
-      issuanceWindows = null;
-      issuanceSeries = null;
-    }
+    const issuance = await fetchIssuance(args.definition, args.nowMs, args.localNonce);
+    if (args.localNonce !== runNonce) return null;
+    issuanceWindows = issuance.windows;
+    issuanceSeries = issuance.series;
   }
 
   if (args.localNonce !== runNonce) return null;
@@ -1307,6 +1311,7 @@ async function computeEconometrics(definition: string) {
       computedAt: activityBundle.computedAt,
     };
   } catch (err) {
+    if (localNonce !== runNonce) return;
     const message = err instanceof Error ? err.message : String(err);
     state.error = message;
   } finally {
@@ -1477,10 +1482,11 @@ const issuanceNetSparkline = computed(() => {
           </div>
 
           <BaseTable
-            v-model:page="assetDefinitionsState.page"
-            v-model:page-size="assetDefinitionsState.per_page"
+            v-model:cursor="assetDefinitionsState.cursor"
+            v-model:page-size="assetDefinitionsState.limit"
             :loading="isAssetDefinitionsLoading"
-            :total="totalAssetDefinitions"
+            pagination-mode="cursor"
+            :cursor-pagination="assetDefinitionsPagination"
             :items="assetDefinitions"
             :row-key="assetDefinitionRowKey"
             container-class="econometrics-page__asset-list"
@@ -1570,7 +1576,15 @@ const issuanceNetSparkline = computed(() => {
             <BaseLoading />
           </div>
 
-          <BaseInnerBlock :title="$t('econometrics.snapshotTitle')">
+          <BaseInnerBlock :title="holderMetricTitle('econometrics.snapshotTitle', result)">
+            <div
+              v-if="!result.holdersComplete"
+              class="econometrics-page__note row-text"
+              role="status"
+              data-testid="holder-sample-notice"
+            >
+              {{ $t('econometrics.coverageSampled') }}: {{ $t('table.scanSample', [result.holdersCount]) }}
+            </div>
             <div class="econometrics-page__grid">
               <DataField
                 :title="$t('econometrics.assetDefinition')"
@@ -1583,7 +1597,7 @@ const issuanceNetSparkline = computed(() => {
                 monospace
               />
               <DataField
-                :title="$t('econometrics.holders')"
+                :title="holderMetricTitle('econometrics.holders', result)"
                 :value="result.holdersCount"
                 monospace
               />
@@ -1603,22 +1617,18 @@ const issuanceNetSparkline = computed(() => {
                 monospace
               />
               <DataField
-                :title="$t('econometrics.totalSupply')"
+                :title="holderMetricTitle('econometrics.totalSupply', result)"
                 :value="result.holdersTotalSupply.toString()"
                 monospace
               />
               <DataField
-                :title="$t('econometrics.supplyCoverage')"
+                :title="holderMetricTitle('econometrics.supplyCoverage', result)"
                 :value="formatPercent(result.supplyCoverage)"
                 monospace
               />
               <DataField
                 :title="$t('econometrics.coverage')"
-                :value="
-                  result.holdersTotalCount === null
-                    ? $t('none')
-                    : `${result.holdersCount}/${result.holdersTotalCount} (${result.holdersComplete ? $t('econometrics.coverageComplete') : $t('econometrics.coverageSampled')})`
-                "
+                :value="formatHolderCoverage(result)"
                 monospace
               />
               <DataField
@@ -1725,11 +1735,11 @@ const issuanceNetSparkline = computed(() => {
                   class="econometrics-page__lorenz-curve"
                 />
               </svg>
-              <span class="caption">{{ $t('econometrics.lorenzCaption') }}</span>
+              <span class="caption">{{ holderMetricTitle('econometrics.lorenzCaption', result) }}</span>
             </div>
           </BaseInnerBlock>
 
-          <BaseInnerBlock :title="$t('econometrics.topHoldersTitle')">
+          <BaseInnerBlock :title="holderMetricTitle('econometrics.topHoldersTitle', result)">
             <BaseTable
               :loading="false"
               :items="topHolders"

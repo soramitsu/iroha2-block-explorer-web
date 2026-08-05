@@ -9,12 +9,13 @@ import type * as VueUse from '@vueuse/core';
 import { defineComponent, ref } from 'vue';
 
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
-const SAMPLE_I105_ALT = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const SAMPLE_I105_ALT = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const LIVE_MULTISIG_ACCOUNT = 'soraﾁｷVMXKﾏtKAoQﾅﾛ3qｾヱ8aﾄdNuｷﾀｱｽh9ｻtWﾐBﾒ9AﾏHｼQﾅvﾛﾌｹYﾑﾐﾛCﾎjtQQヰYCbﾎｵPfb6vXcﾖ1176ﾃﾈcﾐｲUEtﾎヱﾅｻﾀiuｦ2MPﾍﾏiﾌhﾓJｶｶgboCｻBpｷ35ｸ15ｼmGｲFK9NﾑoVﾜWvQMKﾃﾎB7ヰdM99EU4V';
 const LIVE_TRANSFER_SOURCE = `66owaQmAQMuHxPzxUN3bqZ6FJfDa#${LIVE_MULTISIG_ACCOUNT}`;
 const LIVE_TRANSFER_DESTINATION = 'sorauﾛ1QEﾄiBzndﾆDwﾉｴxSﾔﾋ6KXﾆ2xﾗﾆrﾐﾚﾄoNqｳZﾘqtHﾛDBCRJ5';
 const LIVE_TRANSFER_INSTRUCTION =
   'TlJUMAAAhip9dwddTSP/bBJh2wJ4EQDSAQAAAAAAABQKMDTp3Yu+Ag8OaXJvaGEudHJhbnNmZXLAA7gBAAAAAAAATlJUMAAApBdMeNY0H4+Y/Cra6O1nuQCQAQAAAAAAAOy4mMbcuTFWAgIAAACKA6oCggIBAAAA/AEBAQICAPUBAwAAAAAAAABOSiEAAAAAAAAAAQABhAExAb0BZQH/ASQBcwHNAacBpwEHAcEBgAH3AcEB5AH2AcQBzAGVASABPQFuAXoBJwFLAYUBswHtAW8BbAE1AgEATkohAAAAAAAAAAEAAbQBJgHPAXIBUQE3Af8B5gEzAbkB7gFJAXQBIAGoAYIB2gGYAW0BNgGxAfMBgQGPASEBkQFsAdUBtQH9AUoB/QIBAE5KIQAAAAAAAAABAAHHAeIB8QH8AZMBSQHvAZ8BkgG6AYEBeAFSAa4BbQGBAV0B2wGyAWABgQHUAWsBrQHiATMBSwERATwBHwF/AWUCAQAgAW4BFQFrAVABEAHmAUUB+AGDAesBgwEZAUYBuAGNAbgEAAAAAA0HAwAAAKCGAQQAAAAATwAAAABKIQAAAAAAAAABAAH9AVUB7wEWAZIB1QGPAYcBkwEvAVkBgAEhAbEB1gEWATkBRwGAAQgBIwHlAb4BuQF0AcoBiAEEAZoByAGaAfc=';
+const FRAMED_SHA256 = `0x${'00'.repeat(32)}`;
 
 const clipboardCopySpy = vi.fn();
 const eventSourceData = ref<string | null>(null);
@@ -93,6 +94,7 @@ describe('InstructionsTable', () => {
     kind: 'Register',
     box: {
       encoded: '0x01',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Register',
         payload: {
@@ -118,6 +120,7 @@ describe('InstructionsTable', () => {
     kind: 'Custom',
     box: {
       encoded: '0x99',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Custom',
         payload: {
@@ -146,6 +149,7 @@ describe('InstructionsTable', () => {
     kind: 'Custom',
     box: {
       encoded: '0x88',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Custom',
         payload: {
@@ -162,6 +166,7 @@ describe('InstructionsTable', () => {
     kind: 'Custom',
     box: {
       encoded: '0x0d0c69726f68612e637573746f6d',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Custom',
         payload: {
@@ -184,6 +189,7 @@ describe('InstructionsTable', () => {
     kind: 'Custom',
     box: {
       encoded: '0x77',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Custom',
         wire_id: 'iroha_data_model::isi::offline::SubmitOfflineToOnlineTransfer',
@@ -203,6 +209,7 @@ describe('InstructionsTable', () => {
     kind: 'Custom',
     box: {
       encoded: '0x66',
+      framed_sha256: FRAMED_SHA256,
       json: {
         kind: 'Custom',
         payload: {
@@ -248,6 +255,7 @@ describe('InstructionsTable', () => {
         ...baseInstruction,
         box: {
           encoded: '0x01',
+          framed_sha256: FRAMED_SHA256,
           json: {
             kind: 'Register',
             payload: {
@@ -362,6 +370,7 @@ describe('InstructionsTable', () => {
       kind: 'RegisterSmartContractBytes',
       box: {
         encoded: '0x07',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'RegisterSmartContractBytes',
           payload: {
@@ -376,6 +385,7 @@ describe('InstructionsTable', () => {
       index: 1,
       box: {
         encoded: '0x08',
+        framed_sha256: FRAMED_SHA256,
         json: {
           kind: 'RegisterSmartContractCode',
           payload: {
@@ -614,6 +624,7 @@ describe('InstructionsTable', () => {
         ...baseInstruction,
         box: {
           encoded: '0x01',
+          framed_sha256: FRAMED_SHA256,
           json: {
             kind: 'Register',
             payload: {

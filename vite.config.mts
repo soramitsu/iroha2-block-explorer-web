@@ -19,7 +19,7 @@ const vitestLocalStorageFile = path.join(os.tmpdir(), 'iroha2-block-explorer-web
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
   const toriiProxyTarget = (env.VITE_TORII_PROXY_TARGET || 'http://127.0.0.1:29080').replace(/\/+$/, '');
   const rawAppBasePath = (env.VITE_APP_BASE_PATH || '/').trim();
   const appBasePath =
@@ -39,6 +39,9 @@ export default defineConfig(({ mode }) => {
         '/status': {
           target: toriiProxyTarget,
           changeOrigin: true,
+          headers: {
+            Accept: 'application/json',
+          },
         },
         '/metrics': {
           target: toriiProxyTarget,

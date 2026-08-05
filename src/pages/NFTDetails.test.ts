@@ -5,7 +5,7 @@ import NFTDetails from './NFTDetails.vue';
 import { i18n } from '@/shared/lib/localization';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
-const route = ref({ params: { id: 'passport$identity' } });
+const route = ref({ params: { id: 'passport$identity.main' } });
 const refetch = vi.fn();
 const expose = ref<any>();
 
@@ -41,11 +41,11 @@ function mountPage() {
 describe('NFTDetails resource states', () => {
   beforeEach(() => {
     refetch.mockClear();
-    route.value = { params: { id: 'passport$identity' } };
+    route.value = { params: { id: 'passport$identity.main' } };
     const result = {
       status: SUCCESSFUL_FETCHING,
       data: {
-        id: 'passport$identity',
+        id: 'passport$identity.main',
         owned_by: 'alice@wonderland',
         metadata: { class: 'travel' },
       },

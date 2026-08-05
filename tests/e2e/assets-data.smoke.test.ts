@@ -11,6 +11,14 @@ import BigNumber from 'bignumber.js';
 const fetchAssetDefinitionMock = vi.fn();
 const fetchAssetsMock = vi.fn();
 
+function requestedAssetsCursor(cursor: string): boolean {
+  return fetchAssetsMock.mock.calls.some(([params]) => params?.cursor === cursor);
+}
+
+function assetRequestForCursor(cursor: string) {
+  return fetchAssetsMock.mock.calls.findLast(([params]) => params?.cursor === cursor)?.[0];
+}
+
 vi.mock('@/shared/api', async () => {
   const actual = await vi.importActual<typeof SharedApiModule>('@/shared/api');
   return {
@@ -53,13 +61,14 @@ const BaseTableStub = defineComponent({
   name: 'BaseTableStub',
   props: {
     items: { type: Array, default: () => [] },
-    page: { type: Number, default: 1 },
+    cursor: { type: String, default: null },
     pageSize: { type: Number, default: 10 },
-    total: { type: Number, default: 0 },
+    cursorPagination: { type: Object, default: null },
+    paginationMode: { type: String, default: 'numbered' },
     loading: { type: Boolean, default: false },
     containerClass: { type: String, default: '' },
   },
-  emits: ['update:page', 'update:pageSize', 'click:row'],
+  emits: ['update:cursor', 'update:pageSize', 'click:row'],
   template: `
     <div data-test="base-table">
       <slot name="header" />
@@ -82,6 +91,11 @@ const BaseTableStub = defineComponent({
           <slot name="mobile-card" :item="item" />
         </div>
       </div>
+      <button
+        v-if="cursorPagination?.next_cursor"
+        data-test="cursor-next"
+        @click="$emit('update:cursor', cursorPagination.next_cursor)"
+      >Next</button>
     </div>
   `,
 });
@@ -169,10 +183,12 @@ describe('Assets data smoke', () => {
       },
     });
 
-    fetchAssetsMock.mockResolvedValue({
+    fetchAssetsMock.mockImplementation((params) => Promise.resolve({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: { page: 1, per_page: 10, total_pages: 2, total_items: 15 },
+        pagination: params?.cursor
+          ? { limit: 10, next_cursor: null, has_more: false }
+          : { limit: 10, next_cursor: 'aG9sZGVycy1jdXJzb3ItMg', has_more: true },
         items: [
           {
             id: `PKR#sbp#${holderAccount}`,
@@ -182,7 +198,7 @@ describe('Assets data smoke', () => {
           },
         ],
       },
-    });
+    }));
   });
 
   afterEach(() => {
@@ -198,10 +214,23 @@ describe('Assets data smoke', () => {
 
     expect(fetchAssetDefinitionMock).toHaveBeenCalledTimes(1);
     expect(fetchAssetsMock).toHaveBeenCalledTimes(1);
+    const fetchArgs = fetchAssetsMock.mock.calls[0]?.[0];
+    expect(fetchArgs?.cursor).toBeNull();
+    expect(fetchArgs?.limit).toBe(10);
+    expect(fetchArgs?.definition.toString()).toBe(definition.toString());
+    expect(fetchArgs).not.toHaveProperty('page');
+    expect(fetchArgs).not.toHaveProperty('per_page');
 
     const row = wrapper.find('[data-test="base-table-row"]');
     expect(row.exists()).toBe(true);
     expect(row.text()).toContain(holderAccount);
     expect(row.text()).toContain('1080');
+
+    await wrapper.get('[data-test="cursor-next"]').trigger('click');
+    await vi.waitFor(() => {
+      expect(requestedAssetsCursor('aG9sZGVycy1jdXJzb3ItMg')).toBe(true);
+    });
+    const cursorCall = assetRequestForCursor('aG9sZGVycy1jdXJzb3ItMg');
+    expect(cursorCall?.limit).toBe(10);
   }, 20000);
 });

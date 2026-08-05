@@ -2,11 +2,15 @@ import { z } from 'zod/v4';
 import BigNumber from 'bignumber.js';
 import { normalizeAccountIdLiteral, normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
 import {
+  isAssetDefinitionAliasLiteral,
   normalizeAssetDefinitionAliasLiteral,
   normalizeAssetDefinitionIdLiteral,
   normalizeAssetDefinitionSelectorLiteral,
   normalizeAssetIdLiteral,
+  parseAssetDefinitionAliasLiteral,
+  parseAssetIdLiteral,
 } from '@/shared/lib/asset-definition-literal';
+import { normalizeDomainIdLiteral, normalizeRwaIdLiteral } from '@/shared/lib/rwa-id';
 
 const Pagination = z.object({
   page: z.number(),
@@ -33,9 +37,101 @@ export interface PaginationParams {
   per_page: number;
 }
 
-const Metadata = z.record(z.string(), z.any());
+export const CursorPagination = z
+  .object({
+    limit: z.number().int().min(1).max(100),
+    next_cursor: z
+      .string()
+      .min(1)
+      .max(1424)
+      .regex(/^[A-Za-z0-9_-]+$/u)
+      .nullable(),
+    has_more: z.boolean(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.has_more !== (value.next_cursor !== null)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'has_more must match next_cursor availability',
+        path: ['has_more'],
+      });
+    }
+  });
+
+export type CursorPagination = z.infer<typeof CursorPagination>;
+
+export const CursorPaginated = <T extends z.ZodType>(item: T) =>
+  z
+    .object({
+      pagination: CursorPagination,
+      items: item.array(),
+    })
+    .strict()
+    .superRefine((value, ctx) => {
+      if (value.items.length > value.pagination.limit) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'items must not exceed the cursor page limit',
+          path: ['items'],
+        });
+      }
+    });
+
+export interface CursorPaginated<T> {
+  pagination: CursorPagination;
+  items: T[];
+}
+
+export interface CursorPaginationParams {
+  cursor?: string | null;
+  limit?: number;
+}
+
+const Metadata = z.record(z.string(), z.json());
 const BigIntCoerce = z.union([z.string(), z.number(), z.bigint()]).transform((value) => BigInt(value));
-const BigNumberValue = z.union([z.string(), z.number(), z.bigint()]).transform((value) => BigNumber(value.toString()));
+const U16 = z.number().int().min(0).max(0xffff);
+const U32 = z.number().int().min(0).max(0xffff_ffff);
+const MAX_NUMERIC_SCALE = 28;
+const MAX_POSITIVE_NUMERIC_MANTISSA = (1n << 511n) - 1n;
+const MAX_NEGATIVE_NUMERIC_MAGNITUDE = 1n << 511n;
+const CANONICAL_UNSIGNED_DECIMAL = /^(?:0|[1-9]\d*|(?:0|[1-9]\d*)\.\d{0,27}[1-9])$/u;
+const CANONICAL_SIGNED_DECIMAL = /^(?:0|-?[1-9]\d*|-?(?:0|[1-9]\d*)\.\d{0,27}[1-9])$/u;
+
+function canonicalNumericValue(nonnegative: boolean) {
+  const grammar = nonnegative ? CANONICAL_UNSIGNED_DECIMAL : CANONICAL_SIGNED_DECIMAL;
+  return z
+    .string()
+    .max(160)
+    .superRefine((value, ctx) => {
+      if (!grammar.test(value)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: nonnegative ? 'expected a canonical Quantity string' : 'expected a canonical Numeric string',
+        });
+        return;
+      }
+
+      const unsigned = value.startsWith('-') ? value.slice(1) : value;
+      const [integer, fraction = ''] = unsigned.split('.');
+      if (fraction.length > MAX_NUMERIC_SCALE) {
+        ctx.addIssue({ code: 'custom', message: `numeric scale must not exceed ${MAX_NUMERIC_SCALE}` });
+        return;
+      }
+
+      const mantissa = BigInt(`${integer}${fraction}`);
+      const maximum = value.startsWith('-') ? MAX_NEGATIVE_NUMERIC_MAGNITUDE : MAX_POSITIVE_NUMERIC_MANTISSA;
+      if (mantissa > maximum) {
+        ctx.addIssue({ code: 'custom', message: 'numeric mantissa exceeds the signed 512-bit domain' });
+      }
+    })
+    .transform((value) => BigNumber(value));
+}
+
+/** Exact canonical Norito JSON representation of `Quantity`. */
+const QuantityValue = canonicalNumericValue(true);
+/** Exact canonical Norito JSON representation of signed `Numeric`. */
+const SignedNumericValue = canonicalNumericValue(false);
 const TransactionStatus = z.enum(['Committed', 'Rejected']);
 export type TransactionStatus = z.infer<typeof TransactionStatus>;
 
@@ -59,14 +155,70 @@ function normalizedStringSchema(normalize: (value: string) => string | null, mes
   });
 }
 
+function exactNormalizedStringSchema(normalize: (value: string) => string | null, message: string) {
+  return z.string().superRefine((value, ctx) => {
+    if (normalize(value) !== value) ctx.addIssue({ code: 'custom', message });
+  });
+}
+
+function isCanonicalName(value: string): boolean {
+  return (
+    value.length > 0 &&
+    new TextEncoder().encode(value).length <= 255 &&
+    value.normalize('NFC') === value &&
+    !/[\s@#$\p{Cc}]/u.test(value) &&
+    !/[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/u.test(value)
+  );
+}
+
+const CanonicalName = z.string().refine(isCanonicalName, 'expected a canonical Iroha Name');
+const CanonicalDomainId = exactNormalizedStringSchema(
+  normalizeDomainIdLiteral,
+  'expected a canonical fully-qualified domain.dataspace ID'
+);
+const CanonicalAssetId = exactNormalizedStringSchema(
+  normalizeAssetIdLiteral,
+  'Asset ID response must use an exact canonical asset literal'
+);
+const ExactAssetDefinitionAlias = z
+  .string()
+  .refine(isAssetDefinitionAliasLiteral, 'expected an exact on-chain asset alias literal');
+const AssetHumanName = z
+  .string()
+  .refine(
+    (value) =>
+      value.trim().length > 0 && new TextEncoder().encode(value.trim()).length <= 128 && !/[#@\p{Cc}]/u.test(value),
+    'expected a valid asset human name'
+  );
+const AssetDescription = z
+  .string()
+  .refine(
+    (value) => value.trim().length > 0 && new TextEncoder().encode(value).length <= 2048 && !/\p{Cc}/u.test(value),
+    'expected a valid asset description'
+  )
+  .nullable();
+const CanonicalAccountId = exactNormalizedStringSchema(
+  normalizeAccountIdLiteral,
+  'Account ID response must be an exact canonical halfwidth i105 literal'
+);
+
+function equalIgnoringAsciiCase(left: string, right: string): boolean {
+  const fold = (value: string) => value.replace(/[A-Z]/gu, (character) => character.toLowerCase());
+  return fold(left) === fold(right);
+}
+
+function aliasMatchesAssetName(alias: string | null, name: string): boolean {
+  if (alias === null) return true;
+  const parsed = parseAssetDefinitionAliasLiteral(alias);
+  return parsed !== null && equalIgnoringAsciiCase(parsed.name, name);
+}
+
 function normalizeNftIdLiteral(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const [name, domain] = trimmed.split('$');
+  const [name, domain] = value.split('$');
   if (!name || !domain) return null;
-  if (trimmed.indexOf('$') !== trimmed.lastIndexOf('$')) return null;
-  if (/\s|[@#$]/u.test(name) || /\s|[@#$]/u.test(domain)) return null;
-  return trimmed;
+  if (value.indexOf('$') !== value.lastIndexOf('$')) return null;
+  if (!isCanonicalName(name) || normalizeDomainIdLiteral(domain) !== domain) return null;
+  return value;
 }
 
 export const AccountIdSchema = normalizedStringSchema(
@@ -87,9 +239,12 @@ export const AssetDefinitionSelectorSchema = normalizedStringSchema(
 );
 export const AssetIdSchema = normalizedStringSchema(
   normalizeAssetIdLiteral,
-  'Asset ID must use `<base58-asset-id>#<canonical-halfwidth-i105-account-id>`'
+  'Asset ID must use `<base58-asset-id>#<canonical-halfwidth-i105-account-id>` with an optional `#dataspace:<u64>` suffix'
 );
-export const NftIdSchema = normalizedStringSchema(normalizeNftIdLiteral, 'NFT ID must use `name$domain`');
+export const NftIdSchema = exactNormalizedStringSchema(
+  normalizeNftIdLiteral,
+  'NFT ID must use a canonical `name$domain.dataspace` literal'
+);
 export const AssetDefinitionAliasSchema = normalizedStringSchema(
   normalizeAssetDefinitionAliasLiteral,
   'Asset alias must use `name#domain.dataspace` or `name#dataspace`'
@@ -110,23 +265,26 @@ const NullableAssetDefinitionAlias = z
     return z.NEVER;
   });
 
-export const RwaIdSchema = z.string().transform((value) => value.trim());
+export const RwaIdSchema = exactNormalizedStringSchema(
+  normalizeRwaIdLiteral,
+  'RWA ID must use a canonical lowercase 64-hex-hash$domain.dataspace literal'
+);
 
-export interface AccountSearchParams extends PaginationParams {
+export interface AccountSearchParams extends CursorPaginationParams {
   domain?: string;
   with_asset?: AssetDefinitionSelector;
 }
 
 export const Account = z
   .object({
-    id: AccountIdSchema,
-    compressed_address: z.string().nullish(),
-    network_prefix: z.number().optional(),
+    id: CanonicalAccountId,
+    network_prefix: U16,
     metadata: Metadata,
-    owned_assets: z.number(),
-    owned_nfts: z.number(),
-    owned_domains: z.number(),
+    owned_assets: U32,
+    owned_nfts: U32,
+    owned_domains: U32,
   })
+  .strict()
   .transform((value) => {
     // Torii now returns the canonical i105 account literal in `id` directly.
     const canonical = value.id;
@@ -137,7 +295,7 @@ export const Account = z
       owned_assets: value.owned_assets,
       owned_nfts: value.owned_nfts,
       owned_domains: value.owned_domains,
-      network_prefix: value.network_prefix ?? 0,
+      network_prefix: value.network_prefix,
     };
   });
 
@@ -209,10 +367,7 @@ const AccountHistoryFanoutResponse = CountedListEnvelope.extend({
 }).strict();
 
 export const AccountHistoryResponse = z
-  .discriminatedUnion('query_source', [
-    AccountHistoryIndexResponse,
-    AccountHistoryFanoutResponse,
-  ])
+  .discriminatedUnion('query_source', [AccountHistoryIndexResponse, AccountHistoryFanoutResponse])
   .superRefine((value, ctx) => {
     if (value.count_mode === 'exact' && value.total === undefined) {
       ctx.addIssue({
@@ -283,12 +438,7 @@ export const ContractEventResponse = z
   .strict();
 export type ContractEventResponse = z.infer<typeof ContractEventResponse>;
 
-export const MultisigProposalStatus = z.enum([
-  'COLLECTING_SIGNATURES',
-  'FINALIZED',
-  'CANCELED',
-  'EXPIRED',
-]);
+export const MultisigProposalStatus = z.enum(['COLLECTING_SIGNATURES', 'FINALIZED', 'CANCELED', 'EXPIRED']);
 export type MultisigProposalStatus = z.infer<typeof MultisigProposalStatus>;
 
 export const MultisigSpecPayload = z
@@ -336,14 +486,19 @@ export const MultisigProposalsQueryResponse = z
   .object({
     resolved_multisig_account_id: AccountIdSchema,
     proposals: MultisigProposalEntry.array().max(100),
-    next_cursor: z.string().regex(/^[A-Za-z0-9_-]+$/u).nullable().optional(),
+    next_cursor: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]+$/u)
+      .nullable()
+      .optional(),
   })
   .strict();
 export type MultisigProposalsQueryResponse = z.infer<typeof MultisigProposalsQueryResponse>;
 
-export interface AssetSearchParams extends PaginationParams {
+export interface AssetSearchParams extends CursorPaginationParams {
   owned_by?: string;
   definition?: AssetDefinitionSelector;
+  asset_id?: AssetId;
 }
 
 export const Asset = z
@@ -356,8 +511,8 @@ export const Asset = z
     account_id: AccountIdSchema,
     asset_name: NullableString.optional().default(null),
     asset_alias: NullableAssetDefinitionAlias.optional().default(null),
-    value: BigNumberValue.optional(),
-    quantity: BigNumberValue.optional(),
+    value: QuantityValue.optional(),
+    quantity: QuantityValue.optional(),
     scope: z
       .string()
       .nullish()
@@ -389,7 +544,42 @@ export const Asset = z
 
 export type Asset = z.infer<typeof Asset>;
 
-export interface AssetDefinitionSearchParams extends PaginationParams {
+/** Exact item emitted by the current `/v1/explorer/assets` routes. */
+export const ExplorerAsset = z
+  .object({
+    id: CanonicalAssetId,
+    definition_id: AssetDefinitionIdSchema,
+    account_id: CanonicalAccountId,
+    asset_name: AssetHumanName,
+    asset_alias: ExactAssetDefinitionAlias.nullable(),
+    value: QuantityValue,
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const parsedId = parseAssetIdLiteral(value.id);
+    if (!parsedId || parsedId.definitionId !== value.definition_id || parsedId.accountId !== value.account_id) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'asset id must bind the supplied definition_id and account_id',
+        path: ['id'],
+      });
+    }
+    if (!aliasMatchesAssetName(value.asset_alias, value.asset_name)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'asset alias name segment must match asset_name',
+        path: ['asset_alias'],
+      });
+    }
+  })
+  .transform((value) => ({
+    ...value,
+    scope: value.id.match(/#(dataspace:\d+)$/u)?.[1] ?? null,
+  }));
+
+export type ExplorerAsset = z.infer<typeof ExplorerAsset>;
+
+export interface AssetDefinitionSearchParams extends CursorPaginationParams {
   domain?: string;
   owned_by?: string;
 }
@@ -402,56 +592,108 @@ export const AssetDefinitionAliasBindingStatus = z.enum([
 ]);
 export type AssetDefinitionAliasBindingStatus = z.infer<typeof AssetDefinitionAliasBindingStatus>;
 
-export const AssetDefinitionAliasBinding = z.object({
-  alias: AssetDefinitionAliasSchema,
-  status: AssetDefinitionAliasBindingStatus,
-  lease_expiry_ms: z
-    .number()
-    .nullable()
-    .optional()
-    .transform((value) => value ?? null),
-  grace_until_ms: z
-    .number()
-    .nullable()
-    .optional()
-    .transform((value) => value ?? null),
-  bound_at_ms: z.number(),
-});
+export const AssetDefinitionAliasBinding = z
+  .object({
+    alias: ExactAssetDefinitionAlias,
+    status: AssetDefinitionAliasBindingStatus,
+    lease_expiry_ms: z
+      .number()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
+    grace_until_ms: z
+      .number()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
+    bound_at_ms: z.number(),
+  })
+  .strict();
 export type AssetDefinitionAliasBinding = z.infer<typeof AssetDefinitionAliasBinding>;
 
-export const AssetDefinition = z.object({
-  id: AssetDefinitionIdSchema,
-  name: NullableString.optional().default(null),
-  description: NullableString.optional().default(null),
-  alias: NullableAssetDefinitionAlias.optional().default(null),
-  alias_binding: AssetDefinitionAliasBinding.nullish().transform((value) => value ?? null),
-  logo: z.string().nullish().transform((value) => value ?? null),
-  assets: z
-    .number()
-    .nullish()
-    .transform((value) => value ?? 0),
-  // Some Torii deployments omit supply fields on asset-definition listings. Treat them as optional
-  // so the UI remains functional and can fall back to `/asset-definitions/:id/snapshot` where available.
-  total_quantity: z
-    .union([z.string(), z.number(), z.bigint()])
-    .nullish()
-    .transform((value) => (value === null || value === undefined ? null : BigNumber(value.toString()))),
-  locked_quantity: z
-    .union([z.string(), z.number(), z.bigint()])
-    .nullable()
-    .optional()
-    .transform((value) => (value === null || value === undefined ? null : BigNumber(value.toString()))),
-  circulating_quantity: z
-    .union([z.string(), z.number(), z.bigint()])
-    .nullable()
-    .optional()
-    .transform((value) => (value === null || value === undefined ? null : BigNumber(value.toString()))),
-  metadata: Metadata.nullish().transform((value) => value ?? {}),
-  mintable: z.union([z.enum(['Infinitely', 'Once', 'Not']), z.string().regex(/^Limited\(.+\)$/)]),
-  owned_by: AccountIdSchema,
-});
+const AssetDefinitionMintable = z.union([
+  z.enum(['Infinitely', 'Once', 'Not']),
+  z.string().refine((value) => {
+    const match = /^Limited\(([1-9]\d{0,9})\)$/u.exec(value);
+    if (!match) return false;
+    return BigInt(match[1]) <= 0xffff_ffffn;
+  }, 'expected Limited(<nonzero-u32>)'),
+]);
 
-export type AssetDefinition = z.infer<typeof AssetDefinition>;
+/** Exact item emitted by the cursor-native `/v1/explorer/asset-definitions` route. */
+export const ExplorerAssetDefinition = z
+  .object({
+    id: AssetDefinitionIdSchema,
+    owning_domain: CanonicalDomainId.nullable(),
+    name: AssetHumanName,
+    description: AssetDescription,
+    alias: ExactAssetDefinitionAlias.nullable(),
+    mintable: AssetDefinitionMintable,
+    logo: z.string().nullable(),
+    metadata: Metadata,
+    owned_by: CanonicalAccountId,
+    assets: U32,
+    total_quantity: QuantityValue,
+    locked_quantity: QuantityValue.nullable(),
+    circulating_quantity: QuantityValue.nullable(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!aliasMatchesAssetName(value.alias, value.name)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'asset alias name segment must match asset name',
+        path: ['alias'],
+      });
+    }
+  })
+  .transform((value) => ({
+    ...value,
+    alias_binding: null,
+  }));
+
+export type ExplorerAssetDefinition = z.infer<typeof ExplorerAssetDefinition>;
+
+/** Full asset-definition record from `/v1/assets/definitions/:id`, including alias bindings. */
+export const AssetDefinition = z
+  .object({
+    id: AssetDefinitionIdSchema,
+    owning_domain: CanonicalDomainId.nullable(),
+    name: AssetHumanName,
+    description: AssetDescription,
+    alias: ExactAssetDefinitionAlias.nullable(),
+    alias_binding: AssetDefinitionAliasBinding.nullish().transform((value) => value ?? null),
+    logo: z.string().nullable(),
+    metadata: Metadata,
+    mintable: AssetDefinitionMintable,
+    owned_by: CanonicalAccountId,
+    total_quantity: QuantityValue,
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!aliasMatchesAssetName(value.alias, value.name)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'asset alias name segment must match asset name',
+        path: ['alias'],
+      });
+    }
+    if (value.alias_binding !== null && value.alias_binding.alias !== value.alias) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'alias binding must match the authoritative alias field',
+        path: ['alias_binding', 'alias'],
+      });
+    }
+  })
+  .transform((value) => ({
+    ...value,
+    assets: null,
+    locked_quantity: null,
+    circulating_quantity: null,
+  }));
+
+export type AssetDefinition = z.infer<typeof AssetDefinition> | ExplorerAssetDefinition;
 
 export const AssetDefinitionEconometricsVelocityWindow = z.object({
   key: z.string(),
@@ -460,7 +702,7 @@ export const AssetDefinitionEconometricsVelocityWindow = z.object({
   transfers: z.number(),
   unique_senders: z.number(),
   unique_receivers: z.number(),
-  amount: z.string().transform((value) => BigNumber(value)),
+  amount: QuantityValue,
 });
 
 export type AssetDefinitionEconometricsVelocityWindow = z.infer<typeof AssetDefinitionEconometricsVelocityWindow>;
@@ -471,18 +713,18 @@ export const AssetDefinitionEconometricsIssuanceWindow = z.object({
   end_ms: z.number(),
   mint_count: z.number(),
   burn_count: z.number(),
-  minted: z.string().transform((value) => BigNumber(value)),
-  burned: z.string().transform((value) => BigNumber(value)),
-  net: z.string().transform((value) => BigNumber(value)),
+  minted: QuantityValue,
+  burned: QuantityValue,
+  net: SignedNumericValue,
 });
 
 export type AssetDefinitionEconometricsIssuanceWindow = z.infer<typeof AssetDefinitionEconometricsIssuanceWindow>;
 
 export const AssetDefinitionEconometricsIssuanceSeriesPoint = z.object({
   bucket_start_ms: z.number(),
-  minted: z.string().transform((value) => BigNumber(value)),
-  burned: z.string().transform((value) => BigNumber(value)),
-  net: z.string().transform((value) => BigNumber(value)),
+  minted: QuantityValue,
+  burned: QuantityValue,
+  net: SignedNumericValue,
 });
 
 export type AssetDefinitionEconometricsIssuanceSeriesPoint = z.infer<
@@ -518,18 +760,9 @@ export const AssetDefinitionSnapshotDistribution = z.object({
   top1: z.number(),
   top5: z.number(),
   top10: z.number(),
-  median: z
-    .string()
-    .nullable()
-    .transform((value) => (typeof value === 'string' ? BigNumber(value) : null)),
-  p90: z
-    .string()
-    .nullable()
-    .transform((value) => (typeof value === 'string' ? BigNumber(value) : null)),
-  p99: z
-    .string()
-    .nullable()
-    .transform((value) => (typeof value === 'string' ? BigNumber(value) : null)),
+  median: QuantityValue.nullable(),
+  p90: QuantityValue.nullable(),
+  p99: QuantityValue.nullable(),
   lorenz: AssetDefinitionSnapshotLorenzPoint.array(),
 });
 
@@ -537,7 +770,7 @@ export type AssetDefinitionSnapshotDistribution = z.infer<typeof AssetDefinition
 
 export const AssetDefinitionSnapshotTopHolder = z.object({
   account_id: AccountIdSchema,
-  balance: z.string().transform((value) => BigNumber(value)),
+  balance: QuantityValue,
 });
 
 export type AssetDefinitionSnapshotTopHolder = z.infer<typeof AssetDefinitionSnapshotTopHolder>;
@@ -546,67 +779,70 @@ export const AssetDefinitionSnapshot = z.object({
   definition_id: AssetDefinitionIdSchema,
   computed_at_ms: z.number(),
   holders_total: z.number(),
-  total_supply: z.string().transform((value) => BigNumber(value)),
+  total_supply: QuantityValue,
   top_holders: AssetDefinitionSnapshotTopHolder.array(),
   distribution: AssetDefinitionSnapshotDistribution,
 });
 
 export type AssetDefinitionSnapshot = z.infer<typeof AssetDefinitionSnapshot>;
 
-export const NFT = z.object({
-  id: NftIdSchema,
-  owned_by: AccountIdSchema,
-  metadata: Metadata,
-});
+export const NFT = z
+  .object({
+    id: NftIdSchema,
+    owned_by: CanonicalAccountId,
+    metadata: Metadata,
+  })
+  .strict();
 
 export type NFT = z.infer<typeof NFT>;
 
 export type NFTsSearchParams = AssetDefinitionSearchParams;
 
-export interface RWASearchParams extends PaginationParams {
+export interface RWASearchParams extends CursorPaginationParams {
   domain?: string;
   owned_by?: string;
 }
 
-export const RwaParent = z.object({
-  rwa: RwaIdSchema,
-  quantity: z.union([z.string(), z.number(), z.bigint()]).transform((value) => BigNumber(value.toString())),
-});
+export const RwaParent = z
+  .object({
+    rwa: RwaIdSchema,
+    quantity: QuantityValue,
+  })
+  .strict();
 
 export type RwaParent = z.infer<typeof RwaParent>;
 
-export const RWA = z.object({
-  id: RwaIdSchema,
-  owned_by: AccountIdSchema,
-  quantity: z.union([z.string(), z.number(), z.bigint()]).transform((value) => BigNumber(value.toString())),
-  held_quantity: z.union([z.string(), z.number(), z.bigint()]).transform((value) => BigNumber(value.toString())),
-  primary_reference: z.string(),
-  status: z
-    .string()
-    .nullish()
-    .transform((value) => value ?? null),
-  is_frozen: z.boolean(),
-  metadata: Metadata.nullish().transform((value) => value ?? {}),
-  parents: RwaParent.array()
-    .nullish()
-    .transform((value) => value ?? []),
-});
+export const RWA = z
+  .object({
+    id: RwaIdSchema,
+    owned_by: CanonicalAccountId,
+    quantity: QuantityValue,
+    held_quantity: QuantityValue,
+    primary_reference: z.string(),
+    status: CanonicalName.nullable(),
+    is_frozen: z.boolean(),
+    metadata: Metadata,
+    parents: RwaParent.array(),
+  })
+  .strict();
 
 export type RWA = z.infer<typeof RWA>;
 
-export interface DomainSearchParams extends PaginationParams {
+export interface DomainSearchParams extends CursorPaginationParams {
   owned_by?: string;
 }
 
-export const Domain = z.object({
-  id: z.string(),
-  logo: z.string().nullable(),
-  metadata: Metadata,
-  owned_by: AccountIdSchema,
-  accounts: z.number(),
-  assets: z.number(),
-  nfts: z.number(),
-});
+export const Domain = z
+  .object({
+    id: CanonicalDomainId,
+    logo: z.string().nullable(),
+    metadata: Metadata,
+    owned_by: CanonicalAccountId,
+    accounts: U32,
+    assets: U32,
+    nfts: U32,
+  })
+  .strict();
 
 export type Domain = z.infer<typeof Domain>;
 
@@ -670,49 +906,60 @@ export const Block = z.object({
 
 export type Block = z.infer<typeof Block>;
 
-export const LedgerCommitQc = z.object({
-  phase: z.string(),
-  subject_block_hash: z.string(),
-  parent_state_root: z.string(),
-  post_state_root: z.string(),
-  height: z.number(),
-  view: z.number(),
-  epoch: z.number(),
-  mode_tag: z.string(),
-  highest_qc: z.object({
+export const LedgerCommitQc = z
+  .object({
+    phase: z.string(),
+    subject_block_hash: z.string(),
+    parent_state_root: z.string(),
+    post_state_root: z.string(),
     height: z.number(),
     view: z.number(),
     epoch: z.number(),
-    subject_block_hash: z.string(),
-    phase: z.string(),
-  }).strict().nullable(),
-  validator_set_hash: z.string(),
-  validator_set_hash_version: z.number(),
-  validator_set: z.string().array(),
-  aggregate: z.object({
-    signers_bitmap: z.string(),
-    bls_aggregate_signature: z.string(),
-  }).strict(),
-}).strict();
+    mode_tag: z.string(),
+    highest_qc: z
+      .object({
+        height: z.number(),
+        view: z.number(),
+        epoch: z.number(),
+        subject_block_hash: z.string(),
+        phase: z.string(),
+      })
+      .strict()
+      .nullable(),
+    validator_set_hash: z.string(),
+    validator_set_hash_version: z.number(),
+    validator_set: z.string().array(),
+    aggregate: z
+      .object({
+        signers_bitmap: z.string(),
+        bls_aggregate_signature: z.string(),
+      })
+      .strict(),
+  })
+  .strict();
 
 export type LedgerCommitQc = z.infer<typeof LedgerCommitQc>;
 
-export const LedgerStateRoot = z.object({
-  height: z.number(),
-  block_hash: z.string(),
-  state_root: z.string(),
-  source: z.enum(['commit_qc', 'result_merkle_root']),
-  commit_qc: LedgerCommitQc.nullable(),
-}).strict();
+export const LedgerStateRoot = z
+  .object({
+    height: z.number(),
+    block_hash: z.string(),
+    state_root: z.string(),
+    source: z.enum(['commit_qc', 'result_merkle_root']),
+    commit_qc: LedgerCommitQc.nullable(),
+  })
+  .strict();
 
 export type LedgerStateRoot = z.infer<typeof LedgerStateRoot>;
 
-export const LedgerStateProof = z.object({
-  height: z.number(),
-  block_hash: z.string(),
-  state_root: z.string(),
-  commit_qc: LedgerCommitQc,
-}).strict();
+export const LedgerStateProof = z
+  .object({
+    height: z.number(),
+    block_hash: z.string(),
+    state_root: z.string(),
+    commit_qc: LedgerCommitQc,
+  })
+  .strict();
 
 export type LedgerStateProof = z.infer<typeof LedgerStateProof>;
 
@@ -794,7 +1041,11 @@ export const PeerInfo = z.object({
   telemetry_unsupported: z.boolean(),
   config: PeerConfig.nullish().transform((value) => value ?? null),
   location: PeerLocation.nullish().transform((value) => value ?? null),
-  connected_peers: z.string().array().nullish().transform((value) => value ?? null),
+  connected_peers: z
+    .string()
+    .array()
+    .nullish()
+    .transform((value) => value ?? null),
 });
 
 export type PeerInfo = z.infer<typeof PeerInfo>;
@@ -1713,12 +1964,7 @@ export const SorafsStorageManifestResponse = z.object({
 });
 export type SorafsStorageManifestResponse = z.infer<typeof SorafsStorageManifestResponse>;
 
-export const SorafsCidLookupModerationStatus = z.enum([
-  'clear',
-  'local_blocked',
-  'global_blocked',
-  'mixed_blocked',
-]);
+export const SorafsCidLookupModerationStatus = z.enum(['clear', 'local_blocked', 'global_blocked', 'mixed_blocked']);
 export type SorafsCidLookupModerationStatus = z.infer<typeof SorafsCidLookupModerationStatus>;
 
 export const SorafsCidLookupModerationScope = z.enum(['local', 'global']);
@@ -1895,8 +2141,18 @@ export const PipelineTransactionStatusResponse = z.object({
   hash: HashLike32String,
   status: z.object({
     kind: z.string(),
-    block_height: z.number().int().nonnegative().nullable().optional().transform((value) => value ?? null),
-    rejection_reason: z.unknown().nullable().optional().transform((value) => value ?? null),
+    block_height: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
+    rejection_reason: z
+      .unknown()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
   }),
   scope: z.string(),
   resolved_from: z.string(),

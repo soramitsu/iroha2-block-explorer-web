@@ -15,6 +15,8 @@ const scope = {
   dataspaceLaneId: '7',
   dataspaceId: '42',
 };
+const RWA_ID = `${'01'.repeat(32)}$commodities.main`;
+const ENCODED_RWA_ID = encodeURIComponent(RWA_ID);
 
 describe('explorer scope helpers', () => {
   it('parses full route scope from query', () => {
@@ -39,7 +41,7 @@ describe('explorer scope helpers', () => {
   it('preserves scope only for scoped explorer paths', () => {
     expect(shouldPreserveExplorerScopeForPath('/blocks')).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/accounts/abc')).toBe(true);
-    expect(shouldPreserveExplorerScopeForPath('/rwas/lot-001%24commodities')).toBe(true);
+    expect(shouldPreserveExplorerScopeForPath(`/rwas/${ENCODED_RWA_ID}`)).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/search?q=abc')).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/contracts')).toBe(true);
     expect(shouldPreserveExplorerScopeForPath('/soracloud')).toBe(true);
@@ -81,11 +83,11 @@ describe('explorer scope helpers', () => {
   });
 
   it('applies scope to rwa route-name destinations', () => {
-    const destination: RouteLocationRaw = { name: 'rwa-details', params: { id: 'lot-001$commodities' } };
+    const destination: RouteLocationRaw = { name: 'rwa-details', params: { id: RWA_ID } };
     const scopedDestination = applyExplorerScopeToLocation(destination, scope) as Exclude<RouteLocationRaw, string>;
     expect(scopedDestination).toMatchObject({
       name: 'rwa-details',
-      params: { id: 'lot-001$commodities' },
+      params: { id: RWA_ID },
       query: toExplorerScopeQuery(scope),
     });
   });
@@ -141,7 +143,7 @@ describe('explorer scope helpers', () => {
 
     const rwaRoute = parseExplorerScopeFromRoute({
       name: 'rwa-details',
-      path: '/rwas/lot-001%24commodities',
+      path: `/rwas/${ENCODED_RWA_ID}`,
       query: toExplorerScopeQuery(scope),
     } as any);
     expect(rwaRoute).toEqual(scope);

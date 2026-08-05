@@ -19,6 +19,8 @@ import { normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
 import { getRwaDomain } from '@/shared/lib/rwa-id';
 import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
 import { parseOptionalFilter } from '@/shared/lib/optional-filter';
+import { firstRouteQueryValue } from '@/shared/lib/route-query';
+import { useCursorListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -34,23 +36,45 @@ const hashType = useAdaptiveHash(
   'full'
 );
 
-const listState = reactive({
-  page: 1,
-  per_page: 10,
+const CURSOR_LIMITS = new Set([10, 20, 50, 100]);
+const { route, cursor, limit, updateListQuery } = useCursorListRouteQuery();
+const listLimit = computed({
+  get: () => limit.value,
+  set: (value: number) => {
+    const normalized = CURSOR_LIMITS.has(value) ? value : 10;
+    updateListQuery(
+      { limit: normalized, page: null, per_page: null },
+      { history: 'replace' }
+    ).catch(() => undefined);
+  },
 });
 
+function deriveTabFromRoute(): TabAssetsList {
+  const currentRoute = router.currentRoute.value;
+  if (currentRoute.name === 'rwas') return 'rwa';
+  if (currentRoute.name === 'nfts') return 'nft';
+  const view = currentRoute.query.view;
+  if (currentRoute.name === 'assets' && view === 'holders') return 'holders';
+  return 'assets';
+}
+
+const initialTab = deriveTabFromRoute();
+const initialDomain = firstRouteQueryValue(route.query.domain) ?? '';
+const initialOwner = firstRouteQueryValue(route.query.owner) ?? '';
+
 const assetFilters = reactive({
-  domain: '',
-  owner: '',
+  domain: initialTab === 'assets' ? initialDomain : '',
+  owner: initialTab === 'assets' ? initialOwner : '',
 });
 const nftFilters = reactive({
-  domain: '',
-  owner: '',
+  domain: initialTab === 'nft' ? initialDomain : '',
+  owner: initialTab === 'nft' ? initialOwner : '',
 });
 const rwaFilters = reactive({
-  domain: '',
-  owner: '',
+  domain: initialTab === 'rwa' ? initialDomain : '',
+  owner: initialTab === 'rwa' ? initialOwner : '',
 });
+const holderFilter = ref(initialTab === 'holders' ? firstRouteQueryValue(route.query.holder) ?? '' : '');
 const ownerFilterState = computed(() =>
   parseOptionalFilter(assetFilters.owner, normalizeAccountSelectorLiteral, t('searchUnsupported'))
 );
@@ -66,42 +90,101 @@ const rwaOwnerFilterState = computed(() =>
 );
 const parsedRwaOwnerFilter = computed<string | undefined>(() => rwaOwnerFilterState.value.value);
 const rwaOwnerFilterError = computed(() => rwaOwnerFilterState.value.error);
+const holderFilterState = computed(() =>
+  parseOptionalFilter(holderFilter.value, normalizeAccountSelectorLiteral, t('searchUnsupported'))
+);
+const parsedHolderFilter = computed<string | undefined>(() => holderFilterState.value.value);
+const holderFilterError = computed(() => holderFilterState.value.error);
 
-function deriveTabFromRoute(): TabAssetsList {
-  const route = router.currentRoute.value;
-  if (route.name === 'rwas') return 'rwa';
-  if (route.name === 'nfts') return 'nft';
-  const view = route.query.view;
-  if (route.name === 'assets' && view === 'holders') return 'holders';
-  return 'assets';
+const assetsTab = ref<TabAssetsList>(initialTab);
+let syncingFiltersFromRoute = false;
+
+function syncFiltersFromRoute() {
+  const activeTab = deriveTabFromRoute();
+  const domain = firstRouteQueryValue(route.query.domain) ?? '';
+  const owner = firstRouteQueryValue(route.query.owner) ?? '';
+  const holder = firstRouteQueryValue(route.query.holder) ?? '';
+
+  syncingFiltersFromRoute = true;
+  assetsTab.value = activeTab;
+  if (activeTab === 'assets') {
+    assetFilters.domain = domain;
+    assetFilters.owner = owner;
+  } else if (activeTab === 'nft') {
+    nftFilters.domain = domain;
+    nftFilters.owner = owner;
+  } else if (activeTab === 'rwa') {
+    rwaFilters.domain = domain;
+    rwaFilters.owner = owner;
+  } else {
+    holderFilter.value = holder;
+  }
+  syncingFiltersFromRoute = false;
 }
 
-const assetsTab = ref<TabAssetsList>(deriveTabFromRoute());
-
 watch(
-  () => [router.currentRoute.value.name, router.currentRoute.value.query.view] as const,
-  () => {
-    assetsTab.value = deriveTabFromRoute();
-  }
+  () => [
+    router.currentRoute.value.name,
+    router.currentRoute.value.query.view,
+    route.query.domain,
+    route.query.owner,
+    route.query.holder,
+  ] as const,
+  syncFiltersFromRoute,
+  { flush: 'sync' }
 );
+
+function normalizedFilterForRoute(raw: string, normalized?: string): string | null {
+  return normalized ?? (raw.trim() || null);
+}
+
+const filterBoundCursor = computed(() => {
+  const routeDomain = firstRouteQueryValue(route.query.domain) ?? '';
+  const routeOwner = firstRouteQueryValue(route.query.owner);
+  const routeHolder = firstRouteQueryValue(route.query.holder);
+
+  if (assetsTab.value === 'holders') {
+    const holder = normalizedFilterForRoute(holderFilter.value, parsedHolderFilter.value);
+    return holder === routeHolder ? cursor.value : null;
+  }
+
+  const filters = assetsTab.value === 'assets' ? assetFilters : assetsTab.value === 'nft' ? nftFilters : rwaFilters;
+  const owner = assetsTab.value === 'assets'
+    ? normalizedFilterForRoute(filters.owner, parsedOwnerFilter.value)
+    : assetsTab.value === 'nft'
+      ? normalizedFilterForRoute(filters.owner, parsedNftOwnerFilter.value)
+      : normalizedFilterForRoute(filters.owner, parsedRwaOwnerFilter.value);
+  return filters.domain.trim() === routeDomain && owner === routeOwner ? cursor.value : null;
+});
+
+function filtersForTab(tab: TabAssetsList): LocationQueryRaw {
+  const query: LocationQueryRaw = {};
+  if (listLimit.value !== 10) query.limit = String(listLimit.value);
+
+  if (tab === 'holders') {
+    query.view = 'holders';
+    const holder = normalizedFilterForRoute(holderFilter.value, parsedHolderFilter.value);
+    if (holder) query.holder = holder;
+    return query;
+  }
+
+  const filters = tab === 'assets' ? assetFilters : tab === 'nft' ? nftFilters : rwaFilters;
+  const owner = tab === 'assets'
+    ? normalizedFilterForRoute(filters.owner, parsedOwnerFilter.value)
+    : tab === 'nft'
+      ? normalizedFilterForRoute(filters.owner, parsedNftOwnerFilter.value)
+      : normalizedFilterForRoute(filters.owner, parsedRwaOwnerFilter.value);
+  const domain = filters.domain.trim();
+  if (domain) query.domain = domain;
+  if (owner) query.owner = owner;
+  return query;
+}
 
 watch(assetsTab, () => {
   if (assetsTab.value === deriveTabFromRoute()) return;
 
-  if (assetsTab.value === 'rwa') {
-    navigation.push('/rwas').catch(() => {});
-    return;
-  }
-
-  if (assetsTab.value === 'nft') {
-    navigation.push('/nfts').catch(() => {});
-    return;
-  }
-
-  const query: LocationQueryRaw = { ...router.currentRoute.value.query };
-  if (assetsTab.value === 'holders') query.view = 'holders';
-  else delete query.view;
-  navigation.push({ path: '/assets', query }).catch(() => {});
+  const path = assetsTab.value === 'rwa' ? '/rwas' : assetsTab.value === 'nft' ? '/nfts' : '/assets';
+  navigation.push({ path, query: filtersForTab(assetsTab.value) }).catch(() => {});
 });
 
 const tableTitle = computed(() => {
@@ -118,19 +201,23 @@ const tableTitle = computed(() => {
 });
 
 const assetDefinitionParams = computed(() => ({
-  page: listState.page,
-  per_page: listState.per_page,
+  cursor: filterBoundCursor.value,
+  limit: listLimit.value,
   domain: assetFilters.domain.trim() || undefined,
   owned_by: parsedOwnerFilter.value,
 }));
 const assetsScope = useParamScope(
   () => {
-    if (assetsTab.value !== 'assets') return null;
+    if (
+      assetsTab.value !== 'assets'
+      || deriveTabFromRoute() !== 'assets'
+      || ownerFilterError.value
+    ) return null;
 
     return {
       key: JSON.stringify({
-        page: assetDefinitionParams.value.page,
-        per_page: assetDefinitionParams.value.per_page,
+        cursor: assetDefinitionParams.value.cursor,
+        limit: assetDefinitionParams.value.limit,
         domain: assetFilters.domain.trim() || null,
         owned_by: parsedOwnerFilter.value?.toString() ?? null,
       }),
@@ -141,37 +228,30 @@ const assetsScope = useParamScope(
 );
 
 const isAssetDefinitionsLoading = computed(() => !!assetsScope.value?.expose.isLoading);
-const totalAssetDefinitions = computed(() =>
+const assetDefinitionsPagination = computed(() =>
   assetsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? assetsScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? assetsScope.value.expose.data.data.pagination
+    : null
 );
 const assetDefinitions = computed(() =>
   assetsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetsScope.value.expose.data.data.items : []
 );
 const assetDefinitionRowKey = (item: AssetDefinition) => item.id.toString();
 
-const holderFilter = ref('');
-const holderFilterState = computed(() =>
-  parseOptionalFilter(holderFilter.value, normalizeAccountSelectorLiteral, t('searchUnsupported'))
-);
-const parsedHolderFilter = computed<string | undefined>(() => holderFilterState.value.value);
-const holderFilterError = computed(() => holderFilterState.value.error);
-
 const assetInstancesParams = computed(() => ({
-  page: listState.page,
-  per_page: listState.per_page,
+  cursor: filterBoundCursor.value,
+  limit: listLimit.value,
   owned_by: parsedHolderFilter.value,
 }));
 
 const assetsInstancesScope = useParamScope(
   () => {
-    if (assetsTab.value !== 'holders' || !parsedHolderFilter.value) return null;
+    if (assetsTab.value !== 'holders' || deriveTabFromRoute() !== 'holders' || !parsedHolderFilter.value) return null;
 
     return {
       key: JSON.stringify({
-        page: assetInstancesParams.value.page,
-        per_page: assetInstancesParams.value.per_page,
+        cursor: assetInstancesParams.value.cursor,
+        limit: assetInstancesParams.value.limit,
         owned_by: parsedHolderFilter.value?.toString() ?? null,
       }),
       payload: assetInstancesParams.value,
@@ -181,10 +261,10 @@ const assetsInstancesScope = useParamScope(
 );
 
 const isAssetInstancesLoading = computed(() => !!assetsInstancesScope.value?.expose.isLoading);
-const totalAssetInstances = computed(() =>
+const assetInstancesPagination = computed(() =>
   assetsInstancesScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? assetsInstancesScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? assetsInstancesScope.value.expose.data.data.pagination
+    : null
 );
 const assetInstances = computed(() =>
   assetsInstancesScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? assetsInstancesScope.value.expose.data.data.items : []
@@ -192,20 +272,24 @@ const assetInstances = computed(() =>
 const assetInstanceRowKey = (item: Asset) => item.id;
 
 const nftParams = computed(() => ({
-  page: listState.page,
-  per_page: listState.per_page,
+  cursor: filterBoundCursor.value,
+  limit: listLimit.value,
   domain: nftFilters.domain.trim() || undefined,
   owned_by: parsedNftOwnerFilter.value,
 }));
 
 const NFTsScope = useParamScope(
   () => {
-    if (assetsTab.value !== 'nft') return null;
+    if (
+      assetsTab.value !== 'nft'
+      || deriveTabFromRoute() !== 'nft'
+      || nftOwnerFilterError.value
+    ) return null;
 
     return {
       key: JSON.stringify({
-        page: nftParams.value.page,
-        per_page: nftParams.value.per_page,
+        cursor: nftParams.value.cursor,
+        limit: nftParams.value.limit,
         domain: nftFilters.domain.trim() || null,
         owned_by: parsedNftOwnerFilter.value?.toString() ?? null,
       }),
@@ -216,10 +300,10 @@ const NFTsScope = useParamScope(
 );
 
 const isNFTsLoading = computed(() => !!NFTsScope.value?.expose.isLoading);
-const totalNFTs = computed(() =>
+const NFTsPagination = computed(() =>
   NFTsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING
-    ? NFTsScope.value.expose.data.data.pagination.total_items
-    : 0
+    ? NFTsScope.value.expose.data.data.pagination
+    : null
 );
 const NFTs = computed(() =>
   NFTsScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? NFTsScope.value.expose.data.data.items : []
@@ -227,20 +311,24 @@ const NFTs = computed(() =>
 const nftRowKey = (item: NFT) => item.id.toString();
 
 const rwaParams = computed(() => ({
-  page: listState.page,
-  per_page: listState.per_page,
+  cursor: filterBoundCursor.value,
+  limit: listLimit.value,
   domain: rwaFilters.domain.trim() || undefined,
   owned_by: parsedRwaOwnerFilter.value,
 }));
 
 const rwasScope = useParamScope(
   () => {
-    if (assetsTab.value !== 'rwa') return null;
+    if (
+      assetsTab.value !== 'rwa'
+      || deriveTabFromRoute() !== 'rwa'
+      || rwaOwnerFilterError.value
+    ) return null;
 
     return {
       key: JSON.stringify({
-        page: rwaParams.value.page,
-        per_page: rwaParams.value.per_page,
+        cursor: rwaParams.value.cursor,
+        limit: rwaParams.value.limit,
         domain: rwaFilters.domain.trim() || null,
         owned_by: parsedRwaOwnerFilter.value?.toString() ?? null,
       }),
@@ -251,37 +339,73 @@ const rwasScope = useParamScope(
 );
 
 const isRwasLoading = computed(() => !!rwasScope.value?.expose.isLoading);
-const totalRwas = computed(() =>
-  rwasScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? rwasScope.value.expose.data.data.pagination.total_items : 0
+const rwasPagination = computed(() =>
+  rwasScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? rwasScope.value.expose.data.data.pagination : null
 );
 const rwas = computed(() =>
   rwasScope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? rwasScope.value.expose.data.data.items : []
 );
 const rwaRowKey = (item: RWA) => item.id;
 
-watch([() => listState.per_page, () => assetsTab.value], () => {
-  listState.page = 1;
-});
+watch(
+  [() => assetFilters.domain, () => assetFilters.owner],
+  () => {
+    if (syncingFiltersFromRoute || assetsTab.value !== 'assets') return;
+    updateListQuery({
+      domain: assetFilters.domain.trim() || null,
+      owner: normalizedFilterForRoute(assetFilters.owner, parsedOwnerFilter.value),
+      holder: null,
+      page: null,
+      per_page: null,
+    }).catch(() => undefined);
+  },
+  { flush: 'sync' }
+);
 
-watch([() => assetFilters.domain, parsedOwnerFilter], () => {
-  if (assetsTab.value !== 'assets') return;
-  listState.page = 1;
-});
+watch(
+  holderFilter,
+  () => {
+    if (syncingFiltersFromRoute || assetsTab.value !== 'holders') return;
+    updateListQuery({
+      domain: null,
+      owner: null,
+      holder: normalizedFilterForRoute(holderFilter.value, parsedHolderFilter.value),
+      page: null,
+      per_page: null,
+    }).catch(() => undefined);
+  },
+  { flush: 'sync' }
+);
 
-watch(parsedHolderFilter, () => {
-  if (assetsTab.value !== 'holders') return;
-  listState.page = 1;
-});
+watch(
+  [() => nftFilters.domain, () => nftFilters.owner],
+  () => {
+    if (syncingFiltersFromRoute || assetsTab.value !== 'nft') return;
+    updateListQuery({
+      domain: nftFilters.domain.trim() || null,
+      owner: normalizedFilterForRoute(nftFilters.owner, parsedNftOwnerFilter.value),
+      holder: null,
+      page: null,
+      per_page: null,
+    }).catch(() => undefined);
+  },
+  { flush: 'sync' }
+);
 
-watch([() => nftFilters.domain, parsedNftOwnerFilter], () => {
-  if (assetsTab.value !== 'nft') return;
-  listState.page = 1;
-});
-
-watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
-  if (assetsTab.value !== 'rwa') return;
-  listState.page = 1;
-});
+watch(
+  [() => rwaFilters.domain, () => rwaFilters.owner],
+  () => {
+    if (syncingFiltersFromRoute || assetsTab.value !== 'rwa') return;
+    updateListQuery({
+      domain: rwaFilters.domain.trim() || null,
+      owner: normalizedFilterForRoute(rwaFilters.owner, parsedRwaOwnerFilter.value),
+      holder: null,
+      page: null,
+      per_page: null,
+    }).catch(() => undefined);
+  },
+  { flush: 'sync' }
+);
 </script>
 
 <template>
@@ -322,10 +446,11 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
       </div>
 
       <BaseTable
-        v-model:page="listState.page"
-        v-model:page-size="listState.per_page"
+        v-model:cursor="cursor"
+        v-model:page-size="listLimit"
         :loading="isAssetDefinitionsLoading"
-        :total="totalAssetDefinitions"
+        pagination-mode="cursor"
+        :cursor-pagination="assetDefinitionsPagination"
         :items="assetDefinitions"
         :row-key="assetDefinitionRowKey"
         container-class="assets-list-page__container"
@@ -426,10 +551,11 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
       </div>
 
       <BaseTable
-        v-model:page="listState.page"
-        v-model:page-size="listState.per_page"
+        v-model:cursor="cursor"
+        v-model:page-size="listLimit"
         :loading="isAssetInstancesLoading"
-        :total="totalAssetInstances"
+        pagination-mode="cursor"
+        :cursor-pagination="assetInstancesPagination"
         :items="assetInstances"
         :row-key="assetInstanceRowKey"
         container-class="assets-list-page__container"
@@ -556,10 +682,11 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
       </div>
 
       <BaseTable
-        v-model:page="listState.page"
-        v-model:page-size="listState.per_page"
+        v-model:cursor="cursor"
+        v-model:page-size="listLimit"
         :loading="isRwasLoading"
-        :total="totalRwas"
+        pagination-mode="cursor"
+        :cursor-pagination="rwasPagination"
         :items="rwas"
         :row-key="rwaRowKey"
         container-class="rwas-list-page__container"
@@ -696,10 +823,11 @@ watch([() => rwaFilters.domain, parsedRwaOwnerFilter], () => {
       </div>
 
       <BaseTable
-        v-model:page="listState.page"
-        v-model:page-size="listState.per_page"
+        v-model:cursor="cursor"
+        v-model:page-size="listLimit"
         :loading="isNFTsLoading"
-        :total="totalNFTs"
+        pagination-mode="cursor"
+        :cursor-pagination="NFTsPagination"
         :items="NFTs"
         :row-key="nftRowKey"
         container-class="nfts-list-page__container"

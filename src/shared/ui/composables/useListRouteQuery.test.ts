@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { nextTick, reactive } from 'vue';
 
-import { useListRouteQuery } from './useListRouteQuery';
+import { useCursorListRouteQuery, useListRouteQuery } from './useListRouteQuery';
 
 const route = reactive({ query: {} as Record<string, string> });
 const updateRouteQuery = vi.fn().mockResolvedValue(undefined);
@@ -49,6 +49,57 @@ describe('useListRouteQuery', () => {
       3,
       { page: 1, status: 'Committed' },
       { history: 'replace', defaults: { page: 1, per_page: 10 } }
+    );
+  });
+});
+
+describe('useCursorListRouteQuery', () => {
+  it('reads an opaque cursor and a supported limit without deriving a page number', () => {
+    route.query = { cursor: 'cursor-1', limit: '20' };
+    const state = useCursorListRouteQuery();
+
+    expect(state.cursor.value).toBe('cursor-1');
+    expect(state.limit.value).toBe(20);
+    expect(state).not.toHaveProperty('page');
+  });
+
+  it('pushes continuations and atomically clears them when the limit or filters change', async () => {
+    route.query = {};
+    updateRouteQuery.mockClear();
+    const state = useCursorListRouteQuery();
+    state.cursor.value = 'cursor-1';
+    state.limit.value = 50;
+    await state.updateListQuery({ domain: 'wonderland' });
+
+    expect(updateRouteQuery).toHaveBeenNthCalledWith(
+      1,
+      { cursor: 'cursor-1' },
+      { history: 'push', defaults: { cursor: null, limit: 10 } }
+    );
+    expect(updateRouteQuery).toHaveBeenNthCalledWith(
+      2,
+      { cursor: null, limit: 50 },
+      { history: 'replace', defaults: { cursor: null, limit: 10 } }
+    );
+    expect(updateRouteQuery).toHaveBeenNthCalledWith(
+      3,
+      { cursor: null, domain: 'wonderland' },
+      { history: 'replace', defaults: { cursor: null, limit: 10 } }
+    );
+  });
+
+  it('removes retired offset pagination keys from cursor-native bookmarks', async () => {
+    route.query = { cursor: 'cursor-1', limit: '20', page: '2', per_page: '20', domain: 'wonderland' };
+    updateRouteQuery.mockClear();
+
+    const state = useCursorListRouteQuery();
+    await nextTick();
+
+    expect(state.cursor.value).toBe('cursor-1');
+    expect(state.limit.value).toBe(20);
+    expect(updateRouteQuery).toHaveBeenCalledWith(
+      { limit: 20, page: null, per_page: null },
+      { history: 'replace', defaults: { cursor: null, limit: 10 } }
     );
   });
 });

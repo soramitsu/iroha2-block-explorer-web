@@ -9,7 +9,7 @@ const setupState = {
   data: {
     status: SUCCESSFUL_FETCHING,
     data: {
-      pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 0 },
+      pagination: { limit: 10, next_cursor: null as string | null, has_more: false },
       items: [] as any[],
     },
   },
@@ -23,10 +23,10 @@ vi.mock('@/shared/utils/setup-async-data', () => ({
 vi.mock('@/shared/ui/composables/useListRouteQuery', async () => {
   const { ref } = await vi.importActual<typeof import('vue')>('vue');
   return {
-    useListRouteQuery: () => ({
+    useCursorListRouteQuery: () => ({
       route: { query: {} },
-      page: ref(1),
-      pageSize: ref(10),
+      cursor: ref<string | null>(null),
+      limit: ref(10),
       updateListQuery: vi.fn(),
     }),
   };
@@ -38,7 +38,8 @@ const BaseContentBlockStub = {
 };
 
 const BaseTableStub = {
-  props: ['items'],
+  name: 'BaseTableStub',
+  props: ['items', 'paginationMode', 'cursorPagination', 'total'],
   emits: ['click:row'],
   template: `
     <div>
@@ -66,11 +67,11 @@ describe('AccountsList', () => {
   const canonicalAccountId =
     'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
   const canonicalAccountIdAlt =
-    'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+    'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 
   beforeEach(() => {
     setupState.data.data.items = [];
-    setupState.data.data.pagination.total_items = 0;
+    setupState.data.data.pagination = { limit: 10, next_cursor: null, has_more: false };
   });
 
   const factory = () =>
@@ -119,7 +120,6 @@ describe('AccountsList', () => {
         owned_nfts: 3,
       },
     ];
-    setupState.data.data.pagination.total_items = 1;
 
     const wrapper = factory();
     await flushPromises();
@@ -137,7 +137,6 @@ describe('AccountsList', () => {
       owned_assets: 0,
       owned_nfts: 0,
     }];
-    setupState.data.data.pagination.total_items = 1;
 
     const wrapper = factory();
     await flushPromises();
@@ -145,5 +144,16 @@ describe('AccountsList', () => {
     expect(wrapper.get('.base-hash-stub').attributes('data-link')).toBe(
       `/accounts/${encodeURIComponent(canonicalAccountIdAlt)}`
     );
+  });
+
+  it('passes authoritative cursor metadata to the table without an exact total', async () => {
+    setupState.data.data.pagination = { limit: 10, next_cursor: 'cursor-1', has_more: true };
+    const wrapper = factory();
+    await flushPromises();
+
+    const table = wrapper.getComponent({ name: 'BaseTableStub' });
+    expect(table.props('paginationMode')).toBe('cursor');
+    expect(table.props('cursorPagination')).toEqual(setupState.data.data.pagination);
+    expect(table.props('total')).toBeUndefined();
   });
 });

@@ -55,4 +55,20 @@ describe('runtime config', () => {
     await module.loadRuntimeConfig();
     expect(module.getRuntimeConfig()).toEqual({});
   });
+
+  it('rejects unknown public fields instead of retaining accidental secrets', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        toriiBaseUrl: 'https://torii.example',
+        operatorToken: 'must-not-be-public',
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const module = await import('./runtime-config');
+
+    await module.loadRuntimeConfig();
+    expect(module.getRuntimeConfig()).toEqual({});
+  });
 });

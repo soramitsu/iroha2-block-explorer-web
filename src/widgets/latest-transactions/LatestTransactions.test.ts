@@ -4,7 +4,7 @@ import LatestTransactions from './LatestTransactions.vue';
 import { i18n } from '@/shared/lib/localization';
 import { ref, defineComponent } from 'vue';
 
-const SAMPLE_I105 = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
+const SAMPLE_I105 = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 
 const mocks = vi.hoisted(() => ({
   fetchLatestTransactions: vi.fn().mockResolvedValue({

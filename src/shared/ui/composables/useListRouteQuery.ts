@@ -67,3 +67,63 @@ export function useListRouteQuery(
 
   return { route, page, pageSize, updateListQuery };
 }
+
+export function useCursorListRouteQuery(
+  options: {
+    cursorKey?: string
+    limitKey?: string
+    defaultLimit?: number
+  } = {}
+) {
+  const cursorKey = options.cursorKey ?? 'cursor';
+  const limitKey = options.limitKey ?? 'limit';
+  const defaultLimit = options.defaultLimit ?? 10;
+  const { route, updateRouteQuery } = useRouteQueryState();
+  const defaults = { [cursorKey]: null, [limitKey]: defaultLimit };
+
+  const cursor = computed<string | null>({
+    get: () => firstRouteQueryValue(route.query[cursorKey]),
+    set: (value) => {
+      updateRouteQuery({ [cursorKey]: value }, { history: 'push', defaults }).catch(() => undefined);
+    },
+  });
+  const limit = computed({
+    get: () => parseRoutePositiveInteger(route.query[limitKey], defaultLimit, PAGE_SIZES),
+    set: (value: number) => {
+      const normalized = PAGE_SIZES.has(value) ? value : defaultLimit;
+      updateRouteQuery(
+        { [cursorKey]: null, [limitKey]: normalized },
+        { history: 'replace', defaults }
+      ).catch(() => undefined);
+    },
+  });
+
+  async function updateListQuery(
+    patch: Record<string, RouteQueryPatchValue>,
+    config: { history?: 'push' | 'replace', resetCursor?: boolean } = {}
+  ) {
+    await updateRouteQuery(
+      { ...(config.resetCursor === false ? {} : { [cursorKey]: null }), ...patch },
+      { history: config.history ?? 'replace', defaults }
+    );
+  }
+
+  watch(
+    () => [route.query[limitKey], route.query.page, route.query.per_page] as const,
+    ([rawLimit]) => {
+      const limitValue = limit.value;
+      const normalizedLimit = firstRouteQueryValue(rawLimit);
+      const shouldCanonicalize = normalizedLimit !== null && normalizedLimit !== String(limitValue);
+      const containsExplicitDefault = normalizedLimit === String(defaultLimit);
+      const containsRetiredOffsetState = 'page' in route.query || 'per_page' in route.query;
+      if (!shouldCanonicalize && !containsExplicitDefault && !containsRetiredOffsetState) return;
+      updateRouteQuery(
+        { [limitKey]: limitValue, page: null, per_page: null },
+        { history: 'replace', defaults }
+      ).catch(() => undefined);
+    },
+    { immediate: true }
+  );
+
+  return { route, cursor, limit, updateListQuery };
+}

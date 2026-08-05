@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   extractAssetDefinitionIdFromAssetIdLiteral,
+  isAssetDefinitionAliasLiteral,
   normalizeAssetDefinitionAliasLiteral,
   normalizeAssetDefinitionIdLiteral,
   normalizeAssetDefinitionSelectorLiteral,
@@ -15,25 +16,38 @@ const SAMPLE_ACCOUNT_ID = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒ
 describe('asset definition literal helpers', () => {
   it('normalizes canonical base58 asset-definition ids', () => {
     expect(normalizeAssetDefinitionIdLiteral(SAMPLE_ASSET_DEFINITION_ID)).toBe(SAMPLE_ASSET_DEFINITION_ID);
+    expect(normalizeAssetDefinitionIdLiteral(`${SAMPLE_ASSET_DEFINITION_ID.slice(0, -1)}b`)).toBeNull();
     expect(normalizeAssetDefinitionIdLiteral('usd#main')).toBeNull();
     expect(normalizeAssetDefinitionIdLiteral('aid:2d17e27f978d4356883b540591476118')).toBeNull();
   });
 
   it('normalizes canonical asset aliases', () => {
-    expect(normalizeAssetDefinitionAliasLiteral('Usd#Issuer.Main')).toBe('usd#issuer.main');
+    expect(normalizeAssetDefinitionAliasLiteral('Usd#Issuer.Main')).toBe('Usd#Issuer.Main');
     expect(parseAssetDefinitionAliasLiteral('Usd#Main')).toEqual({
-      literal: 'usd#main',
-      name: 'usd',
+      literal: 'Usd#Main',
+      name: 'Usd',
       domain: null,
-      dataspace: 'main',
+      dataspace: 'Main',
     });
+    expect(normalizeAssetDefinitionAliasLiteral('USD:v1#Issuer.Main')).toBe('USD:v1#Issuer.Main');
     expect(normalizeAssetDefinitionAliasLiteral('usd#issuer.main.extra')).toBeNull();
     expect(normalizeAssetDefinitionAliasLiteral('usd#issuer@main')).toBeNull();
+  });
+
+  it('validates response aliases without rewriting their stored spelling', () => {
+    expect(isAssetDefinitionAliasLiteral('CBDC.v1#Issuer.Main')).toBe(true);
+    expect(isAssetDefinitionAliasLiteral('cafe\u0301#issuer.main')).toBe(true);
+    expect(isAssetDefinitionAliasLiteral('usd#issuer.main.extra')).toBe(false);
+    expect(isAssetDefinitionAliasLiteral(' usd#issuer.main')).toBe(false);
+    expect(isAssetDefinitionAliasLiteral('usd#issuer.\u202emain')).toBe(false);
   });
 
   it('accepts base58 ids or aliases as asset-definition selectors', () => {
     expect(normalizeAssetDefinitionSelectorLiteral(SAMPLE_ASSET_DEFINITION_ID)).toBe(SAMPLE_ASSET_DEFINITION_ID);
     expect(normalizeAssetDefinitionSelectorLiteral('Usd#Issuer.Main')).toBe('usd#issuer.main');
+    expect(normalizeAssetDefinitionSelectorLiteral('Treasury_Bond#Issuer.Main')).toBe(
+      'treasury_bond#issuer.main'
+    );
     expect(normalizeAssetDefinitionSelectorLiteral('??')).toBeNull();
   });
 
@@ -54,5 +68,9 @@ describe('asset definition literal helpers', () => {
     expect(normalizeAssetIdLiteral(`usd#main#${SAMPLE_ACCOUNT_ID}`)).toBeNull();
     expect(normalizeAssetIdLiteral(`${SAMPLE_ASSET_DEFINITION_ID}#primary@main`)).toBeNull();
     expect(normalizeAssetIdLiteral(`${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_ACCOUNT_ID}#scope:1`)).toBeNull();
+    expect(normalizeAssetIdLiteral(`${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_ACCOUNT_ID}#dataspace:007`)).toBeNull();
+    expect(
+      normalizeAssetIdLiteral(`${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_ACCOUNT_ID}#dataspace:18446744073709551616`)
+    ).toBeNull();
   });
 });

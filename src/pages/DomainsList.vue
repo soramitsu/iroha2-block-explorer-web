@@ -4,10 +4,11 @@
     class="domains-list-page"
   >
     <BaseTable
-      v-model:page="page"
-      v-model:page-size="pageSize"
+      v-model:cursor="cursor"
+      v-model:page-size="limit"
       :loading="isLoading"
-      :total="totalDomains"
+      pagination-mode="cursor"
+      :cursor-pagination="domainsPagination"
       :items="domains"
       :row-key="domainRowKey"
       container-class="domains-list-page__container"
@@ -95,12 +96,12 @@ import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import type { Domain } from '@/shared/api/schemas';
-import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
+import { useCursorListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', sm: 'medium', xxs: 'two-line' });
 
-const { page, pageSize } = useListRouteQuery();
-const listParams = computed(() => ({ page: page.value, per_page: pageSize.value }));
+const { cursor, limit } = useCursorListRouteQuery();
+const listParams = computed(() => ({ cursor: cursor.value, limit: limit.value }));
 
 const scope = useParamScope(
   () => {
@@ -113,8 +114,8 @@ const scope = useParamScope(
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
-const totalDomains = computed(() =>
-  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination.total_items : 0
+const domainsPagination = computed(() =>
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination : null
 );
 const domains = computed(() =>
   scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.items : []

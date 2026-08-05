@@ -29,10 +29,11 @@
     </div>
 
     <BaseTable
-      v-model:page="page"
-      v-model:page-size="pageSize"
+      v-model:cursor="cursor"
+      v-model:page-size="limit"
       :loading="isLoading"
-      :total="totalAccounts"
+      pagination-mode="cursor"
+      :cursor-pagination="accountsPagination"
       :items="accounts"
       :row-key="accountRowKey"
       container-class="accounts-list-page__container"
@@ -111,14 +112,14 @@ import { getPreferredAccountId } from '@/shared/lib/account-id';
 import { normalizeAssetDefinitionSelectorLiteral } from '@/shared/lib/asset-definition-literal';
 import { parseOptionalFilterCatching } from '@/shared/lib/optional-filter';
 import { firstRouteQueryValue } from '@/shared/lib/route-query';
-import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
+import { useCursorListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 import { watchDebounced } from '@vueuse/core';
 
 const { t } = useI18n();
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xs: 'two-line', xxs: 'two-line' }, 'medium');
 
-const { route, page, pageSize, updateListQuery } = useListRouteQuery();
+const { route, cursor, limit, updateListQuery } = useCursorListRouteQuery();
 const domainFilter = ref(firstRouteQueryValue(route.query.domain) ?? '');
 const assetFilter = ref(firstRouteQueryValue(route.query.asset) ?? '');
 function parseAssetSelector(value: string): string {
@@ -153,8 +154,8 @@ watchDebounced(
 );
 
 const accountQuery = computed(() => ({
-  page: page.value,
-  per_page: pageSize.value,
+  cursor: cursor.value,
+  limit: limit.value,
   domain: (firstRouteQueryValue(route.query.domain) ?? '').trim() || undefined,
   with_asset: (() => {
     const raw = firstRouteQueryValue(route.query.asset) ?? '';
@@ -169,8 +170,8 @@ const hasInvalidRouteAsset = computed(() => {
 const scope = useParamScope(
   () => ({
     key: JSON.stringify({
-      page: accountQuery.value.page,
-      per_page: accountQuery.value.per_page,
+      cursor: accountQuery.value.cursor,
+      limit: accountQuery.value.limit,
       domain: accountQuery.value.domain ?? null,
       with_asset: accountQuery.value.with_asset?.toString() ?? null,
     }),
@@ -180,8 +181,8 @@ const scope = useParamScope(
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
-const totalAccounts = computed(() =>
-  scope.value.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination.total_items : 0
+const accountsPagination = computed(() =>
+  scope.value.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination : null
 );
 const accounts = computed(() =>
   scope.value.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.items : []

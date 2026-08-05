@@ -73,12 +73,14 @@ describe('HomePage', () => {
     expect(pushSpy).toHaveBeenNthCalledWith(4, { name: 'asset-details', params: { id: sampleAssetAlias } });
 
     await tags[4].trigger('click');
-    expect(pushSpy).toHaveBeenNthCalledWith(5, { name: 'nft-details', params: { id: 'cool-cat$gallery' } });
+    expect(pushSpy).toHaveBeenNthCalledWith(5, { name: 'nft-details', params: { id: 'cool-cat$gallery.main' } });
 
     await tags[5].trigger('click');
     expect(pushSpy).toHaveBeenNthCalledWith(6, {
       name: 'rwa-details',
-      params: { id: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities' },
+      params: {
+        id: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities.main',
+      },
     });
   });
 });

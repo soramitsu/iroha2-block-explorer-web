@@ -4,8 +4,7 @@ import { ref } from 'vue';
 import AssetDetails from './AssetDetails.vue';
 import { i18n } from '@/shared/lib/localization';
 
-const SAMPLE_ACCOUNT_ID =
-  'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
+const SAMPLE_ACCOUNT_ID = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_ASSET_ALIAS = 'usd#issuer.main';
 
 const routeState = ref({
@@ -20,13 +19,19 @@ const assetDetailsStates = vi.hoisted((): any => ({
       status: 'ok',
       data: {
         id: '66owaQmAQMuHxPzxUN3bqZ6FJfDa',
+        owning_domain: 'issuer.main',
         alias: 'usd#issuer.main',
+        alias_binding: null,
         name: 'usd',
-        owned_by:
-          'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE',
+        description: null,
+        owned_by: 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE',
         mintable: 'Infinitely',
+        logo: null,
         metadata: {},
-        assets: 1,
+        assets: null,
+        total_quantity: '11',
+        locked_quantity: null,
+        circulating_quantity: null,
       },
     },
     refetch: vi.fn(),
@@ -36,7 +41,7 @@ const assetDetailsStates = vi.hoisted((): any => ({
     data: {
       status: 'ok',
       data: {
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 0 },
+        pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [],
       },
     },
@@ -79,12 +84,20 @@ const BaseButtonStub = {
   template: '<button><slot /></button>',
 };
 
+const DataFieldStub = {
+  props: ['title', 'value', 'link'],
+  template: '<div data-test="data-field" :data-title="title" :data-value="value" :data-link="link" />',
+};
+
 describe('AssetDetails', () => {
   beforeEach(() => {
     routeState.value = {
       params: { id: SAMPLE_ASSET_ALIAS },
     };
     setupStateQueue.splice(0);
+    assetDetailsStates.asset.data.data.owning_domain = 'issuer.main';
+    assetDetailsStates.assets.data.data.items = [];
+    assetDetailsStates.assets.data.data.pagination = { limit: 10, next_cursor: null, has_more: false };
     assetDetailsStates.asset.snapshot = {
       status: 'ready',
       data: assetDetailsStates.asset.data,
@@ -105,19 +118,49 @@ describe('AssetDetails', () => {
           BaseLink: BaseLinkStub,
           BaseLoading: true,
           BaseTable: BaseTableStub,
-          DataField: true,
+          DataField: DataFieldStub,
         },
       },
     });
 
   it('shows an error for invalid holder filters', async () => {
+    assetDetailsStates.assets.data.data.items = [
+      {
+        id: `66owaQmAQMuHxPzxUN3bqZ6FJfDa#${SAMPLE_ACCOUNT_ID}`,
+        definition_id: '66owaQmAQMuHxPzxUN3bqZ6FJfDa',
+        account_id: SAMPLE_ACCOUNT_ID,
+        value: '11',
+      },
+    ];
     const wrapper = factory();
     const holderFilter = wrapper.get(`input[placeholder="${i18n.global.t('assets.filters.holderPlaceholder')}"]`);
+
+    expect(wrapper.text()).toContain(SAMPLE_ACCOUNT_ID);
 
     await holderFilter.setValue('not-a-valid-holder');
     await flushPromises();
 
     expect(wrapper.text()).toContain(i18n.global.t('searchUnsupported'));
+    expect(wrapper.text()).not.toContain(SAMPLE_ACCOUNT_ID);
+  });
+
+  it('renders the zero-holder state from a terminal empty first cursor page', async () => {
+    const wrapper = factory();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(i18n.global.t('assets.assetDoesntContainAnyInstances'));
+  });
+
+  it('does not claim zero holders while Torii exposes a continuation cursor', async () => {
+    assetDetailsStates.assets.data.data.pagination = {
+      limit: 10,
+      next_cursor: 'holder_cursor_2',
+      has_more: true,
+    };
+    const wrapper = factory();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain(i18n.global.t('assets.assetDoesntContainAnyInstances'));
   });
 
   it('clears the holder filter error after a valid account id is entered', async () => {
@@ -132,6 +175,26 @@ describe('AssetDetails', () => {
     await flushPromises();
 
     expect(wrapper.text()).not.toContain(i18n.global.t('searchUnsupported'));
+  });
+
+  it('displays the authoritative owning domain for an opaque asset-definition id', async () => {
+    assetDetailsStates.assets.data.data.items = [
+      {
+        id: `66owaQmAQMuHxPzxUN3bqZ6FJfDa#${SAMPLE_ACCOUNT_ID}`,
+        definition_id: '66owaQmAQMuHxPzxUN3bqZ6FJfDa',
+        account_id: SAMPLE_ACCOUNT_ID,
+        value: '11',
+      },
+    ];
+    const wrapper = factory();
+    await flushPromises();
+
+    const domainField = wrapper
+      .findAll('[data-test="data-field"]')
+      .find((field) => field.attributes('data-title') === i18n.global.t('domain'));
+    expect(domainField?.attributes('data-value')).toBe('issuer.main');
+    expect(domainField?.attributes('data-link')).toBe('/domains/issuer.main');
+    expect(wrapper.get('a[href="/domains/issuer.main"]').text()).toBe('issuer.main');
   });
 
   it('renders an explicit not-found state and hides the holder controls', async () => {

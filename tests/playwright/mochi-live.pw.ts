@@ -43,4 +43,23 @@ test('loads the deterministic seed domain through generated Mochi session config
   expect((await domainResponse).ok()).toBe(true);
   await expect(page.getByText(profile.seed.domain_id, { exact: true }).first()).toBeVisible();
   await expect(page.locator('[data-test="resource-retry"]')).toHaveCount(0);
+
+  const domainsResponsePromise = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.origin === toriiBaseUrl && url.pathname === '/v1/explorer/domains';
+  });
+  await page.goto('/domains?limit=10');
+  const domainsResponse = await domainsResponsePromise;
+  expect(domainsResponse.ok()).toBe(true);
+  const domainsRequestUrl = new URL(domainsResponse.request().url());
+  expect(domainsRequestUrl.searchParams.get('limit')).toBe('10');
+  expect(domainsRequestUrl.searchParams.has('page')).toBe(false);
+  expect(domainsRequestUrl.searchParams.has('per_page')).toBe(false);
+  const domainsPayload = await domainsResponse.json() as {
+    pagination: Record<string, unknown>
+    items: Array<{ id: string }>
+  };
+  expect(Object.keys(domainsPayload.pagination).sort()).toEqual(['has_more', 'limit', 'next_cursor']);
+  expect(domainsPayload.items.some((domain) => domain.id === profile.seed.domain_id)).toBe(true);
+  await expect(page.getByText(profile.seed.domain_id, { exact: true }).first()).toBeVisible();
 });

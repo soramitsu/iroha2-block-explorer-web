@@ -10,6 +10,9 @@
   "table": {
     "rowsPerPage": "Rows per page",
     "pageOf": "{0}-{1} of {2}",
+    "cursorPage": "{0} rows on this page; exact total unavailable",
+    "scanSample": "{0} records scanned; exact total unavailable",
+    "cursorRepeated": "Pagination stopped because Torii repeated a cursor",
     "newDataAvailable": "New data available",
     "load": "Load"
   },

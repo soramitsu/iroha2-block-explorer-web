@@ -102,15 +102,15 @@ describe('SearchField', () => {
     await input.trigger('keyup.enter');
     expect(pushSpy).toHaveBeenNthCalledWith(3, { name: 'asset-details', params: { id: assetAlias } });
 
-    const rwaId = '0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF$commodities';
+    const rwaId = '0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF$commodities.main';
     await input.setValue(rwaId);
     await input.trigger('keyup.enter');
     expect(pushSpy).toHaveBeenNthCalledWith(4, {
       name: 'rwa-details',
-      params: { id: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities' },
+      params: { id: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities.main' },
     });
 
-    const nftId = 'collectible$domain';
+    const nftId = 'collectible$domain.main';
     await input.setValue(nftId);
     await input.trigger('keyup.enter');
     expect(pushSpy).toHaveBeenNthCalledWith(5, { name: 'nft-details', params: { id: nftId } });

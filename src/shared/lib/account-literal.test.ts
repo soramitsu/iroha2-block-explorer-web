@@ -15,9 +15,12 @@ import {
   renderCanonicalPublicKeyLiteralFromAccountIdLiteral,
 } from './account-literal';
 
-const SAMPLE_I105 = 'soraゴヂアニィルサフユイサヹピビレッデヹボテハキョメベチュヒャネィギチュヲベァヱェベモネェネツデトツオチハセ';
-const SAMPLE_I105_ALT = 'soraゴヂアヌペゲクュリショィィョオチャデォブェニュプピニュトトャヘヒュチャマヵニャベヱャヅロョケヨネトイナヘタケヒ';
+const SAMPLE_I105 =
+  'soraゴヂアニィルサフユイサヹピビレッデヹボテハキョメベチュヒャネィギチュヲベァヱェベモネェネツデトツオチハセ';
+const SAMPLE_I105_ALT =
+  'soraゴヂアヌペゲクュリショィィョオチャデォブェニュプピニュトトャヘヒュチャマヵニャベヱャヅロョケヨネトイナヘタケヒ';
 const SAMPLE_I105_MODERN = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
+const MIXED_TORSION_I105 = 'sorauﾛ1Npﾃﾕヱﾇq11pｳﾘ2ｱ5ﾇｦiCJKjRﾔzｷNMNﾆｹﾕPCｳﾙFvｵE9LBLB';
 const SAMPLE_I105_MODERN_FULLWIDTH = 'sorauロ1NラhBUd2BツヲトiヤニツヌKSテaリメモQラrメoリナnウリbQウQJニLJ5HSE';
 const SAMPLE_I105_TEST_MODERN = 'testuﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_ALIAS = 'Treasury@Banking.Retail';
@@ -51,6 +54,9 @@ describe('account literal helpers', () => {
     expect(normalizeAccountIdLiteral('sorauﾛ1Nﾗ0BUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE')).toBeNull();
     expect(normalizeAccountIdLiteral('sorauﾛ1NﾗOBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE')).toBeNull();
     expect(normalizeAccountIdLiteral('sorauﾛ1NﾗlBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE')).toBeNull();
+    expect(normalizeAccountIdLiteral('sora1')).toBeNull();
+    expect(normalizeAccountIdLiteral(`${SAMPLE_I105_MODERN.slice(0, -1)}F`)).toBeNull();
+    expect(normalizeAccountIdLiteral(MIXED_TORSION_I105)).toBeNull();
     expect(normalizeAccountIdLiteral('alice@wonderland')).toBeNull();
     expect(normalizeAccountAliasLiteral('alice')).toBeNull();
     expect(normalizeAccountAliasLiteral('alice@wonder.land.ops')).toBeNull();
@@ -88,7 +94,9 @@ describe('account literal helpers', () => {
     expect(normalizeDisplayedAccountSelectorLiteral(SAMPLE_I105_TEST_MODERN, 'https://nexus.mof3.sora.org:18080')).toBe(
       SAMPLE_I105_TEST_MODERN
     );
-    expect(normalizeDisplayedAccountSelectorLiteral(SAMPLE_ALIAS, 'https://taira.sora.org')).toBe('treasury@banking.retail');
+    expect(normalizeDisplayedAccountSelectorLiteral(SAMPLE_ALIAS, 'https://taira.sora.org')).toBe(
+      'treasury@banking.retail'
+    );
   });
 
   it('detects canonical ids, selectors, and norito asset literals', () => {
@@ -124,8 +132,12 @@ describe('account literal helpers', () => {
     const edAccountId = renderCanonicalAccountIdLiteralFromPublicKeyLiteral(SAMPLE_ED25519_PUBLIC_KEY);
     const secpAccountId = renderCanonicalAccountIdLiteralFromPublicKeyLiteral(SAMPLE_SECP256K1_PUBLIC_KEY);
 
-    expect(renderCanonicalPublicKeyLiteralFromAccountIdLiteral(edAccountId!)).toBe(SAMPLE_ED25519_PUBLIC_KEY.toUpperCase());
-    expect(renderCanonicalPublicKeyLiteralFromAccountIdLiteral(secpAccountId!)).toBe(SAMPLE_SECP256K1_PUBLIC_KEY.toUpperCase());
+    expect(renderCanonicalPublicKeyLiteralFromAccountIdLiteral(edAccountId!)).toBe(
+      SAMPLE_ED25519_PUBLIC_KEY.toUpperCase()
+    );
+    expect(renderCanonicalPublicKeyLiteralFromAccountIdLiteral(secpAccountId!)).toBe(
+      SAMPLE_SECP256K1_PUBLIC_KEY.toUpperCase()
+    );
   });
 
   it('rejects noncanonical or malformed i105 ids when decoding back into public keys', () => {
@@ -138,7 +150,15 @@ describe('account literal helpers', () => {
   it('rejects malformed or unsupported public-key multihashes when rendering i105 ids', () => {
     expect(renderCanonicalAccountIdLiteralFromPublicKeyLiteral('')).toBeNull();
     expect(renderCanonicalAccountIdLiteralFromPublicKeyLiteral('ed0120ZZ')).toBeNull();
-    expect(renderCanonicalAccountIdLiteralFromPublicKeyLiteral('bls:ed01201509A611AD6D97B01D871E58ED00C8FD7C3917B6CA61A8C2833A19E000AAC2E4')).toBeNull();
-    expect(renderCanonicalAccountIdLiteralFromPublicKeyLiteral('ea01201509A611AD6D97B01D871E58ED00C8FD7C3917B6CA61A8C2833A19E000AAC2E4')).toBeNull();
+    expect(
+      renderCanonicalAccountIdLiteralFromPublicKeyLiteral(
+        'bls:ed01201509A611AD6D97B01D871E58ED00C8FD7C3917B6CA61A8C2833A19E000AAC2E4'
+      )
+    ).toBeNull();
+    expect(
+      renderCanonicalAccountIdLiteralFromPublicKeyLiteral(
+        'ea01201509A611AD6D97B01D871E58ED00C8FD7C3917B6CA61A8C2833A19E000AAC2E4'
+      )
+    ).toBeNull();
   });
 });

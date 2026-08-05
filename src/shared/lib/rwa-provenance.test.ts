@@ -22,9 +22,9 @@ function makeRwa(id: string, overrides?: Partial<RWA>): RWA {
 
 describe('fetchRwaProvenanceBundle', () => {
   it('builds a layered provenance graph from recursive parent refs', async () => {
-    const rootId = 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc$commodities';
-    const midId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb$commodities';
-    const leafId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$commodities';
+    const rootId = 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc$commodities.main';
+    const midId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb$commodities.main';
+    const leafId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$commodities.main';
 
     const records = new Map<string, RWA>([
       [
@@ -65,8 +65,8 @@ describe('fetchRwaProvenanceBundle', () => {
   });
 
   it('keeps placeholder nodes when ancestor fetches fail', async () => {
-    const rootId = 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd$commodities';
-    const missingId = 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee$commodities';
+    const rootId = 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd$commodities.main';
+    const missingId = 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee$commodities.main';
 
     const fetchRwa = vi.fn(async (id: string) => {
       if (id === rootId) {

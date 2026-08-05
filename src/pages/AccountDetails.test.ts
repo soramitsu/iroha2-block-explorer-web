@@ -131,8 +131,11 @@ const BaseTableStub = defineComponent({
   name: 'BaseTable',
   props: {
     items: { type: Array, default: () => [] },
+    cursor: { type: String, default: null },
+    pageSize: { type: Number, default: 10 },
+    cursorPagination: { type: Object, default: null },
   },
-  emits: ['click:row', 'update:page', 'update:page-size'],
+  emits: ['click:row', 'update:cursor', 'update:pageSize'],
   template: `
     <div class="base-table-stub">
       <slot name="header" />
@@ -544,7 +547,7 @@ describe('AccountDetails', () => {
   });
 
   it('renders account-owned RWAs behind a dedicated tab and routes to rwa details', async () => {
-    const rwaId = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities';
+    const rwaId = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef$commodities.main';
     scopeExposeQueue = [
       {
         isLoading: false,
@@ -567,7 +570,7 @@ describe('AccountDetails', () => {
         data: {
           status: SUCCESSFUL_FETCHING,
           data: {
-            pagination: { page: 1, per_page: 10, total_pages: 0, total_items: 0 },
+            pagination: { limit: 10, next_cursor: null, has_more: false },
             items: [],
           },
         },
@@ -578,7 +581,7 @@ describe('AccountDetails', () => {
         data: {
           status: SUCCESSFUL_FETCHING,
           data: {
-            pagination: { page: 1, per_page: 10, total_pages: 0, total_items: 0 },
+            pagination: { limit: 10, next_cursor: null, has_more: false },
             items: [],
           },
         },
@@ -589,7 +592,7 @@ describe('AccountDetails', () => {
         data: {
           status: SUCCESSFUL_FETCHING,
           data: {
-            pagination: { page: 1, per_page: 10, total_pages: 0, total_items: 0 },
+            pagination: { limit: 10, next_cursor: null, has_more: false },
             items: [],
           },
         },
@@ -600,7 +603,7 @@ describe('AccountDetails', () => {
         data: {
           status: SUCCESSFUL_FETCHING,
           data: {
-            pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+            pagination: { limit: 10, next_cursor: null, has_more: false },
             items: [
               {
                 id: rwaId,
