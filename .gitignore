@@ -16,6 +16,7 @@ node_modules
 # Build artifacts and generated outputs
 dist
 dist-ssr
+/releases/
 output
 coverage
 playwright-report

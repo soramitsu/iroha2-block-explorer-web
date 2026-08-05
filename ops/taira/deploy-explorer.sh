@@ -1,42 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${TAIRA_EXPLORER_ROOT:-/Users/administrator/dev/iroha-block-explorer-web}"
-SERVED_DIST="${TAIRA_EXPLORER_SERVED_DIST:-/Users/administrator/dev/iroha2-block-explorer-web/dist}"
-HEALTH_URL="${TAIRA_EXPLORER_URL:-https://taira-explorer.sora.org/}"
+COMMAND="${1:-deploy}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+DEFAULT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
+ROOT="${TAIRA_EXPLORER_ROOT:-$DEFAULT_ROOT}"
 
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+case "$COMMAND" in
+  manifest|initialize|deploy|prepare-transition|verify)
+    if [[ "$#" -ne 1 ]]; then
+      echo "Usage: $0 $COMMAND" >&2
+      exit 2
+    fi
+    ;;
+  transition|rollback)
+    if [[ "$#" -ne 2 ]]; then
+      echo "Usage: $0 $COMMAND <exact-release-id>" >&2
+      exit 2
+    fi
+    ;;
+  *)
+    echo "Unknown command: $COMMAND" >&2
+    echo "Usage: $0 {manifest|initialize|deploy|prepare-transition|transition <exact-release-id>|verify|rollback <exact-release-id>}" >&2
+    exit 2
+    ;;
+esac
 
-cd "$ROOT"
+cd -- "$ROOT"
+ROOT="$(pwd -P)"
+export TAIRA_EXPLORER_ROOT="$ROOT"
 
-if [[ "${TAIRA_EXPLORER_PULL:-0}" == "1" ]]; then
-  git fetch --prune origin
-  git pull --ff-only origin "$(git branch --show-current)"
-fi
-
-if command -v corepack >/dev/null 2>&1; then
-  corepack enable
-fi
-
-if command -v pnpm >/dev/null 2>&1; then
-  pnpm install --frozen-lockfile
-  pnpm build
-else
-  npm ci
-  npm run build
-fi
-
-mkdir -p "$SERVED_DIST"
-rsync -a --delete "$ROOT/dist/" "$SERVED_DIST/"
-
-for _ in $(seq 1 30); do
-  if curl -fsS "$HEALTH_URL" >/dev/null; then
-    echo "Explorer is reachable: $HEALTH_URL"
-    echo "Synced dist to: $SERVED_DIST"
-    exit 0
-  fi
-  sleep 2
-done
-
-echo "Explorer did not become reachable: $HEALTH_URL" >&2
-exit 1
+unset NODE_OPTIONS NODE_PATH
+exec node "$SCRIPT_DIR/release-tool.mjs" --taira-release-wrapper "$@"
