@@ -21,7 +21,7 @@ import {
 } from 'node:fs';
 import { link as linkFile, open as openFile } from 'node:fs/promises';
 import path from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   CutoverCommitUncertainError,
@@ -35,6 +35,7 @@ import {
   assertReleaseNodeVersion,
   atomicSwitchRelease,
   collectReleaseFiles,
+  consumeTairaReleaseAttestation,
   createReleaseManifest,
   deployRelease,
   installTairaRuntimeConfig,
@@ -68,12 +69,22 @@ import {
   verifyReviewedBaselineInventory,
   verifyCanonicalSdkRevision,
   verifyCanonicalExplorerRevision,
+  verifyGitCommitSignature,
   verifySdkSourceClosure,
   withReleaseLock,
   withIsolatedReleaseBuild,
   writeFileDurably,
   writeReleaseManifest,
 } from './release-tool.mjs';
+import {
+  TAIRA_GIT_VERIFY_GNUPGHOME_ENV,
+  TAIRA_GIT_VERIFY_GPG_ENV,
+  TAIRA_RELEASE_ATTESTATION_NONCE_ENV,
+  TAIRA_RELEASE_SIGNER_FINGERPRINT,
+  TAIRA_RELEASE_TOOL_PATH,
+  createTairaReleaseAttestation,
+  prepareTairaGitVerification,
+} from '../../scripts/run-exact-toolchain.mjs';
 
 const explorerA = 'a'.repeat(40);
 const explorerB = 'b'.repeat(40);
@@ -86,8 +97,66 @@ const packageLockSha256 = 'f0bcde463fa201480015b9caa7db2017d3c1b6ca9c7e133df9550
 const explorerOrigin = 'https://taira-explorer.sora.org';
 const temporaryDirectories: string[] = [];
 const servers: Server[] = [];
+let suiteGitVerifierRoot: string;
+let previousGitVerifyGpg: string | undefined;
+let previousGitVerifyGnupgHome: string | undefined;
+const runGpgIntegration = process.env.IROHA_EXPLORER_RUN_GPG_INTEGRATION === '1';
 
 type Fixture = ReturnType<typeof fixture>;
+
+function installFixtureGitVerifier(root: string, environment: Record<string, string>) {
+  const gpgPath = path.join(root, 'fixture-gpg');
+  const gnupgHome = path.join(root, 'git-verify-gnupg');
+  writeFileSync(gpgPath, '#!/bin/sh\nexit 97\n', { mode: 0o700 });
+  mkdirSync(gnupgHome, { mode: 0o700 });
+  environment[TAIRA_GIT_VERIFY_GPG_ENV] = realpathSync(gpgPath);
+  environment[TAIRA_GIT_VERIFY_GNUPGHOME_ENV] = realpathSync(gnupgHome);
+}
+
+function openPgpCommitObject(signatureArmor = 'PGP SIGNATURE') {
+  return [
+    `tree ${'1'.repeat(40)}`,
+    'author Release Test <release@example.test> 1700000000 +0000',
+    'committer Release Test <release@example.test> 1700000000 +0000',
+    `gpgsig -----BEGIN ${signatureArmor}-----`,
+    ' fixture-signature',
+    ` -----END ${signatureArmor}-----`,
+    '',
+    'fixture commit',
+    '',
+  ].join('\n');
+}
+
+function expectedOpenPgpIdentity(status = 'G') {
+  return `${status}\0${TAIRA_RELEASE_SIGNER_FINGERPRINT}\0${TAIRA_RELEASE_SIGNER_FINGERPRINT}\n`;
+}
+
+beforeAll(() => {
+  suiteGitVerifierRoot = realpathSync(mkdtempSync(path.join(realpathSync('/tmp'), 'taira-suite-git-verifier-')));
+  chmodSync(suiteGitVerifierRoot, 0o700);
+  const environment: Record<string, string> = {};
+  installFixtureGitVerifier(suiteGitVerifierRoot, environment);
+  previousGitVerifyGpg = process.env[TAIRA_GIT_VERIFY_GPG_ENV];
+  previousGitVerifyGnupgHome = process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV];
+  process.env[TAIRA_GIT_VERIFY_GPG_ENV] = environment[TAIRA_GIT_VERIFY_GPG_ENV];
+  process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV] = environment[TAIRA_GIT_VERIFY_GNUPGHOME_ENV];
+});
+
+afterAll(() => {
+  if (previousGitVerifyGpg === undefined) {
+    delete process.env[TAIRA_GIT_VERIFY_GPG_ENV];
+  } else {
+    process.env[TAIRA_GIT_VERIFY_GPG_ENV] = previousGitVerifyGpg;
+  }
+  if (previousGitVerifyGnupgHome === undefined) {
+    delete process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV];
+  } else {
+    process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV] = previousGitVerifyGnupgHome;
+  }
+  if (suiteGitVerifierRoot) {
+    rmSync(suiteGitVerifierRoot, { force: true, recursive: true });
+  }
+});
 
 function sdkProvenance(revision = runtimeRevision) {
   return {
@@ -173,6 +242,36 @@ function fixture() {
   };
 }
 
+async function tairaReleaseAttestation(argv: string[] = ['verify']) {
+  const root = realpathSync(mkdtempSync(path.join(realpathSync('/tmp'), 'taira-release-attestation-')));
+  chmodSync(root, 0o700);
+  temporaryDirectories.push(root);
+  const cacheRoot = path.join(root, 'cache');
+  mkdirSync(cacheRoot, { mode: 0o700 });
+  const nodeRunRoot = mkdtempSync(path.join(cacheRoot, '.node-run.'));
+  chmodSync(nodeRunRoot, 0o700);
+  const nodePlatform = process.platform === 'darwin' ? 'darwin' : 'linux';
+  const nodeArchitecture = process.arch === 'arm64' ? 'arm64' : 'x64';
+  const nodeBin = path.join(nodeRunRoot, `node-v24.19.0-${nodePlatform}-${nodeArchitecture}`, 'bin');
+  mkdirSync(nodeBin, { recursive: true, mode: 0o700 });
+  const nodePath = path.join(nodeBin, 'node');
+  writeFileSync(nodePath, '#!/bin/sh\nexit 0\n', { mode: 0o700 });
+  const toolRoot = mkdtempSync(path.join(cacheRoot, '.toolchain-run-'));
+  chmodSync(toolRoot, 0o700);
+  mkdirSync(path.join(toolRoot, 'home'), { mode: 0o700 });
+  const env: Record<string, string> = {
+    IROHA_EXPLORER_TOOLCHAIN_CACHE: cacheRoot,
+  };
+  installFixtureGitVerifier(toolRoot, env);
+  const attestationPath = await createTairaReleaseAttestation({
+    argv,
+    environment: env,
+    toolRoot,
+    nodeExecutable: nodePath,
+  });
+  return { attestationPath, cacheRoot, env, nodePath, nodeRunRoot, toolRoot, argv };
+}
+
 async function baselineManifest(testFixture: Fixture) {
   return createReleaseManifest({
     distDir: testFixture.servedPath,
@@ -206,12 +305,8 @@ async function startPublicServer(testFixture: Fixture, failMarker?: string, repo
       response.setHeader('access-control-allow-origin', testFixture.corsOrigin);
     }
     if (
-      request.method === 'OPTIONS'
-      && [
-        '/v1/explorer/blocks',
-        '/v1/pipeline/transactions',
-        '/v1/multisig/spec',
-      ].includes(requestUrl.pathname)
+      request.method === 'OPTIONS' &&
+      ['/v1/explorer/blocks', '/v1/pipeline/transactions', '/v1/multisig/spec'].includes(requestUrl.pathname)
     ) {
       response.statusCode = 204;
       response.setHeader('access-control-allow-methods', testFixture.corsMethods);
@@ -243,14 +338,13 @@ async function startPublicServer(testFixture: Fixture, failMarker?: string, repo
       response.end(contents);
     } catch {
       if (requestUrl.pathname === '/accounts' && testFixture.spaFallbackMode !== 'missing') {
-        const contents = testFixture.spaFallbackMode === 'wrong-bytes'
-          ? Buffer.from('<main>wrong release</main>\n')
-          : readFileSync(path.join(testFixture.servedPath, 'index.html'));
+        const contents =
+          testFixture.spaFallbackMode === 'wrong-bytes'
+            ? Buffer.from('<main>wrong release</main>\n')
+            : readFileSync(path.join(testFixture.servedPath, 'index.html'));
         response.setHeader(
           'content-type',
-          testFixture.spaFallbackMode === 'wrong-content-type'
-            ? 'application/octet-stream'
-            : 'text/html; charset=utf-8'
+          testFixture.spaFallbackMode === 'wrong-content-type' ? 'application/octet-stream' : 'text/html; charset=utf-8'
         );
         response.end(contents);
         return;
@@ -376,14 +470,15 @@ describe('release manifest', () => {
 });
 
 describe('operator safety gates', () => {
-  it('keeps build and publication inseparable inside the direct Node CLI', () => {
+  it('keeps build and publication inseparable inside the exact Taira profile', () => {
     const script = readFileSync(path.resolve('ops/taira/deploy-explorer.sh'), 'utf8');
     expect(script).not.toContain('preflight');
     expect(script).not.toContain('pnpm ');
     expect(script).not.toContain('corepack');
-    expect(script).toContain(
-      'exec node "$SCRIPT_DIR/release-tool.mjs" --taira-release-wrapper "$@"'
-    );
+    expect(script).toContain('exec /bin/sh "$DEFAULT_ROOT/scripts/bootstrap-exact-toolchain.sh"');
+    expect(script).toContain('taira-release "$@"');
+    expect(script.match(/bootstrap-exact-toolchain\.sh/gu)).toHaveLength(1);
+    expect(script).not.toContain('deploy-explorer.sh "$@"');
 
     const tool = readFileSync(path.resolve('ops/taira/release-tool.mjs'), 'utf8');
     const deployHandler = tool.indexOf('async function runDeployCommand');
@@ -402,63 +497,224 @@ describe('operator safety gates', () => {
     const changeDirectory = script.indexOf('cd -- "$ROOT"');
     const canonicalizeRoot = script.indexOf('ROOT="$(pwd -P)"');
     const exportRoot = script.indexOf('export TAIRA_EXPLORER_ROOT="$ROOT"');
-    const stripNodeInjection = script.indexOf('unset NODE_OPTIONS NODE_PATH');
-    const firstReleaseTool = script.indexOf(
-      'exec node "$SCRIPT_DIR/release-tool.mjs" --taira-release-wrapper'
-    );
+    const trustedPath = script.indexOf('PATH=/usr/bin:/bin:/usr/sbin:/sbin');
+    const stripInjection = script.indexOf('unset CDPATH ENV BASH_ENV NODE_OPTIONS NODE_PATH');
+    const exactBootstrap = script.indexOf('exec /bin/sh "$DEFAULT_ROOT/scripts/bootstrap-exact-toolchain.sh"');
+    const releaseProfile = script.indexOf('taira-release "$@"');
+    expect(script.startsWith('#!/bin/sh\n')).toBe(true);
+    expect(trustedPath).toBeGreaterThan(0);
+    expect(stripInjection).toBeGreaterThan(trustedPath);
     expect(changeDirectory).toBeGreaterThan(0);
     expect(canonicalizeRoot).toBeGreaterThan(changeDirectory);
     expect(exportRoot).toBeGreaterThan(canonicalizeRoot);
-    expect(stripNodeInjection).toBeGreaterThan(exportRoot);
-    expect(firstReleaseTool).toBeGreaterThan(stripNodeInjection);
+    expect(exactBootstrap).toBeGreaterThan(exportRoot);
+    expect(releaseProfile).toBeGreaterThan(exactBootstrap);
   });
 
-  it('makes the wrapper the only CLI entry and scrubs Node injection functionally', () => {
-    const testFixture = fixture();
-    const fakeBin = path.join(testFixture.root, 'fake-bin');
-    const fakeNode = path.join(fakeBin, 'node');
-    mkdirSync(fakeBin);
+  it('ignores caller PATH and preload injection before entering the fixed Taira profile', () => {
+    const root = realpathSync(mkdtempSync(path.join(realpathSync('/tmp'), 'taira-wrapper-fixture-')));
+    chmodSync(root, 0o700);
+    temporaryDirectories.push(root);
+    const wrapperDirectory = path.join(root, 'ops', 'taira');
+    const scriptsDirectory = path.join(root, 'scripts');
+    const fakeBin = path.join(root, 'fake-bin');
+    mkdirSync(wrapperDirectory, { recursive: true, mode: 0o700 });
+    mkdirSync(scriptsDirectory, { mode: 0o700 });
+    mkdirSync(fakeBin, { mode: 0o700 });
+    const wrapper = path.join(wrapperDirectory, 'deploy-explorer.sh');
+    cpSync(path.resolve('ops/taira/deploy-explorer.sh'), wrapper);
+    chmodSync(wrapper, 0o700);
+    const sentinel = path.join(root, 'fake-command-ran');
+    for (const command of ['dirname', 'node', 'sh', 'sha256sum', 'tar', 'uname']) {
+      writeFileSync(
+        path.join(fakeBin, command),
+        `#!/bin/sh\nprintf '%s\\n' ${JSON.stringify(command)} >> ${JSON.stringify(sentinel)}\nexit 97\n`,
+        { mode: 0o700 }
+      );
+    }
     writeFileSync(
-      fakeNode,
+      path.join(scriptsDirectory, 'bootstrap-exact-toolchain.sh'),
       [
         '#!/bin/sh',
+        'printf "PATH=%s\\n" "$PATH"',
+        'printf "ROOT=%s\\n" "$TAIRA_EXPLORER_ROOT"',
         'printf "NODE_OPTIONS=%s\\n" "§{NODE_OPTIONS-unset}"'.replace('§', '$'),
         'printf "NODE_PATH=%s\\n" "§{NODE_PATH-unset}"'.replace('§', '$'),
-        'printf "PWD=%s\\n" "$PWD"',
-        'printf "ARG=%s\\n" "$@"',
+        'printf "CDPATH=%s\\n" "§{CDPATH-unset}"'.replace('§', '$'),
+        'printf "ENV=%s\\n" "§{ENV-unset}"'.replace('§', '$'),
+        'printf "BASH_ENV=%s\\n" "§{BASH_ENV-unset}"'.replace('§', '$'),
+        'for argument do printf "ARG=%s\\n" "$argument"; done',
       ].join('\n'),
       { mode: 0o700 }
     );
-    const wrapper = path.resolve('ops/taira/deploy-explorer.sh');
-    const wrapperEnvironment = {
-      ...process.env,
-      NODE_OPTIONS: '--require /definitely-not-present/attacker.js',
-      NODE_PATH: '/definitely-not-present',
-      PATH: `${fakeBin}${path.delimiter}${process.env.PATH ?? ''}`,
-    };
-    delete wrapperEnvironment.TAIRA_EXPLORER_ROOT;
-    const wrapped = spawnSync('bash', [wrapper, 'verify'], {
-      cwd: testFixture.root,
+    const result = spawnSync('/bin/sh', [wrapper, 'verify'], {
       encoding: 'utf8',
-      env: wrapperEnvironment,
+      env: {
+        ...process.env,
+        BASH_ENV: '/attacker/bash-env',
+        CDPATH: '/attacker/cdpath',
+        ENV: '/attacker/env',
+        NODE_OPTIONS: '--require /attacker.js',
+        NODE_PATH: '/attacker/node-path',
+        PATH: `${fakeBin}${path.delimiter}/usr/bin:/bin`,
+      },
     });
-    expect(wrapped.status).toBe(0);
-    expect(wrapped.stdout).toContain('NODE_OPTIONS=unset');
-    expect(wrapped.stdout).toContain('NODE_PATH=unset');
-    expect(wrapped.stdout).toContain(`PWD=${path.resolve('.')}`);
-    expect(wrapped.stdout).toContain('ARG=--taira-release-wrapper');
-    expect(wrapped.stdout).toContain('ARG=verify');
-    expect(wrapped.stdout).not.toContain('attacker.js');
+    expect(result.status).toBe(0);
+    expect(existsSync(sentinel)).toBe(false);
+    expect(result.stdout).toContain('PATH=/usr/bin:/bin:/usr/sbin:/sbin');
+    expect(result.stdout).toContain(`ROOT=${root}`);
+    for (const variable of ['NODE_OPTIONS', 'NODE_PATH', 'CDPATH', 'ENV', 'BASH_ENV']) {
+      expect(result.stdout).toContain(`${variable}=unset`);
+    }
+    expect(result.stdout).toContain('ARG=taira-release');
+    expect(result.stdout).toContain('ARG=verify');
+  });
 
-    const direct = spawnSync(
-      process.execPath,
-      [path.resolve('ops/taira/release-tool.mjs'), 'verify'],
-      { encoding: 'utf8' }
-    );
+  it('rejects direct entry even when the retired public wrapper marker is supplied', () => {
+    const direct = spawnSync(process.execPath, [path.resolve('ops/taira/release-tool.mjs'), 'verify'], {
+      encoding: 'utf8',
+    });
     expect(direct.status).toBe(1);
     expect(direct.stderr).toContain(
-      'must be invoked through ops/taira/deploy-explorer.sh'
+      'must be invoked through ops/taira/deploy-explorer.sh and the exact-toolchain bootstrap'
     );
+    const forgedMarker = spawnSync(
+      process.execPath,
+      [path.resolve('ops/taira/release-tool.mjs'), '--taira-release-wrapper', 'verify'],
+      { encoding: 'utf8' }
+    );
+    expect(forgedMarker.status).toBe(1);
+    expect(forgedMarker.stderr).toContain('exact-toolchain bootstrap');
+  });
+
+  it('consumes one owner-only exact-toolchain attestation bound to Node, source, and argv', async () => {
+    const { attestationPath, env, nodePath, argv } = await tairaReleaseAttestation();
+    expect(lstatSync(attestationPath).mode & 0o777).toBe(0o600);
+    const payload = consumeTairaReleaseAttestation({ env, argv, nodePath });
+    expect(payload.schema).toBe(1);
+    expect(existsSync(attestationPath)).toBe(false);
+    expect(env).toEqual({
+      [TAIRA_GIT_VERIFY_GNUPGHOME_ENV]: path.join(path.dirname(attestationPath), 'git-verify-gnupg'),
+      [TAIRA_GIT_VERIFY_GPG_ENV]: realpathSync(process.env[TAIRA_GIT_VERIFY_GPG_ENV]!),
+      IROHA_EXPLORER_TOOLCHAIN_CACHE: path.dirname(path.dirname(attestationPath)),
+    });
+    expect(() => consumeTairaReleaseAttestation({ env, argv })).toThrow('exact-toolchain bootstrap');
+  });
+
+  it('rejects a reusable, permissive, or argv-mismatched release attestation', async () => {
+    const permissive = await tairaReleaseAttestation();
+    chmodSync(permissive.attestationPath, 0o644);
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: permissive.env,
+        argv: permissive.argv,
+        nodePath: permissive.nodePath,
+      })
+    ).toThrow('exact-toolchain bootstrap');
+
+    const mismatched = await tairaReleaseAttestation(['rollback', releaseA]);
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: mismatched.env,
+        argv: ['verify'],
+        nodePath: mismatched.nodePath,
+      })
+    ).toThrow('exact-toolchain bootstrap');
+  });
+
+  it('rejects forged attestation identity, content, filesystem, and extracted-Node provenance', async () => {
+    const wrongNonce = await tairaReleaseAttestation();
+    wrongNonce.env[TAIRA_RELEASE_ATTESTATION_NONCE_ENV] = 'f'.repeat(64);
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: wrongNonce.env,
+        argv: wrongNonce.argv,
+        nodePath: wrongNonce.nodePath,
+      })
+    ).toThrow('exact-toolchain bootstrap');
+
+    for (const field of [
+      'git_verify_gpg_sha256',
+      'git_verify_signers_sha256',
+      'node_sha256',
+      'release_tool_sha256',
+    ] as const) {
+      const corrupted = await tairaReleaseAttestation();
+      const payload = JSON.parse(readFileSync(corrupted.attestationPath, 'utf8'));
+      payload[field] = '0'.repeat(64);
+      writeFileSync(corrupted.attestationPath, `${JSON.stringify(payload)}\n`, {
+        mode: 0o600,
+      });
+      expect(() =>
+        consumeTairaReleaseAttestation({
+          env: corrupted.env,
+          argv: corrupted.argv,
+          nodePath: corrupted.nodePath,
+        })
+      ).toThrow('exact-toolchain bootstrap');
+    }
+
+    const hardLinked = await tairaReleaseAttestation();
+    await linkFile(hardLinked.attestationPath, path.join(hardLinked.toolRoot, 'attestation-link'));
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: hardLinked.env,
+        argv: hardLinked.argv,
+        nodePath: hardLinked.nodePath,
+      })
+    ).toThrow('exact-toolchain bootstrap');
+
+    const symbolic = await tairaReleaseAttestation();
+    const backingPath = path.join(symbolic.toolRoot, 'attestation-backing');
+    renameSync(symbolic.attestationPath, backingPath);
+    symlinkSync(backingPath, symbolic.attestationPath);
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: symbolic.env,
+        argv: symbolic.argv,
+        nodePath: symbolic.nodePath,
+      })
+    ).toThrow('exact-toolchain bootstrap');
+
+    const removedStaging = await tairaReleaseAttestation();
+    rmSync(removedStaging.nodeRunRoot, { recursive: true });
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: removedStaging.env,
+        argv: removedStaging.argv,
+        nodePath: removedStaging.nodePath,
+      })
+    ).toThrow('exact-toolchain bootstrap');
+
+    const outsideStaging = await tairaReleaseAttestation();
+    const outsideNode = path.join(path.dirname(outsideStaging.cacheRoot), 'outside-node');
+    writeFileSync(outsideNode, '#!/bin/sh\nexit 0\n', { mode: 0o700 });
+    unlinkSync(outsideStaging.attestationPath);
+    await createTairaReleaseAttestation({
+      argv: outsideStaging.argv,
+      environment: outsideStaging.env,
+      toolRoot: outsideStaging.toolRoot,
+      nodeExecutable: outsideNode,
+    });
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: outsideStaging.env,
+        argv: outsideStaging.argv,
+        nodePath: outsideNode,
+      })
+    ).toThrow('exact-toolchain bootstrap');
+
+    const noncanonicalTool = await tairaReleaseAttestation();
+    const linkedTool = path.join(path.dirname(noncanonicalTool.cacheRoot), 'release-tool-link');
+    symlinkSync(TAIRA_RELEASE_TOOL_PATH, linkedTool);
+    expect(() =>
+      consumeTairaReleaseAttestation({
+        env: noncanonicalTool.env,
+        argv: noncanonicalTool.argv,
+        nodePath: noncanonicalTool.nodePath,
+        releaseToolPath: linkedTool,
+      })
+    ).toThrow('exact-toolchain bootstrap');
   });
 
   it('keeps transition adoption-only with no build, package, SDK, or network-Git path', () => {
@@ -735,10 +991,7 @@ server {
   }
 }
 ${valid}`;
-    const validSpa = valid.replace(
-      'try_files $uri /index.html',
-      'try_files $uri $uri/ /index.html'
-    );
+    const validSpa = valid.replace('try_files $uri /index.html', 'try_files $uri $uri/ /index.html');
     expect(
       verifyNginxRoot(validSpa, {
         host: 'taira-explorer.sora.org',
@@ -765,16 +1018,10 @@ ${valid}`;
       ).toThrow('exactly one TLS content-serving block');
     }
     expect(
-      verifyNginxRoot(
-        validWithRedirect.replace(
-          'try_files $uri /index.html',
-          'try_files $uri $uri/ /index.html'
-        ),
-        {
-          host: 'taira-explorer.sora.org',
-          servedPath: testFixture.servedPath,
-        }
-      )
+      verifyNginxRoot(validWithRedirect.replace('try_files $uri /index.html', 'try_files $uri $uri/ /index.html'), {
+        host: 'taira-explorer.sora.org',
+        servedPath: testFixture.servedPath,
+      })
     ).toBe(testFixture.servedPath);
     expect(() =>
       verifyNginxRoot(validSpa.replace(testFixture.servedPath, '/var/www/wrong'), {
@@ -932,9 +1179,9 @@ server {
 
     const quotedCommentAndEscapedQuote = validSpa.replace(
       'location / { try_files $uri $uri/ /index.html; }',
-      'add_header X-Debug "escaped \\" brace } # literal";\n'
-        + '  # ignored comment with } and proxy_pass http://old-explorer;\n'
-        + '  location / { try_files $uri $uri/ /index.html; }'
+      'add_header X-Debug "escaped \\" brace } # literal";\n' +
+        '  # ignored comment with } and proxy_pass http://old-explorer;\n' +
+        '  location / { try_files $uri $uri/ /index.html; }'
     );
     expect(quotedCommentAndEscapedQuote).toContain('X-Debug');
     expect(
@@ -946,8 +1193,7 @@ server {
 
     const escapedStructuralCharacters = validSpa.replace(
       'location / { try_files $uri $uri/ /index.html; }',
-      'add_header X-Debug escaped\\{brace\\}\\#hash\\;semi;\n'
-        + '  location / { try_files $uri $uri/ /index.html; }'
+      'add_header X-Debug escaped\\{brace\\}\\#hash\\;semi;\n  location / { try_files $uri $uri/ /index.html; }'
     );
     expect(
       verifyNginxRoot(escapedStructuralCharacters, {
@@ -973,9 +1219,7 @@ server {
     const testFixture = fixture();
     const dump = path.join(testFixture.root, 'nginx.conf');
     writeFileSync(dump, 'server { listen 443; }\n', { mode: 0o600 });
-    await expect(nginxConfigDump({ TAIRA_NGINX_CONFIG_DUMP: dump })).resolves.toBe(
-      'server { listen 443; }\n'
-    );
+    await expect(nginxConfigDump({ TAIRA_NGINX_CONFIG_DUMP: dump })).resolves.toBe('server { listen 443; }\n');
 
     chmodSync(dump, 0o620);
     await expect(nginxConfigDump({ TAIRA_NGINX_CONFIG_DUMP: dump })).rejects.toThrow(
@@ -997,44 +1241,52 @@ server {
 
     const linkedDump = path.join(testFixture.root, 'nginx-linked.conf');
     symlinkSync(dump, linkedDump);
-    await expect(nginxConfigDump({ TAIRA_NGINX_CONFIG_DUMP: linkedDump })).rejects.toThrow(
-      'canonical regular file'
-    );
+    await expect(nginxConfigDump({ TAIRA_NGINX_CONFIG_DUMP: linkedDump })).rejects.toThrow('canonical regular file');
   });
 });
 
 describe('release command dispatch', () => {
   it('rejects an invalid Node runtime before selecting a command', async () => {
-    await expect(runReleaseCommand({
-      argv: ['verify'],
-      nodeVersion: '24.18.0',
-    })).rejects.toThrow('Node 24.19.0 is required, found 24.18.0');
+    await expect(
+      runReleaseCommand({
+        argv: ['verify'],
+        nodeVersion: '24.18.0',
+      })
+    ).rejects.toThrow('Node 24.19.0 is required, found 24.18.0');
   });
 
   it('rejects an unknown command before dispatch', async () => {
-    await expect(runReleaseCommand({
-      argv: ['publish'],
-      nodeVersion: '24.19.0',
-    })).rejects.toThrow('Unknown release command: publish');
+    await expect(
+      runReleaseCommand({
+        argv: ['publish'],
+        nodeVersion: '24.19.0',
+      })
+    ).rejects.toThrow('Unknown release command: publish');
   });
 
   it('rejects invalid command arity before dispatch', async () => {
-    await expect(runReleaseCommand({
-      argv: ['verify', 'unexpected'],
-      nodeVersion: '24.19.0',
-    })).rejects.toThrow('Usage: verify');
-    await expect(runReleaseCommand({
-      argv: ['rollback'],
-      nodeVersion: '24.19.0',
-    })).rejects.toThrow('Usage: rollback <exact-release-id>');
+    await expect(
+      runReleaseCommand({
+        argv: ['verify', 'unexpected'],
+        nodeVersion: '24.19.0',
+      })
+    ).rejects.toThrow('Usage: verify');
+    await expect(
+      runReleaseCommand({
+        argv: ['rollback'],
+        nodeVersion: '24.19.0',
+      })
+    ).rejects.toThrow('Usage: rollback <exact-release-id>');
   });
 
   it('dispatches manifest generation only after its required input gate', async () => {
-    await expect(runReleaseCommand({
-      argv: ['manifest'],
-      env: {},
-      nodeVersion: '24.19.0',
-    })).rejects.toThrow('TAIRA_EXPLORER_REVISION is required');
+    await expect(
+      runReleaseCommand({
+        argv: ['manifest'],
+        env: {},
+        nodeVersion: '24.19.0',
+      })
+    ).rejects.toThrow('TAIRA_EXPLORER_REVISION is required');
   });
 });
 
@@ -1097,10 +1349,12 @@ describe('isolated release build boundary', () => {
       'add',
       '--detach',
     ]);
-    expect(commands).toContainEqual(expect.objectContaining({
-      command: 'git',
-      args: ['status', '--porcelain=v1', '--untracked-files=all', '--ignored=matching'],
-    }));
+    expect(commands).toContainEqual(
+      expect.objectContaining({
+        command: 'git',
+        args: ['status', '--porcelain=v1', '--untracked-files=all', '--ignored=matching'],
+      })
+    );
     for (const { env } of commands) {
       expect(env).not.toHaveProperty('VITE_SECRET');
       expect(env).not.toHaveProperty('TAIRA_RUNTIME_CONFIG');
@@ -1157,28 +1411,30 @@ describe('isolated release build boundary', () => {
   ])('rejects %s hook-injected package input before pnpm runs', async (_kind, injectedStatus) => {
     const testFixture = fixture();
     const commands: Array<{ command: string; args: string[] }> = [];
-    await expect(withIsolatedReleaseBuild(
-      {
-        repositoryRoot: testFixture.root,
-        explorerRevision: explorerA,
-      },
-      async () => undefined,
-      {
-        nodeVersion: '24.19.0',
-        runCommandFn: (command: string, args: string[]) => {
-          commands.push({ command, args });
-          if (command === 'git' && args.includes('worktree') && args.includes('add')) {
-            mkdirSync(args.at(-2)!, { recursive: true });
-            return '';
-          }
-          if (command === 'git' && args[0] === 'rev-parse') return `${explorerA}\n`;
-          if (command === 'git' && args.includes('--ignored=matching')) {
-            return `${injectedStatus}\n`;
-          }
-          return '';
+    await expect(
+      withIsolatedReleaseBuild(
+        {
+          repositoryRoot: testFixture.root,
+          explorerRevision: explorerA,
         },
-      }
-    )).rejects.toThrow(`Isolated release build contains unsigned files:\n${injectedStatus}`);
+        async () => undefined,
+        {
+          nodeVersion: '24.19.0',
+          runCommandFn: (command: string, args: string[]) => {
+            commands.push({ command, args });
+            if (command === 'git' && args.includes('worktree') && args.includes('add')) {
+              mkdirSync(args.at(-2)!, { recursive: true });
+              return '';
+            }
+            if (command === 'git' && args[0] === 'rev-parse') return `${explorerA}\n`;
+            if (command === 'git' && args.includes('--ignored=matching')) {
+              return `${injectedStatus}\n`;
+            }
+            return '';
+          },
+        }
+      )
+    ).rejects.toThrow(`Isolated release build contains unsigned files:\n${injectedStatus}`);
     expect(commands.some(({ command }) => command === 'pnpm')).toBe(false);
   });
 
@@ -1251,45 +1507,34 @@ describe('release store lifecycle', () => {
     ['Accept header', 'corsHeaders', 'content-type', 'CORS preflight must allow the Accept header'],
     ['POST method', 'corsMethods', 'GET, OPTIONS', 'CORS preflight must allow POST'],
     ['Content-Type header', 'corsHeaders', 'accept', 'CORS preflight must allow the Content-Type header'],
-  ] as const)(
-    'rejects an Explorer preflight without the required %s',
-    async (_case, field, value, error) => {
+  ] as const)('rejects an Explorer preflight without the required %s', async (_case, field, value, error) => {
+    const testFixture = fixture();
+    testFixture[field] = value;
+    const urls = await startPublicServer(testFixture);
+    await expect(fetchRuntimeRevision(urls.statusUrl)).rejects.toThrow(error);
+  });
+
+  it.each(['X-Iroha-Account', 'X-Iroha-Signature', 'X-Iroha-Timestamp-Ms', 'X-Iroha-Nonce', 'X-Iroha-Witness'])(
+    'rejects canonical-auth preflight without the %s header',
+    async (missingHeader) => {
       const testFixture = fixture();
-      testFixture[field] = value;
+      testFixture.corsHeaders = testFixture.corsHeaders
+        .split(', ')
+        .filter((header) => header !== missingHeader.toLowerCase())
+        .join(', ');
       const urls = await startPublicServer(testFixture);
-      await expect(fetchRuntimeRevision(urls.statusUrl)).rejects.toThrow(error);
+      await expect(fetchRuntimeRevision(urls.statusUrl)).rejects.toThrow(
+        `CORS preflight must allow the ${missingHeader} header`
+      );
     }
   );
-
-  it.each([
-    'X-Iroha-Account',
-    'X-Iroha-Signature',
-    'X-Iroha-Timestamp-Ms',
-    'X-Iroha-Nonce',
-    'X-Iroha-Witness',
-  ])('rejects canonical-auth preflight without the %s header', async (missingHeader) => {
-    const testFixture = fixture();
-    testFixture.corsHeaders = testFixture.corsHeaders
-      .split(', ')
-      .filter((header) => header !== missingHeader.toLowerCase())
-      .join(', ');
-    const urls = await startPublicServer(testFixture);
-    await expect(fetchRuntimeRevision(urls.statusUrl)).rejects.toThrow(
-      `CORS preflight must allow the ${missingHeader} header`
-    );
-  });
 
   it('smokes the public root and a history-mode deep route as the exact active SPA shell', async () => {
     const testFixture = fixture();
     const manifest = await baselineManifest(testFixture);
-    writeFileSync(
-      path.join(testFixture.servedPath, 'release-manifest.json'),
-      serializeReleaseManifest(manifest)
-    );
+    writeFileSync(path.join(testFixture.servedPath, 'release-manifest.json'), serializeReleaseManifest(manifest));
     const urls = await startPublicServer(testFixture);
-    await expect(
-      verifyPublicRelease({ ...urls, manifest })
-    ).resolves.toEqual(manifest);
+    await expect(verifyPublicRelease({ ...urls, manifest })).resolves.toEqual(manifest);
     expect(urls.requestedPaths).toContain('/');
     expect(urls.requestedPaths).toContain('/accounts');
   });
@@ -1298,20 +1543,14 @@ describe('release store lifecycle', () => {
     ['missing fallback', 'missing', 'returned HTTP 404'],
     ['wrong shell bytes', 'wrong-bytes', 'exact active index.html SPA shell'],
     ['wrong content type', 'wrong-content-type', 'SPA shell as text/html'],
-  ] as const)(
-    'rejects a public deep route with %s',
-    async (_case, mode, error) => {
-      const testFixture = fixture();
-      testFixture.spaFallbackMode = mode;
-      const manifest = await baselineManifest(testFixture);
-      writeFileSync(
-        path.join(testFixture.servedPath, 'release-manifest.json'),
-        serializeReleaseManifest(manifest)
-      );
-      const urls = await startPublicServer(testFixture);
-      await expect(verifyPublicRelease({ ...urls, manifest })).rejects.toThrow(error);
-    }
-  );
+  ] as const)('rejects a public deep route with %s', async (_case, mode, error) => {
+    const testFixture = fixture();
+    testFixture.spaFallbackMode = mode;
+    const manifest = await baselineManifest(testFixture);
+    writeFileSync(path.join(testFixture.servedPath, 'release-manifest.json'), serializeReleaseManifest(manifest));
+    const urls = await startPublicServer(testFixture);
+    await expect(verifyPublicRelease({ ...urls, manifest })).rejects.toThrow(error);
+  });
 
   it('fails closed when an uninitialized live directory contains reserved release metadata', async () => {
     const testFixture = fixture();
@@ -1847,11 +2086,9 @@ describe('durability and transaction recovery', () => {
     const manifest = await baselineManifest(testFixture);
     writeFileSync(testFixture.baselineManifestPath, serializeReleaseManifest(manifest));
     const operatorConfigPath = path.join(testFixture.root, 'invalid-taira-config.json');
-    writeFileSync(
-      operatorConfigPath,
-      '{"toriiBaseUrl":"https://wrong.example","toriiForceBaseUrl":true}\n',
-      { mode: 0o600 }
-    );
+    writeFileSync(operatorConfigPath, '{"toriiBaseUrl":"https://wrong.example","toriiForceBaseUrl":true}\n', {
+      mode: 0o600,
+    });
     const liveConfigPath = path.join(testFixture.servedPath, 'config.json');
     chmodSync(liveConfigPath, 0o644);
     const originalConfig = readFileSync(liveConfigPath);
@@ -1914,9 +2151,7 @@ describe('durability and transaction recovery', () => {
       import assert from 'node:assert/strict';
       import { readFileSync, statSync } from 'node:fs';
       import path from 'node:path';
-      import { initializeReleaseStore } from ${JSON.stringify(
-        path.resolve('ops/taira/release-tool.mjs')
-      )};
+      import { initializeReleaseStore } from ${JSON.stringify(path.resolve('ops/taira/release-tool.mjs'))};
 
       const servedPath = ${JSON.stringify(testFixture.servedPath)};
       const releasesDir = ${JSON.stringify(testFixture.releasesDir)};
@@ -2365,90 +2600,86 @@ describe('durability and transaction recovery', () => {
     expect((await resolveActiveRelease(testFixture.servedPath, testFixture.releasesDir)).releaseId).toBe(releaseA);
   });
 
-  it(
-    'gives an executable transition path when predecessor smoke fails during coupled recovery',
-    async () => {
-      const testFixture = fixture();
-      await initialize(testFixture);
-      writeDist(testFixture.nextDist, 'FAIL_NEW_RUNTIME');
-      const nextRuntime = 'd'.repeat(40);
-      const nextRelease = `${explorerB.slice(0, 12)}-${nextRuntime.slice(0, 12)}`;
-      const preparation = {
-        distDir: testFixture.nextDist,
-        packageLockPath: testFixture.packageLockPath,
-        servedPath: testFixture.servedPath,
-        releasesDir: testFixture.releasesDir,
-        explorerRevision: explorerB,
-        generatorRevision: explorerB,
-        sdkRevision: nextRuntime,
-        runtimeRevision: nextRuntime,
-        profileRevision: nextRuntime,
-        sdkProvenance: sdkProvenance(nextRuntime),
-        runtimeTransitionFrom: runtimeRevision,
-        currentRuntimeRevision: runtimeRevision,
-      };
-      const prepared = await prepareTransitionRelease(preparation);
-      expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(releaseA);
-      const failingNewRuntimeUrls = await startPublicServer(testFixture, 'FAIL_NEW_RUNTIME', nextRuntime);
-      await expect(
-        activatePreparedTransition({
-          releaseId: nextRelease,
-          expectedManifest: prepared.manifest,
-          servedPath: testFixture.servedPath,
-          releasesDir: testFixture.releasesDir,
-          ...failingNewRuntimeUrls,
-          currentRuntimeRevision: nextRuntime,
-          runtimeTransitionFrom: runtimeRevision,
-          verification: { attempts: 1, delayMs: 0 },
-        })
-      ).rejects.toBeInstanceOf(CoupledRuntimeRollbackRequiredError);
-      expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(nextRelease);
-
-      const failingOldRuntimeUrls = await startPublicServer(testFixture, 'release-a', runtimeRevision);
-      let recoveryError: CoupledRuntimeRollbackRequiredError | null = null;
-      try {
-        await rollbackRelease({
-          releaseId: releaseA,
-          servedPath: testFixture.servedPath,
-          releasesDir: testFixture.releasesDir,
-          ...failingOldRuntimeUrls,
-          currentRuntimeRevision: runtimeRevision,
-          verification: { attempts: 1, delayMs: 0 },
-        });
-      } catch (error) {
-        recoveryError = error as CoupledRuntimeRollbackRequiredError;
-      }
-      expect(recoveryError).toBeInstanceOf(CoupledRuntimeRollbackRequiredError);
-      expect(recoveryError).toMatchObject({
-        failedReleaseId: releaseA,
-        failedRuntimeRevision: runtimeRevision,
-        previousReleaseId: nextRelease,
-        previousRuntimeRevision: nextRuntime,
-        recoveryAction: 'transition',
-        recoveryRuntimeRevision: nextRuntime,
-        recoveryReleaseId: nextRelease,
-        runtimeTransitionFrom: runtimeRevision,
-      });
-      expect(recoveryError?.message).toContain(`TAIRA_COUPLED_PREVIOUS_RUNTIME_REVISION=${runtimeRevision}`);
-      expect(recoveryError?.message).toContain(`ops/taira/deploy-explorer.sh transition ${nextRelease}`);
-      expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(releaseA);
-
-      const healthyNewRuntimeUrls = await startPublicServer(testFixture, undefined, nextRuntime);
-      const recovered = await activatePreparedTransition({
+  it('gives an executable transition path when predecessor smoke fails during coupled recovery', async () => {
+    const testFixture = fixture();
+    await initialize(testFixture);
+    writeDist(testFixture.nextDist, 'FAIL_NEW_RUNTIME');
+    const nextRuntime = 'd'.repeat(40);
+    const nextRelease = `${explorerB.slice(0, 12)}-${nextRuntime.slice(0, 12)}`;
+    const preparation = {
+      distDir: testFixture.nextDist,
+      packageLockPath: testFixture.packageLockPath,
+      servedPath: testFixture.servedPath,
+      releasesDir: testFixture.releasesDir,
+      explorerRevision: explorerB,
+      generatorRevision: explorerB,
+      sdkRevision: nextRuntime,
+      runtimeRevision: nextRuntime,
+      profileRevision: nextRuntime,
+      sdkProvenance: sdkProvenance(nextRuntime),
+      runtimeTransitionFrom: runtimeRevision,
+      currentRuntimeRevision: runtimeRevision,
+    };
+    const prepared = await prepareTransitionRelease(preparation);
+    expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(releaseA);
+    const failingNewRuntimeUrls = await startPublicServer(testFixture, 'FAIL_NEW_RUNTIME', nextRuntime);
+    await expect(
+      activatePreparedTransition({
         releaseId: nextRelease,
         expectedManifest: prepared.manifest,
         servedPath: testFixture.servedPath,
         releasesDir: testFixture.releasesDir,
-        ...healthyNewRuntimeUrls,
+        ...failingNewRuntimeUrls,
         currentRuntimeRevision: nextRuntime,
         runtimeTransitionFrom: runtimeRevision,
         verification: { attempts: 1, delayMs: 0 },
+      })
+    ).rejects.toBeInstanceOf(CoupledRuntimeRollbackRequiredError);
+    expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(nextRelease);
+
+    const failingOldRuntimeUrls = await startPublicServer(testFixture, 'release-a', runtimeRevision);
+    let recoveryError: CoupledRuntimeRollbackRequiredError | null = null;
+    try {
+      await rollbackRelease({
+        releaseId: releaseA,
+        servedPath: testFixture.servedPath,
+        releasesDir: testFixture.releasesDir,
+        ...failingOldRuntimeUrls,
+        currentRuntimeRevision: runtimeRevision,
+        verification: { attempts: 1, delayMs: 0 },
       });
-      expect(recovered.releaseId).toBe(nextRelease);
-      expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(nextRelease);
-    },
-    15_000
-  );
+    } catch (error) {
+      recoveryError = error as CoupledRuntimeRollbackRequiredError;
+    }
+    expect(recoveryError).toBeInstanceOf(CoupledRuntimeRollbackRequiredError);
+    expect(recoveryError).toMatchObject({
+      failedReleaseId: releaseA,
+      failedRuntimeRevision: runtimeRevision,
+      previousReleaseId: nextRelease,
+      previousRuntimeRevision: nextRuntime,
+      recoveryAction: 'transition',
+      recoveryRuntimeRevision: nextRuntime,
+      recoveryReleaseId: nextRelease,
+      runtimeTransitionFrom: runtimeRevision,
+    });
+    expect(recoveryError?.message).toContain(`TAIRA_COUPLED_PREVIOUS_RUNTIME_REVISION=${runtimeRevision}`);
+    expect(recoveryError?.message).toContain(`ops/taira/deploy-explorer.sh transition ${nextRelease}`);
+    expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(releaseA);
+
+    const healthyNewRuntimeUrls = await startPublicServer(testFixture, undefined, nextRuntime);
+    const recovered = await activatePreparedTransition({
+      releaseId: nextRelease,
+      expectedManifest: prepared.manifest,
+      servedPath: testFixture.servedPath,
+      releasesDir: testFixture.releasesDir,
+      ...healthyNewRuntimeUrls,
+      currentRuntimeRevision: nextRuntime,
+      runtimeTransitionFrom: runtimeRevision,
+      verification: { attempts: 1, delayMs: 0 },
+    });
+    expect(recovered.releaseId).toBe(nextRelease);
+    expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(nextRelease);
+  }, 15_000);
 
   it('removes staging on a publication rename failure and rejects a symlinked dist source', async () => {
     const testFixture = fixture();
@@ -2666,6 +2897,174 @@ describe('durability and transaction recovery', () => {
 });
 
 describe('closed provenance and canonical inputs', () => {
+  it.each(['G', 'U'])('accepts an exact OpenPGP signer with Git status %s', (status) => {
+    const calls: Array<{ args: string[]; environment: NodeJS.ProcessEnv }> = [];
+    const git = (_root: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => {
+      calls.push({ args, environment: options?.env ?? {} });
+      if (args[0] === 'cat-file') return openPgpCommitObject();
+      if (args[0] === 'verify-commit') return '';
+      if (args[0] === 'show') return expectedOpenPgpIdentity(status);
+      throw new Error(`unexpected signature verifier call: ${args.join(' ')}`);
+    };
+
+    const source = {
+      ...process.env,
+      GIT_DIR: '/attacker/repository',
+      GIT_OBJECT_DIRECTORY: '/attacker/objects',
+      GIT_ALTERNATE_OBJECT_DIRECTORIES: '/attacker/alternate-objects',
+      GIT_EXEC_PATH: '/attacker/git-exec',
+      GIT_CONFIG_PARAMETERS: "'gpg.format'='ssh'",
+      LD_PRELOAD: '/attacker/preload.so',
+      DYLD_INSERT_LIBRARIES: '/attacker/preload.dylib',
+      DYLD_LIBRARY_PATH: '/attacker/lib',
+      HTTP_PROXY: 'http://attacker.invalid',
+      HTTPS_PROXY: 'http://attacker.invalid',
+      ALL_PROXY: 'socks5://attacker.invalid',
+      GIT_SSL_CAINFO: '/attacker/ca.pem',
+      NODE_EXTRA_CA_CERTS: '/attacker/ca.pem',
+      SSL_CERT_FILE: '/attacker/ca.pem',
+    };
+    expect(verifyGitCommitSignature('/fixture/repository', explorerA, { git, source })).toBe(explorerA);
+    expect(calls.map(({ args }) => args)).toEqual([
+      ['cat-file', 'commit', explorerA],
+      ['verify-commit', explorerA],
+      ['show', '--no-patch', '--format=%G?%x00%GF%x00%GP', explorerA],
+    ]);
+    for (const { environment } of calls) {
+      expect(environment).toMatchObject({
+        GIT_CONFIG_COUNT: '9',
+        GIT_CONFIG_KEY_0: 'gpg.program',
+        GIT_CONFIG_KEY_4: 'gpg.format',
+        GIT_CONFIG_VALUE_4: 'openpgp',
+        GIT_CONFIG_KEY_5: 'gpg.openpgp.program',
+        GIT_CONFIG_VALUE_5: process.env[TAIRA_GIT_VERIFY_GPG_ENV],
+        GIT_NO_REPLACE_OBJECTS: '1',
+        GNUPGHOME: process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV],
+      });
+      for (const unsafe of [
+        'GIT_DIR',
+        'GIT_OBJECT_DIRECTORY',
+        'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+        'GIT_EXEC_PATH',
+        'GIT_CONFIG_PARAMETERS',
+        'LD_PRELOAD',
+        'DYLD_INSERT_LIBRARIES',
+        'DYLD_LIBRARY_PATH',
+        'HTTP_PROXY',
+        'HTTPS_PROXY',
+        'ALL_PROXY',
+        'GIT_SSL_CAINFO',
+        'NODE_EXTRA_CA_CERTS',
+        'SSL_CERT_FILE',
+      ]) {
+        expect(environment).not.toHaveProperty(unsafe);
+      }
+    }
+  });
+
+  it.each(['SSH SIGNATURE', 'SIGNED MESSAGE'])(
+    'rejects a cryptographically accepted %s commit before invoking its verifier',
+    (signatureArmor) => {
+      const calls: string[][] = [];
+      const git = (_root: string, args: string[]) => {
+        calls.push(args);
+        if (args[0] === 'cat-file') return openPgpCommitObject(signatureArmor);
+        if (args[0] === 'verify-commit') return '';
+        if (args[0] === 'show') return expectedOpenPgpIdentity();
+        throw new Error(`unexpected signature verifier call: ${args.join(' ')}`);
+      };
+
+      expect(() => verifyGitCommitSignature('/fixture/repository', explorerA, { git })).toThrow(
+        'signature must use OpenPGP armor'
+      );
+      expect(calls).toEqual([['cat-file', 'commit', explorerA]]);
+    }
+  );
+
+  it.each([
+    [
+      'missing signature',
+      openPgpCommitObject()
+        .split('\n')
+        .filter((_line, index) => index < 3 || index > 5)
+        .join('\n'),
+      'exactly one OpenPGP signature',
+    ],
+    [
+      'duplicate signatures',
+      [...openPgpCommitObject().split('\n').slice(0, 6), ...openPgpCommitObject().split('\n').slice(3)].join('\n'),
+      'exactly one OpenPGP signature',
+    ],
+    [
+      'gpgsig-sha256 header',
+      openPgpCommitObject().replace('\ngpgsig ', '\ngpgsig-sha256 '),
+      'signature must use OpenPGP armor',
+    ],
+    [
+      'malformed armor terminator',
+      openPgpCommitObject().replace(' -----END PGP SIGNATURE-----', ' malformed-signature-terminator'),
+      'signature must use OpenPGP armor',
+    ],
+  ])('rejects a commit object with %s', (_case, commitObject, expectedError) => {
+    const calls: string[][] = [];
+    const git = (_root: string, args: string[]) => {
+      calls.push(args);
+      if (args[0] === 'cat-file') return commitObject;
+      throw new Error(`unexpected signature verifier call: ${args.join(' ')}`);
+    };
+
+    expect(() => verifyGitCommitSignature('/fixture/repository', explorerA, { git })).toThrow(expectedError);
+    expect(calls).toEqual([['cat-file', 'commit', explorerA]]);
+  });
+
+  it('rejects a valid, locally trusted OpenPGP signature from the wrong signer', () => {
+    const wrongFingerprint = 'A'.repeat(40);
+    const git = (_root: string, args: string[]) => {
+      if (args[0] === 'cat-file') return openPgpCommitObject();
+      if (args[0] === 'verify-commit') return '';
+      if (args[0] === 'show') return `G\0${wrongFingerprint}\0${wrongFingerprint}\n`;
+      throw new Error(`unexpected signature verifier call: ${args.join(' ')}`);
+    };
+
+    expect(() => verifyGitCommitSignature('/fixture/repository', explorerA, { git })).toThrow(
+      `exact Taira release signer ${TAIRA_RELEASE_SIGNER_FINGERPRINT}`
+    );
+  });
+
+  it.each([
+    ['B', TAIRA_RELEASE_SIGNER_FINGERPRINT, TAIRA_RELEASE_SIGNER_FINGERPRINT],
+    ['G', TAIRA_RELEASE_SIGNER_FINGERPRINT, 'B'.repeat(40)],
+    ['G', TAIRA_RELEASE_SIGNER_FINGERPRINT, ''],
+  ])('rejects invalid or ambiguous OpenPGP identity tuple %#', (status, signer, primary) => {
+    const git = (_root: string, args: string[]) => {
+      if (args[0] === 'cat-file') return openPgpCommitObject();
+      if (args[0] === 'verify-commit') return '';
+      if (args[0] === 'show') return `${status}\0${signer}\0${primary}\n`;
+      throw new Error(`unexpected signature verifier call: ${args.join(' ')}`);
+    };
+
+    expect(() => verifyGitCommitSignature('/fixture/repository', explorerA, { git })).toThrow();
+  });
+
+  it.skipIf(!runGpgIntegration)('verifies the actual signed HEAD with the generated public-only keyring', async () => {
+    const integrationRoot = realpathSync(
+      mkdtempSync(path.join(realpathSync('/tmp'), 'taira-release-gpg-integration-'))
+    );
+    temporaryDirectories.push(integrationRoot);
+    chmodSync(integrationRoot, 0o700);
+    mkdirSync(path.join(integrationRoot, 'home'), { mode: 0o700 });
+    const environment: Record<string, string> = {};
+    await prepareTairaGitVerification({ environment, toolRoot: integrationRoot });
+    const repositoryRoot = path.resolve(import.meta.dirname, '../..');
+    const source = {
+      HOME: path.join(integrationRoot, 'home'),
+      PATH: '/usr/bin:/bin:/usr/sbin:/sbin',
+      [TAIRA_GIT_VERIFY_GPG_ENV]: environment[TAIRA_GIT_VERIFY_GPG_ENV],
+      [TAIRA_GIT_VERIFY_GNUPGHOME_ENV]: environment[TAIRA_GIT_VERIFY_GNUPGHOME_ENV],
+    };
+    expect(verifyGitCommitSignature(repositoryRoot, 'HEAD', { source })).toBe('HEAD');
+  });
+
   it('keeps the live release store out of checkout cleanliness while retaining its independent gates', () => {
     const repositoryRoot = path.resolve(import.meta.dirname, '../..');
     const ignored = spawnSync('git', ['check-ignore', '--no-index', '--quiet', 'releases/.release-tool-contract'], {
@@ -2677,14 +3076,33 @@ describe('closed provenance and canonical inputs', () => {
     expect(readFileSync(path.join(repositoryRoot, '.dockerignore'), 'utf8').split(/\r?\n/u)).toContain('/releases/');
   });
 
-  function fakeExplorerGit({ head, master, ancestor = true }: { head: string; master: string; ancestor?: boolean }) {
+  function fakeExplorerGit({
+    head,
+    master,
+    ancestor = true,
+    headAfterVerification = head,
+  }: {
+    head: string,
+    master: string,
+    ancestor?: boolean,
+    headAfterVerification?: string,
+  }) {
     const calls: string[][] = [];
-    const git = (_root: string, args: string[]) => {
+    const environments: NodeJS.ProcessEnv[] = [];
+    let headReads = 0;
+    const git = (_root: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => {
       calls.push(args);
+      environments.push(options?.env ?? {});
       if (args[0] === 'config') return 'https://github.com/soramitsu/iroha-block-explorer-web.git\n';
       if (args[0] === 'fetch' || args[0] === 'verify-commit') return '';
+      if (args[0] === 'cat-file') return openPgpCommitObject();
+      if (args[0] === 'show') return expectedOpenPgpIdentity();
       if (args[0] === 'status') return '';
-      if (args[0] === 'rev-parse' && args[1] === 'HEAD') return `${head}\n`;
+      if (args[0] === 'rev-parse' && args.at(-1) === 'HEAD^{commit}') {
+        const revision = headReads === 0 ? head : headAfterVerification;
+        headReads += 1;
+        return `${revision}\n`;
+      }
       if (args[0] === 'rev-parse') return `${master}\n`;
       if (args[0] === 'merge-base') {
         if (!ancestor) throw new Error('not an ancestor');
@@ -2692,24 +3110,82 @@ describe('closed provenance and canonical inputs', () => {
       }
       throw new Error(`unexpected git call: ${args.join(' ')}`);
     };
-    return { git, calls };
+    return { git, calls, environments };
   }
 
   it('freshly fetches canonical origin/master and requires final HEAD to equal it', () => {
     const testFixture = fixture();
     const matching = fakeExplorerGit({ head: explorerA, master: explorerA });
-    expect(verifyReleaseCheckout(testFixture.root, { git: matching.git })).toBe(explorerA);
+    const source = {
+      ...process.env,
+      GIT_DIR: '/attacker/repository',
+      GIT_OBJECT_DIRECTORY: '/attacker/objects',
+      GIT_ALTERNATE_OBJECT_DIRECTORIES: '/attacker/alternate-objects',
+      GIT_EXEC_PATH: '/attacker/git-exec',
+      GIT_CONFIG_PARAMETERS: "'gpg.format'='ssh'",
+      LD_PRELOAD: '/attacker/preload.so',
+      DYLD_INSERT_LIBRARIES: '/attacker/preload.dylib',
+      DYLD_LIBRARY_PATH: '/attacker/lib',
+      HTTP_PROXY: 'http://attacker.invalid',
+      HTTPS_PROXY: 'http://attacker.invalid',
+      ALL_PROXY: 'socks5://attacker.invalid',
+      GIT_SSL_CAINFO: '/attacker/ca.pem',
+      NODE_EXTRA_CA_CERTS: '/attacker/ca.pem',
+      SSL_CERT_FILE: '/attacker/ca.pem',
+    };
+    expect(verifyReleaseCheckout(testFixture.root, { git: matching.git, source })).toBe(explorerA);
     expect(matching.calls).toContainEqual([
       'fetch',
       '--force',
       '--prune',
-      'origin',
-      'refs/heads/master:refs/remotes/origin/master',
+      '--no-tags',
+      '--no-recurse-submodules',
+      'https://github.com/soramitsu/iroha-block-explorer-web.git',
+      '+refs/heads/master:refs/remotes/origin/master',
     ]);
+    for (const environment of matching.environments) {
+      expect(environment).toMatchObject({
+        GIT_CONFIG_COUNT: '9',
+        GIT_CONFIG_KEY_0: 'gpg.program',
+        GIT_CONFIG_KEY_4: 'gpg.format',
+        GIT_CONFIG_VALUE_4: 'openpgp',
+        GIT_CONFIG_KEY_5: 'gpg.openpgp.program',
+        GIT_CONFIG_VALUE_5: process.env[TAIRA_GIT_VERIFY_GPG_ENV],
+        GIT_NO_REPLACE_OBJECTS: '1',
+        GNUPGHOME: process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV],
+      });
+      for (const unsafe of [
+        'GIT_DIR',
+        'GIT_OBJECT_DIRECTORY',
+        'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+        'GIT_EXEC_PATH',
+        'GIT_CONFIG_PARAMETERS',
+        'LD_PRELOAD',
+        'DYLD_INSERT_LIBRARIES',
+        'DYLD_LIBRARY_PATH',
+        'HTTP_PROXY',
+        'HTTPS_PROXY',
+        'ALL_PROXY',
+        'GIT_SSL_CAINFO',
+        'NODE_EXTRA_CA_CERTS',
+        'SSL_CERT_FILE',
+      ]) {
+        expect(environment).not.toHaveProperty(unsafe);
+      }
+    }
 
     const stale = fakeExplorerGit({ head: explorerA, master: explorerB });
     expect(() => verifyReleaseCheckout(testFixture.root, { git: stale.git })).toThrow(
       'must equal freshly fetched origin/master'
+    );
+
+    const raced = fakeExplorerGit({
+      head: explorerA,
+      headAfterVerification: explorerB,
+      master: explorerB,
+    });
+    expect(() => verifyReleaseCheckout(testFixture.root, { git: raced.git })).toThrow(
+      `Explorer HEAD changed during signature verification: ${explorerA} -> ${explorerB}`
     );
   });
 
@@ -2725,6 +3201,15 @@ describe('closed provenance and canonical inputs', () => {
       `HEAD ${explorerB} does not match manifest generator ${explorerA}`
     );
     expect(mismatched.calls.some((args) => args[0] === 'fetch')).toBe(false);
+
+    const raced = fakeExplorerGit({
+      head: explorerA,
+      headAfterVerification: explorerB,
+      master: explorerB,
+    });
+    expect(() => verifyLocalReleaseCheckout(testFixture.root, explorerA, { git: raced.git })).toThrow(
+      `Recovery tool HEAD changed during signature verification: ${explorerA} -> ${explorerB}`
+    );
   });
 
   it('accepts only the hard-coded reviewed baseline manifest tuple', async () => {
@@ -2826,11 +3311,8 @@ describe('closed provenance and canonical inputs', () => {
     let masterRevision = explorerB;
     let canonicalReachable = true;
     let signatureValid = true;
-    const git = (
-      root: string,
-      args: string[],
-      options?: { env?: NodeJS.ProcessEnv }
-    ) => {
+    let signatureIdentity = expectedOpenPgpIdentity();
+    const git = (root: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => {
       if (args[0] === 'init') {
         verifierRoots.push(root);
         expect(statSync(root).mode & 0o777).toBe(0o700);
@@ -2856,10 +3338,29 @@ describe('closed provenance and canonical inputs', () => {
         if (!signatureValid) throw new Error('injected signature failure');
         return '';
       }
+      if (args[0] === 'cat-file') return openPgpCommitObject();
+      if (args[0] === 'show') return signatureIdentity;
       throw new Error(`unexpected canonical Explorer verifier call: ${args.join(' ')}`);
     };
 
-    await expect(verifyCanonicalExplorerRevision(explorerA, { git })).resolves.toBe(explorerA);
+    const hostileSource = {
+      ...process.env,
+      GIT_DIR: '/attacker/repository',
+      GIT_OBJECT_DIRECTORY: '/attacker/objects',
+      GIT_ALTERNATE_OBJECT_DIRECTORIES: '/attacker/alternate-objects',
+      GIT_EXEC_PATH: '/attacker/git-exec',
+      GIT_CONFIG_PARAMETERS: "'gpg.openpgp.program'='/attacker/fake-gpg'",
+      LD_PRELOAD: '/attacker/preload.so',
+      DYLD_INSERT_LIBRARIES: '/attacker/preload.dylib',
+      DYLD_LIBRARY_PATH: '/attacker/lib',
+      HTTP_PROXY: 'http://attacker.invalid',
+      HTTPS_PROXY: 'http://attacker.invalid',
+      ALL_PROXY: 'socks5://attacker.invalid',
+      GIT_SSL_CAINFO: '/attacker/ca.pem',
+      NODE_EXTRA_CA_CERTS: '/attacker/ca.pem',
+      SSL_CERT_FILE: '/attacker/ca.pem',
+    };
+    await expect(verifyCanonicalExplorerRevision(explorerA, { git, source: hostileSource })).resolves.toBe(explorerA);
     expect(fetchArguments[0]).toEqual([
       '-c',
       'protocol.allow=never',
@@ -2878,28 +3379,43 @@ describe('closed provenance and canonical inputs', () => {
       '+refs/heads/*:refs/taira-explorer-verifier/heads/*',
     ]);
     expect(fetchEnvironments[0]).toMatchObject({
+      GIT_CONFIG_COUNT: '9',
+      GIT_CONFIG_KEY_0: 'gpg.program',
+      GIT_CONFIG_VALUE_0: process.env[TAIRA_GIT_VERIFY_GPG_ENV],
+      GIT_CONFIG_KEY_4: 'gpg.format',
+      GIT_CONFIG_VALUE_4: 'openpgp',
+      GIT_CONFIG_KEY_5: 'gpg.openpgp.program',
+      GIT_CONFIG_VALUE_5: process.env[TAIRA_GIT_VERIFY_GPG_ENV],
       GIT_CONFIG_GLOBAL: '/dev/null',
       GIT_CONFIG_NOSYSTEM: '1',
+      GIT_NO_REPLACE_OBJECTS: '1',
       GIT_TERMINAL_PROMPT: '0',
+      GNUPGHOME: process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV],
     });
     for (const unsafe of [
-      'GIT_CONFIG_COUNT',
       'GIT_DIR',
       'GIT_OBJECT_DIRECTORY',
+      'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+      'GIT_EXEC_PATH',
+      'GIT_CONFIG_PARAMETERS',
+      'LD_PRELOAD',
+      'DYLD_INSERT_LIBRARIES',
+      'DYLD_LIBRARY_PATH',
       'HTTP_PROXY',
+      'HTTPS_PROXY',
+      'ALL_PROXY',
+      'GIT_SSL_CAINFO',
       'NODE_EXTRA_CA_CERTS',
       'SSL_CERT_FILE',
     ]) {
       expect(fetchEnvironments[0]).not.toHaveProperty(unsafe);
     }
 
-    await expect(
-      verifyCanonicalExplorerRevision(explorerA, { git, requireMasterTip: true })
-    ).rejects.toThrow(`must equal freshly fetched canonical master ${explorerB}`);
+    await expect(verifyCanonicalExplorerRevision(explorerA, { git, requireMasterTip: true })).rejects.toThrow(
+      `must equal freshly fetched canonical master ${explorerB}`
+    );
     masterRevision = explorerA;
-    await expect(
-      verifyCanonicalExplorerRevision(explorerA, { git, requireMasterTip: true })
-    ).resolves.toBe(explorerA);
+    await expect(verifyCanonicalExplorerRevision(explorerA, { git, requireMasterTip: true })).resolves.toBe(explorerA);
 
     canonicalReachable = false;
     await expect(verifyCanonicalExplorerRevision(explorerA, { git })).rejects.toThrow(
@@ -2910,8 +3426,13 @@ describe('closed provenance and canonical inputs', () => {
     await expect(verifyCanonicalExplorerRevision(explorerA, { git })).rejects.toThrow(
       'cryptographically verified canonical commit'
     );
+    signatureValid = true;
+    signatureIdentity = `G\0${'A'.repeat(40)}\0${'A'.repeat(40)}\n`;
+    await expect(verifyCanonicalExplorerRevision(explorerA, { git })).rejects.toThrow(
+      'cryptographically verified canonical commit'
+    );
 
-    expect(verifierRoots).toHaveLength(5);
+    expect(verifierRoots).toHaveLength(6);
     for (const root of verifierRoots) expect(existsSync(root)).toBe(false);
   });
 
@@ -2940,11 +3461,32 @@ describe('closed provenance and canonical inputs', () => {
         return '';
       }
       if (args[0] === 'verify-commit') return '';
+      if (args[0] === 'cat-file') return openPgpCommitObject();
+      if (args[0] === 'show') return expectedOpenPgpIdentity();
       if (args[0] === 'rev-parse') return `${'f'.repeat(40)}\n`;
       throw new Error(`unexpected canonical verifier call: ${args.join(' ')}`);
     };
 
-    await expect(verifyCanonicalSdkRevision(runtimeRevision, { git })).resolves.toBe('f'.repeat(40));
+    const hostileSource = {
+      ...process.env,
+      GIT_DIR: '/attacker/repository',
+      GIT_OBJECT_DIRECTORY: '/attacker/objects',
+      GIT_ALTERNATE_OBJECT_DIRECTORIES: '/attacker/alternate-objects',
+      GIT_EXEC_PATH: '/attacker/git-exec',
+      GIT_CONFIG_PARAMETERS: "'gpg.openpgp.program'='/attacker/fake-gpg'",
+      LD_PRELOAD: '/attacker/preload.so',
+      DYLD_INSERT_LIBRARIES: '/attacker/preload.dylib',
+      DYLD_LIBRARY_PATH: '/attacker/lib',
+      HTTP_PROXY: 'http://attacker.invalid',
+      HTTPS_PROXY: 'http://attacker.invalid',
+      ALL_PROXY: 'socks5://attacker.invalid',
+      GIT_SSL_CAINFO: '/attacker/ca.pem',
+      NODE_EXTRA_CA_CERTS: '/attacker/ca.pem',
+      SSL_CERT_FILE: '/attacker/ca.pem',
+    };
+    await expect(verifyCanonicalSdkRevision(runtimeRevision, { git, source: hostileSource })).resolves.toBe(
+      'f'.repeat(40)
+    );
     expect(fetchArguments).toEqual([
       '-c',
       'protocol.allow=never',
@@ -2963,15 +3505,32 @@ describe('closed provenance and canonical inputs', () => {
       '+refs/heads/optimizations:refs/taira-sdk-verifier/heads/optimizations',
     ]);
     expect(fetchEnvironment).toMatchObject({
+      GIT_CONFIG_COUNT: '9',
+      GIT_CONFIG_KEY_0: 'gpg.program',
+      GIT_CONFIG_VALUE_0: process.env[TAIRA_GIT_VERIFY_GPG_ENV],
+      GIT_CONFIG_KEY_4: 'gpg.format',
+      GIT_CONFIG_VALUE_4: 'openpgp',
+      GIT_CONFIG_KEY_5: 'gpg.openpgp.program',
+      GIT_CONFIG_VALUE_5: process.env[TAIRA_GIT_VERIFY_GPG_ENV],
       GIT_CONFIG_GLOBAL: '/dev/null',
       GIT_CONFIG_NOSYSTEM: '1',
+      GIT_NO_REPLACE_OBJECTS: '1',
       GIT_TERMINAL_PROMPT: '0',
+      GNUPGHOME: process.env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV],
     });
     for (const unsafe of [
-      'GIT_CONFIG_COUNT',
       'GIT_DIR',
       'GIT_OBJECT_DIRECTORY',
+      'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+      'GIT_EXEC_PATH',
+      'GIT_CONFIG_PARAMETERS',
+      'LD_PRELOAD',
+      'DYLD_INSERT_LIBRARIES',
+      'DYLD_LIBRARY_PATH',
       'HTTP_PROXY',
+      'HTTPS_PROXY',
+      'ALL_PROXY',
+      'GIT_SSL_CAINFO',
       'NODE_EXTRA_CA_CERTS',
       'SSL_CERT_FILE',
     ]) {
@@ -2984,6 +3543,10 @@ describe('closed provenance and canonical inputs', () => {
       'refs/taira-sdk-verifier/heads/optimizations',
     ]);
     expect(existsSync(verifierRoot)).toBe(false);
+  });
+
+  it('rejects a non-commit SDK revision before creating a canonical verifier', async () => {
+    await expect(verifyCanonicalSdkRevision('HEAD')).rejects.toThrow('Canonical SDK revision');
   });
 
   it('binds the clean sibling checkout only to freshly fetched canonical SDK refs', async () => {
@@ -3017,6 +3580,8 @@ describe('closed provenance and canonical inputs', () => {
         throw new Error(`unexpected local git call: ${args.join(' ')}`);
       }
       if (args[0] === 'init' || args.includes('fetch') || args[0] === 'verify-commit') return '';
+      if (args[0] === 'cat-file') return openPgpCommitObject();
+      if (args[0] === 'show') return expectedOpenPgpIdentity();
       if (args[0] === 'rev-parse' && args[1] === '--verify') return `${runtimeRevision}\n`;
       if (args[0] === 'merge-base') {
         if (!canonicalReachable) throw new Error('not an optimizations ancestor');
@@ -3071,18 +3636,14 @@ describe('closed provenance and canonical inputs', () => {
     await expect(readReleaseManifest(reviewedDirectory)).resolves.toEqual(manifest);
 
     chmodSync(manifestPath, 0o666);
-    await expect(readReleaseManifest(reviewedDirectory)).rejects.toThrow(
-      'must not be group- or world-writable'
-    );
+    await expect(readReleaseManifest(reviewedDirectory)).rejects.toThrow('must not be group- or world-writable');
     chmodSync(manifestPath, 0o644);
 
     if (typeof process.geteuid === 'function') {
       const actualUid = process.geteuid();
       const uid = vi.spyOn(process, 'geteuid').mockReturnValue(actualUid + 1);
       try {
-        await expect(readReleaseManifest(reviewedDirectory)).rejects.toThrow(
-          'must be owned by the deployment account'
-        );
+        await expect(readReleaseManifest(reviewedDirectory)).rejects.toThrow('must be owned by the deployment account');
       } finally {
         uid.mockRestore();
       }

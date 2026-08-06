@@ -1,20 +1,24 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
+
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+unset CDPATH ENV BASH_ENV NODE_OPTIONS NODE_PATH
 
 COMMAND="${1:-deploy}"
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-DEFAULT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
+DEFAULT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd -P)"
 ROOT="${TAIRA_EXPLORER_ROOT:-$DEFAULT_ROOT}"
 
 case "$COMMAND" in
   manifest|initialize|deploy|prepare-transition|verify)
-    if [[ "$#" -ne 1 ]]; then
+    if [ "$#" -ne 1 ]; then
       echo "Usage: $0 $COMMAND" >&2
       exit 2
     fi
     ;;
   transition|rollback)
-    if [[ "$#" -ne 2 ]]; then
+    if [ "$#" -ne 2 ]; then
       echo "Usage: $0 $COMMAND <exact-release-id>" >&2
       exit 2
     fi
@@ -30,5 +34,5 @@ cd -- "$ROOT"
 ROOT="$(pwd -P)"
 export TAIRA_EXPLORER_ROOT="$ROOT"
 
-unset NODE_OPTIONS NODE_PATH
-exec node "$SCRIPT_DIR/release-tool.mjs" --taira-release-wrapper "$@"
+exec /bin/sh "$DEFAULT_ROOT/scripts/bootstrap-exact-toolchain.sh" \
+  taira-release "$@"

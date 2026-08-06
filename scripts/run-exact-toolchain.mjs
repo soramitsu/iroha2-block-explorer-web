@@ -1,23 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import {
-  access,
-  chmod,
-  lstat,
-  mkdir,
-  mkdtemp,
-  realpath,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
-import { realpathSync, statSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+import { access, chmod, lstat, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import {
-  REQUIRED_NODE_VERSION,
-  assertRequiredNodeVersion,
-} from './check-node-version.mjs';
+import { REQUIRED_NODE_VERSION, assertRequiredNodeVersion } from './check-node-version.mjs';
 
 export const REQUIRED_PNPM_VERSION = '10.11.0';
 export const REQUIRED_PNPM_INTEGRITY =
@@ -26,6 +15,42 @@ export const NODE_DOWNLOAD_ORIGIN = `https://nodejs.org/dist/v${REQUIRED_NODE_VE
 export const EXACT_TOOLCHAIN_REPOSITORY_ROOT = realpathSync(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 );
+export const TAIRA_RELEASE_TOOL_PATH = path.join(EXACT_TOOLCHAIN_REPOSITORY_ROOT, 'ops', 'taira', 'release-tool.mjs');
+export const TAIRA_RELEASE_ATTESTATION_ENV = 'IROHA_EXPLORER_TAIRA_RELEASE_ATTESTATION';
+export const TAIRA_RELEASE_ATTESTATION_NONCE_ENV = 'IROHA_EXPLORER_TAIRA_RELEASE_ATTESTATION_NONCE';
+export const TAIRA_GIT_VERIFY_GPG_ENV = 'IROHA_EXPLORER_TAIRA_GIT_VERIFY_GPG';
+export const TAIRA_GIT_VERIFY_GNUPGHOME_ENV = 'IROHA_EXPLORER_TAIRA_GIT_VERIFY_GNUPGHOME';
+export const TAIRA_RELEASE_SIGNERS_PATH = path.join(
+  EXACT_TOOLCHAIN_REPOSITORY_ROOT,
+  'ops',
+  'taira',
+  'trusted-release-signers.asc'
+);
+export const TAIRA_RELEASE_SIGNERS_SHA256 = '6e5f5a01094f7257c7bb29708d2479d67beeb0cc945b20cce2b24f6b84c7808e';
+export const TAIRA_RELEASE_SIGNER_FINGERPRINT = '9D1C8BFA5A0C1FEF5A8B1E5F552C2D0FD7C40BEB';
+
+const TAIRA_RELEASE_COMMON_ENVIRONMENT_KEYS = Object.freeze([
+  'TAIRA_EXPLORER_RELEASES_DIR',
+  'TAIRA_EXPLORER_ROOT',
+  'TAIRA_EXPLORER_SERVED_DIST',
+  'TAIRA_NGINX_BIN',
+  'TAIRA_NGINX_CONFIG_DUMP',
+]);
+const TAIRA_RELEASE_COMMAND_ENVIRONMENT_KEYS = Object.freeze({
+  manifest: Object.freeze([
+    'TAIRA_EXPLORER_REVISION',
+    'TAIRA_SDK_REVISION',
+    'TAIRA_RUNTIME_REVISION',
+    'TAIRA_MANIFEST_OUTPUT',
+    'TAIRA_RUNTIME_CONFIG',
+  ]),
+  initialize: Object.freeze(['TAIRA_BASELINE_MANIFEST', 'TAIRA_RUNTIME_CONFIG']),
+  deploy: Object.freeze(['TAIRA_RUNTIME_CONFIG']),
+  'prepare-transition': Object.freeze(['TAIRA_COUPLED_PREVIOUS_RUNTIME_REVISION', 'TAIRA_RUNTIME_CONFIG']),
+  transition: Object.freeze(['TAIRA_COUPLED_PREVIOUS_RUNTIME_REVISION']),
+  verify: Object.freeze([]),
+  rollback: Object.freeze([]),
+});
 
 const CANONICAL_TEMP_ROOT = realpathSync(tmpdir());
 const CANONICAL_HOME_ROOT = realpathSync(homedir());
@@ -53,9 +78,7 @@ export function resolveNodeArtifact(platform = process.platform, arch = process.
   const key = `${platform}-${arch}`;
   const artifact = NODE_ARTIFACTS[key];
   if (!artifact) {
-    throw new Error(
-      `Node ${REQUIRED_NODE_VERSION} bootstrap does not support platform ${platform}/${arch}`
-    );
+    throw new Error(`Node ${REQUIRED_NODE_VERSION} bootstrap does not support platform ${platform}/${arch}`);
   }
   return artifact;
 }
@@ -63,16 +86,12 @@ export function resolveNodeArtifact(platform = process.platform, arch = process.
 export function assertRequiredPnpmVersion(version) {
   const normalized = String(version).trim();
   if (normalized !== REQUIRED_PNPM_VERSION) {
-    throw new Error(
-      `pnpm ${REQUIRED_PNPM_VERSION} is required, found ${normalized || 'unknown'}`
-    );
+    throw new Error(`pnpm ${REQUIRED_PNPM_VERSION} is required, found ${normalized || 'unknown'}`);
   }
   return normalized;
 }
 
-export function resolveToolchainCache(
-  override = process.env.IROHA_EXPLORER_TOOLCHAIN_CACHE
-) {
+export function resolveToolchainCache(override = process.env.IROHA_EXPLORER_TOOLCHAIN_CACHE) {
   const candidate = override ?? path.join(CANONICAL_TEMP_ROOT, 'iroha-explorer-web-toolchain');
   if (!path.isAbsolute(candidate) || path.resolve(candidate) !== candidate) {
     throw new Error('IROHA_EXPLORER_TOOLCHAIN_CACHE must be an absolute normalized path');
@@ -80,16 +99,16 @@ export function resolveToolchainCache(
   const root = path.parse(candidate).root;
   const relativeToRepository = path.relative(EXACT_TOOLCHAIN_REPOSITORY_ROOT, candidate);
   const insideRepository =
-    relativeToRepository === ''
-    || (!relativeToRepository.startsWith(`..${path.sep}`)
-      && relativeToRepository !== '..'
-      && !path.isAbsolute(relativeToRepository));
+    relativeToRepository === '' ||
+    (!relativeToRepository.startsWith(`..${path.sep}`) &&
+      relativeToRepository !== '..' &&
+      !path.isAbsolute(relativeToRepository));
   if (
-    candidate === root
-    || candidate === CANONICAL_TEMP_ROOT
-    || candidate === CANONICAL_HOME_ROOT
-    || insideRepository
-    || path.dirname(candidate) === root
+    candidate === root ||
+    candidate === CANONICAL_TEMP_ROOT ||
+    candidate === CANONICAL_HOME_ROOT ||
+    insideRepository ||
+    path.dirname(candidate) === root
   ) {
     throw new Error(`Refusing broad or in-repository exact-toolchain cache: ${candidate}`);
   }
@@ -104,9 +123,7 @@ function checkedSpawn(command, args, options = {}) {
   if (result.error) throw result.error;
   if (result.status !== 0) {
     const detail = String(result.stderr || result.stdout || '').trim();
-    throw new Error(
-      `${command} ${args.join(' ')} exited with status ${result.status}${detail ? `: ${detail}` : ''}`
-    );
+    throw new Error(`${command} ${args.join(' ')} exited with status ${result.status}${detail ? `: ${detail}` : ''}`);
   }
   return String(result.stdout || '').trim();
 }
@@ -161,9 +178,7 @@ async function validateCanonicalParent(parent) {
   }
 }
 
-export async function validateToolchainCacheDirectory(
-  override = process.env.IROHA_EXPLORER_TOOLCHAIN_CACHE
-) {
+export async function validateToolchainCacheDirectory(override = process.env.IROHA_EXPLORER_TOOLCHAIN_CACHE) {
   const effectiveCacheRoot = resolveToolchainCache(override);
   const parent = path.dirname(effectiveCacheRoot);
   await validateCanonicalParent(parent);
@@ -222,6 +237,9 @@ export function sanitizedExactToolchainEnvironment(
   };
 
   if (source.CI === '1') environment.CI = '1';
+  if (source.IROHA_EXPLORER_TOOLCHAIN_CACHE !== undefined) {
+    environment.IROHA_EXPLORER_TOOLCHAIN_CACHE = resolveToolchainCache(String(source.IROHA_EXPLORER_TOOLCHAIN_CACHE));
+  }
   if (source.RUN_LIVE_MOCHI_E2E === '1') {
     environment.RUN_LIVE_MOCHI_E2E = '1';
     if (source.IROHA_REPO_ROOT !== undefined) {
@@ -256,15 +274,178 @@ export function sanitizedExactToolchainEnvironment(
   return environment;
 }
 
-async function removeExactToolchainRunDirectory(toolRoot, initialStats) {
-  const currentStats = await inspectOwnedPrivateDirectory(
-    toolRoot,
-    'Exact-toolchain run directory'
-  );
+function sha256Bytes(bytes) {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+export function resolveTairaGpgExecutable(
+  candidates = ['/usr/bin/gpg', '/opt/homebrew/bin/gpg', '/usr/local/bin/gpg']
+) {
+  const currentUid = process.getuid?.();
+  for (const candidate of candidates) {
+    try {
+      const canonical = realpathSync(candidate);
+      const stats = lstatSync(canonical);
+      if (
+        stats.isFile() &&
+        !stats.isSymbolicLink() &&
+        (stats.uid === 0 || stats.uid === currentUid) &&
+        (stats.mode & 0o111) !== 0 &&
+        (stats.mode & 0o022) === 0
+      ) {
+        return canonical;
+      }
+    } catch {
+      // Try the next fixed, checked-in system location.
+    }
+  }
+  throw new Error('The Taira release profile requires a canonical owner-controlled GPG executable');
+}
+
+function runTairaGpg(gpgExecutable, args, { home }) {
+  const result = spawnSync(gpgExecutable, args, {
+    encoding: 'utf8',
+    env: {
+      HOME: home,
+      LANG: 'C.UTF-8',
+      LC_ALL: 'C.UTF-8',
+      PATH: '/usr/bin:/bin:/usr/sbin:/sbin',
+    },
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(
+      `Taira GPG verifier preparation failed with status ${result.status}: ${String(result.stderr || '').trim()}`
+    );
+  }
+  return String(result.stdout || '');
+}
+
+export async function prepareTairaGitVerification({
+  environment,
+  toolRoot,
+  gpgExecutable = resolveTairaGpgExecutable(),
+}) {
+  const signersPath = realpathSync(TAIRA_RELEASE_SIGNERS_PATH);
   if (
-    currentStats.dev !== initialStats.dev
-    || currentStats.ino !== initialStats.ino
+    signersPath !== TAIRA_RELEASE_SIGNERS_PATH ||
+    sha256Bytes(readFileSync(signersPath)) !== TAIRA_RELEASE_SIGNERS_SHA256
   ) {
+    throw new Error('The checked-in Taira release signer keyring does not match its pinned digest');
+  }
+  const canonicalGpgExecutable = realpathSync(gpgExecutable);
+  if (canonicalGpgExecutable !== resolveTairaGpgExecutable([canonicalGpgExecutable])) {
+    throw new Error('The Taira GPG verifier must be a canonical owner-controlled executable');
+  }
+
+  const gnupgHome = path.join(toolRoot, 'git-verify-gnupg');
+  await mkdir(gnupgHome, { mode: 0o700 });
+  await chmod(gnupgHome, 0o700);
+  const keyringPath = path.join(gnupgHome, 'trusted-release-signers.gpg');
+  runTairaGpg(
+    canonicalGpgExecutable,
+    ['--batch', '--yes', '--no-options', '--homedir', gnupgHome, '--dearmor', '--output', keyringPath, signersPath],
+    { home: path.join(toolRoot, 'home') }
+  );
+  await chmod(keyringPath, 0o600);
+  const quotedKeyringPath = keyringPath.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+  await writeFile(
+    path.join(gnupgHome, 'gpg.conf'),
+    `no-default-keyring\nkeyring "${quotedKeyringPath}"\nno-auto-key-retrieve\n`,
+    { encoding: 'utf8', mode: 0o600 }
+  );
+  const listing = runTairaGpg(
+    canonicalGpgExecutable,
+    [
+      '--batch',
+      '--no-options',
+      '--homedir',
+      gnupgHome,
+      '--no-default-keyring',
+      '--keyring',
+      keyringPath,
+      '--with-colons',
+      '--fingerprint',
+      '--list-keys',
+    ],
+    { home: path.join(toolRoot, 'home') }
+  );
+  const primaryFingerprints = [];
+  let expectPrimaryFingerprint = false;
+  for (const line of listing.split('\n')) {
+    const fields = line.split(':');
+    if (fields[0] === 'pub') {
+      expectPrimaryFingerprint = true;
+    } else if (fields[0] === 'fpr' && expectPrimaryFingerprint) {
+      primaryFingerprints.push(fields[9]);
+      expectPrimaryFingerprint = false;
+    }
+  }
+  if (primaryFingerprints.length !== 1 || primaryFingerprints[0] !== TAIRA_RELEASE_SIGNER_FINGERPRINT) {
+    throw new Error('The Taira public verification keyring contains an unexpected signer set');
+  }
+  environment[TAIRA_GIT_VERIFY_GPG_ENV] = canonicalGpgExecutable;
+  environment[TAIRA_GIT_VERIFY_GNUPGHOME_ENV] = gnupgHome;
+  return { gpgExecutable: canonicalGpgExecutable, gnupgHome };
+}
+
+export function sanitizedTairaReleaseEnvironment(source, baseEnvironment, argv) {
+  const releaseCommand = argv[0];
+  const commandKeys = TAIRA_RELEASE_COMMAND_ENVIRONMENT_KEYS[releaseCommand];
+  if (!commandKeys) {
+    throw new Error(`Unknown Taira release command: ${releaseCommand ?? 'missing'}`);
+  }
+  const environment = { ...baseEnvironment };
+  for (const key of [...TAIRA_RELEASE_COMMON_ENVIRONMENT_KEYS, ...commandKeys]) {
+    if (source[key] !== undefined) environment[key] = String(source[key]);
+  }
+  return environment;
+}
+
+export async function createTairaReleaseAttestation({
+  argv,
+  environment,
+  toolRoot,
+  nodeExecutable = process.execPath,
+  releaseToolPath = TAIRA_RELEASE_TOOL_PATH,
+}) {
+  const canonicalReleaseTool = realpathSync(TAIRA_RELEASE_TOOL_PATH);
+  const releaseTool = realpathSync(releaseToolPath);
+  if (releaseTool !== canonicalReleaseTool) {
+    throw new Error('The Taira release profile requires the canonical release tool');
+  }
+  const canonicalNodeExecutable = realpathSync(nodeExecutable);
+  const gitVerifyGpg = realpathSync(environment[TAIRA_GIT_VERIFY_GPG_ENV]);
+  const gitVerifyGnupgHome = realpathSync(environment[TAIRA_GIT_VERIFY_GNUPGHOME_ENV]);
+
+  const nonce = randomBytes(32).toString('hex');
+  const attestationPath = path.join(toolRoot, '.taira-release-attestation.json');
+  const payload = {
+    schema: 1,
+    nonce,
+    git_verify_gnupghome: gitVerifyGnupgHome,
+    git_verify_gpg_path: gitVerifyGpg,
+    git_verify_gpg_sha256: sha256Bytes(readFileSync(gitVerifyGpg)),
+    git_verify_signers_sha256: TAIRA_RELEASE_SIGNERS_SHA256,
+    node_path: canonicalNodeExecutable,
+    node_sha256: sha256Bytes(readFileSync(canonicalNodeExecutable)),
+    release_tool_path: releaseTool,
+    release_tool_sha256: sha256Bytes(readFileSync(releaseTool)),
+    argv_sha256: sha256Bytes(JSON.stringify(argv)),
+  };
+  await writeFile(attestationPath, `${JSON.stringify(payload)}\n`, {
+    encoding: 'utf8',
+    flag: 'wx',
+    mode: 0o600,
+  });
+  environment[TAIRA_RELEASE_ATTESTATION_ENV] = attestationPath;
+  environment[TAIRA_RELEASE_ATTESTATION_NONCE_ENV] = nonce;
+  return attestationPath;
+}
+
+async function removeExactToolchainRunDirectory(toolRoot, initialStats) {
+  const currentStats = await inspectOwnedPrivateDirectory(toolRoot, 'Exact-toolchain run directory');
+  if (currentStats.dev !== initialStats.dev || currentStats.ino !== initialStats.ino) {
     throw new Error('Exact-toolchain run directory identity changed before cleanup');
   }
   await rm(toolRoot, { force: true, recursive: true });
@@ -277,21 +458,11 @@ async function prepareExactToolchain() {
   const nodeExecutable = process.execPath;
   const nodeBin = path.dirname(nodeExecutable);
   const nodeRoot = path.dirname(nodeBin);
-  const corepackScript = path.join(
-    nodeRoot,
-    'lib',
-    'node_modules',
-    'corepack',
-    'dist',
-    'corepack.js'
-  );
+  const corepackScript = path.join(nodeRoot, 'lib', 'node_modules', 'corepack', 'dist', 'corepack.js');
   await access(corepackScript);
   const toolRoot = await mkdtemp(path.join(cacheRoot, '.toolchain-run-'));
   await chmod(toolRoot, 0o700);
-  const toolRootStats = await inspectOwnedPrivateDirectory(
-    toolRoot,
-    'Exact-toolchain run directory'
-  );
+  const toolRootStats = await inspectOwnedPrivateDirectory(toolRoot, 'Exact-toolchain run directory');
   const corepackHome = path.join(toolRoot, 'corepack');
   const toolBin = path.join(toolRoot, 'bin');
   const privateDirectories = [
@@ -305,9 +476,7 @@ async function prepareExactToolchain() {
     path.join(toolRoot, 'xdg-config'),
     path.join(toolRoot, 'xdg-data'),
   ];
-  await Promise.all(
-    privateDirectories.map((directory) => mkdir(directory, { mode: 0o700 }))
-  );
+  await Promise.all(privateDirectories.map((directory) => mkdir(directory, { mode: 0o700 })));
   await Promise.all([
     writeFile(path.join(toolRoot, 'npm-globalconfig'), '', { mode: 0o600 }),
     writeFile(path.join(toolRoot, 'npm-userconfig'), '', { mode: 0o600 }),
@@ -321,19 +490,13 @@ async function prepareExactToolchain() {
   });
   let preparationError = null;
   try {
+    checkedSpawn(nodeExecutable, [corepackScript, 'enable', '--install-directory', toolBin], {
+      cwd: EXACT_TOOLCHAIN_REPOSITORY_ROOT,
+      env: childEnvironment,
+    });
     checkedSpawn(
       nodeExecutable,
-      [corepackScript, 'enable', '--install-directory', toolBin],
-      { cwd: EXACT_TOOLCHAIN_REPOSITORY_ROOT, env: childEnvironment }
-    );
-    checkedSpawn(
-      nodeExecutable,
-      [
-        corepackScript,
-        'install',
-        '--global',
-        `pnpm@${REQUIRED_PNPM_VERSION}+${REQUIRED_PNPM_INTEGRITY}`,
-      ],
+      [corepackScript, 'install', '--global', `pnpm@${REQUIRED_PNPM_VERSION}+${REQUIRED_PNPM_INTEGRITY}`],
       { cwd: EXACT_TOOLCHAIN_REPOSITORY_ROOT, env: childEnvironment }
     );
     assertRequiredPnpmVersion(
@@ -360,11 +523,7 @@ async function prepareExactToolchain() {
   return { childEnvironment, toolRoot, toolRootStats };
 }
 
-export function executeExactToolchainCommand(
-  command,
-  args,
-  { environment, spawn = spawnSync }
-) {
+export function executeExactToolchainCommand(command, args, { environment, spawn = spawnSync }) {
   const result = spawn(command, args, {
     cwd: EXACT_TOOLCHAIN_REPOSITORY_ROOT,
     env: environment,
@@ -382,21 +541,33 @@ async function main() {
   const command = separator >= 0 ? process.argv[separator + 1] : undefined;
   const args = separator >= 0 ? process.argv.slice(separator + 2) : [];
   if (!command) {
-    throw new Error(
-      'usage: node scripts/run-exact-toolchain.mjs -- <command> [arguments...]'
-    );
+    throw new Error('usage: node scripts/run-exact-toolchain.mjs -- <command> [arguments...]');
   }
 
-  const { childEnvironment, toolRoot, toolRootStats } =
-    await prepareExactToolchain();
+  const { childEnvironment, toolRoot, toolRootStats } = await prepareExactToolchain();
+  let executable = command;
+  let executableArgs = args;
+  let executionEnvironment = childEnvironment;
   let status;
   let commandError = null;
   try {
-    console.log(
-      `EXACT TOOLCHAIN: Node ${REQUIRED_NODE_VERSION}, pnpm ${REQUIRED_PNPM_VERSION}`
-    );
-    status = executeExactToolchainCommand(command, args, {
-      environment: childEnvironment,
+    if (command === 'taira-release') {
+      executionEnvironment = sanitizedTairaReleaseEnvironment(process.env, childEnvironment, args);
+      await prepareTairaGitVerification({
+        environment: executionEnvironment,
+        toolRoot,
+      });
+      await createTairaReleaseAttestation({
+        argv: args,
+        environment: executionEnvironment,
+        toolRoot,
+      });
+      executable = process.execPath;
+      executableArgs = [TAIRA_RELEASE_TOOL_PATH, ...args];
+    }
+    console.log(`EXACT TOOLCHAIN: Node ${REQUIRED_NODE_VERSION}, pnpm ${REQUIRED_PNPM_VERSION}`);
+    status = executeExactToolchainCommand(executable, executableArgs, {
+      environment: executionEnvironment,
     });
   } catch (error) {
     commandError = error;
@@ -421,9 +592,7 @@ if (process.argv[1]?.endsWith('run-exact-toolchain.mjs')) {
   try {
     await main();
   } catch (error) {
-    console.error(
-      `EXACT TOOLCHAIN: ${error instanceof Error ? error.message : String(error)}`
-    );
+    console.error(`EXACT TOOLCHAIN: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;
   }
 }

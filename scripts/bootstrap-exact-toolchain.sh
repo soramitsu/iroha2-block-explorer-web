@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+unset CDPATH ENV BASH_ENV NODE_OPTIONS NODE_PATH TAR_OPTIONS
+
 script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 repository_root=$(CDPATH= cd -- "$script_directory/.." && pwd -P)
 required_node_version=$(tr -d '[:space:]' < "$repository_root/.node-version")
@@ -243,7 +247,7 @@ else
       ;;
   esac
   chmod 600 "$downloaded_archive"
-  curl \
+  curl --disable \
     --fail \
     --proto '=https' \
     --silent \
@@ -281,7 +285,6 @@ if [ ! -x "$exact_node" ] || [ -L "$exact_node" ]; then
   exit 1
 fi
 
-unset NODE_OPTIONS NODE_PATH
 if [ "$("$exact_node" --version)" != "v$required_node_version" ]; then
   echo "EXACT TOOLCHAIN: verified archive did not contain Node $required_node_version" >&2
   exit 1

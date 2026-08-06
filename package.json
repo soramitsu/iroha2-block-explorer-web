@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@iroha/core": "npm:@jsr/iroha__core@0.5.0-alpha",
-    "@iroha/iroha-js": "file:../iroha/javascript/iroha_js",
+    "@iroha/iroha-js": "github:hyperledger-iroha/iroha#234e4a9c7090efd206dbdec6fcf851b72b577cf3&path:javascript/iroha_js",
     "@ngneat/falso": "^8.0.2",
     "@noble/ciphers": "^1.3.0",
     "@noble/hashes": "^2.0.1",

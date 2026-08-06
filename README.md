@@ -12,6 +12,10 @@ pnpm i
 pnpm build
 ```
 
+The production container independently pins the readable Node and Caddy tags to their OCI
+multi-platform index digests, asserts Node `24.19.0`, and installs the same integrity-pinned pnpm
+`10.11.0` used by the local/CI exact-toolchain bootstrap.
+
 ### Exact CI and local gate runner
 
 The Jenkins worker is the multi-architecture, digest-pinned Playwright 1.58.2 Noble image so its
@@ -151,6 +155,7 @@ VITE_APP_BASE_PATH=/explorer-iroha2 pnpm build
 ```
 
 Then:
+
 1. Sync `dist/` into the nginx-served subdirectory:
 
 ```bash

@@ -41,10 +41,11 @@ rejected.
   `node` found by the isolated build PATH are checked at the exact patch version.
 - Use clean checkouts at signed, `git verify-commit`-valid revisions from the canonical
   `soramitsu/iroha-block-explorer-web` origin. Before any package command or build, the release tool
-  freshly fetches `origin/master`; normal build/publish commands require HEAD to equal that fetched
-  revision and independently verify the same tip through a fresh owner-only bare repository fetched
-  from the fixed canonical HTTPS URL. The reviewed baseline is the sole build exception and must be a
-  signed ancestor of fetched `origin/master`. Initialization similarly verifies the exact
+  fetches `master` from the fixed canonical public HTTPS URL into the local tracking ref; it never
+  depends on the checkout's accepted SSH URL, SSH config, or agent. Normal build/publish commands
+  require HEAD to equal that fetched revision and independently verify the same tip through a fresh
+  owner-only bare repository fetched from the same fixed URL. The reviewed baseline is the sole build
+  exception and must be a signed ancestor of fetched `origin/master`. Initialization similarly verifies the exact
   manifest-pinned generator through fresh canonical refs, but does not require that retained generator
   to remain the current branch tip. Transition adoption and rollback never fetch Git; they require the
   local, clean, signed checkout HEAD to equal the retained manifest's already-verified
@@ -102,11 +103,40 @@ TAIRA_NGINX_BIN
 TAIRA_NGINX_CONFIG_DUMP
 ```
 
-The wrapper is the only supported release CLI entry point. It validates command arity, canonicalizes
-`TAIRA_EXPLORER_ROOT`, strips `NODE_OPTIONS` and `NODE_PATH`, and execs the Node tool with the
-required wrapper marker. Direct `node ops/taira/release-tool.mjs ...` invocation is rejected because
-Node preload options execute before JavaScript can enforce release gates. The wrapper does not expose
-a preflight/build/publish gap: every
+The wrapper is the only supported release CLI entry point. Its absolute `/bin/sh` interpreter fixes
+`PATH` to the checked-in system path before running any external command, validates command arity,
+canonicalizes `TAIRA_EXPLORER_ROOT`, and strips shell and Node preload variables. The shell-first
+bootstrap rehashes and freshly extracts the exact official Node archive, then enters the dedicated
+`taira-release` exact-toolchain profile; an operator cannot select the profile's executable or module.
+That profile forwards only the documented common inputs plus the minimum command-specific Taira
+inputs, invokes the canonical release tool with the absolute verified Node executable, and supplies a
+mode-`0600`, one-use attestation bound to the extracted Node path and digest, release-tool path and
+digest, public-only GPG verifier path/keyring, and exact argument vector. It converts the pinned
+[`trusted-release-signers.asc`](trusted-release-signers.asc) public key into an owner-only per-run
+keyring; it does not inherit the operator's GPG home or expose private keys. The current allowed
+OpenPGP primary fingerprint is `9D1C8BFA5A0C1FEF5A8B1E5F552C2D0FD7C40BEB`, and the armored key
+file's pinned SHA-256 digest is
+`6e5f5a01094f7257c7bb29708d2479d67beeb0cc945b20cce2b24f6b84c7808e`.
+
+That key file must contain exactly one trusted primary key; the release gate intentionally has no
+old/new overlap mode. A signer change is therefore an out-of-band trust-anchor handoff, not a normal
+release. Pause deployments, have the repository/security owners authenticate the incoming full
+fingerprint and armored-key digest over independent protected channels, and record their approval
+beside the exact transition commit SHA. In one reviewed change, replace (do not append to) the key,
+fingerprint, and pinned digest, and sign that transition commit with the incoming key. Independently
+deliver the approved commit SHA, fingerprint, and digest to the deployment operator, who must compare
+all three before replacing the protected clean checkout. Resume only after the exact-toolchain tests
+and a real-GPG integration check pass with the incoming key. The outgoing tool cannot authenticate
+this single-key transition; repository access or a Git signature alone is not authorization for it.
+
+Direct `node ops/taira/release-tool.mjs ...` invocation and the retired public wrapper marker are
+rejected because Node preload options execute before JavaScript can enforce release gates.
+
+The attestation proves the repository-controlled bootstrap/profile path and detects ordinary PATH or
+system-Node bypass; it is not authentication against a process deliberately emulating the files under
+the same deployment UID. Host account isolation, owner-only toolchain directories, a protected clean
+checkout, and signed revisions are the trust boundary for that same-UID case. The wrapper does not
+expose a preflight/build/publish gap: every
 build runs in disposable detached Explorer and Iroha worktrees with a fresh pnpm store, frozen
 fetch, offline frozen install, and a sterile environment that does not inherit frontend/deployment
 variables, Node injection, registry credentials, proxies, or TLS overrides.

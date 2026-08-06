@@ -1,6 +1,15 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { constants as fsConstants, realpathSync } from 'node:fs';
+import {
+  closeSync,
+  constants as fsConstants,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+  unlinkSync,
+} from 'node:fs';
 import {
   access,
   chmod,
@@ -25,6 +34,14 @@ import path from 'node:path';
 
 import { checkIrohaPinFiles } from '../../scripts/check-iroha-pin.mjs';
 import { formatBundleBudgetReport, runBundleBudgetCheck } from '../../scripts/check-bundle-budget.mjs';
+import {
+  TAIRA_GIT_VERIFY_GNUPGHOME_ENV,
+  TAIRA_GIT_VERIFY_GPG_ENV,
+  TAIRA_RELEASE_ATTESTATION_ENV,
+  TAIRA_RELEASE_ATTESTATION_NONCE_ENV,
+  TAIRA_RELEASE_SIGNER_FINGERPRINT,
+  TAIRA_RELEASE_SIGNERS_SHA256,
+} from '../../scripts/run-exact-toolchain.mjs';
 
 const MANIFEST_NAME = 'release-manifest.json';
 const RELEASE_ID_PATTERN = /^[0-9a-f]{12}-[0-9a-f]{12}$/u;
@@ -337,9 +354,7 @@ async function inspectCanonicalReleasePaths({ servedPath, releasesDir }) {
   const parentIdentity = await inspectPublicReleaseParent(parent);
 
   const releasesStats = await pathEntryStats(normalized.releasesDir);
-  const releasesIdentity = releasesStats
-    ? await inspectPublicReleaseStore(normalized.releasesDir)
-    : null;
+  const releasesIdentity = releasesStats ? await inspectPublicReleaseStore(normalized.releasesDir) : null;
   return { ...normalized, parent, parentIdentity, releasesIdentity };
 }
 
@@ -558,20 +573,13 @@ export async function readOperatorRuntimeConfig(configPath, { forbiddenRoots = [
   return validateTairaRuntimeConfig(JSON.parse(snapshot.bytes.toString('utf8')));
 }
 
-export async function installTairaRuntimeConfig(
-  { configPath, distDir, forbiddenRoots = [] },
-  operations = {}
-) {
+export async function installTairaRuntimeConfig({ configPath, distDir, forbiddenRoots = [] }, operations = {}) {
   const { writeFileDurablyFn = writeFileDurably } = operations;
   await validateCanonicalRealDirectory(distDir, 'Runtime-config dist');
   const config = Object.prototype.hasOwnProperty.call(operations, VALIDATED_RUNTIME_CONFIG)
     ? operations[VALIDATED_RUNTIME_CONFIG]
     : await readOperatorRuntimeConfig(configPath, { forbiddenRoots });
-  await writeFileDurablyFn(
-    path.join(distDir, 'config.json'),
-    `${JSON.stringify(config, null, 2)}\n`,
-    { mode: 0o644 }
-  );
+  await writeFileDurablyFn(path.join(distDir, 'config.json'), `${JSON.stringify(config, null, 2)}\n`, { mode: 0o644 });
   return config;
 }
 
@@ -1251,11 +1259,9 @@ export async function publishBaselineManifestOutput(filePath, contents, operatio
 
 export async function writeReleaseManifest(releaseDirectory, manifest) {
   validateReleaseManifest(manifest);
-  await writeFileDurably(
-    path.join(releaseDirectory, MANIFEST_NAME),
-    serializeReleaseManifest(manifest),
-    { mode: 0o644 }
-  );
+  await writeFileDurably(path.join(releaseDirectory, MANIFEST_NAME), serializeReleaseManifest(manifest), {
+    mode: 0o644,
+  });
 }
 
 export async function readReleaseManifest(releaseDirectory) {
@@ -1440,9 +1446,7 @@ async function inspectReleaseLockRoots(releasesDir) {
   const parent = path.dirname(releasesDir);
   const parentIdentity = await inspectPublicReleaseParent(parent);
   const existingStore = await pathEntryStats(releasesDir);
-  const releasesIdentity = existingStore
-    ? await inspectPublicReleaseStore(releasesDir)
-    : null;
+  const releasesIdentity = existingStore ? await inspectPublicReleaseStore(releasesDir) : null;
   return { parent, parentIdentity, releasesIdentity };
 }
 
@@ -1775,10 +1779,7 @@ async function commitBaselineInitialization(options, inspection) {
 
 export async function initializeReleaseStore(options) {
   let validatedOptions = options;
-  if (
-    options.replacementConfigPath &&
-    !Object.prototype.hasOwnProperty.call(options, VALIDATED_RUNTIME_CONFIG)
-  ) {
+  if (options.replacementConfigPath && !Object.prototype.hasOwnProperty.call(options, VALIDATED_RUNTIME_CONFIG)) {
     const config = await readOperatorRuntimeConfig(options.replacementConfigPath, {
       forbiddenRoots: options.runtimeConfigForbiddenRoots ?? [],
     });
@@ -1835,10 +1836,7 @@ function publicFileUrl(baseUrl, relativePath, releaseId) {
   return url;
 }
 
-async function fetchChecked(
-  url,
-  { accept = null, method = 'GET', requestHeaders = {} } = {}
-) {
+async function fetchChecked(url, { accept = null, method = 'GET', requestHeaders = {} } = {}) {
   const headers = { 'cache-control': 'no-cache', ...requestHeaders };
   if (accept) headers.accept = accept;
   const response = await fetch(url, {
@@ -1880,16 +1878,10 @@ async function verifyCorsPreflight(url, method, requestedHeaders) {
     },
   });
   requireExactCorsOrigin(preflightResponse, url);
-  if (
-    !commaSeparatedHeaderValues(preflightResponse, 'access-control-allow-methods')
-      .has(method.toLowerCase())
-  ) {
+  if (!commaSeparatedHeaderValues(preflightResponse, 'access-control-allow-methods').has(method.toLowerCase())) {
     throw new Error(`${url} CORS preflight must allow ${method}`);
   }
-  const allowedHeaders = commaSeparatedHeaderValues(
-    preflightResponse,
-    'access-control-allow-headers'
-  );
+  const allowedHeaders = commaSeparatedHeaderValues(preflightResponse, 'access-control-allow-headers');
   for (const header of requestedHeaders) {
     if (!allowedHeaders.has(header.toLowerCase())) {
       throw new Error(`${url} CORS preflight must allow the ${header} header`);
@@ -1905,28 +1897,16 @@ export async function verifyToriiBrowserCors(statusUrl) {
   });
   requireExactCorsOrigin(statusResponse, statusUrl);
 
-  await verifyCorsPreflight(
-    new URL('/v1/explorer/blocks', statusUrl),
-    'GET',
-    ['Accept']
-  );
-  await verifyCorsPreflight(
-    new URL('/v1/pipeline/transactions', statusUrl),
-    'POST',
-    ['Content-Type']
-  );
-  await verifyCorsPreflight(
-    new URL('/v1/multisig/spec', statusUrl),
-    'POST',
-    [
-      'Content-Type',
-      'X-Iroha-Account',
-      'X-Iroha-Signature',
-      'X-Iroha-Timestamp-Ms',
-      'X-Iroha-Nonce',
-      'X-Iroha-Witness',
-    ]
-  );
+  await verifyCorsPreflight(new URL('/v1/explorer/blocks', statusUrl), 'GET', ['Accept']);
+  await verifyCorsPreflight(new URL('/v1/pipeline/transactions', statusUrl), 'POST', ['Content-Type']);
+  await verifyCorsPreflight(new URL('/v1/multisig/spec', statusUrl), 'POST', [
+    'Content-Type',
+    'X-Iroha-Account',
+    'X-Iroha-Signature',
+    'X-Iroha-Timestamp-Ms',
+    'X-Iroha-Nonce',
+    'X-Iroha-Witness',
+  ]);
   return statusResponse;
 }
 
@@ -1964,10 +1944,7 @@ export async function verifyPublicRelease({ baseUrl, statusUrl, manifest }) {
       throw new Error(`${url} must serve the SPA shell as text/html`);
     }
     const bytes = new Uint8Array(await response.arrayBuffer());
-    if (
-      bytes.byteLength !== indexBytes.byteLength
-      || bytes.some((byte, index) => byte !== indexBytes[index])
-    ) {
+    if (bytes.byteLength !== indexBytes.byteLength || bytes.some((byte, index) => byte !== indexBytes[index])) {
       throw new Error(`${url} must serve the exact active index.html SPA shell`);
     }
   }
@@ -2533,10 +2510,7 @@ function assertNoObscuredNginxServerBlocks(cleaned, structural) {
     const character = structural[index];
     if (character === '{') {
       const nameToken = /^\s*(\S+)/u.exec(statement)?.[1] ?? '';
-      if (
-        normalizedNginxDirectiveName(nameToken) === 'server'
-        && nameToken !== 'server'
-      ) {
+      if (normalizedNginxDirectiveName(nameToken) === 'server' && nameToken !== 'server') {
         throw new Error('nginx configuration must not use quoted or escaped directive names');
       }
       statement = '';
@@ -2655,23 +2629,21 @@ function verifyNginxSpaFallback(servingBlock, host) {
   const rootLocations = topLevelBlocks.filter(
     (directive) => directive.name === 'location' && directive.value.trim() === '/'
   );
-  const rootLocationDirectives = rootLocations.length === 1
-    ? allNginxDirectives(rootLocations[0].content)
-    : [];
+  const rootLocationDirectives = rootLocations.length === 1 ? allNginxDirectives(rootLocations[0].content) : [];
   const spaFallbacks = rootLocationDirectives.filter(
-    (directive) => !directive.block && directive.depth === 0
-      && directive.name === 'try_files'
-      && directive.value.trim() === '$uri $uri/ /index.html'
+    (directive) =>
+      !directive.block &&
+      directive.depth === 0 &&
+      directive.name === 'try_files' &&
+      directive.value.trim() === '$uri $uri/ /index.html'
   );
   if (
-    topLevelBlocks.length !== 1
-    || rootLocations.length !== 1
-    || rootLocationDirectives.length !== 1
-    || spaFallbacks.length !== 1
+    topLevelBlocks.length !== 1 ||
+    rootLocations.length !== 1 ||
+    rootLocationDirectives.length !== 1 ||
+    spaFallbacks.length !== 1
   ) {
-    throw new Error(
-      `nginx server for ${host} must have one location / with try_files $uri $uri/ /index.html`
-    );
+    throw new Error(`nginx server for ${host} must have one location / with try_files $uri $uri/ /index.html`);
   }
 }
 
@@ -2687,27 +2659,14 @@ function verifyNginxRedirectListeners(directives, host) {
     .filter((directive) => directive.name === 'listen')
     .map((directive) => directive.value.trim())
     .sort();
-  if (
-    listens.length !== 2
-    || listens[0] !== '80'
-    || listens[1] !== '[::]:80'
-  ) {
+  if (listens.length !== 2 || listens[0] !== '80' || listens[1] !== '[::]:80') {
     throw new Error(`nginx HTTP redirect block for ${host} must listen only on IPv4/IPv6 port 80`);
   }
 }
 
 function verifyNginxRedirectDirectiveInventory(effectiveDirectives, directives, host) {
-  const allowedNames = new Set([
-    'default_type',
-    'listen',
-    'location',
-    'return',
-    'root',
-    'server_name',
-  ]);
-  const unexpected = effectiveDirectives.filter(
-    (directive) => !allowedNames.has(directive.name)
-  );
+  const allowedNames = new Set(['default_type', 'listen', 'location', 'return', 'root', 'server_name']);
+  const unexpected = effectiveDirectives.filter((directive) => !allowedNames.has(directive.name));
   if (unexpected.length > 0) {
     throw new Error(
       `nginx HTTP redirect block for ${host} contains unsupported directives: ${[
@@ -2722,48 +2681,42 @@ function verifyNginxRedirectDirectiveInventory(effectiveDirectives, directives, 
 }
 
 function verifyNginxRedirectLocations(block, host) {
-  const locations = topLevelNginxBlocks(block).filter(
-    (directive) => directive.name === 'location'
-  );
+  const locations = topLevelNginxBlocks(block).filter((directive) => directive.name === 'location');
   const locationValues = locations.map((directive) => directive.value.trim()).sort();
   if (
-    locationValues.length !== 2
-    || locationValues[0] !== '/'
-    || locationValues[1] !== '^~ /.well-known/acme-challenge/'
+    locationValues.length !== 2 ||
+    locationValues[0] !== '/' ||
+    locationValues[1] !== '^~ /.well-known/acme-challenge/'
   ) {
     throw new Error(`nginx HTTP redirect block for ${host} must contain only ACME and root locations`);
   }
   const rootLocation = locations.find((directive) => directive.value.trim() === '/');
-  const acmeLocation = locations.find(
-    (directive) => directive.value.trim() === '^~ /.well-known/acme-challenge/'
-  );
+  const acmeLocation = locations.find((directive) => directive.value.trim() === '^~ /.well-known/acme-challenge/');
   const redirectDirectives = rootLocation ? allNginxDirectives(rootLocation.content) : [];
   const redirects = redirectDirectives.filter((directive) => directive.name === 'return');
   if (
-    redirectDirectives.length !== 1
-    || redirects.length !== 1
-    || redirects[0].depth !== 0
-    || redirects[0].value.trim() !== '301 https://$host$request_uri'
+    redirectDirectives.length !== 1 ||
+    redirects.length !== 1 ||
+    redirects[0].depth !== 0 ||
+    redirects[0].value.trim() !== '301 https://$host$request_uri'
   ) {
     throw new Error(`nginx HTTP redirect block for ${host} must redirect exactly to HTTPS`);
   }
   const acmeDirectives = acmeLocation ? allNginxDirectives(acmeLocation.content) : [];
   const roots = acmeDirectives.filter((directive) => directive.name === 'root');
   if (
-    acmeDirectives.length !== 2
-    || roots.length !== 1
-    || roots[0].depth !== 0
-    || path.normalize(unquoteNginxValue(roots[0].value)) !== TAIRA_CERTBOT_ROOT
+    acmeDirectives.length !== 2 ||
+    roots.length !== 1 ||
+    roots[0].depth !== 0 ||
+    path.normalize(unquoteNginxValue(roots[0].value)) !== TAIRA_CERTBOT_ROOT
   ) {
     throw new Error(`nginx HTTP redirect block for ${host} must use the reviewed ACME root`);
   }
-  const contentTypes = acmeDirectives.filter(
-    (directive) => directive.name === 'default_type'
-  );
+  const contentTypes = acmeDirectives.filter((directive) => directive.name === 'default_type');
   if (
-    contentTypes.length !== 1
-    || contentTypes[0].depth !== 0
-    || unquoteNginxValue(contentTypes[0].value) !== 'text/plain'
+    contentTypes.length !== 1 ||
+    contentTypes[0].depth !== 0 ||
+    unquoteNginxValue(contentTypes[0].value) !== 'text/plain'
   ) {
     throw new Error(`nginx HTTP redirect block for ${host} must serve ACME as text/plain`);
   }
@@ -2941,30 +2894,174 @@ function defaultGit(root, args, options = {}) {
   });
 }
 
+function gitSignatureVerificationEnvironment(baseEnvironment, source = process.env) {
+  const currentUid = process.getuid?.();
+  if (!Number.isSafeInteger(currentUid)) throw tairaReleaseInvocationError();
+  const gpgPath = canonicalTairaInvocationPath(source[TAIRA_GIT_VERIFY_GPG_ENV]);
+  const gnupgHome = canonicalTairaInvocationPath(source[TAIRA_GIT_VERIFY_GNUPGHOME_ENV]);
+  assertOwnerPrivateExactDirectory(gnupgHome, currentUid);
+  let gpgStats;
+  try {
+    gpgStats = lstatSync(gpgPath);
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+  if (
+    !gpgStats.isFile() ||
+    gpgStats.isSymbolicLink() ||
+    (gpgStats.uid !== 0 && gpgStats.uid !== currentUid) ||
+    gpgStats.nlink !== 1 ||
+    (gpgStats.mode & 0o111) === 0 ||
+    (gpgStats.mode & 0o022) !== 0
+  ) {
+    throw tairaReleaseInvocationError();
+  }
+  return {
+    ...baseEnvironment,
+    GIT_NO_REPLACE_OBJECTS: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_CONFIG_COUNT: '9',
+    GIT_CONFIG_KEY_0: 'gpg.program',
+    GIT_CONFIG_VALUE_0: gpgPath,
+    GIT_CONFIG_KEY_1: 'protocol.allow',
+    GIT_CONFIG_VALUE_1: 'never',
+    GIT_CONFIG_KEY_2: 'protocol.https.allow',
+    GIT_CONFIG_VALUE_2: 'always',
+    GIT_CONFIG_KEY_3: 'http.followRedirects',
+    GIT_CONFIG_VALUE_3: 'false',
+    GIT_CONFIG_KEY_4: 'gpg.format',
+    GIT_CONFIG_VALUE_4: 'openpgp',
+    GIT_CONFIG_KEY_5: 'gpg.openpgp.program',
+    GIT_CONFIG_VALUE_5: gpgPath,
+    GIT_CONFIG_KEY_6: 'core.hooksPath',
+    GIT_CONFIG_VALUE_6: '/dev/null',
+    GIT_CONFIG_KEY_7: 'core.fsmonitor',
+    GIT_CONFIG_VALUE_7: 'false',
+    GIT_CONFIG_KEY_8: 'maintenance.auto',
+    GIT_CONFIG_VALUE_8: 'false',
+    GNUPGHOME: gnupgHome,
+  };
+}
+
+function closedLocalGitEnvironment(source = process.env) {
+  if (typeof source.PATH !== 'string' || source.PATH.length === 0) {
+    throw new Error('A non-empty PATH is required for release provenance verification');
+  }
+  return gitSignatureVerificationEnvironment(
+    {
+      HOME: homedir(),
+      LANG: 'C.UTF-8',
+      LC_ALL: 'C.UTF-8',
+      PATH: source.PATH,
+    },
+    source
+  );
+}
+
+function assertOpenPgpCommitObject(commitObject, revision) {
+  if (typeof commitObject !== 'string' || commitObject.includes('\r')) {
+    throw new Error(`Commit ${revision} could not be inspected as a canonical Git commit object`);
+  }
+  const headerEnd = commitObject.indexOf('\n\n');
+  if (headerEnd < 0) {
+    throw new Error(`Commit ${revision} could not be inspected as a canonical Git commit object`);
+  }
+
+  const headers = commitObject.slice(0, headerEnd).split('\n');
+  const signatureBlocks = [];
+  for (let index = 0; index < headers.length; index += 1) {
+    const match = /^(gpgsig(?:-[^ ]+)?) (.*)$/u.exec(headers[index]);
+    if (!match) continue;
+    const lines = [match[2]];
+    while (index + 1 < headers.length && headers[index + 1].startsWith(' ')) {
+      index += 1;
+      lines.push(headers[index].slice(1));
+    }
+    signatureBlocks.push({ name: match[1], lines });
+  }
+
+  if (signatureBlocks.length !== 1) {
+    throw new Error(`Commit ${revision} must contain exactly one OpenPGP signature`);
+  }
+  const [{ name, lines }] = signatureBlocks;
+  if (
+    name !== 'gpgsig' ||
+    lines[0] !== '-----BEGIN PGP SIGNATURE-----' ||
+    lines.at(-1) !== '-----END PGP SIGNATURE-----'
+  ) {
+    throw new Error(`Commit ${revision} signature must use OpenPGP armor`);
+  }
+}
+
+function assertExpectedGitSigner(signatureIdentity, revision) {
+  if (typeof signatureIdentity !== 'string' || !signatureIdentity.endsWith('\n')) {
+    throw new Error(`Commit ${revision} signer identity could not be read canonically`);
+  }
+  const record = signatureIdentity.slice(0, -1);
+  if (record.includes('\n')) {
+    throw new Error(`Commit ${revision} signer identity could not be read canonically`);
+  }
+  const [status, signerFingerprint, primaryFingerprint, ...unexpected] = record.split('\0');
+  if (unexpected.length !== 0 || !['G', 'U'].includes(status)) {
+    throw new Error(`Commit ${revision} does not have a current valid OpenPGP signature`);
+  }
+  if (
+    signerFingerprint !== TAIRA_RELEASE_SIGNER_FINGERPRINT ||
+    primaryFingerprint !== TAIRA_RELEASE_SIGNER_FINGERPRINT
+  ) {
+    throw new Error(
+      `Commit ${revision} must be signed by exact Taira release signer ${TAIRA_RELEASE_SIGNER_FINGERPRINT}`
+    );
+  }
+}
+
+function verifyGitCommitSignatureWithEnvironment(root, revision, { git, environment }) {
+  assertOpenPgpCommitObject(git(root, ['cat-file', 'commit', revision], { env: environment }), revision);
+  git(root, ['verify-commit', revision], { env: environment });
+  assertExpectedGitSigner(
+    git(root, ['show', '--no-patch', '--format=%G?%x00%GF%x00%GP', revision], { env: environment }),
+    revision
+  );
+  return revision;
+}
+
+export function verifyGitCommitSignature(root, revision, { git = defaultGit, source = process.env } = {}) {
+  return verifyGitCommitSignatureWithEnvironment(root, revision, {
+    git,
+    environment: closedLocalGitEnvironment(source),
+  });
+}
+
 function canonicalVerifierGitEnvironment(verifierRoot, source = process.env) {
   if (typeof source.PATH !== 'string' || source.PATH.length === 0) {
     throw new Error('A non-empty PATH is required for canonical provenance verification');
   }
-  return {
-    GIT_CONFIG_GLOBAL: '/dev/null',
-    GIT_CONFIG_NOSYSTEM: '1',
-    GIT_TERMINAL_PROMPT: '0',
-    HOME: homedir(),
-    LANG: 'C.UTF-8',
-    LC_ALL: 'C.UTF-8',
-    PATH: source.PATH,
-    TMPDIR: verifierRoot,
-  };
+  return gitSignatureVerificationEnvironment(
+    {
+      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_TERMINAL_PROMPT: '0',
+      HOME: homedir(),
+      LANG: 'C.UTF-8',
+      LC_ALL: 'C.UTF-8',
+      PATH: source.PATH,
+      TMPDIR: verifierRoot,
+    },
+    source
+  );
 }
 
 export async function verifyCanonicalSdkRevision(
   expectedRevision,
-  { git = defaultGit, mkdtempFn = mkdtemp, removeDirectoryFn = rm } = {}
+  { git = defaultGit, mkdtempFn = mkdtemp, removeDirectoryFn = rm, source = process.env } = {}
 ) {
+  assertRevision(expectedRevision, 'Canonical SDK revision');
   const verifierRoot = await mkdtempFn(path.join(realpathSync(tmpdir()), 'taira-sdk-provenance-'));
   await chmod(verifierRoot, 0o700);
   await inspectOwnedCanonicalRealDirectory(verifierRoot, 'Canonical SDK verifier');
-  const environment = canonicalVerifierGitEnvironment(verifierRoot);
+  const environment = canonicalVerifierGitEnvironment(verifierRoot, source);
   let subtreeTree = null;
   let actionError = null;
   try {
@@ -2999,12 +3096,7 @@ export async function verifyCanonicalSdkRevision(
     try {
       git(
         verifierRoot,
-        [
-          'merge-base',
-          '--is-ancestor',
-          expectedRevision,
-          'refs/taira-sdk-verifier/heads/optimizations',
-        ],
+        ['merge-base', '--is-ancestor', expectedRevision, 'refs/taira-sdk-verifier/heads/optimizations'],
         { env: environment }
       );
     } catch (error) {
@@ -3014,7 +3106,7 @@ export async function verifyCanonicalSdkRevision(
       );
     }
     try {
-      git(verifierRoot, ['verify-commit', expectedRevision], { env: environment });
+      verifyGitCommitSignatureWithEnvironment(verifierRoot, expectedRevision, { git, environment });
     } catch (error) {
       throw new Error('SDK source closure requires a cryptographically verified canonical commit', {
         cause: error,
@@ -3043,20 +3135,13 @@ export async function verifyCanonicalSdkRevision(
 
 export async function verifyCanonicalExplorerRevision(
   expectedRevision,
-  {
-    requireMasterTip = false,
-    git = defaultGit,
-    mkdtempFn = mkdtemp,
-    removeDirectoryFn = rm,
-  } = {}
+  { requireMasterTip = false, git = defaultGit, mkdtempFn = mkdtemp, removeDirectoryFn = rm, source = process.env } = {}
 ) {
   assertRevision(expectedRevision, 'Canonical Explorer revision');
-  const verifierRoot = await mkdtempFn(
-    path.join(realpathSync(tmpdir()), 'taira-explorer-provenance-')
-  );
+  const verifierRoot = await mkdtempFn(path.join(realpathSync(tmpdir()), 'taira-explorer-provenance-'));
   await chmod(verifierRoot, 0o700);
   await inspectOwnedCanonicalRealDirectory(verifierRoot, 'Canonical Explorer verifier');
-  const environment = canonicalVerifierGitEnvironment(verifierRoot);
+  const environment = canonicalVerifierGitEnvironment(verifierRoot, source);
   let actionError = null;
   try {
     git(verifierRoot, ['init', '--bare', '.'], { env: environment });
@@ -3081,35 +3166,21 @@ export async function verifyCanonicalExplorerRevision(
       ],
       { env: environment }
     );
-    const canonicalCommit = git(
-      verifierRoot,
-      ['rev-parse', '--verify', `${expectedRevision}^{commit}`],
-      { env: environment }
-    ).trim();
+    const canonicalCommit = git(verifierRoot, ['rev-parse', '--verify', `${expectedRevision}^{commit}`], {
+      env: environment,
+    }).trim();
     if (canonicalCommit !== expectedRevision) {
       throw new Error(`Canonical Explorer verifier did not resolve exact commit ${expectedRevision}`);
     }
     const containingRefs = git(
       verifierRoot,
-      [
-        'for-each-ref',
-        '--contains',
-        expectedRevision,
-        '--format=%(refname)',
-        'refs/taira-explorer-verifier/heads',
-      ],
+      ['for-each-ref', '--contains', expectedRevision, '--format=%(refname)', 'refs/taira-explorer-verifier/heads'],
       { env: environment }
     ).trim();
     if (containingRefs === '') {
-      throw new Error(
-        `Explorer revision ${expectedRevision} is not reachable from freshly fetched canonical refs`
-      );
+      throw new Error(`Explorer revision ${expectedRevision} is not reachable from freshly fetched canonical refs`);
     }
-    if (
-      containingRefs
-        .split('\n')
-        .some((ref) => !ref.startsWith('refs/taira-explorer-verifier/heads/'))
-    ) {
+    if (containingRefs.split('\n').some((ref) => !ref.startsWith('refs/taira-explorer-verifier/heads/'))) {
       throw new Error('Canonical Explorer verifier returned a ref outside its fresh namespace');
     }
     if (requireMasterTip) {
@@ -3125,7 +3196,7 @@ export async function verifyCanonicalExplorerRevision(
       }
     }
     try {
-      git(verifierRoot, ['verify-commit', expectedRevision], { env: environment });
+      verifyGitCommitSignatureWithEnvironment(verifierRoot, expectedRevision, { git, environment });
     } catch (error) {
       throw new Error('Explorer releases require a cryptographically verified canonical commit', {
         cause: error,
@@ -3148,35 +3219,61 @@ export async function verifyCanonicalExplorerRevision(
   return expectedRevision;
 }
 
-export function verifyReleaseCheckout(root, { allowReviewedBaseline = false, git = defaultGit } = {}) {
+export function verifyReleaseCheckout(
+  root,
+  { allowReviewedBaseline = false, git = defaultGit, source = process.env } = {}
+) {
   const canonicalRoot = realpathSync(root);
   if (canonicalRoot !== path.resolve(root)) {
     throw new Error(`Explorer checkout must be a canonical real path: ${root}`);
   }
-  const remote = git(root, ['config', '--get', 'remote.origin.url']).trim();
+  const gitEnvironment = closedLocalGitEnvironment(source);
+  const remote = git(root, ['config', '--get', 'remote.origin.url'], { env: gitEnvironment }).trim();
   if (normalizeExplorerRemote(remote) !== EXPLORER_REPOSITORY) {
     throw new Error(`Taira releases require origin ${EXPLORER_REPOSITORY}`);
   }
-  git(root, ['fetch', '--force', '--prune', 'origin', 'refs/heads/master:refs/remotes/origin/master']);
-  const status = git(root, ['status', '--porcelain=v1', '--untracked-files=all']);
+  git(
+    root,
+    [
+      'fetch',
+      '--force',
+      '--prune',
+      '--no-tags',
+      '--no-recurse-submodules',
+      EXPLORER_REPOSITORY_URL,
+      '+refs/heads/master:refs/remotes/origin/master',
+    ],
+    { env: gitEnvironment }
+  );
+  const status = git(root, ['status', '--porcelain=v1', '--untracked-files=all'], { env: gitEnvironment });
   if (status.trim() !== '') {
     throw new Error('Taira releases require a clean checkout with no tracked or untracked changes');
   }
+  const revision = git(root, ['rev-parse', '--verify', 'HEAD^{commit}'], {
+    env: gitEnvironment,
+  }).trim();
+  assertRevision(revision, 'Explorer HEAD');
   try {
-    git(root, ['verify-commit', 'HEAD']);
+    verifyGitCommitSignatureWithEnvironment(root, revision, { git, environment: gitEnvironment });
   } catch (error) {
     throw new Error('Taira releases require a cryptographically verified HEAD commit', { cause: error });
   }
-  const revision = git(root, ['rev-parse', 'HEAD']).trim();
-  assertRevision(revision, 'Explorer HEAD');
-  const masterRevision = git(root, ['rev-parse', 'refs/remotes/origin/master']).trim();
+  const verifiedHead = git(root, ['rev-parse', '--verify', 'HEAD^{commit}'], {
+    env: gitEnvironment,
+  }).trim();
+  if (verifiedHead !== revision) {
+    throw new Error(`Explorer HEAD changed during signature verification: ${revision} -> ${verifiedHead}`);
+  }
+  const masterRevision = git(root, ['rev-parse', '--verify', 'refs/remotes/origin/master^{commit}'], {
+    env: gitEnvironment,
+  }).trim();
   assertRevision(masterRevision, 'fetched origin/master');
   if (revision === masterRevision) return revision;
   if (!allowReviewedBaseline || revision !== REVIEWED_BASELINE.explorerRevision) {
     throw new Error(`Explorer HEAD ${revision} must equal freshly fetched origin/master ${masterRevision}`);
   }
   try {
-    git(root, ['merge-base', '--is-ancestor', revision, masterRevision]);
+    git(root, ['merge-base', '--is-ancestor', revision, masterRevision], { env: gitEnvironment });
   } catch (error) {
     throw new Error('Reviewed historical baseline is not an ancestor of fetched origin/master', {
       cause: error,
@@ -3185,25 +3282,35 @@ export function verifyReleaseCheckout(root, { allowReviewedBaseline = false, git
   return revision;
 }
 
-export function verifyLocalReleaseCheckout(root, expectedRevision, { git = defaultGit } = {}) {
+export function verifyLocalReleaseCheckout(root, expectedRevision, { git = defaultGit, source = process.env } = {}) {
   assertRevision(expectedRevision, 'Expected local Explorer revision');
   const canonicalRoot = realpathSync(root);
   if (canonicalRoot !== path.resolve(root)) {
     throw new Error(`Explorer checkout must be a canonical real path: ${root}`);
   }
-  const remote = git(root, ['config', '--get', 'remote.origin.url']).trim();
+  const gitEnvironment = closedLocalGitEnvironment(source);
+  const remote = git(root, ['config', '--get', 'remote.origin.url'], { env: gitEnvironment }).trim();
   if (normalizeExplorerRemote(remote) !== EXPLORER_REPOSITORY) {
     throw new Error(`Taira recovery requires origin ${EXPLORER_REPOSITORY}`);
   }
-  if (git(root, ['status', '--porcelain=v1', '--untracked-files=all']).trim() !== '') {
+  if (git(root, ['status', '--porcelain=v1', '--untracked-files=all'], { env: gitEnvironment }).trim() !== '') {
     throw new Error('Taira recovery requires a clean checkout with no tracked or untracked changes');
   }
+  const revision = git(root, ['rev-parse', '--verify', 'HEAD^{commit}'], {
+    env: gitEnvironment,
+  }).trim();
+  assertRevision(revision, 'Recovery tool HEAD');
   try {
-    git(root, ['verify-commit', 'HEAD']);
+    verifyGitCommitSignatureWithEnvironment(root, revision, { git, environment: gitEnvironment });
   } catch (error) {
     throw new Error('Taira recovery requires a cryptographically verified HEAD commit', { cause: error });
   }
-  const revision = git(root, ['rev-parse', 'HEAD']).trim();
+  const verifiedHead = git(root, ['rev-parse', '--verify', 'HEAD^{commit}'], {
+    env: gitEnvironment,
+  }).trim();
+  if (verifiedHead !== revision) {
+    throw new Error(`Recovery tool HEAD changed during signature verification: ${revision} -> ${verifiedHead}`);
+  }
   if (revision !== expectedRevision) {
     throw new Error(`Recovery tool HEAD ${revision} does not match manifest generator ${expectedRevision}`);
   }
@@ -3383,6 +3490,271 @@ export function assertReleaseNodeVersion(nodeVersion = process.versions.node) {
   return normalizedNodeVersion;
 }
 
+const TAIRA_RELEASE_INVOCATION_ERROR =
+  'The Taira release CLI must be invoked through ops/taira/deploy-explorer.sh and the exact-toolchain bootstrap';
+
+function tairaReleaseInvocationError() {
+  return new Error(TAIRA_RELEASE_INVOCATION_ERROR);
+}
+
+function assertOwnerPrivateExactDirectory(directory, currentUid) {
+  let stats;
+  try {
+    stats = lstatSync(directory);
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+  if (
+    !stats.isDirectory() ||
+    stats.isSymbolicLink() ||
+    stats.uid !== currentUid ||
+    (stats.mode & 0o777) !== 0o700 ||
+    realpathSync(directory) !== directory
+  ) {
+    throw tairaReleaseInvocationError();
+  }
+}
+
+function tairaAttestationCoordinates(env) {
+  const attestationPath = env[TAIRA_RELEASE_ATTESTATION_ENV];
+  const nonce = env[TAIRA_RELEASE_ATTESTATION_NONCE_ENV];
+  const cacheRoot = env.IROHA_EXPLORER_TOOLCHAIN_CACHE;
+  if (
+    typeof attestationPath !== 'string' ||
+    !path.isAbsolute(attestationPath) ||
+    path.resolve(attestationPath) !== attestationPath ||
+    path.basename(attestationPath) !== '.taira-release-attestation.json' ||
+    typeof nonce !== 'string' ||
+    !/^[0-9a-f]{64}$/u.test(nonce) ||
+    typeof cacheRoot !== 'string' ||
+    !path.isAbsolute(cacheRoot) ||
+    path.resolve(cacheRoot) !== cacheRoot
+  ) {
+    throw tairaReleaseInvocationError();
+  }
+  const currentUid = process.getuid?.();
+  const runRoot = path.dirname(attestationPath);
+  if (
+    !Number.isSafeInteger(currentUid) ||
+    path.dirname(runRoot) !== cacheRoot ||
+    !/^\.toolchain-run-[A-Za-z0-9]+$/u.test(path.basename(runRoot))
+  ) {
+    throw tairaReleaseInvocationError();
+  }
+  assertOwnerPrivateExactDirectory(cacheRoot, currentUid);
+  assertOwnerPrivateExactDirectory(runRoot, currentUid);
+  return { attestationPath, cacheRoot, currentUid, nonce, runRoot };
+}
+
+function canonicalTairaInvocationPath(candidate) {
+  if (typeof candidate !== 'string' || !path.isAbsolute(candidate) || path.resolve(candidate) !== candidate) {
+    throw tairaReleaseInvocationError();
+  }
+  let canonical;
+  try {
+    canonical = realpathSync(candidate);
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+  if (canonical !== candidate) throw tairaReleaseInvocationError();
+  return canonical;
+}
+
+function expectedTairaNodeArchiveRoot() {
+  const platform = { darwin: 'darwin', linux: 'linux' }[process.platform];
+  const architecture = { arm64: 'arm64', x64: 'x64' }[process.arch];
+  if (!platform || !architecture) throw tairaReleaseInvocationError();
+  return `node-v${REQUIRED_NODE_VERSION}-${platform}-${architecture}`;
+}
+
+function validateTairaInvocationBinaries({ cacheRoot, currentUid, nodePath, releaseToolPath }) {
+  assertReleaseNodeVersion();
+  const canonicalNodePath = canonicalTairaInvocationPath(nodePath);
+  const canonicalReleaseToolPath = canonicalTairaInvocationPath(releaseToolPath);
+  const nodePathParts = path.relative(cacheRoot, canonicalNodePath).split(path.sep);
+  if (
+    nodePathParts.length !== 4 ||
+    !/^\.node-run\.[A-Za-z0-9]+$/u.test(nodePathParts[0]) ||
+    nodePathParts[1] !== expectedTairaNodeArchiveRoot() ||
+    nodePathParts[2] !== 'bin' ||
+    nodePathParts[3] !== 'node'
+  ) {
+    throw tairaReleaseInvocationError();
+  }
+  const nodeRunRoot = path.join(cacheRoot, nodePathParts[0]);
+  assertOwnerPrivateExactDirectory(nodeRunRoot, currentUid);
+  let nodeStats;
+  try {
+    nodeStats = lstatSync(canonicalNodePath);
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+  if (
+    !nodeStats.isFile() ||
+    nodeStats.isSymbolicLink() ||
+    nodeStats.uid !== currentUid ||
+    nodeStats.nlink !== 1 ||
+    (nodeStats.mode & 0o111) === 0 ||
+    (nodeStats.mode & 0o022) !== 0
+  ) {
+    throw tairaReleaseInvocationError();
+  }
+  return { canonicalNodePath, canonicalReleaseToolPath };
+}
+
+function validateTairaGitVerifier({ env, currentUid, runRoot }) {
+  const gpgPath = canonicalTairaInvocationPath(env[TAIRA_GIT_VERIFY_GPG_ENV]);
+  const gnupgHome = canonicalTairaInvocationPath(env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV]);
+  if (gnupgHome !== path.join(runRoot, 'git-verify-gnupg')) {
+    throw tairaReleaseInvocationError();
+  }
+  assertOwnerPrivateExactDirectory(gnupgHome, currentUid);
+  let gpgStats;
+  try {
+    gpgStats = lstatSync(gpgPath);
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+  if (
+    !gpgStats.isFile() ||
+    gpgStats.isSymbolicLink() ||
+    (gpgStats.uid !== 0 && gpgStats.uid !== currentUid) ||
+    gpgStats.nlink !== 1 ||
+    (gpgStats.mode & 0o111) === 0 ||
+    (gpgStats.mode & 0o022) !== 0
+  ) {
+    throw tairaReleaseInvocationError();
+  }
+  return { gitVerifyGnupgHome: gnupgHome, gitVerifyGpgPath: gpgPath };
+}
+
+function readTairaReleaseAttestation(attestationPath, currentUid) {
+  let descriptor;
+  try {
+    descriptor = openSync(attestationPath, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0));
+    const openedStats = fstatSync(descriptor);
+    if (
+      !openedStats.isFile() ||
+      openedStats.uid !== currentUid ||
+      openedStats.nlink !== 1 ||
+      (openedStats.mode & 0o777) !== 0o600 ||
+      openedStats.size < 2 ||
+      openedStats.size > 4_096
+    ) {
+      throw tairaReleaseInvocationError();
+    }
+    const payloadText = readFileSync(descriptor, 'utf8');
+    const pathStats = lstatSync(attestationPath);
+    if (pathStats.isSymbolicLink() || pathStats.dev !== openedStats.dev || pathStats.ino !== openedStats.ino) {
+      throw tairaReleaseInvocationError();
+    }
+    return { openedStats, payloadText };
+  } catch {
+    throw tairaReleaseInvocationError();
+  } finally {
+    if (descriptor !== undefined) closeSync(descriptor);
+  }
+}
+
+function parseTairaReleaseAttestation(payloadText) {
+  if (!payloadText.endsWith('\n') || payloadText.indexOf('\n') !== payloadText.length - 1) {
+    throw tairaReleaseInvocationError();
+  }
+  try {
+    const payload = JSON.parse(payloadText);
+    assertExactKeys(
+      payload,
+      [
+        'argv_sha256',
+        'git_verify_gnupghome',
+        'git_verify_gpg_path',
+        'git_verify_gpg_sha256',
+        'git_verify_signers_sha256',
+        'node_path',
+        'node_sha256',
+        'nonce',
+        'release_tool_path',
+        'release_tool_sha256',
+        'schema',
+      ],
+      'Taira release attestation'
+    );
+    return payload;
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+}
+
+function assertTairaAttestationMatches(
+  payload,
+  { argv, canonicalNodePath, canonicalReleaseToolPath, gitVerifyGnupgHome, gitVerifyGpgPath, nonce }
+) {
+  let matches = false;
+  try {
+    matches =
+      payload.schema === 1 &&
+      payload.nonce === nonce &&
+      payload.git_verify_gnupghome === gitVerifyGnupgHome &&
+      payload.git_verify_gpg_path === gitVerifyGpgPath &&
+      payload.git_verify_gpg_sha256 === sha256(readFileSync(gitVerifyGpgPath)) &&
+      payload.git_verify_signers_sha256 === TAIRA_RELEASE_SIGNERS_SHA256 &&
+      payload.node_path === canonicalNodePath &&
+      payload.node_sha256 === sha256(readFileSync(canonicalNodePath)) &&
+      payload.release_tool_path === canonicalReleaseToolPath &&
+      payload.release_tool_sha256 === sha256(readFileSync(canonicalReleaseToolPath)) &&
+      payload.argv_sha256 === sha256(JSON.stringify(argv));
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+  if (!matches) throw tairaReleaseInvocationError();
+}
+
+function assertTairaAttestationIdentity(attestationPath, openedStats) {
+  let finalStats;
+  try {
+    finalStats = lstatSync(attestationPath);
+  } catch {
+    throw tairaReleaseInvocationError();
+  }
+  if (finalStats.dev !== openedStats.dev || finalStats.ino !== openedStats.ino) {
+    throw tairaReleaseInvocationError();
+  }
+}
+
+export function consumeTairaReleaseAttestation({
+  env = process.env,
+  argv = process.argv.slice(2),
+  nodePath = process.execPath,
+  releaseToolPath = fileURLToPath(import.meta.url),
+} = {}) {
+  const coordinates = tairaAttestationCoordinates(env);
+  const binaries = validateTairaInvocationBinaries({
+    cacheRoot: coordinates.cacheRoot,
+    currentUid: coordinates.currentUid,
+    nodePath,
+    releaseToolPath,
+  });
+  const gitVerifier = validateTairaGitVerifier({
+    env,
+    currentUid: coordinates.currentUid,
+    runRoot: coordinates.runRoot,
+  });
+  const snapshot = readTairaReleaseAttestation(coordinates.attestationPath, coordinates.currentUid);
+  const payload = parseTairaReleaseAttestation(snapshot.payloadText);
+  assertTairaAttestationMatches(payload, {
+    argv,
+    ...binaries,
+    ...gitVerifier,
+    nonce: coordinates.nonce,
+  });
+  assertTairaAttestationIdentity(coordinates.attestationPath, snapshot.openedStats);
+  const { attestationPath } = coordinates;
+  unlinkSync(attestationPath);
+  delete env[TAIRA_RELEASE_ATTESTATION_ENV];
+  delete env[TAIRA_RELEASE_ATTESTATION_NONCE_ENV];
+  return payload;
+}
+
 function validateIsolatedBuildSpec({ explorerRevision, irohaRoot, irohaRevision, nodeVersion }) {
   assertRevision(explorerRevision, 'isolated Explorer revision');
   if ((irohaRoot === null) !== (irohaRevision === null)) {
@@ -3406,10 +3778,7 @@ async function initializeSterileBuildEnvironment(environment) {
   await writeFileDurably(environment.NPM_CONFIG_USERCONFIG, '');
 }
 
-function verifyIsolatedWorktree(
-  worktree,
-  { runCommandFn, environment, requirePristine = false }
-) {
+function verifyIsolatedWorktree(worktree, { runCommandFn, environment, requirePristine = false }) {
   const actualRevision = String(
     runCommandFn('git', ['rev-parse', 'HEAD'], {
       cwd: worktree.buildRoot,
@@ -3705,10 +4074,7 @@ async function runInitializeCommand(context, { env }) {
   const baselineManifestPath = path.resolve(requiredEnvironment('TAIRA_BASELINE_MANIFEST', env));
   const baseline = await readCanonicalManifestFile(baselineManifestPath);
   validateReviewedBaselineManifest(baseline);
-  await verifyCanonicalPinnedMutatingCheckout(
-    context.repositoryRoot,
-    baseline.generator_revision
-  );
+  await verifyCanonicalPinnedMutatingCheckout(context.repositoryRoot, baseline.generator_revision);
   const runtimeRevision = await fetchRuntimeRevision(context.statusUrl);
   if (baseline.runtime_revision !== runtimeRevision) {
     throw new Error(`Baseline expects Torii ${baseline.runtime_revision}, but current runtime is ${runtimeRevision}`);
@@ -3949,10 +4315,6 @@ export async function runReleaseCommand({
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (process.argv[2] !== '--taira-release-wrapper') {
-    throw new Error(
-      'The Taira release CLI must be invoked through ops/taira/deploy-explorer.sh'
-    );
-  }
-  await runReleaseCommand({ argv: process.argv.slice(3) });
+  consumeTairaReleaseAttestation();
+  await runReleaseCommand({ argv: process.argv.slice(2) });
 }
