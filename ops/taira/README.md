@@ -62,7 +62,9 @@ rejected.
   world-writable. Only the frontend's reviewed public config keys are accepted; unknown fields are
   rejected so secrets cannot silently become public. Its
   `toriiBaseUrl` must be exactly `https://taira.sora.org`, `toriiForceBaseUrl` must be `true`, and
-  every configured service/failover origin must use non-loopback HTTPS. The file is validated and
+  every configured service/failover origin must use non-loopback HTTPS. An optional `networkId` must be the exact
+  canonical lowercase 32-byte identity supplied from authenticated deployment metadata; it is never inferred or
+  defaulted, and Connect remains disabled while it is absent. The file is validated and
   installed into the build before its digest is recorded.
 - Deploy only after `https://taira.sora.org/status` reports the same full revision pinned by
   `package.json`, `pnpm-lock.yaml`, and `tests/mochi/explorer-profile.json`. The status request

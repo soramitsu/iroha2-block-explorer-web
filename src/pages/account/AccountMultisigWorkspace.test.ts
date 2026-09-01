@@ -6,8 +6,6 @@ import AccountMultisigWorkspace from './AccountMultisigWorkspace.vue';
 import { TORII_CANONICAL_REQUEST_DOMAIN_TAG } from '@/shared/lib/connect';
 
 const apiMocks = vi.hoisted(() => ({
-  fetchConnectStatus: vi.fn(),
-  createConnectSession: vi.fn(),
   fetchMultisigSpec: vi.fn(),
   fetchMultisigProposals: vi.fn(),
 }));
@@ -15,13 +13,13 @@ const appSession = vi.hoisted(() => ({ close: vi.fn() }));
 const canonicalSign = vi.hoisted(() => vi.fn());
 const connectMocks = vi.hoisted(() => ({
   createConnectSessionPreview: vi.fn(),
+  getConnectConfiguration: vi.fn(),
+  registerConnectSession: vi.fn(),
   createConnectAppSession: vi.fn(),
   createConnectCanonicalRequestAuth: vi.fn(),
 }));
 
 vi.mock('@/shared/api', () => ({
-  fetchConnectStatus: apiMocks.fetchConnectStatus,
-  createConnectSession: apiMocks.createConnectSession,
   fetchMultisigSpec: apiMocks.fetchMultisigSpec,
   fetchMultisigProposals: apiMocks.fetchMultisigProposals,
   getToriiBaseUrl: () => 'https://taira.sora.org',
@@ -32,6 +30,8 @@ vi.mock('@/shared/lib/connect', async (importOriginal) => {
   return {
     ...actual,
     createConnectSessionPreview: connectMocks.createConnectSessionPreview,
+    getConnectConfiguration: connectMocks.getConnectConfiguration,
+    registerConnectSession: connectMocks.registerConnectSession,
     createConnectAppSession: connectMocks.createConnectAppSession,
     createConnectCanonicalRequestAuth: connectMocks.createConnectCanonicalRequestAuth,
   };
@@ -42,18 +42,28 @@ const MULTISIG_ACCOUNT =
 const SIGNATORY = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const ASSET_DEFINITION = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
 const EXACT_AMOUNT = '90071992547409931234567890.000000000000000001';
+const NETWORK_ID_LITERAL = '11'.repeat(32);
+const NETWORK_ID = {
+  literal: NETWORK_ID_LITERAL,
+  toBytes: () => new Uint8Array(32).fill(0x11),
+  toString: () => NETWORK_ID_LITERAL,
+};
 const AUTH = { authAccountId: SIGNATORY, sign: canonicalSign };
 const PREVIEW = {
   sidBase64Url: 'preview-session',
-  chainId: 'taira',
+  networkId: NETWORK_ID,
   node: 'https://taira.sora.org',
 };
 const SESSION = {
   sid: 'session-1',
+  network_id: NETWORK_ID_LITERAL,
+  app_pk: 'app-public-key',
+  nonce: 'nonce',
   wallet_uri: 'irohaconnect://wallet/session-1',
   app_uri: 'irohaconnect://app/session-1',
   token_app: 'app-token',
   token_wallet: 'wallet-token',
+  token_management: 'management-token',
   token_relay: 'relay-token',
 };
 const SPEC = {
@@ -121,7 +131,7 @@ const InstructionSemanticCardStub = defineComponent({
   template: '<div data-test="semantic-instruction">{{ presentation.title }}</div>',
 });
 
-async function factory(query: Record<string, string> = { multisig_chain: 'taira' }) {
+async function factory(query: Record<string, string> = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/account', component: { template: '<div />' } }],
@@ -169,11 +179,15 @@ function proposalsResponse(overrides: Record<string, unknown> = {}) {
 describe('AccountMultisigWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMocks.fetchConnectStatus.mockResolvedValue({ status: 'ok', data: { enabled: true } });
-    apiMocks.createConnectSession.mockResolvedValue({ status: 'ok', data: SESSION });
     apiMocks.fetchMultisigSpec.mockResolvedValue({ status: 'ok', data: SPEC });
     apiMocks.fetchMultisigProposals.mockResolvedValue(proposalsResponse());
+    connectMocks.getConnectConfiguration.mockReturnValue({
+      available: true,
+      literal: NETWORK_ID_LITERAL,
+      networkId: NETWORK_ID,
+    });
     connectMocks.createConnectSessionPreview.mockReturnValue(PREVIEW);
+    connectMocks.registerConnectSession.mockResolvedValue(SESSION);
     connectMocks.createConnectAppSession.mockReturnValue(appSession);
     connectMocks.createConnectCanonicalRequestAuth.mockResolvedValue(AUTH);
   });
@@ -184,13 +198,14 @@ describe('AccountMultisigWorkspace', () => {
     await connectAndAuthenticate(wrapper);
 
     expect(connectMocks.createConnectSessionPreview).toHaveBeenCalledWith({
-      chainId: 'taira',
+      networkId: NETWORK_ID,
       node: 'https://taira.sora.org',
     });
-    expect(apiMocks.createConnectSession).toHaveBeenCalledWith({
-      sid: 'preview-session',
-      node: 'taira.sora.org',
-    });
+    expect(connectMocks.registerConnectSession).toHaveBeenCalledWith(
+      'https://taira.sora.org',
+      PREVIEW,
+      { node: 'https://taira.sora.org' }
+    );
     expect(connectMocks.createConnectAppSession).toHaveBeenCalledWith(
       expect.objectContaining({
         permissions: {
@@ -300,7 +315,7 @@ describe('AccountMultisigWorkspace', () => {
     await wrapper.get('[data-test="multisig-authenticate"]').trigger('click');
     await flushPromises();
     await router.replace({
-      query: { multisig_chain: 'taira', multisig_status: 'FINALIZED' },
+      query: { multisig_status: 'FINALIZED' },
     });
     await flushPromises();
 
@@ -316,17 +331,16 @@ describe('AccountMultisigWorkspace', () => {
     );
   });
 
-  it('does not offer a session when Connect is unavailable or the explicit chain ID is absent', async () => {
-    apiMocks.fetchConnectStatus.mockResolvedValue({ status: 'ok', data: { enabled: false } });
+  it('fails closed without an exact runtime NetworkId and dispatches no Connect request', async () => {
+    connectMocks.getConnectConfiguration.mockReturnValue({
+      available: false,
+      error: new Error('Connect is disabled until an exact Iroha NetworkId is configured.'),
+    });
     const unavailable = await factory();
     expect(unavailable.wrapper.find('[data-test="multisig-connect-unavailable"]').exists()).toBe(true);
     expect(unavailable.wrapper.find('[data-test="multisig-create-session"]').exists()).toBe(false);
-
-    apiMocks.fetchConnectStatus.mockResolvedValue({ status: 'ok', data: { enabled: true } });
-    const noChain = await factory({});
-    expect(noChain.wrapper.get('[data-test="multisig-create-session"]').attributes('disabled')).toBeDefined();
-    await noChain.wrapper.get('[data-test="multisig-create-session"]').trigger('click');
-    expect(apiMocks.createConnectSession).not.toHaveBeenCalled();
-    expect(noChain.wrapper.text()).toContain('does not infer it from the node URL');
+    expect(unavailable.wrapper.text()).toContain('exact Iroha NetworkId');
+    expect(connectMocks.createConnectSessionPreview).not.toHaveBeenCalled();
+    expect(connectMocks.registerConnectSession).not.toHaveBeenCalled();
   });
 });

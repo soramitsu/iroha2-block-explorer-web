@@ -48,7 +48,7 @@ const KaigiRelayEventsStub = {
 };
 
 describe('KaigiRelays', () => {
-  it('passes the current /v1 KAIGI relay events stream URL to the child stream component', () => {
+  it('does not mount the authenticated Kaigi relay event stream in the public Explorer', () => {
     const wrapper = mount(KaigiRelays, {
       global: {
         plugins: [i18n],
@@ -63,8 +63,6 @@ describe('KaigiRelays', () => {
       },
     });
 
-    expect(wrapper.get('[data-test="kaigi-relay-events"]').attributes('data-stream-url')).toBe(
-      'https://torii.example/v1/kaigi/relays/events'
-    );
+    expect(wrapper.find('[data-test="kaigi-relay-events"]').exists()).toBe(false);
   });
 });

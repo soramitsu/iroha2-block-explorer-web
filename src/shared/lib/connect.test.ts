@@ -1,29 +1,135 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const runtimeConfigState = vi.hoisted(() => ({ value: {} as { networkId?: string } }));
+
+vi.mock('@/shared/runtime-config', () => ({
+  getRuntimeConfig: () => runtimeConfigState.value,
+}));
+
 import {
   buildConnectTokenProtocol,
   buildConnectWebSocketUrl,
   createConnectSessionPreview,
+  getConnectConfiguration,
+  parseConnectNetworkId,
+  registerConnectSession,
   rewriteConnectUriProtocol,
+  type ConnectNetworkId,
+  type ConnectSdkNamespace,
+  type ConnectSessionPreview,
+  type ConnectSessionResponse,
 } from './connect';
 
-describe('connect helpers', () => {
-  it('builds a deterministic preview payload from chain id, app public key, and nonce', () => {
-    const preview = createConnectSessionPreview({
-      chainId: 'taira',
-      node: 'taira.sora.org',
-      appPublicKey: Uint8Array.from(Array.from({ length: 32 }, (_, index) => index + 1)),
-      nonce: Uint8Array.from(Array.from({ length: 16 }, (_, index) => 0xa0 + index)),
-    });
+const NETWORK_ID_LITERAL = '11'.repeat(32);
 
-    expect(Buffer.from(preview.sidBytes).toString('hex')).toBe(
-      'eaa4aed4d2386cb2f2fe8d46c505873cd379226ee6f482046f00084b84b0a81c'
+function candidateSdkFixture() {
+  const networkId: ConnectNetworkId = {
+    literal: NETWORK_ID_LITERAL,
+    toBytes: () => new Uint8Array(32).fill(0x11),
+    toString: () => NETWORK_ID_LITERAL,
+  };
+  const preview: ConnectSessionPreview = {
+    networkId,
+    node: 'https://taira.example',
+    sidBytes: new Uint8Array(32).fill(1),
+    sidBase64Url: 'preview-sid',
+    nonce: new Uint8Array(16).fill(2),
+    appKeyPair: {
+      publicKey: new Uint8Array(32).fill(3),
+      privateKey: new Uint8Array(32).fill(4),
+    },
+    walletUri: 'iroha://connect?role=wallet',
+    appUri: 'iroha://connect?role=app',
+    wsUrl: 'wss://taira.example/v1/connect/ws?sid=preview-sid&role=app',
+    createdAt: 1,
+  };
+  const session: ConnectSessionResponse = {
+    sid: preview.sidBase64Url,
+    network_id: NETWORK_ID_LITERAL,
+    app_pk: 'app-public-key',
+    nonce: 'nonce',
+    wallet_uri: 'iroha://connect?role=wallet&token=wallet',
+    app_uri: 'iroha://connect?role=app&token=app',
+    token_app: 'app-token',
+    token_wallet: 'wallet-token',
+    token_management: 'management-token',
+    token_relay: 'relay-token',
+  };
+  const parse = vi.fn((literal: string) => {
+    if (literal !== NETWORK_ID_LITERAL) throw new Error('invalid NetworkId fixture');
+    return networkId;
+  });
+  const createPreview = vi.fn((_options: unknown) => preview);
+  const registerSession = vi.fn(async (
+    _baseUrl: string,
+    _preview: ConnectSessionPreview,
+    _options: unknown
+  ) => session);
+  const sdk = {
+    NetworkId: { parse },
+    createConnectSessionPreview: createPreview,
+    registerConnectSession: registerSession,
+    createConnectAppSession: vi.fn(),
+    createConnectCanonicalRequestAuth: vi.fn(),
+  } as unknown as ConnectSdkNamespace;
+  return { createPreview, networkId, parse, preview, registerSession, sdk, session };
+}
+
+describe('connect helpers', () => {
+  beforeEach(() => {
+    runtimeConfigState.value = {};
+  });
+
+  it('parses the exact configured literal through the candidate NetworkId API', () => {
+    const fixture = candidateSdkFixture();
+
+    expect(parseConnectNetworkId(NETWORK_ID_LITERAL, fixture.sdk)).toBe(fixture.networkId);
+    expect(fixture.parse).toHaveBeenCalledWith(NETWORK_ID_LITERAL);
+    expect(() => parseConnectNetworkId(` ${NETWORK_ID_LITERAL}`, fixture.sdk)).toThrow(/surrounding whitespace/u);
+  });
+
+  it('fails closed when runtime config is missing or invalid', () => {
+    const fixture = candidateSdkFixture();
+    expect(getConnectConfiguration(fixture.sdk)).toMatchObject({ available: false });
+
+    runtimeConfigState.value = { networkId: '00'.repeat(32) };
+    const invalid = getConnectConfiguration(fixture.sdk);
+    expect(invalid.available).toBe(false);
+    if (!invalid.available) expect(invalid.error.message).toMatch(/invalid NetworkId fixture/u);
+  });
+
+  it('delegates preview construction with NetworkId and no legacy chainId field', () => {
+    const fixture = candidateSdkFixture();
+    const result = createConnectSessionPreview({
+      networkId: fixture.networkId,
+      node: 'https://taira.example',
+      nonce: new Uint8Array(16).fill(2),
+      appKeyPair: {
+        publicKey: new Uint8Array(32).fill(3),
+        privateKey: new Uint8Array(32).fill(4),
+      },
+    }, fixture.sdk);
+
+    expect(result).toBe(fixture.preview);
+    expect(fixture.createPreview).toHaveBeenCalledOnce();
+    expect(fixture.createPreview.mock.calls[0]?.[0]).not.toHaveProperty('chainId');
+    expect(fixture.createPreview.mock.calls[0]?.[0]).toMatchObject({ networkId: fixture.networkId });
+  });
+
+  it('registers the complete preview instead of posting a caller-provided SID', async () => {
+    const fixture = candidateSdkFixture();
+    const result = await registerConnectSession(
+      'https://taira.example',
+      fixture.preview,
+      { node: 'taira.example' },
+      fixture.sdk
     );
-    expect(preview.sidBase64Url).toBe('6qSu1NI4bLLy_o1GxQWHPNN5Im7m9IIEbwAIS4SwqBw');
-    expect(preview.walletUri).toBe(
-      'iroha://connect?sid=6qSu1NI4bLLy_o1GxQWHPNN5Im7m9IIEbwAIS4SwqBw&chain_id=taira&v=1&role=wallet&node=taira.sora.org'
-    );
-    expect(preview.appUri).toBe(
-      'iroha://connect?sid=6qSu1NI4bLLy_o1GxQWHPNN5Im7m9IIEbwAIS4SwqBw&chain_id=taira&v=1&role=app&node=taira.sora.org'
+
+    expect(result).toBe(fixture.session);
+    expect(fixture.registerSession).toHaveBeenCalledWith(
+      'https://taira.example',
+      fixture.preview,
+      { node: 'taira.example' }
     );
   });
 
@@ -35,21 +141,5 @@ describe('connect helpers', () => {
     expect(rewriteConnectUriProtocol('iroha://connect?sid=session-id&role=wallet')).toBe(
       'irohaconnect://connect?sid=session-id&role=wallet'
     );
-  });
-
-  it('rejects malformed preview key material', () => {
-    expect(() =>
-      createConnectSessionPreview({
-        chainId: 'taira',
-        appPublicKey: new Uint8Array(31),
-      })
-    ).toThrow('appPublicKey must be 32 bytes');
-
-    expect(() =>
-      createConnectSessionPreview({
-        chainId: 'taira',
-        nonce: new Uint8Array(15),
-      })
-    ).toThrow('nonce must be 16 bytes');
   });
 });

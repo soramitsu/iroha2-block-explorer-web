@@ -3,6 +3,7 @@ import { z } from 'zod';
 const RuntimeConfigSchema = z
   .object({
     toriiBaseUrl: z.string().trim().min(1).optional(),
+    networkId: z.string().regex(/^[0-9a-f]{63}[13579bdf]$/u).optional(),
     kotodamaCompilerUrl: z.string().trim().min(1).optional(),
     sorafsPublicBaseUrl: z.string().trim().min(1).optional(),
     toriiForceBaseUrl: z.boolean().optional(),

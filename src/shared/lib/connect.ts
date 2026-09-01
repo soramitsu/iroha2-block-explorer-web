@@ -1,17 +1,5 @@
-import {
-  buildConnectTokenProtocol,
-  buildConnectWebSocketUrl,
-  ConnectApprovalRejectedError,
-  ConnectSessionClosedError,
-  ConnectSignRequestError,
-  createConnectAppSession,
-  createConnectCanonicalRequestAuth,
-  createConnectSessionPreview as createUpstreamConnectSessionPreview,
-  rewriteConnectUriProtocol,
-  TORII_CANONICAL_REQUEST_DOMAIN_TAG,
-} from '@iroha/iroha-js/connect-browser';
-import { blake2b } from '@noble/hashes/blake2.js';
-import type { BrowserConnectSessionPreview as ConnectSessionPreview } from '@iroha/iroha-js/connect-browser';
+import * as connectBrowserSdk from '@iroha/iroha-js/connect-browser';
+import { getRuntimeConfig } from '@/shared/runtime-config';
 
 export {
   buildConnectTokenProtocol,
@@ -19,35 +7,191 @@ export {
   ConnectApprovalRejectedError,
   ConnectSessionClosedError,
   ConnectSignRequestError,
-  createConnectAppSession,
-  createConnectCanonicalRequestAuth,
   rewriteConnectUriProtocol,
   TORII_CANONICAL_REQUEST_DOMAIN_TAG,
-};
-
-export type {
-  BrowserConnectAppSession as ConnectAppSession,
-  BrowserConnectApproval as ConnectApproval,
-  BrowserConnectAppSessionOptions as ConnectAppSessionOptions,
-  BrowserConnectBinaryLike as ConnectBinaryLike,
-  BrowserConnectCanonicalRequestAuth as ConnectCanonicalRequestAuth,
-  BrowserConnectPermissions as ConnectPermissions,
 } from '@iroha/iroha-js/connect-browser';
-export type { ConnectSessionPreview };
 
+export type ConnectBinaryLike = Uint8Array | ArrayBuffer | ArrayBufferView | number[] | string;
 type BinaryLike = Uint8Array | ArrayBuffer | ArrayBufferView;
-const encoder = new TextEncoder();
-const SID_PREFIX = encoder.encode('iroha-connect|sid|');
+
+export interface ConnectNetworkId {
+  readonly literal: string
+  toBytes: () => Uint8Array
+  toString: () => string
+}
+
+export interface ConnectKeyPair {
+  publicKey: Uint8Array
+  privateKey: Uint8Array
+}
+
+export interface ConnectSessionPreview {
+  networkId: ConnectNetworkId
+  node: string | null
+  sidBytes: Uint8Array
+  sidBase64Url: string
+  nonce: Uint8Array
+  appKeyPair: ConnectKeyPair
+  walletUri: string
+  appUri: string
+  wsUrl: string
+  createdAt: number
+}
+
+export interface ConnectSessionResponse {
+  sid: string
+  network_id: string
+  app_pk: string
+  nonce: string
+  wallet_uri: string
+  app_uri: string
+  token_app: string
+  token_wallet: string
+  token_management: string
+  token_relay: string
+  extra?: Record<string, unknown>
+  raw?: Record<string, unknown>
+}
+
+export interface ConnectPermissions {
+  methods?: ReadonlyArray<string>
+  events?: ReadonlyArray<string>
+  resources?: ReadonlyArray<string> | null
+}
+
+export interface ConnectApproval {
+  readonly accountId: string
+  readonly signingPublicKey: Uint8Array
+  readonly walletPublicKey: Uint8Array
+  readonly signature: Uint8Array
+}
+
+export interface ConnectAppSession {
+  readonly socket: WebSocket
+  readonly approvedAccountId: string | null
+  waitForApproval: () => Promise<ConnectApproval>
+  signTransaction: (unsignedTxBytes: ConnectBinaryLike) => Promise<Uint8Array>
+  signRaw: (domainTag: string, bytes: ConnectBinaryLike) => Promise<Uint8Array>
+  close: (reason?: string) => void
+}
+
+export interface ConnectAppSessionOptions {
+  baseUrl: string
+  preview: ConnectSessionPreview
+  session: Pick<ConnectSessionResponse, 'sid' | 'token_app' | 'token_relay'>
+  permissions?: ConnectPermissions | null
+  appMeta?: {
+    name: string
+    url?: string | null
+    iconHash?: string | null
+    icon_hash?: string | null
+  } | null
+  webSocketImpl?: typeof WebSocket
+  protocols?: string | ReadonlyArray<string>
+  allowInsecure?: boolean
+}
+
+export interface ConnectCanonicalRequestAuth {
+  readonly authAccountId: string
+  readonly sign: (input: unknown) => Promise<Uint8Array>
+}
 
 export interface ConnectSessionPreviewOptions {
-  chainId: string
+  networkId: ConnectNetworkId
   node?: string | null
-  nonce?: BinaryLike | null
-  appPublicKey?: BinaryLike | null
+  nonce?: ConnectBinaryLike | null
   appKeyPair?: {
-    publicKey: BinaryLike
-    privateKey: BinaryLike
+    publicKey: ConnectBinaryLike
+    privateKey: ConnectBinaryLike
   } | null
+}
+
+interface CandidateConnectSdk {
+  NetworkId: {
+    parse: (literal: string) => ConnectNetworkId
+  }
+  createConnectSessionPreview: (options: ConnectSessionPreviewOptions) => ConnectSessionPreview
+  registerConnectSession: (
+    baseUrl: string,
+    preview: ConnectSessionPreview,
+    options?: { node?: string | null, fetchImpl?: typeof fetch }
+  ) => Promise<ConnectSessionResponse>
+  createConnectAppSession: (options: ConnectAppSessionOptions) => ConnectAppSession
+  createConnectCanonicalRequestAuth: (
+    session: Pick<ConnectAppSession, 'waitForApproval' | 'signRaw'>
+  ) => Promise<ConnectCanonicalRequestAuth>
+}
+
+export type ConnectSdkNamespace = Record<string, unknown>;
+
+function candidateConnectSdk(sdkNamespace: ConnectSdkNamespace = connectBrowserSdk): CandidateConnectSdk {
+  const networkId = Reflect.get(sdkNamespace, 'NetworkId') as CandidateConnectSdk['NetworkId'] | undefined;
+  const createPreview = Reflect.get(sdkNamespace, 'createConnectSessionPreview');
+  const registerSession = Reflect.get(sdkNamespace, 'registerConnectSession');
+  const createAppSession = Reflect.get(sdkNamespace, 'createConnectAppSession');
+  const createCanonicalAuth = Reflect.get(sdkNamespace, 'createConnectCanonicalRequestAuth');
+  if (
+    typeof networkId?.parse !== 'function' ||
+    typeof createPreview !== 'function' ||
+    typeof registerSession !== 'function' ||
+    typeof createAppSession !== 'function' ||
+    typeof createCanonicalAuth !== 'function'
+  ) {
+    throw new Error('The installed Iroha SDK does not support exact-NetworkId Connect sessions.');
+  }
+  return {
+    NetworkId: networkId,
+    createConnectSessionPreview: createPreview as CandidateConnectSdk['createConnectSessionPreview'],
+    registerConnectSession: registerSession as CandidateConnectSdk['registerConnectSession'],
+    createConnectAppSession: createAppSession as CandidateConnectSdk['createConnectAppSession'],
+    createConnectCanonicalRequestAuth: createCanonicalAuth as CandidateConnectSdk['createConnectCanonicalRequestAuth'],
+  };
+}
+
+function configuredNetworkIdLiteral(): string | null {
+  return getRuntimeConfig().networkId ?? null;
+}
+
+export function parseConnectNetworkId(
+  literal: string,
+  sdkNamespace: ConnectSdkNamespace = connectBrowserSdk
+): ConnectNetworkId {
+  const exactLiteral = literal.trim();
+  if (!exactLiteral) throw new Error('An exact Iroha NetworkId is required for Connect.');
+  if (exactLiteral !== literal) throw new Error('Iroha NetworkId must not contain surrounding whitespace.');
+  const parsed = candidateConnectSdk(sdkNamespace).NetworkId.parse(exactLiteral);
+  if (parsed.toString() !== exactLiteral) {
+    throw new Error('Iroha NetworkId is not in canonical emitted form.');
+  }
+  return parsed;
+}
+
+export type ConnectConfiguration =
+  | { available: true, literal: string, networkId: ConnectNetworkId }
+  | { available: false, error: Error };
+
+export function getConnectConfiguration(
+  sdkNamespace: ConnectSdkNamespace = connectBrowserSdk
+): ConnectConfiguration {
+  try {
+    const literal = configuredNetworkIdLiteral();
+    if (!literal) {
+      return {
+        available: false,
+        error: new Error('Connect is disabled until an exact Iroha NetworkId is configured.'),
+      };
+    }
+    return {
+      available: true,
+      literal,
+      networkId: parseConnectNetworkId(literal, sdkNamespace),
+    };
+  } catch (error) {
+    return {
+      available: false,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+  }
 }
 
 function hexToBytes(hex: string): Uint8Array {
@@ -72,50 +216,6 @@ function toUint8Array(value: BinaryLike, name: string): Uint8Array {
   throw new TypeError(`${name} must be binary data`);
 }
 
-function requireNonEmptyString(value: string, name: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) throw new TypeError(`${name} must not be empty`);
-  return trimmed;
-}
-
-function normalizeOptionalString(value?: string | null): string | null {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
-function randomBytes(length: number): Uint8Array {
-  const cryptoImpl = globalThis.crypto;
-  if (!cryptoImpl?.getRandomValues) throw new Error('Web Crypto getRandomValues() is required for IrohaConnect');
-
-  const output = new Uint8Array(length);
-  cryptoImpl.getRandomValues(output);
-  return output;
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  if (typeof Buffer !== 'undefined') return Buffer.from(bytes).toString('base64');
-
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
-}
-
-function toBase64Url(bytes: Uint8Array): string {
-  return bytesToBase64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function buildConnectUri(sidBase64Url: string, chainId: string, node: string | null, role: 'app' | 'wallet'): string {
-  const params = new URLSearchParams({
-    sid: sidBase64Url,
-    chain_id: chainId,
-    v: '1',
-    role,
-  });
-
-  if (node) params.set('node', node);
-  return `iroha://connect?${params.toString()}`;
-}
-
 function concatBytes(...parts: Uint8Array[]): Uint8Array {
   const length = parts.reduce((sum, part) => sum + part.length, 0);
   const output = new Uint8Array(length);
@@ -136,49 +236,34 @@ function u64ToLittleEndianBytes(value: number): Uint8Array {
   return buffer;
 }
 
-export function createConnectSessionPreview(options: ConnectSessionPreviewOptions): ConnectSessionPreview {
-  const chainId = requireNonEmptyString(options.chainId, 'chainId');
-  const node = normalizeOptionalString(options.node);
+export function createConnectSessionPreview(
+  options: ConnectSessionPreviewOptions,
+  sdkNamespace: ConnectSdkNamespace = connectBrowserSdk
+): ConnectSessionPreview {
+  return candidateConnectSdk(sdkNamespace).createConnectSessionPreview(options);
+}
 
-  if (options.appPublicKey) {
-    const nonce = options.nonce ? toUint8Array(options.nonce, 'nonce') : randomBytes(16);
-    const appPublicKey = toUint8Array(options.appPublicKey, 'appPublicKey');
-    if (nonce.length !== 16) throw new RangeError(`nonce must be 16 bytes (received ${nonce.length})`);
-    if (appPublicKey.length !== 32) {
-      throw new RangeError(`appPublicKey must be 32 bytes (received ${appPublicKey.length})`);
-    }
+export async function registerConnectSession(
+  baseUrl: string,
+  preview: ConnectSessionPreview,
+  options: { node?: string | null, fetchImpl?: typeof fetch } = {},
+  sdkNamespace: ConnectSdkNamespace = connectBrowserSdk
+): Promise<ConnectSessionResponse> {
+  return await candidateConnectSdk(sdkNamespace).registerConnectSession(baseUrl, preview, options);
+}
 
-    const sidBytes = blake2b(concatBytes(SID_PREFIX, encoder.encode(chainId), appPublicKey, nonce), { dkLen: 32 });
-    const sidBase64Url = toBase64Url(sidBytes);
+export function createConnectAppSession(
+  options: ConnectAppSessionOptions,
+  sdkNamespace: ConnectSdkNamespace = connectBrowserSdk
+): ConnectAppSession {
+  return candidateConnectSdk(sdkNamespace).createConnectAppSession(options);
+}
 
-    return {
-      chainId,
-      node,
-      sidBytes,
-      sidBase64Url,
-      nonce,
-      walletUri: buildConnectUri(sidBase64Url, chainId, node, 'wallet'),
-      appUri: buildConnectUri(sidBase64Url, chainId, node, 'app'),
-      wsUrl: node && /^https?:/u.test(node) ? buildConnectWebSocketUrl(node, sidBase64Url, 'app') : '',
-      createdAt: Date.now(),
-      appKeyPair: {
-        publicKey: appPublicKey,
-        privateKey: new Uint8Array(32),
-      },
-    } as unknown as ConnectSessionPreview;
-  }
-
-  return createUpstreamConnectSessionPreview({
-    chainId,
-    node,
-    nonce: options.nonce ?? undefined,
-    appKeyPair: options.appKeyPair
-      ? {
-        publicKey: toUint8Array(options.appKeyPair.publicKey, 'appKeyPair.publicKey'),
-        privateKey: toUint8Array(options.appKeyPair.privateKey, 'appKeyPair.privateKey'),
-      }
-      : undefined,
-  });
+export async function createConnectCanonicalRequestAuth(
+  session: Pick<ConnectAppSession, 'waitForApproval' | 'signRaw'>,
+  sdkNamespace: ConnectSdkNamespace = connectBrowserSdk
+): Promise<ConnectCanonicalRequestAuth> {
+  return await candidateConnectSdk(sdkNamespace).createConnectCanonicalRequestAuth(session);
 }
 
 export function finalizeSignedTransaction(unsignedTxBytes: BinaryLike, detachedSignature: BinaryLike): Uint8Array {

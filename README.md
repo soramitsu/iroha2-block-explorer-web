@@ -96,6 +96,9 @@ The file is fetched from:
 Supported keys:
 
 - `toriiBaseUrl` (string): default Torii base URL used by the node selector when no user override is stored.
+- `networkId` (string): exact canonical lowercase 32-byte Iroha NetworkId for Connect session identity binding.
+  Connect remains disabled when this value is absent or invalid; the Explorer never infers it from a Torii URL or
+  substitutes a generic/test NetworkId. Production deployments should project it from authenticated ledger metadata.
 - `kotodamaCompilerUrl` (string): explicit base URL of a trusted canonical Rust Kotodama compiler service. The Studio
   sends `POST /v1/kotodama/compile` beneath this base URL and sends the complete generated source. This service is
   separate from Torii; the Explorer does not infer or default it from `toriiBaseUrl`. Production URLs must use HTTPS

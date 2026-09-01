@@ -56,11 +56,18 @@ describe('runtimePackageTargets', () => {
   it('binds the Linux-fixed candidate to the same reviewed JavaScript artifacts', () => {
     const priorCandidate = '1c3e843f0b1e5114e8b63202d703a826d7ec8fb5';
     const linuxFixedCandidate = '1e0f79552e01ab98a3fa4f7891e8698d74f34088';
+    const stableLinuxCandidate = '1d679048066424e9d9f1bdf7e42d7d12e2b8ae6d';
 
     expect(REVIEWED_IROHA_JS_SRC_TREES[linuxFixedCandidate]).toBe(
       REVIEWED_IROHA_JS_SRC_TREES[priorCandidate]
     );
+    expect(REVIEWED_IROHA_JS_SRC_TREES[stableLinuxCandidate]).toBe(
+      REVIEWED_IROHA_JS_SRC_TREES[priorCandidate]
+    );
     expect(REVIEWED_IROHA_JS_PACKAGE_JSON_SHA256[linuxFixedCandidate]).toBe(
+      REVIEWED_IROHA_JS_PACKAGE_JSON_SHA256[priorCandidate]
+    );
+    expect(REVIEWED_IROHA_JS_PACKAGE_JSON_SHA256[stableLinuxCandidate]).toBe(
       REVIEWED_IROHA_JS_PACKAGE_JSON_SHA256[priorCandidate]
     );
   });

@@ -61,8 +61,10 @@ const REVIEWED_BASELINE_INVENTORY_NAME = 'baseline-public-inventory.json';
 const REQUIRED_PNPM_VERSION = '10.11.0';
 const REQUIRED_NODE_VERSION = '24.19.0';
 const VALIDATED_RUNTIME_CONFIG = Symbol('validated-runtime-config');
+const NETWORK_ID_PATTERN = /^[0-9a-f]{63}[13579bdf]$/u;
 const PUBLIC_RUNTIME_CONFIG_KEYS = Object.freeze([
   'kotodamaCompilerUrl',
+  'networkId',
   'sorafsPublicBaseUrl',
   'toriiBaseUrl',
   'toriiEconometricsEndpointsEnabled',
@@ -525,6 +527,11 @@ export function validateTairaRuntimeConfig(config) {
   }
   if (config.toriiForceBaseUrl !== true) {
     throw new Error('toriiForceBaseUrl must be true for the Taira release');
+  }
+  if (config.networkId !== undefined) {
+    if (typeof config.networkId !== 'string' || !NETWORK_ID_PATTERN.test(config.networkId)) {
+      throw new Error('networkId must be an exact canonical lowercase 32-byte Iroha NetworkId when present');
+    }
   }
 
   validateOptionalRuntimeOrigins(config);

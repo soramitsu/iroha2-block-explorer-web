@@ -10,8 +10,6 @@ import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 const toriiBaseUrlState = vi.hoisted(() => ({ value: 'https://taira.sora.org' }));
 const runtimeConfigState = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
 const connectApiMocks = vi.hoisted(() => ({
-  fetchConnectStatus: vi.fn(),
-  createConnectSession: vi.fn(),
   draftMinistryAgendaProposal: vi.fn(),
   getMinistryAgendaProposal: vi.fn(),
   submitSignedTransaction: vi.fn(),
@@ -23,6 +21,14 @@ const connectAppSessionMocks = vi.hoisted(() => ({
   close: vi.fn(),
 }));
 const connectLibMocks = vi.hoisted(() => ({
+  configuration: {
+    value: null as null | { available: true, literal: string, networkId: Record<string, unknown> } | {
+      available: false
+      error: Error
+    },
+  },
+  createConnectSessionPreview: vi.fn(),
+  registerConnectSession: vi.fn(),
   createConnectAppSession: vi.fn(() => ({
     waitForApproval: connectAppSessionMocks.waitForApproval,
     signTransaction: connectAppSessionMocks.signTransaction,
@@ -59,8 +65,6 @@ vi.mock('@/shared/api', async (importOriginal) => {
   return {
     ...actual,
     getToriiBaseUrl: () => toriiBaseUrlState.value,
-    fetchConnectStatus: connectApiMocks.fetchConnectStatus,
-    createConnectSession: connectApiMocks.createConnectSession,
     draftMinistryAgendaProposal: connectApiMocks.draftMinistryAgendaProposal,
     getMinistryAgendaProposal: connectApiMocks.getMinistryAgendaProposal,
     submitSignedTransaction: connectApiMocks.submitSignedTransaction,
@@ -72,6 +76,9 @@ vi.mock('@/shared/lib/connect', async (importOriginal) => {
   const actual = await importOriginal<any>();
   return {
     ...actual,
+    getConnectConfiguration: () => connectLibMocks.configuration.value,
+    createConnectSessionPreview: connectLibMocks.createConnectSessionPreview,
+    registerConnectSession: connectLibMocks.registerConnectSession,
     createConnectAppSession: connectLibMocks.createConnectAppSession,
     finalizeSignedTransaction: connectLibMocks.finalizeSignedTransaction,
   };
@@ -176,66 +183,53 @@ const BaseJsonStub = defineComponent({
 const qrToDataUrlMock = vi.mocked(QRCode.toDataURL as unknown as (...args: any[]) => Promise<string>);
 
 describe('SorafsRegistry', () => {
+  const networkIdLiteral = '11'.repeat(32);
+  const networkId = {
+    literal: networkIdLiteral,
+    toBytes: () => new Uint8Array(32).fill(0x11),
+    toString: () => networkIdLiteral,
+  };
+  const connectPreview = {
+    networkId,
+    node: 'https://taira.sora.org',
+    sidBytes: new Uint8Array(32).fill(1),
+    sidBase64Url: 'session-1',
+    nonce: new Uint8Array(16).fill(2),
+    appKeyPair: {
+      publicKey: new Uint8Array(32).fill(3),
+      privateKey: new Uint8Array(32).fill(4),
+    },
+    walletUri: 'iroha://connect?sid=session-1&role=wallet',
+    appUri: 'iroha://connect?sid=session-1&role=app',
+    wsUrl: 'wss://taira.sora.org/v1/connect/ws?sid=session-1&role=app',
+    createdAt: 1,
+  };
+  const connectSession = {
+    sid: 'session-1',
+    network_id: networkIdLiteral,
+    app_pk: 'app-public-key',
+    nonce: 'nonce',
+    wallet_uri: 'iroha://connect?sid=session-1&role=wallet&token=wallet-token',
+    app_uri: 'iroha://connect?sid=session-1&role=app&token=app-token',
+    token_app: 'app-token',
+    token_wallet: 'wallet-token',
+    token_management: 'management-token',
+    token_relay: 'relay-token',
+  };
+
   beforeEach(() => {
     i18n.global.locale.value = 'en';
     toriiBaseUrlState.value = 'https://taira.sora.org';
     runtimeConfigState.value = {};
-    connectApiMocks.fetchConnectStatus.mockReset();
-    connectApiMocks.createConnectSession.mockReset();
+    connectLibMocks.configuration.value = { available: true, literal: networkIdLiteral, networkId };
+    connectLibMocks.createConnectSessionPreview.mockReset();
+    connectLibMocks.createConnectSessionPreview.mockReturnValue(connectPreview);
+    connectLibMocks.registerConnectSession.mockReset();
+    connectLibMocks.registerConnectSession.mockResolvedValue(connectSession);
     connectApiMocks.draftMinistryAgendaProposal.mockReset();
     connectApiMocks.getMinistryAgendaProposal.mockReset();
     connectApiMocks.submitSignedTransaction.mockReset();
     connectApiMocks.fetchPipelineTransactionStatus.mockReset();
-    connectApiMocks.fetchConnectStatus.mockResolvedValue({
-      status: SUCCESSFUL_FETCHING,
-      data: {
-        enabled: true,
-        sessions_total: 4,
-        sessions_active: 1,
-        per_ip_sessions: [{ ip: '127.0.0.1', sessions: 1 }],
-        buffered_sessions: 0,
-        total_buffer_bytes: 0,
-        dedupe_size: 0,
-        policy: {
-          ws_max_sessions: 128,
-          ws_per_ip_max_sessions: 4,
-          ws_rate_per_ip_per_min: 120,
-          session_ttl_ms: 300000,
-          frame_max_bytes: 64000,
-          session_buffer_max_bytes: 262144,
-          relay_enabled: true,
-          relay_strategy: 'broadcast',
-          relay_effective_strategy: 'broadcast',
-          relay_p2p_attached: true,
-          heartbeat_interval_ms: 30000,
-          heartbeat_miss_tolerance: 3,
-          heartbeat_min_interval_ms: 5000,
-        },
-        frames_in_total: 0,
-        frames_out_total: 0,
-        ciphertext_total: 0,
-        dedupe_drops_total: 0,
-        buffer_drops_total: 0,
-        plaintext_control_drops_total: 0,
-        monotonic_drops_total: 0,
-        sequence_violation_closes_total: 0,
-        role_direction_mismatch_total: 0,
-        ping_miss_total: 0,
-        p2p_rebroadcasts_total: 0,
-        p2p_rebroadcast_skipped_total: 0,
-      },
-    });
-    connectApiMocks.createConnectSession.mockResolvedValue({
-      status: SUCCESSFUL_FETCHING,
-      data: {
-        sid: 'session-1',
-        wallet_uri: 'iroha://connect?sid=session-1&role=wallet&token=wallet-token',
-        app_uri: 'iroha://connect?sid=session-1&role=app&token=app-token',
-        token_app: 'app-token',
-        token_wallet: 'wallet-token',
-        token_relay: 'relay-token',
-      },
-    });
     connectApiMocks.draftMinistryAgendaProposal.mockResolvedValue({
       status: SUCCESSFUL_FETCHING,
       data: {
@@ -909,10 +903,14 @@ describe('SorafsRegistry', () => {
     await wrapper.get('[data-testid="sorafs-connect-create"]').trigger('click');
     await flushPromises();
 
-    expect(connectApiMocks.createConnectSession).toHaveBeenCalledWith(
-      expect.objectContaining({
-        node: 'taira.sora.org',
-      })
+    expect(connectLibMocks.createConnectSessionPreview).toHaveBeenCalledWith({
+      networkId,
+      node: 'https://taira.sora.org',
+    });
+    expect(connectLibMocks.registerConnectSession).toHaveBeenCalledWith(
+      'https://taira.sora.org',
+      connectPreview,
+      { node: 'https://taira.sora.org' }
     );
     expect(qrToDataUrlMock).toHaveBeenCalledWith(
       'irohaconnect://connect?sid=session-1&role=wallet&token=wallet-token',
@@ -1005,7 +1003,7 @@ describe('SorafsRegistry', () => {
     await wrapper.get('[data-testid="sorafs-blacklist-submit"]').trigger('click');
     await flushPromises();
 
-    expect(connectApiMocks.createConnectSession).toHaveBeenCalledTimes(1);
+    expect(connectLibMocks.registerConnectSession).toHaveBeenCalledTimes(1);
     expect(connectLibMocks.createConnectAppSession).toHaveBeenCalledTimes(1);
     expect(connectApiMocks.draftMinistryAgendaProposal).toHaveBeenCalledWith({
       proposal: expect.objectContaining({
@@ -1492,11 +1490,11 @@ describe('SorafsRegistry', () => {
     expect(draft.summary.expected_impact).toContain('remove the selected root CID from the denylist');
   });
 
-  it('shows the connect-disabled state when the Torii endpoint does not expose Connect', async () => {
-    connectApiMocks.fetchConnectStatus.mockResolvedValue({
-      status: SUCCESSFUL_FETCHING,
-      data: null,
-    });
+  it('fails closed without a validated runtime NetworkId and makes no Connect registration request', async () => {
+    connectLibMocks.configuration.value = {
+      available: false,
+      error: new Error('Connect is disabled until an exact Iroha NetworkId is configured.'),
+    };
     scopeExposeQueue = [
       {
         isLoading: false,
@@ -1584,6 +1582,12 @@ describe('SorafsRegistry', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Connect is not enabled on this Torii endpoint.');
+    expect(wrapper.get('[data-testid="sorafs-connect-unavailable"]').text()).toContain(
+      'Connect is disabled until an exact Iroha NetworkId is configured.'
+    );
     expect(wrapper.get('[data-testid="sorafs-connect-create"]').attributes('disabled')).toBeDefined();
+    await wrapper.get('[data-testid="sorafs-connect-create"]').trigger('click');
+    expect(connectLibMocks.createConnectSessionPreview).not.toHaveBeenCalled();
+    expect(connectLibMocks.registerConnectSession).not.toHaveBeenCalled();
   });
 });

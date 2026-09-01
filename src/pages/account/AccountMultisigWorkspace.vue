@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import * as http from '@/shared/api';
 import type {
-  ConnectSessionResponse,
   MultisigProposalStatus,
   MultisigProposalsQueryResponse,
   MultisigSpecResponse,
@@ -15,14 +14,16 @@ import {
   createConnectAppSession,
   createConnectCanonicalRequestAuth,
   createConnectSessionPreview,
+  getConnectConfiguration,
+  registerConnectSession,
   TORII_CANONICAL_REQUEST_DOMAIN_TAG,
   type ConnectAppSession,
   type ConnectCanonicalRequestAuth,
+  type ConnectSessionResponse,
   type ConnectSessionPreview,
 } from '@/shared/lib/connect';
 import { buildDecodedInstructionPresentation } from '@/shared/lib/instruction-presentation';
 import { firstRouteQueryValue, parseRouteEnum } from '@/shared/lib/route-query';
-import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
@@ -58,15 +59,6 @@ const STATUS_FILTER_VALUES = new Set<StatusFilter>(STATUS_FILTERS);
 const PROPOSAL_LIMIT = 20;
 
 const { route, updateRouteQuery } = useRouteQueryState();
-const chainId = computed({
-  get: () => firstRouteQueryValue(route.query.multisig_chain) ?? '',
-  set: (value: string) => {
-    updateRouteQuery(
-      { multisig_chain: value.trim() || null, multisig_cursor: null },
-      { history: 'replace' }
-    ).catch(() => {});
-  },
-});
 const statusFilter = computed<StatusFilter>({
   get: () => parseRouteEnum(route.query.multisig_status, STATUS_FILTER_VALUES, 'ALL'),
   set: (value) => {
@@ -80,15 +72,7 @@ const statusFilter = computed<StatusFilter>({
   },
 });
 const cursor = computed(() => firstRouteQueryValue(route.query.multisig_cursor));
-
-const connectStatusResource = setupAsyncData(() => http.fetchConnectStatus());
-const connectStatusResult = computed(() => connectStatusResource.data);
-const connectStatus = computed(() =>
-  connectStatusResult.value?.status === SUCCESSFUL_FETCHING ? connectStatusResult.value.data : null
-);
-const connectUnavailable = computed(() =>
-  connectStatusResult.value?.status === SUCCESSFUL_FETCHING && !connectStatus.value?.enabled
-);
+const connectConfiguration = getConnectConfiguration();
 
 const preview = shallowRef<ConnectSessionPreview | null>(null);
 const sessionResponse = shallowRef<ConnectSessionResponse | null>(null);
@@ -104,9 +88,7 @@ let appSession: ConnectAppSession | null = null;
 let workspaceGeneration = 0;
 let proposalRequestGeneration = 0;
 
-const canCreateSession = computed(() =>
-  Boolean(chainId.value.trim() && connectStatus.value?.enabled && !isCreatingSession.value)
-);
+const canCreateSession = computed(() => connectConfiguration.available && !isCreatingSession.value);
 const signatories = computed(() => Object.entries(spec.value?.spec.signatories ?? {}));
 
 function closeAppSession(reason = 'multisig workspace closed') {
@@ -119,7 +101,7 @@ function closeAppSession(reason = 'multisig workspace closed') {
 }
 
 async function createWalletSession() {
-  if (!canCreateSession.value) return;
+  if (!connectConfiguration.available || isCreatingSession.value) return;
 
   closeAppSession('starting a new multisig read session');
   const generation = workspaceGeneration;
@@ -135,24 +117,16 @@ async function createWalletSession() {
   try {
     const toriiBaseUrl = http.getToriiBaseUrl();
     const createdPreview = createConnectSessionPreview({
-      chainId: chainId.value,
+      networkId: connectConfiguration.networkId,
       node: toriiBaseUrl,
     });
-    const result = await http.createConnectSession({
-      sid: createdPreview.sidBase64Url,
-      node: new URL(toriiBaseUrl).host,
+    const registeredSession = await registerConnectSession(toriiBaseUrl, createdPreview, {
+      node: toriiBaseUrl,
     });
     if (generation !== workspaceGeneration) return;
 
-    if (result.status !== SUCCESSFUL_FETCHING) {
-      sessionError.value = result.status === 'not-found'
-        ? 'The Torii Connect session endpoint is unavailable.'
-        : result.error.message;
-      return;
-    }
-
     preview.value = createdPreview;
-    sessionResponse.value = result.data;
+    sessionResponse.value = registeredSession;
   } catch (error) {
     if (generation !== workspaceGeneration) return;
     sessionError.value = error instanceof Error ? error.message : 'The Connect session could not be created.';
@@ -286,9 +260,9 @@ watch(
 );
 
 watch(
-  [() => props.accountId, chainId],
+  () => props.accountId,
   () => {
-    closeAppSession('multisig account or chain changed');
+    closeAppSession('multisig account changed');
     preview.value = null;
     sessionResponse.value = null;
     spec.value = null;
@@ -313,50 +287,22 @@ onBeforeUnmount(() => closeAppSession());
           </p>
 
           <div
-            v-if="connectStatusResource.isLoading && !connectStatusResult"
-            class="account-multisig__state"
-            role="status"
-          >
-            <BaseLoading />
-            <span>Checking Connect availability…</span>
-          </div>
-          <div
-            v-else-if="connectStatusResource.error"
-            class="account-multisig__state"
-            role="alert"
-            data-test="multisig-connect-error"
-          >
-            <span>Connect status could not be loaded: {{ connectStatusResource.error.message }}</span>
-            <BaseButton
-              bordered
-              @click="connectStatusResource.refetch"
-            >
-              Retry
-            </BaseButton>
-          </div>
-          <div
-            v-else-if="connectUnavailable"
+            v-if="!connectConfiguration.available"
             class="account-multisig__state row-text"
             role="status"
             data-test="multisig-connect-unavailable"
           >
-            Iroha Connect is disabled or unavailable on this Torii node.
+            Iroha Connect is unavailable: {{ connectConfiguration.error.message }}
           </div>
-          <template v-else-if="connectStatus?.enabled">
-            <label class="account-multisig__chain-field">
-              <span>Exact chain ID</span>
-              <input
-                v-model.lazy="chainId"
-                data-test="multisig-chain-id"
-                type="text"
-                placeholder="For example: taira"
-                autocomplete="off"
-              >
+          <template v-else>
+            <div class="account-multisig__chain-field">
+              <span>Exact network ID</span>
+              <code data-test="multisig-network-id">{{ connectConfiguration.literal }}</code>
               <small>
-                Torii's Connect status does not expose the chain ID, so it must be supplied explicitly; Explorer
-                does not infer it from the node URL.
+                This genesis-derived identity comes from the deployment's signed runtime configuration; Explorer
+                never infers it from a chain label or node URL.
               </small>
-            </label>
+            </div>
 
             <div class="account-multisig__actions">
               <BaseButton

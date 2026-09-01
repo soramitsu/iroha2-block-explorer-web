@@ -289,32 +289,18 @@
                 </BaseButton>
               </div>
 
-              <BaseLoading v-if="isConnectStatusLoading" />
               <span
-                v-else-if="connectStatusUnavailable"
+                v-if="connectStatusUnavailable"
                 class="row-text"
+                data-testid="sorafs-connect-unavailable"
               >
-                {{ $t('sorafs.connect.unavailable') }}
+                {{ $t('sorafs.connect.unavailable') }} {{ connectUnavailableReason }}
               </span>
-              <span
-                v-else-if="connectStatusLoadFailed"
-                class="row-text"
-              >
-                {{ $t('sorafs.connect.loadFailed') }}
-              </span>
-              <template v-else-if="connectStatus">
+              <template v-else>
                 <ul class="sorafs-registry-page__meta-list">
                   <li>
-                    <strong>{{ $t('sorafs.connect.sessionTtl') }}:</strong>
-                    <span>{{ connectSessionTtlLabel }}</span>
-                  </li>
-                  <li>
-                    <strong>{{ $t('sorafs.connect.perIpCap') }}:</strong>
-                    <span>{{ connectStatus.policy.ws_per_ip_max_sessions }}</span>
-                  </li>
-                  <li>
-                    <strong>{{ $t('sorafs.connect.relayMode') }}:</strong>
-                    <span>{{ connectStatus.policy.relay_effective_strategy }}</span>
+                    <strong>Network ID:</strong>
+                    <code data-testid="sorafs-connect-network-id">{{ configuredNetworkId }}</code>
                   </li>
                 </ul>
 
@@ -813,13 +799,11 @@ import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import BaseTable from '@/shared/ui/components/BaseTable.vue';
 import BaseJson from '@/shared/ui/components/BaseJson.vue';
 import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import * as http from '@/shared/api';
 import type {
-  ConnectSessionResponse,
-  ConnectStatusResponse,
   MinistryAgendaProposalRecord,
   SorafsCidLookupModeration,
   SorafsCidLookupModerationMatch,
@@ -842,7 +826,10 @@ import {
   createConnectAppSession,
   createConnectSessionPreview,
   finalizeSignedTransaction,
+  getConnectConfiguration,
+  registerConnectSession,
   rewriteConnectUriProtocol,
+  type ConnectSessionResponse,
   type ConnectSessionPreview,
 } from '@/shared/lib/connect';
 import {
@@ -1101,9 +1088,10 @@ const selectedManifestModerationRows = computed(() =>
   })
 );
 
-const connectStatus = ref<ConnectStatusResponse | null>(null);
-const isConnectStatusLoading = ref(true);
-const connectStatusLoadFailed = ref(false);
+const connectConfiguration = getConnectConfiguration();
+const connectStatusUnavailable = !connectConfiguration.available;
+const connectUnavailableReason = connectConfiguration.available ? '' : connectConfiguration.error.message;
+const configuredNetworkId = connectConfiguration.available ? connectConfiguration.literal : null;
 const walletConnectPreview = ref<ConnectSessionPreview | null>(null);
 const walletConnectSession = ref<ConnectSessionResponse | null>(null);
 const walletConnectQr = ref<string | null>(null);
@@ -1126,20 +1114,9 @@ const walletConnectLaunchUri = computed(() => {
   }
 });
 
-const connectStatusUnavailable = computed(
-  () => !isConnectStatusLoading.value && !connectStatusLoadFailed.value && !connectStatus.value?.enabled
-);
 const canCreateConnectSession = computed(
-  () => !!pinAttestation.value?.chain_id?.trim() && !!connectStatus.value?.enabled && !isCreatingConnectSession.value
+  () => connectConfiguration.available && !isCreatingConnectSession.value
 );
-const connectSessionTtlLabel = computed(() => {
-  const ttlMs = connectStatus.value?.policy.session_ttl_ms;
-  if (!ttlMs) return '—';
-
-  if (ttlMs % 60_000 === 0) return t('sorafs.connect.ttlMinutes', { value: ttlMs / 60_000 });
-  if (ttlMs % 1000 === 0) return t('sorafs.connect.ttlSeconds', { value: ttlMs / 1000 });
-  return t('sorafs.connect.ttlMilliseconds', { value: ttlMs });
-});
 
 const blacklistProposalForm = reactive({
   reasonTag: 'spam' as BlacklistReasonTag,
@@ -1341,7 +1318,7 @@ const blacklistProposalReady = computed(
 const canSubmitBlacklistProposal = computed(
   () =>
     blacklistProposalReady.value &&
-    !!connectStatus.value?.enabled &&
+    connectConfiguration.available &&
     blacklistProposalSubmissionState.value !== 'waiting_for_wallet' &&
     blacklistProposalSubmissionState.value !== 'signing'
 );
@@ -1364,8 +1341,7 @@ const blacklistProposalSubmissionStateLabel = computed(() =>
   t(`sorafs.connect.sessionStates.${blacklistProposalSubmissionState.value}`)
 );
 const blacklistProposalSubmissionHelp = computed(() => {
-  if (connectStatusUnavailable.value) return t('sorafs.proposal.walletSubmissionUnavailable');
-  if (connectStatusLoadFailed.value) return t('sorafs.connect.loadFailed');
+  if (connectStatusUnavailable) return t('sorafs.proposal.walletSubmissionUnavailable');
   if (blacklistProposalSubmissionState.value === 'submitted') return t('sorafs.proposal.walletSubmissionComplete');
   return t('sorafs.proposal.walletSubmissionHelp');
 });
@@ -1380,10 +1356,6 @@ watch(
     blacklistProposalSubmissionError.value = null;
   }
 );
-
-onMounted(() => {
-  loadConnectStatus().catch(() => undefined);
-});
 
 watch(
   () => walletConnectLaunchUri.value,
@@ -1405,33 +1377,6 @@ watch(
   },
   { immediate: true }
 );
-
-async function loadConnectStatus() {
-  isConnectStatusLoading.value = true;
-  connectStatusLoadFailed.value = false;
-
-  try {
-    const result = await http.fetchConnectStatus();
-    if (result.status === SUCCESSFUL_FETCHING) {
-      connectStatus.value = result.data?.enabled ? result.data : null;
-      return;
-    }
-
-    connectStatusLoadFailed.value = true;
-  } catch {
-    connectStatusLoadFailed.value = true;
-  } finally {
-    isConnectStatusLoading.value = false;
-  }
-}
-
-function connectNodeHint(baseUrl: string): string | null {
-  try {
-    return new URL(baseUrl).host || null;
-  } catch {
-    return null;
-  }
-}
 
 function decodeBase64(value: string): Uint8Array {
   if (typeof Buffer !== 'undefined') return Uint8Array.from(Buffer.from(value, 'base64'));
@@ -1480,32 +1425,22 @@ async function copyWalletConnectValue(value?: string | null) {
 }
 
 async function createWalletConnectSession() {
-  const chainId = pinAttestation.value?.chain_id?.trim();
-  if (!chainId || !connectStatus.value?.enabled) return;
+  if (!connectConfiguration.available) return;
 
   isCreatingConnectSession.value = true;
 
   try {
+    const toriiBaseUrl = http.getToriiBaseUrl();
     const preview = createConnectSessionPreview({
-      chainId,
-      node: http.getToriiBaseUrl(),
+      networkId: connectConfiguration.networkId,
+      node: toriiBaseUrl,
     });
-    const result = await http.createConnectSession({
-      sid: preview.sidBase64Url,
-      node: connectNodeHint(http.getToriiBaseUrl()),
+    const session = await registerConnectSession(toriiBaseUrl, preview, {
+      node: toriiBaseUrl,
     });
-
-    if (result.status !== SUCCESSFUL_FETCHING) {
-      notifications.error(
-        result.status === 'not-found'
-          ? t('sorafs.connect.notifications.sessionEndpointUnavailable')
-          : resultErrorMessage(result, 'sorafs.connect.notifications.sessionCreateFailed')
-      );
-      return false;
-    }
 
     walletConnectPreview.value = preview;
-    walletConnectSession.value = result.data;
+    walletConnectSession.value = session;
     notifications.success(t('sorafs.connect.notifications.sessionReady'));
     return true;
   } catch (error) {
@@ -1562,7 +1497,7 @@ async function submitBlacklistProposal() {
     return;
   }
 
-  if (!connectStatus.value?.enabled) {
+  if (!connectConfiguration.available) {
     notifications.error(t('sorafs.proposal.notifications.walletSubmitUnavailable'));
     return;
   }

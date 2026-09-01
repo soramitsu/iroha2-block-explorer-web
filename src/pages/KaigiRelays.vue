@@ -147,10 +147,9 @@
 
     <BaseContentBlock :title="$t('kaigi.liveEvents')">
       <template #default>
-        <KaigiRelayEvents
-          :stream-url="kaigiEventsStream"
-          @event="handleKaigiEvent"
-        />
+        <div class="kaigi-relays-page__empty row-text">
+          {{ $t('kaigi.snapshotUnavailable') }}
+        </div>
       </template>
     </BaseContentBlock>
 
@@ -257,10 +256,7 @@ import * as http from '@/shared/api';
 import type { KaigiRelaySummary, KaigiRelayDetail } from '@/shared/api/schemas';
 import { useI18n } from 'vue-i18n';
 import { NOT_FOUND, SUCCESSFUL_FETCHING } from '@/shared/api/consts';
-import KaigiRelayEvents from '@/shared/ui/components/KaigiRelayEvents.vue';
-import type { KaigiRelayEvent } from '@/shared/lib/kaigi';
 import { computeKaigiRelayOverview } from '@/shared/lib/kaigi';
-import { useDebounceFn } from '@vueuse/core';
 
 const { t } = useI18n();
 
@@ -286,16 +282,6 @@ const overview = computed(() =>
 const isOverviewLoading = computed(() => overview.value === null && (healthState.isLoading || relaysState.isLoading));
 
 const domainMetrics = computed(() => healthSnapshot.value?.domains ?? []);
-const kaigiEventsStream = http.buildToriiUrl('/kaigi/relays/events');
-
-const refetchKaigiOverview = useDebounceFn(() => {
-  relaysState.refetch();
-  healthState.refetch();
-}, 750);
-
-function handleKaigiEvent(_event: KaigiRelayEvent) {
-  refetchKaigiOverview();
-}
 
 const detailState = reactive({
   isOpen: false,

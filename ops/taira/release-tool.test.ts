@@ -747,6 +747,7 @@ describe('operator safety gates', () => {
       validateTairaRuntimeConfig({
         toriiBaseUrl: 'https://taira.sora.org',
         toriiForceBaseUrl: true,
+        networkId: '11'.repeat(32),
         sorafsPublicBaseUrl: 'https://taira.sora.org',
         toriiFailoverNodes: [],
       })
@@ -769,6 +770,15 @@ describe('operator safety gates', () => {
         toriiForceBaseUrl: false,
       })
     ).toThrow('toriiForceBaseUrl must be true');
+    for (const networkId of ['AA'.repeat(32), '11'.repeat(31), `${'11'.repeat(31)}10`]) {
+      expect(() =>
+        validateTairaRuntimeConfig({
+          toriiBaseUrl: 'https://taira.sora.org',
+          toriiForceBaseUrl: true,
+          networkId,
+        })
+      ).toThrow('exact canonical lowercase 32-byte Iroha NetworkId');
+    }
     for (const loopback of ['https://localhost.', 'https://[::ffff:7f00:1]']) {
       expect(() =>
         validateTairaRuntimeConfig({
@@ -785,6 +795,7 @@ describe('operator safety gates', () => {
       JSON.stringify({
         toriiBaseUrl: 'https://taira.sora.org',
         toriiForceBaseUrl: true,
+        networkId: '11'.repeat(32),
         sorafsPublicBaseUrl: 'https://taira.sora.org',
       })
     );
