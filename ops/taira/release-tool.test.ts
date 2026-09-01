@@ -589,13 +589,15 @@ describe('operator safety gates', () => {
 
   it('consumes one owner-only exact-toolchain attestation bound to Node, source, and argv', async () => {
     const { attestationPath, env, nodePath, argv } = await tairaReleaseAttestation();
+    const expectedGitVerifyGpg = env[TAIRA_GIT_VERIFY_GPG_ENV];
+    const expectedGitVerifyGnupgHome = env[TAIRA_GIT_VERIFY_GNUPGHOME_ENV];
     expect(lstatSync(attestationPath).mode & 0o777).toBe(0o600);
     const payload = consumeTairaReleaseAttestation({ env, argv, nodePath });
     expect(payload.schema).toBe(1);
     expect(existsSync(attestationPath)).toBe(false);
     expect(env).toEqual({
-      [TAIRA_GIT_VERIFY_GNUPGHOME_ENV]: path.join(path.dirname(attestationPath), 'git-verify-gnupg'),
-      [TAIRA_GIT_VERIFY_GPG_ENV]: realpathSync(process.env[TAIRA_GIT_VERIFY_GPG_ENV]!),
+      [TAIRA_GIT_VERIFY_GNUPGHOME_ENV]: expectedGitVerifyGnupgHome,
+      [TAIRA_GIT_VERIFY_GPG_ENV]: expectedGitVerifyGpg,
       IROHA_EXPLORER_TOOLCHAIN_CACHE: path.dirname(path.dirname(attestationPath)),
     });
     expect(() => consumeTairaReleaseAttestation({ env, argv })).toThrow('exact-toolchain bootstrap');
