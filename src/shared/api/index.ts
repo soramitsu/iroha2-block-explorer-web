@@ -67,8 +67,6 @@ import {
   SorafsReplicationResponse,
   SorafsStorageManifestResponse,
   SorafsCidLookupResponse,
-  ConnectStatusResponse,
-  ConnectSessionResponse,
   MinistryAgendaProposalDraftRequest,
   MinistryAgendaProposalDraftResponse,
   MinistryAgendaProposalGetResponse,
@@ -650,9 +648,14 @@ const TORII_API_PREFIXES = [
   '/sumeragi/',
   '/zk/',
 ];
-const SUMERAGI_STATUS_STREAM_ENABLED =
-  String(import.meta.env.VITE_SUMERAGI_STATUS_STREAM_ENABLED ?? '').toLowerCase() === 'true';
 const ZK_PROVER_REPORTS_ENABLED = String(import.meta.env.VITE_ZK_PROVER_REPORTS_ENABLED ?? '').toLowerCase() === 'true';
+
+function operatorSurfaceUnavailable<T>(message: string): ResultWithStatus<T> {
+  return {
+    status: UNKNOWN_ERROR,
+    error: new Error(message),
+  };
+}
 
 function normalizeToriiApiPath(path: string): string {
   const normalized = path.startsWith('/') ? path : `/${path}`;
@@ -1327,30 +1330,22 @@ export function streamTelemetryMetrics() {
 }
 
 export async function fetchSumeragiStatus(): Promise<ResultWithStatus<SumeragiStatus>> {
-  return await parseToriiSdkResult((client) => client.getSumeragiStatus(), SumeragiStatus);
+  return operatorSurfaceUnavailable(
+    'Authoritative Sumeragi status requires an operator-signed Torii client and is unavailable in the public Explorer.'
+  );
 }
 
 export function streamSumeragiStatus() {
-  if (!SUMERAGI_STATUS_STREAM_ENABLED) {
-    return {
-      data: computed(() => null),
-      status: ref<'CONNECTING' | 'OPEN' | 'CLOSED'>('CLOSED'),
-    };
-  }
-
-  const statusUrl = computed(() => buildToriiUrl('/sumeragi/status/sse'));
-  const { data, status } = useEventSource(statusUrl, [], { autoReconnect: true });
   return {
-    data: computed(() => {
-      if (!data.value) return null;
-      return SumeragiStatus.parse(JSON.parse(data.value));
-    }),
-    status,
+    data: computed(() => null),
+    status: ref<'CONNECTING' | 'OPEN' | 'CLOSED'>('CLOSED'),
   };
 }
 
 export async function fetchSumeragiTelemetry(): Promise<ResultWithStatus<SumeragiTelemetry>> {
-  return await parseToriiSdkResult((client) => client.getSumeragiTelemetry(), SumeragiTelemetry);
+  return operatorSurfaceUnavailable(
+    'Aggregate Sumeragi telemetry was removed from Torii; the authoritative replacement requires an operator-signed client and is unavailable in the public Explorer.'
+  );
 }
 
 export async function fetchPeersInfo(): Promise<ResultWithStatus<PeerInfo[]>> {
@@ -1696,15 +1691,22 @@ export async function fetchNexusPublicStatus(): Promise<ResultWithStatus<NexusPu
 }
 
 export async function fetchKaigiRelays(): Promise<ResultWithStatus<KaigiRelaySummaryList>> {
-  return await parseToriiSdkResult((client) => client.listKaigiRelays(), KaigiRelaySummaryList);
+  return operatorSurfaceUnavailable(
+    'Kaigi relay inventory requires an operator-signed Torii client and is unavailable in the public Explorer.'
+  );
 }
 
 export async function fetchKaigiRelayDetail(relayId: string): Promise<ResultWithStatus<KaigiRelayDetail>> {
-  return await parseToriiSdkResult((client) => client.getKaigiRelay(relayId), KaigiRelayDetail);
+  void relayId;
+  return operatorSurfaceUnavailable(
+    'Kaigi relay detail requires an operator-signed Torii client and is unavailable in the public Explorer.'
+  );
 }
 
 export async function fetchKaigiRelayHealthSnapshot(): Promise<ResultWithStatus<KaigiRelayHealthSnapshot>> {
-  return await parseToriiSdkResult((client) => client.getKaigiRelaysHealth(), KaigiRelayHealthSnapshot);
+  return operatorSurfaceUnavailable(
+    'Kaigi relay health requires an operator-signed Torii client and is unavailable in the public Explorer.'
+  );
 }
 
 export async function fetchSorafsPinRegistry(
@@ -1753,53 +1755,6 @@ export async function fetchSorafsCidLookup(cid: string): Promise<ResultWithStatu
     return { status: SUCCESSFUL_FETCHING, data: SorafsCidLookupResponse.parse(res.data) };
 
   return await transformErrorResponse(res.response);
-}
-
-export async function fetchConnectStatus(): Promise<ResultWithStatus<ConnectStatusResponse | null>> {
-  const res = await get<ConnectStatusResponse>('/connect/status');
-  if (res.status === SUCCESSFUL_FETCHING) {
-    return {
-      status: SUCCESSFUL_FETCHING,
-      data: ConnectStatusResponse.parse(res.data),
-    };
-  }
-
-  if (res.response.status === 404) {
-    return {
-      status: SUCCESSFUL_FETCHING,
-      data: null,
-    };
-  }
-
-  return await transformErrorResponse(res.response);
-}
-
-export async function createConnectSession(input: {
-  sid: string;
-  node?: string | null;
-}): Promise<ResultWithStatus<ConnectSessionResponse>> {
-  const payload = {
-    sid: input.sid,
-    ...(input.node?.trim() ? { node: input.node.trim() } : {}),
-  };
-  const response = await post('/connect/session', payload);
-
-  if (!response.ok) {
-    return await transformErrorResponse(response);
-  }
-
-  const { data, text } = await parseTypedResponse(response, ConnectSessionResponse);
-  if (data) {
-    return {
-      status: SUCCESSFUL_FETCHING,
-      data,
-    };
-  }
-
-  return {
-    status: UNKNOWN_ERROR,
-    error: new Error(text || 'connect session response missing JSON body'),
-  };
 }
 
 export async function draftMinistryAgendaProposal(

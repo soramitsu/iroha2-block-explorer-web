@@ -11,8 +11,6 @@ import {
   AssetDefinitionSnapshot,
   ContractCodeView,
   ContractVerifiedSourceJobResponse,
-  ConnectSessionResponse,
-  ConnectStatusResponse,
   DetailedTransaction,
   Domain,
   ExplorerHealth,
@@ -299,65 +297,6 @@ describe('ledger evidence schemas', () => {
 });
 
 describe('Explorer payload schemas', () => {
-  it('parses Torii Connect status snapshots with snake_case counters', () => {
-    const parsed = ConnectStatusResponse.parse({
-      enabled: true,
-      sessions_total: 4,
-      sessions_active: 2,
-      per_ip_sessions: [{ ip: '127.0.0.1', sessions: 1 }],
-      buffered_sessions: 1,
-      total_buffer_bytes: 256,
-      dedupe_size: 8,
-      policy: {
-        ws_max_sessions: 128,
-        ws_per_ip_max_sessions: 4,
-        ws_rate_per_ip_per_min: 120,
-        session_ttl_ms: 300000,
-        frame_max_bytes: 64000,
-        session_buffer_max_bytes: 262144,
-        relay_enabled: true,
-        relay_strategy: 'broadcast',
-        relay_effective_strategy: 'broadcast',
-        relay_p2p_attached: true,
-        heartbeat_interval_ms: 30000,
-        heartbeat_miss_tolerance: 3,
-        heartbeat_min_interval_ms: 5000,
-      },
-      frames_in_total: 12,
-      frames_out_total: 9,
-      ciphertext_total: 21,
-      dedupe_drops_total: 0,
-      buffer_drops_total: 0,
-      plaintext_control_drops_total: 0,
-      monotonic_drops_total: 0,
-      sequence_violation_closes_total: 0,
-      role_direction_mismatch_total: 0,
-      ping_miss_total: 0,
-      p2p_rebroadcasts_total: 2,
-      p2p_rebroadcast_skipped_total: 1,
-    });
-
-    expect(parsed.enabled).toBe(true);
-    expect(parsed.policy.relay_effective_strategy).toBe('broadcast');
-    expect(parsed.per_ip_sessions[0]?.ip).toBe('127.0.0.1');
-  });
-
-  it('parses Torii Connect session responses with deeplink URIs and tokens', () => {
-    const parsed = ConnectSessionResponse.parse({
-      sid: 'sid-1',
-      wallet_uri: 'iroha://connect?sid=sid-1',
-      app_uri: 'iroha://connect?sid=sid-1&role=app',
-      token_app: 'token-app',
-      token_wallet: 'token-wallet',
-      token_relay: 'token-relay',
-    });
-
-    expect(parsed.sid).toBe('sid-1');
-    expect(parsed.wallet_uri).toContain('iroha://connect');
-    expect(parsed.token_wallet).toBe('token-wallet');
-    expect(parsed.token_relay).toBe('token-relay');
-  });
-
   it('normalizes Ministry agenda draft requests and records to canonical authority and hash fields', () => {
     const request = MinistryAgendaProposalDraftRequest.parse({
       proposal: { proposal_id: 'AC-2026-001' },

@@ -2011,64 +2011,6 @@ export const SorafsCidLookupResponse = z.object({
 });
 export type SorafsCidLookupResponse = z.infer<typeof SorafsCidLookupResponse>;
 
-export const ConnectPerIpSessionsEntry = z.object({
-  ip: z.string(),
-  sessions: z.number(),
-});
-export type ConnectPerIpSessionsEntry = z.infer<typeof ConnectPerIpSessionsEntry>;
-
-export const ConnectStatusPolicy = z.object({
-  ws_max_sessions: z.number(),
-  ws_per_ip_max_sessions: z.number(),
-  ws_rate_per_ip_per_min: z.number(),
-  session_ttl_ms: z.number(),
-  frame_max_bytes: z.number(),
-  session_buffer_max_bytes: z.number(),
-  relay_enabled: z.boolean(),
-  relay_strategy: z.string(),
-  relay_effective_strategy: z.string(),
-  relay_p2p_attached: z.boolean(),
-  heartbeat_interval_ms: z.number(),
-  heartbeat_miss_tolerance: z.number(),
-  heartbeat_min_interval_ms: z.number(),
-});
-export type ConnectStatusPolicy = z.infer<typeof ConnectStatusPolicy>;
-
-export const ConnectStatusResponse = z.object({
-  enabled: z.boolean(),
-  sessions_total: z.number(),
-  sessions_active: z.number(),
-  per_ip_sessions: ConnectPerIpSessionsEntry.array(),
-  buffered_sessions: z.number(),
-  total_buffer_bytes: z.number(),
-  dedupe_size: z.number(),
-  policy: ConnectStatusPolicy,
-  frames_in_total: z.number(),
-  frames_out_total: z.number(),
-  ciphertext_total: z.number(),
-  dedupe_drops_total: z.number(),
-  buffer_drops_total: z.number(),
-  plaintext_control_drops_total: z.number(),
-  monotonic_drops_total: z.number(),
-  sequence_violation_closes_total: z.number(),
-  role_direction_mismatch_total: z.number(),
-  ping_miss_total: z.number(),
-  p2p_rebroadcasts_total: z.number(),
-  p2p_rebroadcast_skipped_total: z.number(),
-});
-export type ConnectStatusResponse = z.infer<typeof ConnectStatusResponse>;
-
-export const ConnectSessionResponse = z.object({
-  sid: z.string(),
-  wallet_uri: z.string(),
-  app_uri: z.string(),
-  token_app: z.string(),
-  token_wallet: z.string(),
-  token_relay: z.string(),
-  token_management: z.string().optional(),
-});
-export type ConnectSessionResponse = z.infer<typeof ConnectSessionResponse>;
-
 function normalizeHashLike32(value: string, name: string): string {
   const trimmed = value.trim();
   if (!trimmed) throw new Error(`${name} must not be empty`);

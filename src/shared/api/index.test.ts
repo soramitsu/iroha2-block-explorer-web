@@ -1829,66 +1829,65 @@ describe('Explorer latest/health API helpers', () => {
 describe('Sumeragi telemetry API helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
-  it('fetchSumeragiStatus returns the parsed snapshot', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => payloads.sumeragiStatus,
-    });
+  it('fails closed instead of requesting operator-only authoritative status', async () => {
+    const fetchSpy = vi.fn();
     global.fetch = fetchSpy as any;
 
     const { fetchSumeragiStatus } = await importApiModule(toriiEnv);
     const result = await fetchSumeragiStatus();
 
-    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall).toBeInstanceOf(URL);
-    expect(firstCall.toString()).toBe('https://torii.example/v1/sumeragi/status');
-    expect(result.status).toBe(SUCCESSFUL_FETCHING);
-    if (result.status === SUCCESSFUL_FETCHING) {
-      expect(result.data).toEqual(payloads.sumeragiStatus);
-    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: UNKNOWN_ERROR });
+    expect(result.status === UNKNOWN_ERROR ? result.error.message : '').toMatch(/operator-signed/u);
   });
 
-  it('fetchSumeragiTelemetry returns the parsed payload', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => payloads.sumeragiTelemetry,
-    });
+  it('fails closed instead of requesting the removed aggregate telemetry endpoint', async () => {
+    const fetchSpy = vi.fn();
     global.fetch = fetchSpy as any;
 
     const { fetchSumeragiTelemetry } = await importApiModule(toriiEnv);
     const result = await fetchSumeragiTelemetry();
 
-    const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
-    expect(firstCall).toBeInstanceOf(URL);
-    expect(firstCall.toString()).toBe('https://torii.example/v1/sumeragi/telemetry');
-    expect(result.status).toBe(SUCCESSFUL_FETCHING);
-    if (result.status === SUCCESSFUL_FETCHING) {
-      expect(result.data).toEqual(payloads.sumeragiTelemetry);
-    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: UNKNOWN_ERROR });
+    expect(result.status === UNKNOWN_ERROR ? result.error.message : '').toMatch(/was removed/u);
   });
 
-  it('streamSumeragiStatus parses SSE payloads', async () => {
+  it('keeps the validator-handshake status stream closed in the public Explorer', async () => {
     const { streamSumeragiStatus } = await importApiModule({
       ...toriiEnv,
       VITE_SUMERAGI_STATUS_STREAM_ENABLED: 'true',
     });
     const stream = streamSumeragiStatus();
 
-    expect(eventSourceStore.instances).toHaveLength(1);
-    const [instance] = eventSourceStore.instances;
-    expect((instance.source as { value?: string }).value).toBe('https://torii.example/v1/sumeragi/status/sse');
-    instance.data.value = JSON.stringify(payloads.sumeragiStatus);
-    await nextTick();
-    expect(stream.data.value).toEqual(payloads.sumeragiStatus);
-  });
-
-  it('streamSumeragiStatus is disabled by default for nodes without SSE support', async () => {
-    const { streamSumeragiStatus } = await importApiModule(toriiEnv);
-    const stream = streamSumeragiStatus();
-
     expect(eventSourceStore.instances).toHaveLength(0);
     expect(stream.status.value).toBe('CLOSED');
     expect(stream.data.value).toBeNull();
+  });
+});
+
+describe('operator-only Kaigi API helpers', () => {
+  it('fail closed without dispatching unsigned public-browser requests', async () => {
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as any;
+    const {
+      fetchKaigiRelays,
+      fetchKaigiRelayDetail,
+      fetchKaigiRelayHealthSnapshot,
+    } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+
+    const results = await Promise.all([
+      fetchKaigiRelays(),
+      fetchKaigiRelayDetail('relay@kaigi'),
+      fetchKaigiRelayHealthSnapshot(),
+    ]);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(results).toHaveLength(3);
+    for (const result of results) {
+      expect(result).toMatchObject({ status: UNKNOWN_ERROR });
+      expect(result.status === UNKNOWN_ERROR ? result.error.message : '').toMatch(/operator-signed/u);
+    }
   });
 });
 
@@ -2094,118 +2093,6 @@ describe('Nexus dataspaces API helpers', () => {
 
     expect((fetchSpy.mock.calls[0]?.[0] as URL).toString()).toBe('https://torii.example/status');
     expect(result.status).toBe(NOT_FOUND);
-  });
-});
-
-describe('Connect API helpers', () => {
-  const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
-
-  it('fetchConnectStatus requests the Torii connect status endpoint and parses the response', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        enabled: true,
-        sessions_total: 4,
-        sessions_active: 2,
-        per_ip_sessions: [{ ip: '127.0.0.1', sessions: 1 }],
-        buffered_sessions: 1,
-        total_buffer_bytes: 128,
-        dedupe_size: 8,
-        policy: {
-          ws_max_sessions: 128,
-          ws_per_ip_max_sessions: 4,
-          ws_rate_per_ip_per_min: 120,
-          session_ttl_ms: 300000,
-          frame_max_bytes: 64000,
-          session_buffer_max_bytes: 262144,
-          relay_enabled: true,
-          relay_strategy: 'broadcast',
-          relay_effective_strategy: 'broadcast',
-          relay_p2p_attached: true,
-          heartbeat_interval_ms: 30000,
-          heartbeat_miss_tolerance: 3,
-          heartbeat_min_interval_ms: 5000,
-        },
-        frames_in_total: 12,
-        frames_out_total: 9,
-        ciphertext_total: 21,
-        dedupe_drops_total: 0,
-        buffer_drops_total: 0,
-        plaintext_control_drops_total: 0,
-        monotonic_drops_total: 0,
-        sequence_violation_closes_total: 0,
-        role_direction_mismatch_total: 0,
-        ping_miss_total: 0,
-        p2p_rebroadcasts_total: 2,
-        p2p_rebroadcast_skipped_total: 1,
-      }),
-    });
-    global.fetch = fetchSpy as any;
-
-    const { fetchConnectStatus } = await importApiModule(toriiEnv);
-    const result = await fetchConnectStatus();
-
-    expect((fetchSpy.mock.calls[0]?.[0] as URL).toString()).toBe('https://torii.example/v1/connect/status');
-    expect(result.status).toBe(SUCCESSFUL_FETCHING);
-    if (result.status === SUCCESSFUL_FETCHING) {
-      expect(result.data?.enabled).toBe(true);
-      expect(result.data?.policy.relay_strategy).toBe('broadcast');
-      expect(result.data?.per_ip_sessions[0]?.sessions).toBe(1);
-    }
-  });
-
-  it('fetchConnectStatus treats a missing endpoint as disabled instead of as a hard error', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 404,
-      text: async () => '',
-    });
-    global.fetch = fetchSpy as any;
-
-    const { fetchConnectStatus } = await importApiModule(toriiEnv);
-    const result = await fetchConnectStatus();
-
-    expect((fetchSpy.mock.calls[0]?.[0] as URL).toString()).toBe('https://torii.example/v1/connect/status');
-    expect(result).toEqual({ status: SUCCESSFUL_FETCHING, data: null });
-  });
-
-  it('createConnectSession posts the caller-provided sid to the Torii connect session endpoint', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () =>
-        JSON.stringify({
-          sid: 'session-1',
-          wallet_uri: 'iroha://connect?sid=session-1&role=wallet',
-          app_uri: 'iroha://connect?sid=session-1&role=app',
-          token_app: 'token-app',
-          token_wallet: 'token-wallet',
-          token_relay: 'token-relay',
-        }),
-    });
-    global.fetch = fetchSpy as any;
-
-    const { createConnectSession } = await importApiModule(toriiEnv);
-    const result = await createConnectSession({ sid: 'session-1', node: 'taira.sora.org' });
-
-    const [requestUrl, requestInit] = fetchSpy.mock.calls[0] ?? [];
-    expect((requestUrl as URL).toString()).toBe('https://torii.example/v1/connect/session');
-    expect(requestInit).toMatchObject({
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-    });
-    expect(JSON.parse(String((requestInit as RequestInit).body))).toEqual({
-      sid: 'session-1',
-      node: 'taira.sora.org',
-    });
-    expect(result.status).toBe(SUCCESSFUL_FETCHING);
-    if (result.status === SUCCESSFUL_FETCHING) {
-      expect(result.data.wallet_uri).toContain('role=wallet');
-      expect(result.data.token_app).toBe('token-app');
-      expect(result.data.token_relay).toBe('token-relay');
-    }
   });
 });
 
