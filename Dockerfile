@@ -18,6 +18,7 @@ RUN test "$(node --version)" = "v24.19.0" \
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY scripts/check-iroha-pin.mjs scripts/check-iroha-pin.mjs
+COPY scripts/materialize-iroha-js-dist.mjs scripts/materialize-iroha-js-dist.mjs
 COPY tests/mochi/explorer-profile.json tests/mochi/explorer-profile.json
 RUN node scripts/check-iroha-pin.mjs
 RUN pnpm fetch --frozen-lockfile
