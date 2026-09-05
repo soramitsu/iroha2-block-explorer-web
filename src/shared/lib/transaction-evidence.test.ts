@@ -20,14 +20,17 @@ describe('transaction evidence orchestration', () => {
       data: 'proof',
     });
     expect(evidencePartFromResult<string>({ status: NOT_FOUND })).toEqual({ status: 'unavailable' });
-    expect(
-      evidencePartFromResult<string>({ status: UNKNOWN_ERROR, error: new Error('rejected') })
-    ).toMatchObject({ status: 'error', problem: { kind: 'invalid-response', message: 'rejected' } });
+    expect(evidencePartFromResult<string>({ status: UNKNOWN_ERROR, error: new Error('rejected') })).toMatchObject({
+      status: 'error',
+      problem: { kind: 'invalid-response', message: 'rejected' },
+    });
   });
 
   it('maps rejected requests to an explicit problem', () => {
-    expect(evidencePartFromSettled<string>({ status: 'rejected', reason: new TypeError('offline') }))
-      .toEqual({ status: 'error', problem: { kind: 'network', message: 'offline' } });
+    expect(evidencePartFromSettled<string>({ status: 'rejected', reason: new TypeError('offline') })).toEqual({
+      status: 'error',
+      problem: { kind: 'network', message: 'offline' },
+    });
   });
 
   it('starts all authoritative requests together and preserves partial availability', async () => {
@@ -72,7 +75,7 @@ describe('transaction evidence orchestration', () => {
           proof: {
             block_height: '42',
             entry_hash: `hash:${TRANSACTION_HASH.toUpperCase()}#4667`,
-            entry_root: `0X${ENTRY_ROOT.toUpperCase()}`,
+            entry_commitment: { root: `0X${ENTRY_ROOT.toUpperCase()}` },
           },
           pathVerification: { valid: true },
         },
@@ -87,6 +90,7 @@ describe('transaction evidence orchestration', () => {
 
     expect(verification).toEqual({
       valid: true,
+      pathVerificationAvailable: true,
       pathVerificationValid: true,
       transactionHashMatches: true,
       proofHeightMatches: true,
@@ -98,42 +102,42 @@ describe('transaction evidence orchestration', () => {
   it.each([
     {
       name: 'another transaction',
-      proof: { block_height: '42', entry_hash: OTHER_HASH, entry_root: ENTRY_ROOT },
+      proof: { block_height: '42', entry_hash: OTHER_HASH, entry_commitment: { root: ENTRY_ROOT } },
       block: { height: 42, transactions_hash: ENTRY_ROOT },
       pathValid: true,
       failedCheck: 'transactionHashMatches',
     },
     {
       name: 'another proof height',
-      proof: { block_height: '43', entry_hash: TRANSACTION_HASH, entry_root: ENTRY_ROOT },
+      proof: { block_height: '43', entry_hash: TRANSACTION_HASH, entry_commitment: { root: ENTRY_ROOT } },
       block: { height: 42, transactions_hash: ENTRY_ROOT },
       pathValid: true,
       failedCheck: 'proofHeightMatches',
     },
     {
       name: 'another reference-block height',
-      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_root: ENTRY_ROOT },
+      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_commitment: { root: ENTRY_ROOT } },
       block: { height: 43, transactions_hash: ENTRY_ROOT },
       pathValid: true,
       failedCheck: 'referenceBlockHeightMatches',
     },
     {
       name: 'another transactions root',
-      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_root: ENTRY_ROOT },
+      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_commitment: { root: ENTRY_ROOT } },
       block: { height: 42, transactions_hash: OTHER_HASH },
       pathValid: true,
       failedCheck: 'entryRootMatches',
     },
     {
       name: 'a null transactions root',
-      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_root: ENTRY_ROOT },
+      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_commitment: { root: ENTRY_ROOT } },
       block: { height: 42, transactions_hash: null },
       pathValid: true,
       failedCheck: 'entryRootMatches',
     },
     {
       name: 'an invalid SDK path',
-      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_root: ENTRY_ROOT },
+      proof: { block_height: '42', entry_hash: TRANSACTION_HASH, entry_commitment: { root: ENTRY_ROOT } },
       block: { height: 42, transactions_hash: ENTRY_ROOT },
       pathValid: false,
       failedCheck: 'pathVerificationValid',
@@ -153,6 +157,38 @@ describe('transaction evidence orchestration', () => {
     expect(verification[failedCheck as keyof typeof verification]).toBe(false);
   });
 
+  it('fails closed when browser path verification has no authenticated anchor', () => {
+    const verification = verifyTransactionBlockEvidence({
+      blockProof: {
+        status: 'available',
+        data: {
+          proof: {
+            block_height: '42',
+            entry_hash: TRANSACTION_HASH,
+            entry_commitment: { root: ENTRY_ROOT },
+          },
+          pathVerification: null,
+        },
+      },
+      referenceBlock: {
+        status: 'available',
+        data: { height: 42, transactions_hash: ENTRY_ROOT },
+      },
+      requestedTransactionHash: TRANSACTION_HASH,
+      requestedBlockHeight: 42,
+    });
+
+    expect(verification).toMatchObject({
+      valid: false,
+      pathVerificationAvailable: false,
+      pathVerificationValid: false,
+      transactionHashMatches: true,
+      proofHeightMatches: true,
+      referenceBlockHeightMatches: true,
+      entryRootMatches: true,
+    });
+  });
+
   it('fails closed on missing reference evidence and malformed proof identities', () => {
     const verification = verifyTransactionBlockEvidence({
       blockProof: {
@@ -161,7 +197,7 @@ describe('transaction evidence orchestration', () => {
           proof: {
             block_height: '042',
             entry_hash: `hash:${TRANSACTION_HASH.toUpperCase()}#0000`,
-            entry_root: 'not-a-hash',
+            entry_commitment: { root: 'not-a-hash' },
           },
           pathVerification: { valid: true },
         },
@@ -183,9 +219,9 @@ describe('transaction evidence orchestration', () => {
   it('reports state identity agreement only at the requested height', () => {
     const matching: TransactionEvidenceBundle<
       unknown,
-      { height: number, hash: string },
-      { height: number, block_hash: string, state_root: string },
-      { height: number, block_hash: string, state_root: string }
+      { height: number; hash: string },
+      { height: number; block_hash: string; state_root: string },
+      { height: number; block_hash: string; state_root: string }
     > = {
       blockProof: { status: 'unavailable' },
       referenceBlock: {
@@ -203,41 +239,71 @@ describe('transaction evidence orchestration', () => {
     };
     expect(stateEvidenceAgreement(matching, 42)).toBe(true);
     expect(stateEvidenceAgreement(matching, 43)).toBe(false);
-    expect(stateEvidenceAgreement({
-      ...matching,
-      stateProof: {
-        status: 'available',
-        data: { height: 43, block_hash: 'hash:block', state_root: 'hash:state' },
-      },
-    }, 42)).toBe(false);
-    expect(stateEvidenceAgreement({
-      ...matching,
-      stateProof: {
-        status: 'available',
-        data: { height: 42, block_hash: 'hash:other-block', state_root: 'hash:state' },
-      },
-    }, 42)).toBe(false);
-    expect(stateEvidenceAgreement({
-      ...matching,
-      stateProof: {
-        status: 'available',
-        data: { height: 42, block_hash: 'hash:block', state_root: 'hash:other-state' },
-      },
-    }, 42)).toBe(false);
-    expect(stateEvidenceAgreement({
-      ...matching,
-      referenceBlock: {
-        status: 'available',
-        data: { height: 42, hash: 'hash:another-block' },
-      },
-    }, 42)).toBe(false);
-    expect(stateEvidenceAgreement({
-      ...matching,
-      stateProof: { status: 'unavailable' },
-    }, 42)).toBeNull();
-    expect(stateEvidenceAgreement({
-      ...matching,
-      referenceBlock: { status: 'unavailable' },
-    }, 42)).toBeNull();
+    expect(
+      stateEvidenceAgreement(
+        {
+          ...matching,
+          stateProof: {
+            status: 'available',
+            data: { height: 43, block_hash: 'hash:block', state_root: 'hash:state' },
+          },
+        },
+        42
+      )
+    ).toBe(false);
+    expect(
+      stateEvidenceAgreement(
+        {
+          ...matching,
+          stateProof: {
+            status: 'available',
+            data: { height: 42, block_hash: 'hash:other-block', state_root: 'hash:state' },
+          },
+        },
+        42
+      )
+    ).toBe(false);
+    expect(
+      stateEvidenceAgreement(
+        {
+          ...matching,
+          stateProof: {
+            status: 'available',
+            data: { height: 42, block_hash: 'hash:block', state_root: 'hash:other-state' },
+          },
+        },
+        42
+      )
+    ).toBe(false);
+    expect(
+      stateEvidenceAgreement(
+        {
+          ...matching,
+          referenceBlock: {
+            status: 'available',
+            data: { height: 42, hash: 'hash:another-block' },
+          },
+        },
+        42
+      )
+    ).toBe(false);
+    expect(
+      stateEvidenceAgreement(
+        {
+          ...matching,
+          stateProof: { status: 'unavailable' },
+        },
+        42
+      )
+    ).toBeNull();
+    expect(
+      stateEvidenceAgreement(
+        {
+          ...matching,
+          referenceBlock: { status: 'unavailable' },
+        },
+        42
+      )
+    ).toBeNull();
   });
 });

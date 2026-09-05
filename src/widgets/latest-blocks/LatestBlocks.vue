@@ -97,7 +97,7 @@ const blockStream = useBlockStream(() => {
   refetchLatestBlocks?.();
 });
 
-const setup = setupAsyncData(() => http.fetchBlocks({ per_page: 10 }), {
+const setup = setupAsyncData(() => http.fetchBlocks({ limit: 10 }), {
   interval: 5000,
   pollWhen: () => !blockStream.isSupported || !blockStream.isStreaming.value,
 });

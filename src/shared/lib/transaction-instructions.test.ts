@@ -29,15 +29,15 @@ function makeInstruction(index: number): Instruction {
 
 describe('fetchAllTransactionInstructions', () => {
   it('loads every page for a transaction and returns a unique index-sorted list', async () => {
-    const fetchInstructions = vi.fn().mockImplementation(async ({ page = 1 }) => ({
+    const fetchInstructions = vi.fn().mockImplementation(async ({ cursor }) => ({
       status: SUCCESSFUL_FETCHING,
-      data: page === 1
+      data: cursor === null
         ? {
-            pagination: { page: 1, per_page: 2, total_pages: 2, total_items: 3 },
+            pagination: { limit: 2, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: 'next', has_more: true },
             items: [makeInstruction(1), makeInstruction(0)],
           }
         : {
-            pagination: { page: 2, per_page: 2, total_pages: 2, total_items: 3 },
+            pagination: { limit: 2, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
             items: [makeInstruction(1), makeInstruction(2)],
           },
     }));
@@ -45,28 +45,28 @@ describe('fetchAllTransactionInstructions', () => {
     const instructions = await fetchAllTransactionInstructions({
       transactionHash: '0xtest',
       fetchInstructions,
-      perPage: 2,
+      limit: 2,
     });
 
     expect(fetchInstructions).toHaveBeenNthCalledWith(1, {
-      page: 1,
-      per_page: 2,
+      cursor: null,
+      limit: 2,
       transaction_hash: '0xtest',
     });
     expect(fetchInstructions).toHaveBeenNthCalledWith(2, {
-      page: 2,
-      per_page: 2,
+      cursor: 'next',
+      limit: 2,
       transaction_hash: '0xtest',
     });
     expect(instructions.map((instruction) => instruction.index)).toEqual([0, 1, 2]);
   });
 
-  it('throws when an instruction-history page fails so the caller can fall back', async () => {
+  it('throws when an instruction-history page fails without returning partial history', async () => {
     const fetchInstructions = vi.fn()
       .mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
         data: {
-          pagination: { page: 1, per_page: 1, total_pages: 2, total_items: 2 },
+          pagination: { limit: 1, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: 'next', has_more: true },
           items: [makeInstruction(0)],
         },
       })
@@ -77,7 +77,25 @@ describe('fetchAllTransactionInstructions', () => {
     await expect(fetchAllTransactionInstructions({
       transactionHash: '0xtest',
       fetchInstructions,
-      perPage: 1,
+      limit: 1,
     })).rejects.toThrow('Failed to fetch transaction instructions page 2');
   });
+  it.each(['snapshot', 'cursor', 'bound'])('rejects incomplete or inconsistent history: %s', async (kind) => {
+    let calls = 0;
+    const fetchInstructions = vi.fn(async () => ({
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        pagination: {
+          limit: 1, snapshot_height: 1,
+          snapshot_hash: (kind === 'snapshot' && calls++ ? 'b' : 'a').repeat(64),
+          next_cursor: 'next', has_more: true,
+        },
+        items: [makeInstruction(0)],
+      },
+    }));
+    await expect(fetchAllTransactionInstructions({
+      transactionHash: '0xtest', fetchInstructions, limit: 1, maxPages: kind === 'bound' ? 1 : 3,
+    })).rejects.toThrow(/snapshot changed|cursor did not advance|bounded page limit/);
+  });
+
 });

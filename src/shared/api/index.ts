@@ -1,6 +1,7 @@
 import { appendSearchParams } from './query';
 import type {
   PaginationParams,
+  CursorPaginationParams,
   AssetSearchParams,
   AssetDefinitionId,
   AssetId,
@@ -31,11 +32,16 @@ import type {
   ZkProverReportSearchParams,
   SubmitVerifiedContractSource,
   MultisigProposalStatus,
+  SumeragiStatus,
+  SumeragiTelemetry,
+  KaigiRelaySummaryList,
+  KaigiRelayDetail,
+  KaigiRelayHealthSnapshot,
 } from '@/shared/api/schemas';
 import {
   Account,
-  Paginated,
   CursorPaginated,
+  HistoryCursorPaginated,
   AssetIdSchema,
   ExplorerAsset,
   AssetDefinition,
@@ -56,12 +62,7 @@ import {
   LatestTransactionsResponse,
   LatestInstructionsResponse,
   PeerMetrics,
-  SumeragiStatus,
-  SumeragiTelemetry,
   RWA,
-  KaigiRelaySummaryList,
-  KaigiRelayDetail,
-  KaigiRelayHealthSnapshot,
   SorafsPinRegistryResponse,
   SorafsAliasResponse,
   SorafsReplicationResponse,
@@ -98,7 +99,6 @@ import {
   NexusPublicStatus,
   ContractCodeView,
   ContractVerifiedSourceJobResponse,
-  ContractActivity,
   ContractActivityResponse,
   ContractEvent,
   ContractEventResponse,
@@ -111,7 +111,7 @@ import {
 } from '@/shared/api/schemas';
 import { useEventSource } from '@vueuse/core';
 import { computed, readonly, ref } from 'vue';
-import { z, type ZodType } from 'zod/v4';
+import type { ZodType } from 'zod/v4';
 import type { ErrorResponse } from '@/shared/utils/transform-error-response';
 import { transformErrorResponse } from '@/shared/utils/transform-error-response';
 import type { SuccessfulFetching } from '@/shared/api/consts';
@@ -119,6 +119,7 @@ import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 import { getRuntimeConfig } from '@/shared/runtime-config';
 import { normalizeAccountIdLiteral, normalizeToriiAccountSelectorLiteral } from '@/shared/lib/account-literal';
 import { ToriiBrowserClient, ToriiBrowserHttpError, ToriiBrowserStreamGapError } from '@iroha/iroha-js/torii-browser';
+import { NetworkId } from '@iroha/iroha-js/connect-browser';
 import type {
   ToriiBlockProofs,
   ToriiBlockProofVerification,
@@ -260,7 +261,16 @@ const toriiLastFailoverSwitchState = ref<ToriiFailoverSwitch | null>(null);
 const failoverFailureTimestampsMs: number[] = [];
 let failoverInFlight: Promise<boolean> | null = null;
 
-const effectiveToriiBaseUrlState = computed(() => routeScopedToriiBaseUrlState.value ?? toriiBaseUrlState.value);
+function forcedToriiBaseUrl(): string | null {
+  const config = getRuntimeConfig();
+  return config.toriiForceBaseUrl === true && config.toriiBaseUrl
+    ? normalizeToriiBaseUrl(config.toriiBaseUrl, null)
+    : null;
+}
+
+const effectiveToriiBaseUrlState = computed(() =>
+  forcedToriiBaseUrl() ?? routeScopedToriiBaseUrlState.value ?? toriiBaseUrlState.value
+);
 const explorerApiBaseState = computed(() =>
   effectiveToriiBaseUrlState.value.endsWith(EXPLORER_SUFFIX)
     ? effectiveToriiBaseUrlState.value
@@ -272,11 +282,11 @@ export function getToriiBaseUrl(): string {
 }
 
 export function getConfiguredToriiBaseUrl(): string {
-  return toriiBaseUrlState.value;
+  return forcedToriiBaseUrl() ?? toriiBaseUrlState.value;
 }
 
 export function setRouteScopedToriiBaseUrl(baseUrl: string | null): string | null {
-  if (!baseUrl?.trim()) {
+  if (forcedToriiBaseUrl() || !baseUrl?.trim()) {
     routeScopedToriiBaseUrlState.value = null;
     return null;
   }
@@ -303,7 +313,7 @@ function markToriiHealthy() {
 function failoverRuntimeConfig() {
   const config = getRuntimeConfig();
   return {
-    enabled: config.toriiFailoverEnabled !== false,
+    enabled: !forcedToriiBaseUrl() && config.toriiFailoverEnabled !== false,
     nodes: config.toriiFailoverNodes ?? [],
     failureThreshold: config.toriiFailoverFailureThreshold ?? DEFAULT_FAILOVER_THRESHOLD,
     windowMs: config.toriiFailoverWindowMs ?? DEFAULT_FAILOVER_WINDOW_MS,
@@ -536,7 +546,6 @@ async function triggerToriiFailover(trigger: ToriiFailoverSwitch['trigger']): Pr
 
 function trackToriiFailure(reason: string) {
   const runtime = failoverRuntimeConfig();
-  if (!runtime.enabled) return;
   const nowMs = Date.now();
   failoverFailureTimestampsMs.push(nowMs);
   const oldestAllowed = nowMs - runtime.windowMs;
@@ -546,7 +555,7 @@ function trackToriiFailure(reason: string) {
   toriiFailureCountState.value = failoverFailureTimestampsMs.length;
   toriiLastErrorState.value = reason;
   if (toriiAvailabilityState.value !== 'failing_over' && toriiAvailabilityState.value !== 'outage') {
-    toriiAvailabilityState.value = 'degraded';
+    toriiAvailabilityState.value = runtime.enabled ? 'degraded' : 'outage';
   }
 }
 
@@ -559,7 +568,7 @@ function maybeTriggerToriiFailoverOnFailure(trigger: ToriiFailoverSwitch['trigge
 }
 
 export function setToriiBaseUrl(baseUrl: string, options?: { persist?: boolean }): string {
-  toriiBaseUrlState.value = normalizeToriiBaseUrl(baseUrl, defaultToriiBase) ?? defaultToriiBase;
+  toriiBaseUrlState.value = forcedToriiBaseUrl() ?? normalizeToriiBaseUrl(baseUrl, defaultToriiBase) ?? defaultToriiBase;
   if (options?.persist !== false) {
     safeWriteStorage(STORAGE_KEY, toriiBaseUrlState.value);
   }
@@ -575,7 +584,7 @@ export function setToriiBaseUrlFromConfig(baseUrl: string, options?: { force?: b
   const stored = safeReadStorage(STORAGE_KEY);
   if (stored && !options?.force) return toriiBaseUrlState.value;
 
-  toriiBaseUrlState.value = normalizeToriiBaseUrl(baseUrl, defaultToriiBase) ?? defaultToriiBase;
+  toriiBaseUrlState.value = forcedToriiBaseUrl() ?? normalizeToriiBaseUrl(baseUrl, defaultToriiBase) ?? defaultToriiBase;
   if (stored && options?.force) {
     safeWriteStorage(STORAGE_KEY, null);
   }
@@ -584,7 +593,7 @@ export function setToriiBaseUrlFromConfig(baseUrl: string, options?: { force?: b
 }
 
 export function resetToriiBaseUrl(): string {
-  toriiBaseUrlState.value = defaultToriiBase;
+  toriiBaseUrlState.value = forcedToriiBaseUrl() ?? defaultToriiBase;
   safeWriteStorage(STORAGE_KEY, null);
   markToriiHealthy();
   return toriiBaseUrlState.value;
@@ -806,12 +815,11 @@ function normalizeAssetIdForApi(value: AssetId): string {
 function normalizeAccountQueryParams(params?: Record<string, any>): Record<string, any> | undefined {
   if (!params) return params;
 
-  return {
-    ...params,
-    owned_by: normalizeAccountSelectorForApi(params.owned_by),
-    authority: normalizeAccountSelectorForApi(params.authority),
-    account: normalizeAccountSelectorForApi(params.account),
-  };
+  const normalized = { ...params };
+  for (const key of ['owned_by', 'authority', 'account']) {
+    if (Object.hasOwn(params, key)) normalized[key] = normalizeAccountSelectorForApi(params[key]);
+  }
+  return normalized;
 }
 
 function toLimitOffsetParams(params?: PaginationParams): { limit?: number; offset?: number } {
@@ -857,6 +865,28 @@ async function fetchExplorerCursorPage<T>(
     throw new TypeError('Explorer cursor did not advance');
   }
   return { status: SUCCESSFUL_FETCHING, data: payload };
+}
+
+/** Current history pages bind opaque cursors to one immutable ledger snapshot. */
+async function fetchExplorerHistoryPage<T>(
+  params: CursorPaginationParams | undefined,
+  itemSchema: ZodType<T>,
+  request: (client: ToriiBrowserClient, pagination: ExplorerCursorSdkParams) => Promise<unknown>
+): Promise<ResultWithStatus<HistoryCursorPaginated<T>>> {
+  const cursor = params?.cursor ?? undefined;
+  const limit = params?.limit;
+  const response = await parseToriiSdkResult(
+    (client) => request(client, { cursor, limit }), HistoryCursorPaginated(itemSchema)
+  );
+  if (response.status === SUCCESSFUL_FETCHING) {
+    if (limit !== undefined && response.data.pagination.limit !== limit) {
+      throw new TypeError('Explorer response limit must match the requested limit');
+    }
+    if (cursor !== undefined && response.data.pagination.next_cursor === cursor) {
+      throw new TypeError('Explorer cursor did not advance');
+    }
+  }
+  return response;
 }
 
 async function post(path: string, body: unknown): Promise<Response> {
@@ -979,9 +1009,11 @@ async function toriiSdkStreamFetch(input: RequestInfo | URL, init?: RequestInit)
 }
 
 function toriiSdkClient(fetchImpl = toriiSdkFetch): ToriiBrowserClient {
+  const networkId = getRuntimeConfig().networkId;
   return new ToriiBrowserClient(getToriiBaseUrl(), {
     fetchImpl,
     defaultHeaders: toriiRequiredHeaders(),
+    ...(networkId ? { networkId: NetworkId.parse(networkId) } : {}),
   });
 }
 
@@ -1127,7 +1159,7 @@ export async function fetchAssets(
     request: (client, pagination) =>
       client.listExplorerAssets({
         ...pagination,
-        ownedBy: normalizeAccountSelectorForApi(params?.owned_by),
+        ownedBy: normalizeAccountSelectorForApi(params?.owned_by) ?? undefined,
         definition: params?.definition?.toString(),
         assetId: params?.asset_id === undefined ? undefined : normalizeAssetIdForApi(params.asset_id),
       }),
@@ -1152,7 +1184,7 @@ export async function fetchAssetDefinitions(
       client.listExplorerAssetDefinitions({
         ...pagination,
         owningDomain: params?.domain,
-        ownedBy: normalizeAccountSelectorForApi(params?.owned_by),
+        ownedBy: normalizeAccountSelectorForApi(params?.owned_by) ?? undefined,
       }),
   });
 }
@@ -1186,7 +1218,7 @@ export async function fetchNFTs(params?: NFTsSearchParams): Promise<ResultWithSt
       client.listExplorerNfts({
         ...pagination,
         domain: params?.domain,
-        ownedBy: normalizeAccountSelectorForApi(params?.owned_by),
+        ownedBy: normalizeAccountSelectorForApi(params?.owned_by) ?? undefined,
       }),
   });
 }
@@ -1202,7 +1234,7 @@ export async function fetchRwas(params?: RWASearchParams): Promise<ResultWithSta
       client.listExplorerRwas({
         ...pagination,
         domain: params?.domain,
-        ownedBy: normalizeAccountSelectorForApi(params?.owned_by),
+        ownedBy: normalizeAccountSelectorForApi(params?.owned_by) ?? undefined,
       }),
   });
 }
@@ -1217,7 +1249,7 @@ export async function fetchDomains(params?: DomainSearchParams): Promise<ResultW
     request: (client, pagination) =>
       client.listExplorerDomains({
         ...pagination,
-        ownedBy: normalizeAccountSelectorForApi(params?.owned_by),
+        ownedBy: normalizeAccountSelectorForApi(params?.owned_by) ?? undefined,
       }),
   });
 }
@@ -1226,8 +1258,8 @@ export async function fetchDomain(id: string): Promise<ResultWithStatus<Domain>>
   return await parseToriiSdkResult((client) => client.getExplorerDomain(id), Domain);
 }
 
-export async function fetchBlocks(params?: Partial<PaginationParams>): Promise<ResultWithStatus<Paginated<Block>>> {
-  return await parseToriiSdkResult((client) => client.listExplorerBlocks(params), Paginated(Block));
+export async function fetchBlocks(params?: CursorPaginationParams): Promise<ResultWithStatus<HistoryCursorPaginated<Block>>> {
+  return await fetchExplorerHistoryPage(params, Block, (client, pagination) => client.listExplorerBlocks(pagination));
 }
 
 export async function fetchBlock(heightOrHash: number | string): Promise<ResultWithStatus<Block>> {
@@ -1236,7 +1268,13 @@ export async function fetchBlock(heightOrHash: number | string): Promise<ResultW
 
 export interface TransactionBlockEvidence {
   proof: ToriiBlockProofs;
-  pathVerification: ToriiBlockProofVerification;
+  /**
+   * Browser builds intentionally do not self-anchor a proof response. The
+   * authenticated Rust verifier is unavailable until a digest-pinned WASM
+   * verifier ships, so callers must treat Merkle/finality verification as
+   * unavailable rather than copying proof fields into a trusted anchor.
+   */
+  pathVerification: ToriiBlockProofVerification | null;
 }
 
 export async function fetchLedgerBlockProof(
@@ -1245,12 +1283,11 @@ export async function fetchLedgerBlockProof(
 ): Promise<ResultWithStatus<TransactionBlockEvidence>> {
   try {
     const proof = await toriiSdkClient().getLedgerBlockProof(blockHeight, transactionHash);
-    const { verifyBlockProofs } = await import('@iroha/iroha-js/norito');
     return {
       status: SUCCESSFUL_FETCHING,
       data: {
         proof,
-        pathVerification: verifyBlockProofs(proof),
+        pathVerification: null,
       },
     };
   } catch (error) {
@@ -1397,34 +1434,33 @@ export async function fetchTelemetryPropagation(): Promise<ResultWithStatus<Peer
 
 export async function fetchTransactions(
   params?: TransactionSearchParams
-): Promise<ResultWithStatus<Paginated<Transaction>>> {
-  return await parseToriiSdkResult(
-    (client) =>
+): Promise<ResultWithStatus<HistoryCursorPaginated<Transaction>>> {
+  return await fetchExplorerHistoryPage(params, Transaction,
+    (client, pagination) =>
       client.listExplorerTransactions(
         normalizeAccountQueryParams({
-          page: params?.page,
-          per_page: params?.per_page,
+          ...pagination,
           authority: params?.authority,
           block: params?.block,
-          status: params?.status,
+          status: params?.status?.toLowerCase(),
           asset_id: params?.asset_id?.toString(),
         })
-      ),
-    Paginated(Transaction)
+      )
   );
 }
 
 export async function fetchLatestTransactions(
-  params?: Omit<TransactionSearchParams, 'page'>
+  params?: TransactionSearchParams
 ): Promise<ResultWithStatus<LatestTransactionsResponse>> {
   return await parseToriiSdkResult(
     (client) =>
       client.listLatestExplorerTransactions(
         normalizeAccountQueryParams({
-          per_page: params?.per_page,
+          cursor: params?.cursor ?? undefined,
+          limit: params?.limit,
           authority: params?.authority,
           block: params?.block,
-          status: params?.status,
+          status: params?.status?.toLowerCase(),
           asset_id: params?.asset_id?.toString(),
         })
       ),
@@ -1438,23 +1474,21 @@ export async function fetchTransaction(hash: string): Promise<ResultWithStatus<D
 
 export async function fetchInstructions(
   params?: InstructionsSearchParams
-): Promise<ResultWithStatus<Paginated<Instruction>>> {
-  return await parseToriiSdkResult(
-    (client) =>
+): Promise<ResultWithStatus<HistoryCursorPaginated<Instruction>>> {
+  return await fetchExplorerHistoryPage(params, Instruction,
+    (client, pagination) =>
       client.listExplorerInstructions(
         normalizeAccountQueryParams({
-          page: params?.page,
-          per_page: params?.per_page,
+          ...pagination,
           account: params?.account,
           authority: params?.authority,
           kind: params?.kind,
           transaction_hash: params?.transaction_hash,
-          transaction_status: params?.transaction_status,
+          transaction_status: params?.transaction_status?.toLowerCase(),
           block: params?.block,
           asset_id: params?.asset_id?.toString(),
         })
-      ),
-    Paginated(Instruction)
+      )
   );
 }
 
@@ -1554,18 +1588,19 @@ export async function* streamContractEvents(
 }
 
 export async function fetchLatestInstructions(
-  params?: Omit<InstructionsSearchParams, 'page'>
+  params?: InstructionsSearchParams
 ): Promise<ResultWithStatus<LatestInstructionsResponse>> {
   return await parseToriiSdkResult(
     (client) =>
       client.listLatestExplorerInstructions(
         normalizeAccountQueryParams({
-          per_page: params?.per_page,
+          cursor: params?.cursor ?? undefined,
+          limit: params?.limit,
           account: params?.account,
           authority: params?.authority,
           kind: params?.kind,
           transaction_hash: params?.transaction_hash,
-          transaction_status: params?.transaction_status,
+          transaction_status: params?.transaction_status?.toLowerCase(),
           block: params?.block,
           asset_id: params?.asset_id?.toString(),
         })
@@ -1654,7 +1689,9 @@ export async function fetchNexusDataspacesAccountSummary(
   literal: string
 ): Promise<ResultWithStatus<NexusDataspacesAccountSummary>> {
   const trimmed = normalizeToriiAccountSelectorLiteral(literal) ?? literal.trim();
-  const res = await get<NexusDataspacesAccountSummary>(`/nexus/dataspaces/accounts/${encodeURIComponent(trimmed)}/summary`);
+  const res = await get<NexusDataspacesAccountSummary>(
+    `/nexus/dataspaces/accounts/${encodeURIComponent(trimmed)}/summary`
+  );
   if (res.status === SUCCESSFUL_FETCHING)
     return { status: SUCCESSFUL_FETCHING, data: NexusDataspacesAccountSummary.parse(res.data) };
 
@@ -1696,8 +1733,7 @@ export async function fetchKaigiRelays(): Promise<ResultWithStatus<KaigiRelaySum
   );
 }
 
-export async function fetchKaigiRelayDetail(relayId: string): Promise<ResultWithStatus<KaigiRelayDetail>> {
-  void relayId;
+export async function fetchKaigiRelayDetail(_relayId: string): Promise<ResultWithStatus<KaigiRelayDetail>> {
   return operatorSurfaceUnavailable(
     'Kaigi relay detail requires an operator-signed Torii client and is unavailable in the public Explorer.'
   );

@@ -7,6 +7,7 @@ const ACCOUNT = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗr�
 const DESTINATION = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const ASSET_DEFINITION = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
 const CREATED_AT = '2026-07-21T12:00:00.000Z';
+const FRAMED_INSTRUCTION_SHA256 = `0x${'1'.repeat(64)}`;
 
 interface MockResponse {
   status?: number
@@ -16,11 +17,16 @@ interface MockResponse {
 
 type MockResolver = (url: URL) => MockResponse | null;
 
-const emptyPagination = (url: URL) => {
-  const page = Number(url.searchParams.get('page') ?? 1);
-  const perPage = Number(url.searchParams.get('per_page') ?? 10);
+const emptyHistoryPage = (url: URL) => {
+  const limit = Number(url.searchParams.get('limit') ?? 10);
   return {
-    pagination: { page, per_page: perPage, total_pages: 1, total_items: 0 },
+    pagination: {
+      limit,
+      snapshot_height: 42,
+      snapshot_hash: HASH,
+      next_cursor: null,
+      has_more: false,
+    },
     items: [],
   };
 };
@@ -46,6 +52,7 @@ function transaction(hash = HASH) {
     executable: 'Instructions',
     status: 'Committed',
     rejection_reason: null,
+    executable_payload: { instruction_count: 1 },
     metadata: { purpose: 'hermetic quality gate' },
     nonce: 7,
     signature: 'ed0120-hermetic-signature',
@@ -61,6 +68,7 @@ function transferInstruction() {
     index: 0,
     box: {
       encoded: 'TlJUM-hermetic-transfer-payload',
+      framed_sha256: FRAMED_INSTRUCTION_SHA256,
       json: {
         kind: 'Transfer',
         payload: {
@@ -105,34 +113,31 @@ function exactSearchResolver(url: URL): MockResponse | null {
   if (blockHash === FAILURE_HASH || transactionHash === FAILURE_HASH) {
     return { status: 500, body: { message: 'exact index unavailable' } };
   }
-  if (url.pathname === '/v1/explorer/blocks') return { body: emptyPagination(url) };
+  if (url.pathname === '/v1/explorer/blocks') return { body: emptyHistoryPage(url) };
   if (url.pathname === '/v1/explorer/transactions/latest') {
-    return { body: { sampled_at: CREATED_AT, items: [] } };
+    return { body: { sampled_at: CREATED_AT, ...emptyHistoryPage(url) } };
   }
   return null;
 }
 
 function countTransactionRequests(requests: URL[], hash: string): number {
-  return requests.filter((url) => (
-    url.pathname.endsWith(hash) && url.pathname.includes('/transactions/')
-  )).length;
+  return requests.filter((url) => url.pathname.endsWith(hash) && url.pathname.includes('/transactions/')).length;
 }
 
 function requestedInstructionKind(requests: URL[], kind: string): boolean {
-  return requests.some((url) => (
-    url.pathname === '/v1/explorer/instructions' && url.searchParams.get('kind') === kind
-  ));
+  return requests.some((url) => url.pathname === '/v1/explorer/instructions' && url.searchParams.get('kind') === kind);
 }
 
 function requestedAccountsCursor(
   requests: URL[],
   expected: { domain: string, cursor: string | null, limit: string }
 ): boolean {
-  return requests.some((url) => (
-    url.searchParams.get('domain') === expected.domain
-    && url.searchParams.get('cursor') === expected.cursor
-    && url.searchParams.get('limit') === expected.limit
-  ));
+  return requests.some(
+    (url) =>
+      url.searchParams.get('domain') === expected.domain &&
+      url.searchParams.get('cursor') === expected.cursor &&
+      url.searchParams.get('limit') === expected.limit
+  );
 }
 
 test.describe('hermetic Explorer quality gates', () => {
@@ -157,49 +162,55 @@ test.describe('hermetic Explorer quality gates', () => {
     await page.goto(`/search?q=${PARTIAL_HASH}`);
     await expect(page.locator('[data-test="search-result-block"]')).toBeVisible();
     await expect(page.locator('[data-test="search-result-transaction-notice"]')).toHaveAttribute('role', 'alert');
-    await expect(page.locator('[data-test="search-result-transaction-notice"]'))
-      .toContainText('Transaction lookup failed: {"message":"transaction index unavailable"}');
+    await expect(page.locator('[data-test="search-result-transaction-notice"]')).toContainText(
+      'Transaction lookup failed: {"message":"transaction index unavailable"}'
+    );
     expect(countTransactionRequests(requests, PARTIAL_HASH)).toBe(1);
 
     await page.locator('[data-test="search-results-partial-retry"]').click();
     await expect.poll(() => countTransactionRequests(requests, PARTIAL_HASH)).toBe(2);
 
     await page.goto(`/search?q=${FAILURE_HASH}`);
-    await expect(page.locator('[data-test="search-results-error"]'))
-      .toContainText('The exact lookup could not be completed: {"message":"exact index unavailable"}');
+    await expect(page.locator('[data-test="search-results-error"]')).toContainText(
+      'The exact lookup could not be completed: {"message":"exact index unavailable"}'
+    );
     await expect(page.locator('[data-test="resource-retry"]')).toHaveText('Retry exact lookup');
   });
 
   test('shows semantic, raw, and unavailable evidence states and supports keyboard tabs', async ({ page }) => {
     const instruction = transferInstruction();
     const requests: URL[] = [];
-    await installHermeticApi(page, (url) => {
-      if (url.pathname === `/v1/explorer/transactions/${HASH}`) return { body: transaction() };
-      if (url.pathname === '/v1/explorer/instructions') {
-        const pageNumber = Number(url.searchParams.get('page') ?? 1);
-        const perPage = Number(url.searchParams.get('per_page') ?? 10);
-        return {
-          body: {
-            pagination: { page: pageNumber, per_page: perPage, total_pages: 1, total_items: 1 },
-            items: [instruction],
-          },
-        };
-      }
-      if (url.pathname === `/v1/explorer/instructions/${HASH}/0`) return { body: instruction };
-      if (
-        url.pathname === `/v1/ledger/block/42/proof/${HASH}`
-        || url.pathname === '/v1/ledger/state/42'
-        || url.pathname === '/v1/ledger/state-proof/42'
-      ) return { status: 404, body: { message: 'evidence unavailable in fixture node' } };
-      return null;
-    }, requests);
+    await installHermeticApi(
+      page,
+      (url) => {
+        if (url.pathname === `/v1/explorer/transactions/${HASH}`) return { body: transaction() };
+        if (url.pathname === '/v1/explorer/instructions') {
+          return {
+            body: {
+              ...emptyHistoryPage(url),
+              items: [instruction],
+            },
+          };
+        }
+        if (url.pathname === `/v1/explorer/instructions/${HASH}/0`) return { body: instruction };
+        if (
+          url.pathname === `/v1/ledger/block/42/proof/${HASH}` ||
+          url.pathname === '/v1/ledger/state/42' ||
+          url.pathname === '/v1/ledger/state-proof/42'
+        )
+          return { status: 404, body: { message: 'evidence unavailable in fixture node' } };
+        return null;
+      },
+      requests
+    );
 
     await page.goto(`/transactions/${HASH}?instruction=0`);
 
     await expect(page.locator('[data-test="instruction-semantic-card"]').first()).toContainText('Asset transfer');
     await expect(page.locator('[data-test="instruction-semantic-field-amount"] dd').first()).toHaveText('100000');
-    await expect(page.locator('[data-test="instruction-encoded-payload"]'))
-      .toHaveText('TlJUM-hermetic-transfer-payload');
+    await expect(page.locator('[data-test="instruction-encoded-payload"]')).toHaveText(
+      'TlJUM-hermetic-transfer-payload'
+    );
     await expect(page.locator('.instructions-detail__json')).toContainText('Raw instruction JSON');
     await expect(page.locator('[data-test="block-proof-unavailable"]')).toBeVisible();
     await expect(page.locator('[data-test="state-proof-unavailable"]')).toBeVisible();
@@ -227,15 +238,16 @@ test.describe('hermetic Explorer quality gates', () => {
             next_cursor: cursor === null ? 'cursor-1' : null,
             has_more: cursor === null,
           },
-          items: [{
-            id: ACCOUNT,
-            compressed_address: null,
-            network_prefix: 0,
-            metadata: {},
-            owned_assets: 2,
-            owned_nfts: 1,
-            owned_domains: 1,
-          }],
+          items: [
+            {
+              id: ACCOUNT,
+              network_prefix: 0,
+              metadata: {},
+              owned_assets: 2,
+              owned_nfts: 1,
+              owned_domains: 1,
+            },
+          ],
         },
       };
     });
@@ -243,10 +255,11 @@ test.describe('hermetic Explorer quality gates', () => {
     await page.goto('/accounts?domain=wonderland.universal&limit=20');
     const domainFilter = page.getByLabel('Domain filter');
     await expect(domainFilter).toHaveValue('wonderland.universal');
-    await expect.poll(() => requestedAccountsCursor(
-      accountRequests,
-      { domain: 'wonderland.universal', cursor: null, limit: '20' }
-    )).toBe(true);
+    await expect
+      .poll(() =>
+        requestedAccountsCursor(accountRequests, { domain: 'wonderland.universal', cursor: null, limit: '20' })
+      )
+      .toBe(true);
 
     await domainFilter.fill('treasury.universal');
     await expect(page).toHaveURL(/\/accounts\?[^#]*domain=treasury\.universal/u);
@@ -258,10 +271,11 @@ test.describe('hermetic Explorer quality gates', () => {
     await nextPage.focus();
     await nextPage.press('Enter');
     await expect(page).toHaveURL(/[?&]cursor=cursor-1(?:&|$)/u);
-    await expect.poll(() => requestedAccountsCursor(
-      accountRequests,
-      { domain: 'treasury.universal', cursor: 'cursor-1', limit: '20' }
-    )).toBe(true);
+    await expect
+      .poll(() =>
+        requestedAccountsCursor(accountRequests, { domain: 'treasury.universal', cursor: 'cursor-1', limit: '20' })
+      )
+      .toBe(true);
   });
 
   test('uses a multi-column table on desktop and a card list on mobile', async ({ page }, testInfo) => {
@@ -271,15 +285,16 @@ test.describe('hermetic Explorer quality gates', () => {
       return {
         body: {
           pagination: { limit, next_cursor: null, has_more: false },
-          items: [{
-            id: ACCOUNT,
-            compressed_address: null,
-            network_prefix: 0,
-            metadata: {},
-            owned_assets: 2,
-            owned_nfts: 1,
-            owned_domains: 1,
-          }],
+          items: [
+            {
+              id: ACCOUNT,
+              network_prefix: 0,
+              metadata: {},
+              owned_assets: 2,
+              owned_nfts: 1,
+              owned_domains: 1,
+            },
+          ],
         },
       };
     });

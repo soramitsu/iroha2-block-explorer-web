@@ -3,10 +3,7 @@ import BigNumber from 'bignumber.js';
 import {
   concentrationTopN,
   computeSetChurn,
-  extractAssetDefinitionIdFromTransferPayload,
-  extractAssetDefinitionIdFromIsiPayload,
-  extractAmountFromIsiPayload,
-  extractTransferAmountFromPayload,
+  decodeCommittedAssetActivity,
   giniCoefficient,
   herfindahlIndex,
   lorenzCurvePoints,
@@ -23,7 +20,6 @@ import {
 const SAMPLE_I105 =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_ASSET_DEFINITION_ID = '66owaQmAQMuHxPzxUN3bqZ6FJfDa';
-const SAMPLE_ASSET_ALIAS = 'usd#issuer.main';
 const SAMPLE_ASSET_ID = `${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_I105}`;
 
 describe('econometrics', () => {
@@ -79,28 +75,6 @@ describe('econometrics', () => {
     expect(nearestRankQuantile([new BigNumber(1), new BigNumber(100)], 0.99)?.toNumber()).toBe(100);
   });
 
-  it('extracts asset definition id from transfer payload', () => {
-    expect(extractAssetDefinitionIdFromTransferPayload({ object: SAMPLE_ASSET_ALIAS })).toBe(SAMPLE_ASSET_ALIAS);
-    expect(extractAssetDefinitionIdFromTransferPayload({ object: SAMPLE_ASSET_ID })).toBe(SAMPLE_ASSET_DEFINITION_ID);
-    expect(extractAssetDefinitionIdFromTransferPayload({ object: { definition: SAMPLE_ASSET_DEFINITION_ID } })).toBe(
-      SAMPLE_ASSET_DEFINITION_ID
-    );
-    expect(extractAssetDefinitionIdFromTransferPayload({ object: { definition_id: SAMPLE_ASSET_ALIAS } })).toBe(
-      SAMPLE_ASSET_ALIAS
-    );
-    expect(extractAssetDefinitionIdFromTransferPayload({ object: { name: 'usd', domain: 'issuer.main' } })).toBe(
-      SAMPLE_ASSET_ALIAS
-    );
-    expect(extractAssetDefinitionIdFromTransferPayload({ nope: true })).toBeNull();
-  });
-
-  it('extracts transfer amounts from transfer payload', () => {
-    expect(extractTransferAmountFromPayload({ value: '10' })?.toString()).toBe('10');
-    expect(extractTransferAmountFromPayload({ amount: 42 })?.toString()).toBe('42');
-    expect(extractTransferAmountFromPayload({ value: { numeric: '0.5' } })?.toString()).toBe('0.5');
-    expect(extractTransferAmountFromPayload({})).toBeNull();
-  });
-
   it('computes entropy/theil metrics', () => {
     const equal = [new BigNumber(1), new BigNumber(1), new BigNumber(1), new BigNumber(1)];
     expect(theilIndexT(equal)).toBeCloseTo(0, 12);
@@ -152,13 +126,52 @@ describe('econometrics', () => {
     expect(churn.retentionCurrent).toBeCloseTo(2 / 3, 10);
   });
 
-  it('extracts generic ISI payload fields', () => {
-    expect(extractAssetDefinitionIdFromIsiPayload({ object: SAMPLE_ASSET_ID })).toBe(SAMPLE_ASSET_DEFINITION_ID);
-    expect(extractAssetDefinitionIdFromIsiPayload({ object: { definition_id: SAMPLE_ASSET_ALIAS } })).toBe(
-      SAMPLE_ASSET_ALIAS
-    );
-    expect(extractAmountFromIsiPayload({ value: '10' })?.toString()).toBe('10');
-    expect(extractAmountFromIsiPayload({ quantity: '7' })?.toString()).toBe('7');
-    expect(extractAmountFromIsiPayload({ value: { value: '3' } })?.toString()).toBe('3');
+  it('decodes the exact native committed Transfer Asset shape', () => {
+    const activity = decodeCommittedAssetActivity('Transfer', {
+      variant: 'Asset', value: { source: SAMPLE_ASSET_ID, object: '12.5', destination: SAMPLE_I105 },
+    }, 'Committed');
+    expect(activity?.definitionId).toBe(SAMPLE_ASSET_DEFINITION_ID);
+    expect(activity?.amount.toString()).toBe('12.5');
+    expect(activity?.source).toBe(SAMPLE_I105);
+    expect(activity?.destination).toBe(SAMPLE_I105);
+  });
+
+  it.each(['Mint', 'Burn'] as const)('decodes the exact native %s Asset destination and quantity', (kind) => {
+    const activity = decodeCommittedAssetActivity(kind, {
+      variant: 'Asset', value: { object: '0.25', destination: SAMPLE_ASSET_ID },
+    }, 'Committed');
+    expect(activity?.definitionId).toBe(SAMPLE_ASSET_DEFINITION_ID);
+    expect(activity?.amount.toString()).toBe('0.25');
+    expect(activity?.source).toBeNull();
+  });
+
+  it('excludes rejected transactions and unrelated valid instruction variants', () => {
+    expect(decodeCommittedAssetActivity('Transfer', {
+      variant: 'Asset', value: { source: SAMPLE_ASSET_ID, object: '10', destination: SAMPLE_I105 },
+    }, 'Rejected')).toBeNull();
+    expect(decodeCommittedAssetActivity('Transfer', { variant: 'Domain', value: {} }, 'Committed')).toBeNull();
+    expect(decodeCommittedAssetActivity('Mint', { variant: 'TriggerRepetitions', value: {} }, 'Committed')).toBeNull();
+  });
+
+  it.each([
+    { object: SAMPLE_ASSET_ID, value: '10' },
+    { variant: 'Asset', value: { object: SAMPLE_ASSET_ID, source: SAMPLE_I105, destination: SAMPLE_I105 } },
+    { variant: 'Asset', value: { source: SAMPLE_ASSET_ID, amount: '10', destination: SAMPLE_I105 } },
+    { variant: 'Asset', value: { source: SAMPLE_ASSET_ID, object: 10, destination: SAMPLE_I105 } },
+    { variant: 'Asset', value: { source: SAMPLE_ASSET_ID, object: '1.00', destination: SAMPLE_I105 } },
+    { variant: 'Asset', value: { source: SAMPLE_ASSET_ID, object: '-1', destination: SAMPLE_I105 } },
+    { variant: 'Asset', value: { source: 'usd#issuer.main', object: '1', destination: SAMPLE_I105 } },
+    { variant: 'Asset', value: { source: SAMPLE_ASSET_ID, object: '1', destination: 'treasury@banking.main' } },
+  ])('rejects obsolete or noncanonical asset activity %#', (payload) => {
+    expect(() => decodeCommittedAssetActivity('Transfer', payload, 'Committed')).toThrow();
+  });
+
+  it.each(['Atomic', 'Independent'])('does not infer settled %s batch amounts from transaction commitment', (mode) => {
+    expect(() => decodeCommittedAssetActivity('Transfer', {
+      variant: 'AssetBatch', value: { mode, entries: [{
+        leg_id: 'leg-1', from: SAMPLE_I105, to: SAMPLE_I105,
+        asset_definition: SAMPLE_ASSET_DEFINITION_ID, amount: '100',
+      }] },
+    }, 'Committed')).toThrow('individual settlement results are missing');
   });
 });

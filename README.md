@@ -66,6 +66,14 @@ sh scripts/bootstrap-exact-toolchain.sh pnpm playwright:install
 
 Build artifacts will be located at `dist` dir.
 
+The current SDK dependency is an **unsigned development candidate** built twice from committed
+Iroha `339a8961b443909ccef163c74d8754435599bcf2`, with archive SHA-256
+`02f8957b16810e94a034065bce2c80e54912f202d17b7f4dbf78d183f7397054`. Its provenance is recorded in
+`vendor/iroha-iroha-js-0.0.3.development-provenance.json`. Install and normal build verify the archive
+and all 163 installed regular files against the checked inventory. A successful development build
+does not admit a release: `pnpm check:iroha-pin` continues to reject this file dependency, and the
+accepted Mochi/runtime profile remains unchanged pending a coherent accepted SDK and ledger release.
+
 ### Docker
 
 `Dockerfile` is also provided.
@@ -96,9 +104,12 @@ The file is fetched from:
 Supported keys:
 
 - `toriiBaseUrl` (string): default Torii base URL used by the node selector when no user override is stored.
-- `networkId` (string): exact canonical lowercase 32-byte Iroha NetworkId for Connect session identity binding.
-  Connect remains disabled when this value is absent or invalid; the Explorer never infers it from a Torii URL or
-  substitutes a generic/test NetworkId. Production deployments should project it from authenticated ledger metadata.
+- `toriiForceBaseUrl` (boolean): binds every request to the configured endpoint and disables manual, scoped-route, and peer failover overrides.
+- `networkId` (string): exact Iroha NetworkId for Connect session identity binding. The production BPNG host requires
+  the checksum-valid Norito JSON spelling `hash:<64 uppercase hex>#<4 uppercase CRC16>` and preserves it losslessly.
+  Raw hexadecimal NetworkIds are rejected. Connect remains disabled when
+  this value is absent or invalid; the Explorer never infers it from a Torii URL or substitutes a generic/test
+  NetworkId. Production deployments should project it from authenticated ledger metadata.
 - `kotodamaCompilerUrl` (string): explicit base URL of a trusted canonical Rust Kotodama compiler service. The Studio
   sends `POST /v1/kotodama/compile` beneath this base URL and sends the complete generated source. This service is
   separate from Torii; the Explorer does not infer or default it from `toriiBaseUrl`. Production URLs must use HTTPS
@@ -110,7 +121,17 @@ Supported keys:
 - `toriiEconometricsEndpointsEnabled` (boolean): set to `false` to force-disable Torii econometrics endpoints and use the
   UI fallback scanners (the default is auto-detect).
 
-Example file: `public/config.json.example` (copy to `public/config.json` for local builds; it is gitignored).
+Example file: `public/config.json.example` (copy to `public/config.json` for local development; it is gitignored).
+Production builds intentionally exclude that root file: the deployment server must inject its independently signed and
+verified `config.json` instead of accepting developer-local bytes from `dist/`.
+
+History lists use the current native `cursor`/`limit` protocol and retain the server's snapshot
+height and hash while scanning or resuming. Blocks, transactions, instructions, and deployment
+history do not synthesize numbered pages or totals. Transaction caches bind the exact canonical
+NetworkId and effective Torii endpoint; unscoped caches are ignored, and outage data is labeled stale.
+RWA domain identifiers accept the native ASCII wire form (`domain.dataspace`), including validated
+punycode labels. Econometrics reports bounded scans as incomplete until cursor exhaustion and
+does not infer per-leg effects from an AssetBatch without authoritative leg outcomes.
 
 ### Local run
 
@@ -122,8 +143,9 @@ pnpm dev --host 0.0.0.0 --port 5173
 
 ### Deterministic Mochi integration chain
 
-The Explorer pins its local integration network in `tests/mochi/explorer-profile.json`. That one
-revision governs the sibling Torii/Mochi runtime and sibling `@iroha/iroha-js` browser SDK.
+The Explorer pins its accepted local integration network in `tests/mochi/explorer-profile.json`.
+Release admission requires that revision to govern both the sibling Torii/Mochi runtime and the
+`@iroha/iroha-js` browser SDK; the unsigned development archive described above is not admitted.
 The wrapper uses the literal sibling unless `IROHA_REPO_ROOT` names an explicit checkout. At the
 Mochi consumer boundary it requires that path to be absolute, normalized, existing, and a canonical
 real directory (not a symlink). It also refuses to execute a different revision or a checkout with

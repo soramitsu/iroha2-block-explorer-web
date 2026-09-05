@@ -1,12 +1,16 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import LatestTransactions from './LatestTransactions.vue';
 import { i18n } from '@/shared/lib/localization';
 import { ref, defineComponent } from 'vue';
+import { historyCacheKey } from '@/shared/lib/history-cache';
 
 const SAMPLE_I105 = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 
 const mocks = vi.hoisted(() => ({
+  networkId: `hash:${'AB'.repeat(32)}#B99E`,
+  toriiUrl: 'https://taira.sora.org',
+  availability: 'healthy',
   fetchLatestTransactions: vi.fn().mockResolvedValue({
     status: 'ok',
     data: {
@@ -17,7 +21,7 @@ const mocks = vi.hoisted(() => ({
   fetchTransactions: vi.fn().mockResolvedValue({
     status: 'ok',
     data: {
-      pagination: { page: 0, per_page: 5, total_pages: 0, total_items: 0 },
+      pagination: { limit: 5, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       items: [],
     },
   }),
@@ -26,7 +30,7 @@ const mocks = vi.hoisted(() => ({
     data: {
       status: 'ok',
       data: {
-        pagination: { page: 0, per_page: 5, total_pages: 0, total_items: 0 },
+        pagination: { limit: 5, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [] as Array<Record<string, unknown>>,
       },
     },
@@ -38,12 +42,17 @@ const mocks = vi.hoisted(() => ({
   }),
 }));
 
+vi.mock('@/shared/runtime-config', () => ({
+  getRuntimeConfig: () => ({ networkId: mocks.networkId }),
+}));
+
 vi.mock('@/shared/api', () => ({
   fetchLatestTransactions: mocks.fetchLatestTransactions,
   fetchTransactions: mocks.fetchTransactions,
   buildToriiUrl: vi.fn((path: string) => `https://torii.example${path}`),
+  getToriiBaseUrl: () => mocks.toriiUrl,
   useToriiAvailability: () => ({
-    state: { value: 'healthy' },
+    state: { value: mocks.availability },
     failureCount: { value: 0 },
     lastError: { value: null },
     lastSwitch: { value: null },
@@ -105,7 +114,18 @@ const TimeStampStub = {
 };
 
 describe('LatestTransactions', () => {
+  const wrappers: Array<ReturnType<typeof mount>> = [];
+  const cache = new Map<string, string>();
   beforeEach(() => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => cache.get(key) ?? null,
+        setItem: (key: string, value: string) => cache.set(key, value),
+        clear: () => cache.clear(),
+      },
+    });
+    mocks.availability = 'healthy';
     mocks.fetchLatestTransactions.mockClear();
     mocks.fetchTransactions.mockClear();
     mocks.setupAsyncData.mockClear();
@@ -113,7 +133,7 @@ describe('LatestTransactions', () => {
     mocks.setupState.data = {
       status: 'ok',
       data: {
-        pagination: { page: 0, per_page: 5, total_pages: 0, total_items: 0 },
+        pagination: { limit: 5, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [],
       },
     };
@@ -121,8 +141,12 @@ describe('LatestTransactions', () => {
     if (typeof localStorage !== 'undefined' && typeof localStorage.clear === 'function') localStorage.clear();
   });
 
-  const factory = () =>
-    mount(LatestTransactions, {
+  afterEach(() => {
+    while (wrappers.length) wrappers.pop()?.unmount();
+  });
+
+  const factory = () => {
+    const wrapper = mount(LatestTransactions, {
       global: {
         plugins: [i18n],
         stubs: {
@@ -136,6 +160,9 @@ describe('LatestTransactions', () => {
         },
       },
     });
+    wrappers.push(wrapper);
+    return wrapper;
+  };
 
   it('fetches transactions on mount', async () => {
     factory();
@@ -143,7 +170,7 @@ describe('LatestTransactions', () => {
 
     expect(mocks.fetchLatestTransactions).toHaveBeenCalledTimes(1);
     expect(mocks.fetchLatestTransactions).toHaveBeenCalledWith(
-      expect.objectContaining({ per_page: 5, status: undefined })
+      expect.objectContaining({ limit: 5, status: undefined })
     );
   });
 
@@ -183,5 +210,44 @@ describe('LatestTransactions', () => {
     const badge = wrapper.get('[data-test="latest-transactions-freshness"]');
     expect(badge.attributes('data-tone')).toBe('unknown');
     expect(badge.text()).toContain(i18n.global.t('telemetry.dataUnknown'));
+  });
+
+  it('labels recent cached data as stale during an outage', async () => {
+    mocks.availability = 'outage';
+    mocks.setupState.data.status = 'unknown-error';
+    cache.set(historyCacheKey('latest-transactions', mocks.networkId, mocks.toriiUrl)!, JSON.stringify({
+      version: 1,
+      updated_at_ms: Date.now(),
+      items: [{
+        authority: SAMPLE_I105,
+        hash: '0xcached',
+        block: 1,
+        created_at: new Date(),
+        executable: 'Instructions',
+        status: 'Committed',
+      }],
+    }));
+    const wrapper = factory();
+    await flushPromises();
+    expect(wrapper.find('.latest-transactions__row').exists()).toBe(true);
+    const badge = wrapper.get('[data-test="latest-transactions-freshness"]');
+    expect(badge.attributes('data-tone')).toBe('stale');
+    expect(badge.text()).toContain(i18n.global.t('telemetry.dataStale'));
+  });
+
+  it.each([
+    'latest_transactions_cache_v2',
+    historyCacheKey('latest-transactions', mocks.networkId, 'https://another.example')!,
+    historyCacheKey('latest-transactions', `hash:${'11'.repeat(32)}#4667`, mocks.toriiUrl)!,
+  ])('does not show another ledger cache as current history: %s', async (key) => {
+    cache.set(key, JSON.stringify({
+      version: 1,
+      updated_at_ms: Date.now(),
+      items: [{ authority: SAMPLE_I105, hash: '0xforeign', block: 1, created_at: new Date(), executable: 'Instructions', status: 'Committed' }],
+    }));
+    const wrapper = factory();
+    await flushPromises();
+    expect(wrapper.find('.latest-transactions__row').exists()).toBe(false);
+    expect(wrapper.get('[data-test="latest-transactions-freshness"]').attributes('data-tone')).toBe('unknown');
   });
 });

@@ -18,11 +18,11 @@
       </BaseButton>
     </div>
     <BaseTable
-      v-model:page="page"
-      v-model:page-size="pageSize"
+      v-model:cursor="cursor"
+      v-model:page-size="limit"
       :loading="isLoading"
-      :total="payloadPagination?.total_items"
-      :payload-pagination
+      pagination-mode="cursor"
+      :cursor-pagination="payloadPagination"
       :items="blocks"
       :row-key="blockRowKey"
       container-class="blocks-list-page__container"
@@ -143,12 +143,12 @@ import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { useBlockStream } from '@/shared/ui/composables/useBlockStream';
 import type { Block } from '@/shared/api/schemas';
 import { useWindowScroll } from '@vueuse/core';
-import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
+import { useCursorListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 
 const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xxs: 'short' }, 'medium');
 
-const { page, pageSize } = useListRouteQuery();
-const listParams = computed(() => ({ page: page.value, per_page: pageSize.value }));
+const { cursor, limit } = useCursorListRouteQuery();
+const listParams = computed(() => ({ cursor: cursor.value, limit: limit.value }));
 
 const { y: windowScrollY } = useWindowScroll();
 const isScrolledDown = computed(() => windowScrollY.value > 80);
@@ -156,7 +156,7 @@ const pendingRefresh = ref(false);
 
 let refetchLatestBlocks: (() => void) | null = null;
 const blockStream = useBlockStream(() => {
-  if (page.value !== 1) return;
+  if (cursor.value) return;
   if (isScrolledDown.value) {
     pendingRefresh.value = true;
     return;
@@ -173,7 +173,7 @@ const scope = useParamScope(
   },
   ({ payload }) =>
     setupAsyncData(() => http.fetchBlocks(payload), {
-      interval: payload.page === 1 ? 5000 : undefined,
+      interval: !payload.cursor ? 5000 : undefined,
       pollWhen: () =>
         windowScrollY.value <= 80 &&
         (!blockStream.isSupported || !blockStream.isStreaming.value),
@@ -192,12 +192,12 @@ const blocks = computed(() =>
 
 const blockRowKey = (item: Block) => item.height;
 
-const latestBlockProbe = setupAsyncData(() => http.fetchBlocks({ page: 1, per_page: 1 }), {
+const latestBlockProbe = setupAsyncData(() => http.fetchBlocks({ limit: 1 }), {
   interval: 10_000,
   immediate: false,
   pollWhen: () =>
     isScrolledDown.value &&
-    page.value === 1 &&
+    !cursor.value &&
     (!blockStream.isSupported || !blockStream.isStreaming.value),
   onError: () => {
     // Background probe while scrolling should not spam toasts; the main table fetch handles errors.
@@ -216,9 +216,9 @@ const maxDisplayedHeight = computed(() => {
 });
 
 watch(
-  () => [latestRemoteHeight.value, maxDisplayedHeight.value, isScrolledDown.value, page.value] as const,
-  ([remoteHeight, localHeight, scrolledDown, page]) => {
-    if (!scrolledDown || page !== 1) {
+  () => [latestRemoteHeight.value, maxDisplayedHeight.value, isScrolledDown.value, cursor.value] as const,
+  ([remoteHeight, localHeight, scrolledDown, cursor]) => {
+    if (!scrolledDown || cursor) {
       pendingRefresh.value = false;
       return;
     }
@@ -229,17 +229,17 @@ watch(
 );
 
 watch(
-  () => [isScrolledDown.value, page.value] as const,
-  ([scrolledDown, page], previous) => {
-    const [prevScrolledDown, prevPage] = previous ?? [false, page];
-    if (page !== 1) {
+  () => [isScrolledDown.value, cursor.value] as const,
+  ([scrolledDown, cursor], previous) => {
+    const [prevScrolledDown, prevCursor] = previous ?? [false, cursor];
+    if (cursor) {
       pendingRefresh.value = false;
       return;
     }
 
     if (scrolledDown) {
       if (blockStream.isSupported && blockStream.isStreaming.value) return;
-      if (!prevScrolledDown || prevPage !== page) {
+      if (!prevScrolledDown || prevCursor !== cursor) {
         latestBlockProbe.refetch();
       }
       return;

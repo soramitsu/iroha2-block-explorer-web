@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { readdir, readFile } from 'node:fs/promises';
 import os from 'os';
 import path from 'path';
 import vue from '@vitejs/plugin-vue';
@@ -16,6 +17,54 @@ console.warn = (...args: unknown[]) => {
   originalConsoleWarn(...args);
 };
 const vitestLocalStorageFile = path.join(os.tmpdir(), 'iroha2-block-explorer-web-vitest-localstorage');
+const runtimeConfigFileName = 'config.json';
+
+interface BuildPublicAsset {
+  fileName: string
+  source: Uint8Array
+}
+
+/** Collect public build assets while reserving root config.json for deployment injection. */
+export async function collectBuildPublicAssets(
+  publicRoot: string,
+  currentDirectory = ''
+): Promise<BuildPublicAsset[]> {
+  const assets: BuildPublicAsset[] = [];
+  const directory = currentDirectory
+    ? path.join(publicRoot, ...currentDirectory.split('/'))
+    : publicRoot;
+  const entries = await readdir(directory, { withFileTypes: true });
+
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    const relative = currentDirectory ? `${currentDirectory}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      assets.push(...(await collectBuildPublicAssets(publicRoot, relative)));
+      continue;
+    }
+    if (!entry.isFile()) {
+      throw new Error(`Unsupported public asset type: ${relative}`);
+    }
+    if (relative === runtimeConfigFileName) continue;
+    assets.push({
+      fileName: relative,
+      source: await readFile(path.join(publicRoot, ...relative.split('/'))),
+    });
+  }
+
+  return assets;
+}
+
+function copyBuildPublicAssets(publicRoot: string): Plugin {
+  return {
+    name: 'explorer-build-public-assets',
+    apply: 'build',
+    async buildStart() {
+      for (const asset of await collectBuildPublicAssets(publicRoot)) {
+        this.emitFile({ type: 'asset', ...asset });
+      }
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -71,6 +120,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      // The signed deployment bundle injects root config.json separately.
+      // Disable Vite's all-or-nothing public copy and emit only application
+      // assets through explorer-build-public-assets below.
+      copyPublicDir: false,
       // to not overlap with the `/assets` route in the app
       assetsDir: '_assets',
       manifest: true,
@@ -85,6 +138,12 @@ export default defineConfig(({ mode }) => {
             if (moduleId.includes('/node_modules/@vue-flow/')) return 'studio-flow';
             if (moduleId.includes('/node_modules/qrcode/')) return 'qr-code';
             if (moduleId.includes('/node_modules/vue-json-pretty/')) return 'json-viewer';
+            if (moduleId.includes('/node_modules/tr46/') || moduleId.includes('/node_modules/punycode/')) return 'domain-validation';
+            if (moduleId.includes('/node_modules/buffer/')) return 'binary-buffer';
+            // Preserve the upstream lazy telemetry parser and route-only compiler.
+            // The blanket SDK bucket otherwise makes both startup dependencies.
+            if (moduleId.includes('/iroha-js/dist/sumeragiTyped.js')) return 'iroha-sumeragi';
+            if (moduleId.includes('/iroha-js/dist/kotodamaCompiler/')) return 'iroha-compiler';
             if (
               moduleId.includes('/javascript/iroha_js/')
               || moduleId.includes('/node_modules/@iroha/iroha-js/')
@@ -105,6 +164,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins: [
+      copyBuildPublicAssets(path.resolve(__dirname, 'public')),
       vue(),
       svg({
         svgoConfig: {

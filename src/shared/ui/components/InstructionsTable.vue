@@ -50,7 +50,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'details-opened', payload: { transactionHash: string, index: number }): void
   (e: 'details-closed'): void
-  (e: 'list-state', payload: { isLoading: boolean, totalItems: number, itemsCount: number }): void
+  (e: 'list-state', payload: { isLoading: boolean, hasMore: boolean, itemsCount: number }): void
 }>();
 
 const presentationCache = new WeakMap<Instruction, InstructionPresentation | null>();
@@ -78,25 +78,28 @@ const listState = reactive({
   authority: computed(() => (props.filterBy.kind === 'authority' ? props.filterBy.value.toString() : '')),
   transaction_hash: computed(() => (props.filterBy.kind === 'transaction' ? props.filterBy.value : '')),
   kind: 'All' as ftm.TabInstructions,
-  page: 1,
-  per_page: 10,
+  cursor: null as string | null,
+  limit: 10,
 });
 
 const searchParams = computed<InstructionsSearchParams>(() => {
   if (isOnAccountPage.value) {
     return {
-      ...objectOmit(listState, shouldShowKind.value ? ['kind'] : []),
+      ...objectOmit(listState, shouldShowKind.value ? ['kind', 'transaction_hash'] : ['transaction_hash']),
       transaction_status: listState.transaction_status ?? undefined,
     };
   }
 
   return {
-    ...objectOmit(listState, shouldShowKind.value ? ['kind', 'transaction_status'] : ['transaction_status']),
+    ...objectOmit(
+      listState,
+      shouldShowKind.value ? ['kind', 'transaction_status', 'authority'] : ['transaction_status', 'authority']
+    ),
   };
 });
 
-watch([() => listState.kind, () => listState.transaction_status, () => listState.per_page], () => {
-  listState.page = 1;
+watch([() => listState.kind, () => listState.transaction_status, () => listState.limit], () => {
+  listState.cursor = null;
 });
 
 const scope = useParamScope(
@@ -110,13 +113,14 @@ const scope = useParamScope(
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
-const fetchedTotalItems = computed(() =>
-  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination.total_items : 0
+const payloadPagination = computed(() =>
+  scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.pagination : undefined
 );
+
 const fetchedItems = computed(() =>
   scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value?.expose.data.data.items : []
 );
-const totalItems = computed(() => fetchedTotalItems.value);
+const hasMore = computed(() => payloadPagination.value?.has_more ?? false);
 const items = computed(() => fetchedItems.value);
 
 const instructionRowKey = (item: Instruction) => `${item.transaction_hash}:${item.index}`;
@@ -212,7 +216,7 @@ async function loadRelatedContractInstructions(instruction: Instruction) {
     const instructions = await fetchAllTransactionInstructions({
       transactionHash: instruction.transaction_hash,
       fetchInstructions: http.fetchInstructions,
-      perPage: 128,
+      limit: 100,
     });
 
     detailRelatedInstructionsState.transactionHash = instruction.transaction_hash;
@@ -375,7 +379,7 @@ watch(
 
     // Avoid shifting paginated views under the user's cursor.
     // Only auto-refresh when the table is on the first page.
-    if (listState.page !== 1) return;
+    if (listState.cursor) return;
 
     // Avoid shifting the page while the user is scrolled down.
     if (windowScrollY.value > 80) {
@@ -388,11 +392,11 @@ watch(
 );
 
 watch(
-  () => [isLoading.value, totalItems.value, items.value.length] as const,
-  ([tableLoading, currentTotalItems, currentItemsCount]) => {
+  () => [isLoading.value, hasMore.value, items.value.length] as const,
+  ([tableLoading, currentHasMore, currentItemsCount]) => {
     emit('list-state', {
       isLoading: Boolean(tableLoading),
-      totalItems: currentTotalItems,
+      hasMore: currentHasMore,
       itemsCount: currentItemsCount,
     });
   },
@@ -432,10 +436,11 @@ watch(
     </div>
 
     <BaseTable
-      v-model:page="listState.page"
-      v-model:page-size="listState.per_page"
+      v-model:cursor="listState.cursor"
+      v-model:page-size="listState.limit"
       :loading="isLoading"
-      :total="totalItems"
+      pagination-mode="cursor"
+      :cursor-pagination="payloadPagination"
       :items
       :row-key="instructionRowKey"
       container-class="instructions-table__container"

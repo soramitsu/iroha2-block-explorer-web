@@ -154,10 +154,11 @@
     >
       <template #default="{ data }">
         <BaseTable
-          v-model:page="page"
-          v-model:page-size="pageSize"
+          v-model:cursor="deploymentCursor"
+          v-model:page-size="deploymentLimit"
           :loading="false"
-          :total="data.total"
+          pagination-mode="cursor"
+          :cursor-pagination="data.pagination"
           :items="data.items"
           :row-key="deploymentRowKey"
           container-class="smart-contracts-page__container"
@@ -593,7 +594,7 @@
 import { computed, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import * as http from '@/shared/api';
-import type { ContractActivity, ContractEvent } from '@/shared/api/schemas';
+import type { ContractActivity, ContractEvent, HistoryCursorPaginated } from '@/shared/api/schemas';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
 import BaseContentBlock from '@/shared/ui/components/BaseContentBlock.vue';
@@ -697,9 +698,11 @@ function clearFilters() {
   updateListQuery(patch).catch(() => {});
 }
 
+const deploymentCursor = ref<string | null>(null);
+const deploymentLimit = ref(10);
 const deploymentQuery = computed(() => ({
-  page: page.value,
-  per_page: pageSize.value,
+  cursor: deploymentCursor.value,
+  limit: deploymentLimit.value,
   kind: 'ActivateContractInstance',
 }));
 const deploymentScope = useParamScope(
@@ -715,7 +718,7 @@ const deploymentScope = useParamScope(
 
 interface DeploymentList {
   items: SmartContractDeployment[]
-  total: number
+  pagination: HistoryCursorPaginated<unknown>['pagination']
 }
 
 const deploymentSnapshot = computed<ResourceSnapshot<DeploymentList>>(() => {
@@ -731,7 +734,7 @@ const deploymentSnapshot = computed<ResourceSnapshot<DeploymentList>>(() => {
   if (items.length === 0) return { status: 'not-found' };
   return {
     status: 'ready',
-    data: { items, total: snapshot.data.data.pagination.total_items },
+    data: { items, pagination: snapshot.data.data.pagination },
     isRefreshing: snapshot.isRefreshing,
     refreshError: snapshot.refreshError,
   };

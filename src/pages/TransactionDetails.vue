@@ -23,7 +23,9 @@ import BaseResourceState from '@/shared/ui/components/BaseResourceState.vue';
 
 const InstructionsTable = defineAsyncComponent(() => import('@/shared/ui/components/InstructionsTable.vue'));
 const ContractCodeViewPanel = defineAsyncComponent(() => import('@/shared/ui/components/ContractCodeViewPanel.vue'));
-const TransactionEvidencePanel = defineAsyncComponent(() => import('@/shared/ui/components/TransactionEvidencePanel.vue'));
+const TransactionEvidencePanel = defineAsyncComponent(
+  () => import('@/shared/ui/components/TransactionEvidencePanel.vue')
+);
 
 const router = useRouter();
 const navigation = useScopedExplorerNavigation();
@@ -34,7 +36,7 @@ const instructionHashType = useAdaptiveHash({ xxl: 'full', xl: 'full' });
 const accountIdHashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xxs: 'short' }, 'medium');
 const instructionsListState = ref({
   isLoading: true,
-  totalItems: 0,
+  hasMore: false,
   itemsCount: 0,
 });
 
@@ -60,9 +62,7 @@ const isSmartContractExecutable = computed(() => {
 });
 
 function hasOpaqueErrorTag(message: string): boolean {
-  return /(?:InstructionExecutionError|ValidationFail|FindError|TransactionRejectionReason)\(\d+\)/.test(
-    message
-  );
+  return /(?:InstructionExecutionError|ValidationFail|FindError|TransactionRejectionReason)\(\d+\)/.test(message);
 }
 
 const rejectionReason = computed(() => {
@@ -93,7 +93,7 @@ const traceWorkspaceRoute = computed(() => ({
 const shouldShowEmptyInstructionsOverview = computed(() => {
   if (!transaction.value || isSmartContractExecutable.value) return false;
   if (instructionsListState.value.isLoading) return false;
-  return instructionsListState.value.totalItems === 0 && instructionsListState.value.itemsCount === 0;
+  return !instructionsListState.value.hasMore && instructionsListState.value.itemsCount === 0;
 });
 
 const smartContractInstructionState = reactive({
@@ -103,9 +103,7 @@ const smartContractInstructionState = reactive({
   primary: null as Instruction | null,
 });
 
-const primarySmartContractInstruction = computed(() =>
-  smartContractInstructionState.primary
-);
+const primarySmartContractInstruction = computed(() => smartContractInstructionState.primary);
 
 async function loadSmartContractInstructions() {
   if (!transaction.value || !isSmartContractExecutable.value) {
@@ -127,7 +125,7 @@ async function loadSmartContractInstructions() {
     const instructions = await fetchAllTransactionInstructions({
       transactionHash: txHash.value,
       fetchInstructions: http.fetchInstructions,
-      perPage: 128,
+      limit: 100,
     });
 
     smartContractInstructionState.items = instructions;
@@ -158,7 +156,7 @@ function updateInstructionQuery(index: number | null) {
   navigation.replace({ query: nextQuery }).catch(() => {});
 }
 
-function handleInstructionOpened(payload: { transactionHash: string, index: number }) {
+function handleInstructionOpened(payload: { transactionHash: string; index: number }) {
   if (transaction.value?.hash !== payload.transactionHash) return;
   updateInstructionQuery(payload.index);
 }
@@ -167,7 +165,7 @@ function handleInstructionClosed() {
   updateInstructionQuery(null);
 }
 
-function handleInstructionsListState(payload: { isLoading: boolean, totalItems: number, itemsCount: number }) {
+function handleInstructionsListState(payload: { isLoading: boolean; hasMore: boolean; itemsCount: number }) {
   instructionsListState.value = payload;
 }
 
@@ -176,7 +174,7 @@ watch(
   () => {
     instructionsListState.value = {
       isLoading: true,
-      totalItems: 0,
+      hasMore: false,
       itemsCount: 0,
     };
   },
@@ -194,15 +192,9 @@ watch(
 
 <template>
   <div class="transaction-details">
-    <BaseContentBlock
-      class="transaction-details__metrics"
-      :title="$t('transactions.transactionDetails')"
-    >
+    <BaseContentBlock class="transaction-details__metrics" :title="$t('transactions.transactionDetails')">
       <template #header-action>
-        <BaseButton
-          bordered
-          :to="traceWorkspaceRoute"
-        >
+        <BaseButton bordered :to="traceWorkspaceRoute">
           {{ $t('tracing.openFromTransaction') }}
         </BaseButton>
       </template>
@@ -215,10 +207,7 @@ watch(
           retry-label="Retry transaction"
           @retry="transactionScope.expose.refetch()"
         >
-          <div
-            v-if="transaction"
-            class="transaction-details__info"
-          >
+          <div v-if="transaction" class="transaction-details__info">
             <div class="transaction-details__info-row">
               <DataField
                 :title="$t('transactions.transactionHash')"
@@ -241,10 +230,7 @@ watch(
             <div class="transaction-details__info-row">
               <div class="transaction-details__info-row-status">
                 <span class="h-sm">{{ $t('transactions.status') }}</span>
-                <TransactionStatus
-                  :committed="transaction.status === 'Committed'"
-                  type="label"
-                />
+                <TransactionStatus :committed="transaction.status === 'Committed'" type="label" />
               </div>
 
               <DataField
@@ -262,10 +248,7 @@ watch(
                 copy
               />
 
-              <DataField
-                :title="$t('transactions.nonce')"
-                :value="transaction.nonce"
-              />
+              <DataField :title="$t('transactions.nonce')" :value="transaction.nonce" />
             </div>
             <div class="transaction-details__info-row">
               <DataField
@@ -275,10 +258,7 @@ watch(
                 monospace
               />
 
-              <DataField
-                :title="$t('transactions.metadata')"
-                :value="parseMetadata(transaction.metadata)"
-              />
+              <DataField :title="$t('transactions.metadata')" :value="parseMetadata(transaction.metadata)" />
             </div>
             <div class="transaction-details__info-row">
               <DataField
@@ -296,10 +276,7 @@ watch(
       :title="isSmartContractExecutable ? $t('transactions.smartContract') : $t('transactions.instructions')"
     >
       <template #default>
-        <div
-          v-if="transaction && isSmartContractExecutable"
-          class="transaction-details__transactions-wasm"
-        >
+        <div v-if="transaction && isSmartContractExecutable" class="transaction-details__transactions-wasm">
           <BaseLoading v-if="smartContractInstructionState.isLoading" />
           <ContractCodeViewPanel
             v-else-if="primarySmartContractInstruction"
@@ -307,11 +284,7 @@ watch(
             :instruction="primarySmartContractInstruction"
             :related-instructions="smartContractInstructionState.items"
           />
-          <span
-            v-else
-            class="row-text"
-            data-test="smart-contract-panel-empty"
-          >
+          <span v-else class="row-text" data-test="smart-contract-panel-empty">
             {{
               smartContractInstructionState.error
                 ? $t('transactions.unknownError')
@@ -333,26 +306,17 @@ watch(
                 :type="transactionHashType"
                 copy
               />
-              <DataField
-                :title="$t('transactions.executable')"
-                :value="transaction.executable"
-              />
+              <DataField :title="$t('transactions.executable')" :value="transaction.executable" />
               <DataField
                 :title="$t('transactions.block')"
                 :value="transaction.block"
                 :link="`/blocks/${transaction.block}`"
                 monospace
               />
-              <DataField
-                :title="$t('transactions.timestamp')"
-                :value="getLocalTime(transaction.created_at)"
-              />
+              <DataField :title="$t('transactions.timestamp')" :value="getLocalTime(transaction.created_at)" />
               <div class="transaction-details__transactions-empty-status">
                 <span class="h-sm">{{ $t('transactions.status') }}</span>
-                <TransactionStatus
-                  :committed="transaction.status === 'Committed'"
-                  type="label"
-                />
+                <TransactionStatus :committed="transaction.status === 'Committed'" type="label" />
               </div>
               <DataField
                 :title="$t('accounts.accountId')"
@@ -361,10 +325,7 @@ watch(
                 :link="`/accounts/${transaction.authority}`"
                 copy
               />
-              <DataField
-                :title="$t('transactions.nonce')"
-                :value="transaction.nonce"
-              />
+              <DataField :title="$t('transactions.nonce')" :value="transaction.nonce" />
               <DataField
                 :title="$t('transactions.signature')"
                 :hash="transaction.signature"
@@ -376,11 +337,7 @@ watch(
                 :metadata="{ display: 'short' }"
                 :value="parseMetadata(transaction.metadata)"
               />
-              <DataField
-                v-if="rejectionReason"
-                :title="$t('transactions.rejectedReason')"
-                :value="rejectionReason"
-              />
+              <DataField v-if="rejectionReason" :title="$t('transactions.rejectedReason')" :value="rejectionReason" />
             </div>
           </div>
           <InstructionsTable

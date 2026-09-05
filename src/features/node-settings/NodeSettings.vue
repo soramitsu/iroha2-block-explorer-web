@@ -23,6 +23,7 @@
           v-model="toriiUrl"
           class="node-settings__input"
           type="url"
+          :readonly="forcedNode"
           :placeholder="defaultUrl"
         >
         <span class="node-settings__hint">
@@ -42,7 +43,7 @@
           </span>
         </div>
         <div
-          v-if="availability.state.value !== 'healthy'"
+          v-if="!forcedNode && availability.state.value !== 'healthy'"
           class="node-settings__health-actions"
         >
           <BaseButton
@@ -57,19 +58,23 @@
           <BaseButton
             size="sm"
             variant="secondary"
+            :disabled="forcedNode"
             @click="onReset"
           >
             {{ $t('settings.reset') }}
           </BaseButton>
           <BaseButton
             size="sm"
-            :disabled="!toriiUrl.trim()"
+            :disabled="forcedNode || !toriiUrl.trim()"
             @click="onApply"
           >
             {{ $t('settings.apply') }}
           </BaseButton>
         </div>
-        <div class="node-settings__presets">
+        <div
+          v-if="!forcedNode"
+          class="node-settings__presets"
+        >
           <span class="h-sm">{{ $t('settings.presets') }}</span>
           <div class="node-settings__presets-list">
             <BaseButton
@@ -105,11 +110,13 @@ import {
   useToriiAvailability,
 } from '@/shared/api';
 import { useNotifications } from '@/shared/ui/composables/notifications';
+import { getRuntimeConfig } from '@/shared/runtime-config';
 
 const dropdown = useNodeSettingsDropdown();
 const notifications = useNotifications();
 const { t } = useI18n();
 const availability = useToriiAvailability();
+const forcedNode = getRuntimeConfig().toriiForceBaseUrl === true;
 
 const dropdownTarget = ref<HTMLElement | null>(null);
 

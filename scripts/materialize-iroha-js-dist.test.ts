@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { chmod, mkdtemp, mkdir, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,9 @@ import {
   REVIEWED_IROHA_JS_SRC_TREES,
   runtimePackageTargets,
 } from './materialize-iroha-js-dist.mjs';
+
+import { checkIrohaPinFiles } from './check-iroha-pin.mjs';
+import { verifyDevelopmentIrohaSdk } from './verify-development-iroha-sdk.mjs';
 
 const temporaryRoots: string[] = [];
 
@@ -205,27 +208,18 @@ describe('materializeIrohaJsDistribution', () => {
     })).rejects.toThrow(/runtime target must be under|runtime target escapes/u);
   });
 
-  it('verifies the real pnpm package target against the active reviewed pin', async () => {
+  it('verifies the installed development archive while the accepted release pin remains closed', async () => {
     const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-    const packageJson = JSON.parse(await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'));
-    const dependency = packageJson.dependencies['@iroha/iroha-js'] as string;
-    const revision = /#([0-9a-f]{40})&path:/u.exec(dependency)?.[1];
-    const reviewedTrees = REVIEWED_IROHA_JS_SRC_TREES as Readonly<Record<string, string>>;
-    const reviewedPackageJson = REVIEWED_IROHA_JS_PACKAGE_JSON_SHA256 as Readonly<Record<string, string>>;
-    const expectedSourceTree = revision ? reviewedTrees[revision] : undefined;
-    const expectedPackageJsonSha256 = revision ? reviewedPackageJson[revision] : undefined;
-    expect(expectedSourceTree).toMatch(/^[0-9a-f]{40}$/u);
-    expect(expectedPackageJsonSha256).toMatch(/^[0-9a-f]{64}$/u);
-
-    const packageRoot = await realpath(path.join(repositoryRoot, 'node_modules', '@iroha', 'iroha-js'));
-    expect(path.relative(path.join(repositoryRoot, 'node_modules'), packageRoot)).not.toMatch(/^\.\./u);
-    const result = await materializeIrohaJsDistribution({
-      packageRoot,
-      expectedPackageJsonSha256,
-      expectedSourceTree,
+    await expect(verifyDevelopmentIrohaSdk(repositoryRoot)).resolves.toMatchObject({
+      files: 163,
+      status: 'development-only',
     });
-
-    expect(result.sourceTree).toBe(expectedSourceTree);
-    expect(result.packageJsonSha256).toBe(expectedPackageJsonSha256);
+    const admission = await checkIrohaPinFiles({
+      packagePath: path.join(repositoryRoot, 'package.json'),
+      profilePath: path.join(repositoryRoot, 'tests/mochi/explorer-profile.json'),
+      lockfilePath: path.join(repositoryRoot, 'pnpm-lock.yaml'),
+    });
+    expect(admission.revision).toBeNull();
+    expect(admission.errors).toContain('@iroha/iroha-js must use github:hyperledger-iroha/iroha#<40-lowercase-hex-sha>&path:javascript/iroha_js');
   });
 });

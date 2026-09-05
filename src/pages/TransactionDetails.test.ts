@@ -17,7 +17,7 @@ const mockRoute = ref({
 const replaceSpy = vi.fn().mockResolvedValue(undefined);
 const instructionsListState = ref({
   isLoading: false,
-  totalItems: 1,
+  hasMore: false,
   itemsCount: 1,
 });
 const scopeExpose = ref<any>({
@@ -36,6 +36,7 @@ const scopeExpose = ref<any>({
         json: '',
         message: '',
       },
+      executable_payload: { instruction_count: 1 },
       metadata: {},
       nonce: null,
       signature: 'deadbeef',
@@ -54,6 +55,7 @@ const scopeExpose = ref<any>({
         executable: 'Instructions',
         status: 'Rejected',
         rejection_reason: { encoded: '', json: '', message: '' },
+        executable_payload: { instruction_count: 1 },
         metadata: {},
         nonce: null,
         signature: 'deadbeef',
@@ -136,7 +138,8 @@ const BaseButtonStub = defineComponent({
   props: {
     to: { type: [String, Object], default: null },
   },
-  template: '<button class="base-button-stub" :data-to="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></button>',
+  template:
+    '<button class="base-button-stub" :data-to="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></button>',
 });
 
 const DataFieldStub = defineComponent({
@@ -146,7 +149,8 @@ const DataFieldStub = defineComponent({
     value: { type: [String, Number, Object], default: null },
     hash: { type: String, default: '' },
   },
-  template: '<div class="data-field-stub"><span>{{ title }}</span><span>{{ value }}</span><span>{{ hash }}</span></div>',
+  template:
+    '<div class="data-field-stub"><span>{{ title }}</span><span>{{ value }}</span><span>{{ hash }}</span></div>',
 });
 
 describe('TransactionDetails', () => {
@@ -155,12 +159,7 @@ describe('TransactionDetails', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 64,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 64, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [
           {
             authority: SAMPLE_I105,
@@ -188,7 +187,7 @@ describe('TransactionDetails', () => {
     });
     instructionsListState.value = {
       isLoading: false,
-      totalItems: 1,
+      hasMore: false,
       itemsCount: 1,
     };
     mockRoute.value = {
@@ -211,6 +210,7 @@ describe('TransactionDetails', () => {
             json: '',
             message: '',
           },
+          executable_payload: { instruction_count: 1 },
           metadata: {},
           nonce: null,
           signature: 'deadbeef',
@@ -233,6 +233,7 @@ describe('TransactionDetails', () => {
               json: '',
               message: '',
             },
+            executable_payload: { instruction_count: 1 },
             metadata: {},
             nonce: null,
             signature: 'deadbeef',
@@ -316,8 +317,7 @@ describe('TransactionDetails', () => {
     scopeExpose.value.data.data.rejection_reason = {
       encoded:
         '0x020000004b00000000000000020000003f000000000000000400000033000000000000000400000000000000030000001f000000000000000000000013000000000000000b000000000000000300000000000000736270',
-      json:
-        'TlJUMAAAFbOLmVWS1wsVs4uZVZLXCwBXAAAAAAAAANkeGTU4zDb4AAIAAABLAAAAAAAAAAIAAAA/AAAAAAAAAAQAAAAzAAAAAAAAAAQAAAAAAAAAAwAAAB8AAAAAAAAAAAAAABMAAAAAAAAACwAAAAAAAAADAAAAAAAAAHNicA==',
+      json: 'TlJUMAAAFbOLmVWS1wsVs4uZVZLXCwBXAAAAAAAAANkeGTU4zDb4AAIAAABLAAAAAAAAAAIAAAA/AAAAAAAAAAQAAAAzAAAAAAAAAAQAAAAAAAAAAwAAAB8AAAAAAAAAAAAAABMAAAAAAAAACwAAAAAAAAADAAAAAAAAAHNicA==',
       message: '',
     };
 
@@ -333,8 +333,7 @@ describe('TransactionDetails', () => {
     scopeExpose.value.data.data.rejection_reason = {
       encoded:
         '0x020000004b00000000000000020000003f000000000000000400000033000000000000000400000000000000030000001f000000000000000000000013000000000000000b000000000000000300000000000000736270',
-      json:
-        'TlJUMAAAFbOLmVWS1wsVs4uZVZLXCwBXAAAAAAAAANkeGTU4zDb4AAIAAABLAAAAAAAAAAIAAAA/AAAAAAAAAAQAAAAzAAAAAAAAAAQAAAAAAAAAAwAAAB8AAAAAAAAAAAAAABMAAAAAAAAACwAAAAAAAAADAAAAAAAAAHNicA==',
+      json: 'TlJUMAAAFbOLmVWS1wsVs4uZVZLXCwBXAAAAAAAAANkeGTU4zDb4AAIAAABLAAAAAAAAAAIAAAA/AAAAAAAAAAQAAAAzAAAAAAAAAAQAAAAAAAAAAwAAAB8AAAAAAAAAAAAAABMAAAAAAAAACwAAAAAAAAADAAAAAAAAAHNicA==',
       message: 'Validation failed: Instruction failed: InstructionExecutionError(4).',
     };
 
@@ -401,67 +400,58 @@ describe('TransactionDetails', () => {
 
   it('loads every instruction-history page for smart-contract transactions before rendering the contract panel', async () => {
     scopeExpose.value.data.data.executable = 'Wasm';
-    (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockImplementation(async ({ page = 1 }) => ({
+    (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockImplementation(async ({ cursor }) => ({
       status: SUCCESSFUL_FETCHING,
-      data: page === 1
-        ? {
-            pagination: {
-              page: 1,
-              per_page: 128,
-              total_pages: 2,
-              total_items: 2,
-            },
-            items: [
-              {
-                authority: SAMPLE_I105,
-                created_at: new Date('2026-02-24T12:00:00Z'),
-                kind: 'RegisterSmartContractBytes',
-                box: {
-                  encoded: '0xcontract',
-                  json: {
-                    kind: 'RegisterSmartContractBytes',
-                    payload: {
-                      code_hash: 'aa'.repeat(32),
-                    },
-                  },
-                },
-                transaction_hash: '0xtest-hash',
-                transaction_status: 'Rejected',
-                block: 42,
-                index: 0,
-              },
-            ],
-          }
-        : {
-            pagination: {
-              page: 2,
-              per_page: 128,
-              total_pages: 2,
-              total_items: 2,
-            },
-            items: [
-              {
-                authority: SAMPLE_I105,
-                created_at: new Date('2026-02-24T12:00:01Z'),
-                kind: 'RegisterSmartContractCode',
-                box: {
-                  encoded: '0xmanifest',
-                  json: {
-                    kind: 'RegisterSmartContractCode',
-                    payload: {
-                      manifest: {
+      data:
+        cursor === null
+          ? {
+              pagination: { limit: 100, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: 'next', has_more: true },
+              items: [
+                {
+                  authority: SAMPLE_I105,
+                  created_at: new Date('2026-02-24T12:00:00Z'),
+                  kind: 'RegisterSmartContractBytes',
+                  box: {
+                    encoded: '0xcontract',
+                    json: {
+                      kind: 'RegisterSmartContractBytes',
+                      payload: {
                         code_hash: 'aa'.repeat(32),
                       },
                     },
                   },
+                  transaction_hash: '0xtest-hash',
+                  transaction_status: 'Rejected',
+                  block: 42,
+                  index: 0,
                 },
-                transaction_hash: '0xtest-hash',
-                transaction_status: 'Rejected',
-                block: 42,
-                index: 1,
-              },
-            ],
-          },
+              ],
+            }
+          : {
+              pagination: { limit: 100, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
+              items: [
+                {
+                  authority: SAMPLE_I105,
+                  created_at: new Date('2026-02-24T12:00:01Z'),
+                  kind: 'RegisterSmartContractCode',
+                  box: {
+                    encoded: '0xmanifest',
+                    json: {
+                      kind: 'RegisterSmartContractCode',
+                      payload: {
+                        manifest: {
+                          code_hash: 'aa'.repeat(32),
+                        },
+                      },
+                    },
+                  },
+                  transaction_hash: '0xtest-hash',
+                  transaction_status: 'Rejected',
+                  block: 42,
+                  index: 1,
+                },
+              ],
+            },
     }));
 
     const wrapper = factory();
@@ -471,13 +461,11 @@ describe('TransactionDetails', () => {
     const panel = wrapper.find('.contract-code-view-stub');
     expect(panel.attributes('data-related-count')).toBe('2');
     expect(api.fetchInstructions).toHaveBeenCalledWith({
-      page: 1,
-      per_page: 128,
+      cursor: null, limit: 100,
       transaction_hash: '0xtest-hash',
     });
     expect(api.fetchInstructions).toHaveBeenCalledWith({
-      page: 2,
-      per_page: 128,
+      cursor: 'next', limit: 100,
       transaction_hash: '0xtest-hash',
     });
   });
@@ -491,7 +479,7 @@ describe('TransactionDetails', () => {
     };
     instructionsListState.value = {
       isLoading: false,
-      totalItems: 0,
+      hasMore: false,
       itemsCount: 0,
     };
 
@@ -517,7 +505,7 @@ describe('TransactionDetails', () => {
     scopeExpose.value.data.data.executable = 'Instructions';
     instructionsListState.value = {
       isLoading: true,
-      totalItems: 0,
+      hasMore: false,
       itemsCount: 0,
     };
 

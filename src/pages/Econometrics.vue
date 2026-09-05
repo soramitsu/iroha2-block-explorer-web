@@ -19,8 +19,8 @@ import {
   concentrationTopN,
   computeSetChurn,
   effectiveNumberFromEntropy,
-  extractAmountFromIsiPayload,
-  extractAssetDefinitionIdFromIsiPayload,
+  decodeCommittedAssetActivity,
+  type AssetActivity,
   giniCoefficient,
   herfindahlIndex,
   lorenzCurvePoints,
@@ -38,6 +38,7 @@ import { normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
 import { normalizeAssetDefinitionSelectorLiteral } from '@/shared/lib/asset-definition-literal';
 import { parseOptionalFilter } from '@/shared/lib/optional-filter';
 import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
+import { advanceHistoryScanCursor, createHistoryScanCursor, type HistoryScanCursor } from '@/shared/lib/history-scan';
 
 defineOptions({
   name: 'EconometricsPage',
@@ -132,31 +133,14 @@ type AssetDefinitionEconometricsSuccess = Extract<
   { status: typeof SUCCESSFUL_FETCHING }
 >;
 
-interface InstructionScanBootstrap {
-  firstPage: { items: Instruction[], totalPages: number }
-  lastPage: { items: Instruction[], totalPages: number } | null
-  totalPages: number
-  perPage: number
-  initialPage: number
-  pageStep: 1 | -1
-}
-
 interface InstructionScanProgress {
   scanned: number
   matched: number
-  cutoffReached: boolean
-  oldestSeenMs: number | null
-  lastProcessedMs: number | null
-  isMonotonic: boolean
 }
 
-interface InstructionScanMeta {
-  scanned: number
-  matched: number
+interface InstructionScanMeta extends InstructionScanProgress {
   endedByPagination: boolean
-  cutoffReached: boolean
-  oldestSeenMs: number | null
-  isMonotonic: boolean
+  snapshot: HistoryScanCursor['snapshot']
 }
 
 const assetDefinitionRowKey = (item: { id: string }) => item.id;
@@ -450,87 +434,6 @@ async function fetchAssetHolders(
   return { holders, totalItems: complete ? holders.length : null, complete };
 }
 
-function normalizeInstructionTotalPages(totalPages: number): number {
-  if (!Number.isFinite(totalPages) || totalPages < 0) return 0;
-  return totalPages;
-}
-
-async function fetchInstructionPage(kind: InstructionScanKind, page: number, perPage: number) {
-  const res = await http.fetchInstructions({ page, per_page: perPage, kind });
-  if (res.status !== SUCCESSFUL_FETCHING) throw new Error(t('econometrics.fetchError'));
-
-  return {
-    items: res.data.items,
-    totalPages: normalizeInstructionTotalPages(res.data.pagination.total_pages),
-  };
-}
-
-function resolveNewestInstructionPage(
-  firstItems: Instruction[],
-  lastItems: Instruction[],
-  totalPages: number
-): { initialPage: number, pageStep: 1 | -1 } {
-  if (totalPages <= 1) return { initialPage: 1, pageStep: 1 };
-
-  const page1MaxMs = firstItems.reduce((acc, item) => Math.max(acc, item.created_at.getTime()), Number.NEGATIVE_INFINITY);
-  const lastMaxMs = lastItems.reduce((acc, item) => Math.max(acc, item.created_at.getTime()), Number.NEGATIVE_INFINITY);
-  return page1MaxMs >= lastMaxMs
-    ? { initialPage: 1, pageStep: 1 }
-    : { initialPage: totalPages, pageStep: -1 };
-}
-
-async function bootstrapInstructionScan(kind: InstructionScanKind, perPage: number): Promise<InstructionScanBootstrap> {
-  const firstPage = await fetchInstructionPage(kind, 1, perPage);
-  const totalPages = firstPage.totalPages;
-  const lastPage = totalPages > 1 ? await fetchInstructionPage(kind, totalPages, perPage) : null;
-  const { initialPage, pageStep } = resolveNewestInstructionPage(firstPage.items, lastPage?.items ?? [], totalPages);
-
-  return {
-    firstPage,
-    lastPage,
-    totalPages,
-    perPage,
-    initialPage,
-    pageStep,
-  };
-}
-
-async function resolveInstructionScanPage(bootstrap: InstructionScanBootstrap, kind: InstructionScanKind, page: number) {
-  if (page === 1) return bootstrap.firstPage;
-  if (bootstrap.lastPage && page === bootstrap.totalPages) return bootstrap.lastPage;
-  return fetchInstructionPage(kind, page, bootstrap.perPage);
-}
-
-function createInstructionScanProgress(): InstructionScanProgress {
-  return {
-    scanned: 0,
-    matched: 0,
-    cutoffReached: false,
-    oldestSeenMs: null,
-    lastProcessedMs: null,
-    isMonotonic: true,
-  };
-}
-
-function recordInstructionTimestamp(progress: InstructionScanProgress, createdAt: number, cutoffMs: number): boolean {
-  if (progress.isMonotonic && progress.lastProcessedMs !== null && createdAt > progress.lastProcessedMs) {
-    progress.isMonotonic = false;
-  }
-  progress.lastProcessedMs = createdAt;
-  if (progress.oldestSeenMs === null || createdAt < progress.oldestSeenMs) {
-    progress.oldestSeenMs = createdAt;
-  }
-  if (progress.isMonotonic && createdAt < cutoffMs) {
-    progress.cutoffReached = true;
-    return true;
-  }
-  return false;
-}
-
-function sortInstructionsNewestFirst(items: Instruction[]): Instruction[] {
-  return items.slice().sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
-}
-
 async function scanInstructionsByKind(args: {
   kind: InstructionScanKind
   perPage: number
@@ -539,29 +442,29 @@ async function scanInstructionsByKind(args: {
   localNonce: number
   onScanned?: (value: number) => void
   onMatched?: (value: number) => void
-  matches: (payload: unknown) => boolean
-  handleMatch: (payload: unknown, createdAt: number) => void
+  definitionId: string
+  handleMatch: (activity: AssetActivity, createdAt: number) => void
 }): Promise<InstructionScanMeta> {
-  const bootstrap = await bootstrapInstructionScan(args.kind, args.perPage);
-  const progress = createInstructionScanProgress();
-  let page = bootstrap.initialPage;
+  const progress: InstructionScanProgress = { scanned: 0, matched: 0 };
+  let cursor = createHistoryScanCursor();
+  let endedByPagination = false;
 
-  while (progress.scanned < args.maxItems && page >= 1 && page <= bootstrap.totalPages) {
+  while (progress.scanned < args.maxItems) {
     if (args.localNonce !== runNonce) break;
-    const currentPage = await resolveInstructionScanPage(bootstrap, args.kind, page);
-    const shouldStop = processInstructionScanPage(args, currentPage.items, progress);
-    if (shouldStop) break;
-    page += bootstrap.pageStep;
+    const response = await http.fetchInstructions({
+      cursor: cursor.nextCursor, limit: args.perPage, kind: args.kind, transaction_status: 'Committed',
+    });
+    if (response.status !== SUCCESSFUL_FETCHING) throw new Error(t('econometrics.fetchError'));
+    const continuation = advanceHistoryScanCursor(cursor, response.data.pagination);
+    const scannedBeforePage = progress.scanned;
+    const shouldStop = processInstructionScanPage(args, response.data.items, progress);
+    endedByPagination = continuation.nextCursor === null &&
+      progress.scanned - scannedBeforePage === response.data.items.length && args.localNonce === runNonce;
+    cursor = continuation;
+    if (shouldStop || endedByPagination) break;
   }
 
-  return {
-    scanned: progress.scanned,
-    matched: progress.matched,
-    endedByPagination: page < 1 || page > bootstrap.totalPages,
-    cutoffReached: progress.cutoffReached,
-    oldestSeenMs: progress.oldestSeenMs,
-    isMonotonic: progress.isMonotonic,
-  };
+  return { ...progress, endedByPagination, snapshot: cursor.snapshot };
 }
 
 function processInstructionScanPage(
@@ -571,30 +474,39 @@ function processInstructionScanPage(
     localNonce: number
     onScanned?: (value: number) => void
     onMatched?: (value: number) => void
-    matches: (payload: unknown) => boolean
-    handleMatch: (payload: unknown, createdAt: number) => void
+    kind: InstructionScanKind
+    definitionId: string
+    handleMatch: (activity: AssetActivity, createdAt: number) => void
   },
   items: Instruction[],
   progress: InstructionScanProgress
 ): boolean {
-  for (const instruction of sortInstructionsNewestFirst(items)) {
+  for (const instruction of items) {
     if (args.localNonce !== runNonce) return true;
 
     progress.scanned += 1;
     args.onScanned?.(progress.scanned);
 
     const createdAt = instruction.created_at.getTime();
-    if (recordInstructionTimestamp(progress, createdAt, args.cutoffMs)) return true;
+    // History cursors order ledger positions, not transaction-created timestamps.
+    // An old timestamp cannot prove later cursor pages fall outside the window.
+    if (createdAt < args.cutoffMs) {
+      if (progress.scanned >= args.maxItems) return true;
+      continue;
+    }
 
-    const payload = instruction.box.json.payload;
-    if (!args.matches(payload)) {
+    if (instruction.kind !== args.kind || instruction.box.json.kind !== args.kind) {
+      throw new Error('Asset activity history returned an unexpected instruction kind');
+    }
+    const activity = decodeCommittedAssetActivity(args.kind, instruction.box.json.payload, instruction.transaction_status);
+    if (!activity || activity.definitionId !== args.definitionId) {
       if (progress.scanned >= args.maxItems) return true;
       continue;
     }
 
     progress.matched += 1;
     args.onMatched?.(progress.matched);
-    args.handleMatch(payload, createdAt);
+    args.handleMatch(activity, createdAt);
 
     if (progress.scanned >= args.maxItems) return true;
   }
@@ -620,20 +532,16 @@ function initVelocityWindows(nowMs: number) {
 function updateVelocityWindows(
   windowsAcc: ReturnType<typeof initVelocityWindows>,
   createdAt: number,
-  payload: unknown
+  activity: AssetActivity
 ) {
-  const amount = extractAmountFromIsiPayload(payload);
+  const amount = activity.amount;
 
   for (const win of windowsAcc) {
     if (createdAt < win.startMs) continue;
     win.transfers += 1;
 
-    if (isRecord(payload)) {
-      const source = payload.source;
-      const destination = payload.destination;
-      if (typeof source === 'string' && source.trim()) win.senders.add(source.trim());
-      if (typeof destination === 'string' && destination.trim()) win.receivers.add(destination.trim());
-    }
+    if (activity.source !== null) win.senders.add(activity.source);
+    win.receivers.add(activity.destination);
 
     if (amount) {
       win.amountSum = win.amountSum.plus(amount);
@@ -659,10 +567,7 @@ function finalizeVelocityWindows(
     const velocityPerDay = turnover === null ? null : turnover / days;
     const transfersPerDay = win.transfers / days;
 
-    const complete =
-      args.meta.endedByPagination ||
-      args.meta.cutoffReached ||
-      (args.meta.isMonotonic && args.meta.oldestSeenMs !== null && args.meta.oldestSeenMs <= win.startMs);
+    const complete = args.meta.endedByPagination;
 
     return {
       key: win.key,
@@ -694,7 +599,7 @@ async function fetchVelocityWindows(args: {
   const earliestStartMs = Math.min(...windowsAcc.map((entry) => entry.startMs));
   const meta = await scanInstructionsByKind({
     kind: 'Transfer',
-    perPage: 200,
+    perPage: 100,
     maxItems: maxTransfersToScan.value,
     cutoffMs: earliestStartMs,
     localNonce: args.localNonce,
@@ -704,9 +609,9 @@ async function fetchVelocityWindows(args: {
     onMatched: (value) => {
       if (args.localNonce === runNonce) state.transfersMatched = value;
     },
-    matches: (payload) => extractAssetDefinitionIdFromIsiPayload(payload) === args.definitionId,
-    handleMatch: (payload, createdAt) => {
-      updateVelocityWindows(windowsAcc, createdAt, payload);
+    definitionId: args.definitionId,
+    handleMatch: (activity, createdAt) => {
+      updateVelocityWindows(windowsAcc, createdAt, activity);
     },
   });
 
@@ -822,7 +727,7 @@ async function scanIssuanceKind(args: {
 }): Promise<InstructionScanMeta> {
   return scanInstructionsByKind({
     kind: args.kind,
-    perPage: 200,
+    perPage: 100,
     maxItems: maxIssuanceToScan.value,
     cutoffMs: args.cutoffMs,
     localNonce: args.localNonce,
@@ -832,9 +737,9 @@ async function scanIssuanceKind(args: {
     onMatched: (value) => {
       if (args.localNonce === runNonce) updateIssuanceProgress(args.kind, 'matched', value);
     },
-    matches: (payload) => extractAssetDefinitionIdFromIsiPayload(payload) === args.definitionId,
-    handleMatch: (payload, createdAt) => {
-      const amount = extractAmountFromIsiPayload(payload);
+    definitionId: args.definitionId,
+    handleMatch: (activity, createdAt) => {
+      const amount = activity.amount;
       updateIssuanceWindows(args.windowsAcc, { kind: args.kind, createdAt, amount });
       updateIssuanceSeries(args.series, { kind: args.kind, createdAt, amount });
     },
@@ -850,14 +755,8 @@ function finalizeIssuanceWindows(
   }
 ): IssuanceWindowStats[] {
   return windowsAcc.map((win) => {
-    const mintComplete =
-      args.mintMeta.endedByPagination ||
-      args.mintMeta.cutoffReached ||
-      (args.mintMeta.isMonotonic && args.mintMeta.oldestSeenMs !== null && args.mintMeta.oldestSeenMs <= win.startMs);
-    const burnComplete =
-      args.burnMeta.endedByPagination ||
-      args.burnMeta.cutoffReached ||
-      (args.burnMeta.isMonotonic && args.burnMeta.oldestSeenMs !== null && args.burnMeta.oldestSeenMs <= win.startMs);
+    const mintComplete = args.mintMeta.endedByPagination;
+    const burnComplete = args.burnMeta.endedByPagination;
     const complete = mintComplete && burnComplete;
 
     const minted = win.mintAmountParsed > 0 ? win.mintedSum : null;
@@ -889,6 +788,10 @@ async function fetchIssuance(definitionId: string, nowMs: number, localNonce: nu
     scanIssuanceKind({ kind: 'Mint', definitionId, cutoffMs: series.startMs, localNonce, windowsAcc, series }),
     scanIssuanceKind({ kind: 'Burn', definitionId, cutoffMs: series.startMs, localNonce, windowsAcc, series }),
   ]);
+  if (!mintMeta.snapshot || !burnMeta.snapshot ||
+      mintMeta.snapshot.height !== burnMeta.snapshot.height || mintMeta.snapshot.hash !== burnMeta.snapshot.hash) {
+    throw new Error('Issuance statistics span different ledger snapshots. Refresh to obtain a consistent result.');
+  }
   const buildWindows = () => finalizeIssuanceWindows(windowsAcc, { mintMeta, burnMeta, nowMs });
 
   return {
@@ -1114,10 +1017,10 @@ async function loadHolderDistribution(definition: string, nowMs: number, localNo
     definitionRes
   );
 
-  const snapshot = await fetchHolderSnapshot(definition);
+  const snapshot = await fetchHolderSnapshot(assetDefinitionId);
   if (localNonce !== runNonce) return null;
 
-  const holderData = await resolveHolderData(definition, localNonce, snapshot);
+  const holderData = await resolveHolderData(assetDefinitionId, localNonce, snapshot);
   if (!holderData || localNonce !== runNonce) return null;
   syncSnapshotHolderProgress(snapshot, localNonce);
 
@@ -1125,7 +1028,7 @@ async function loadHolderDistribution(definition: string, nowMs: number, localNo
   const velocitySupply = resolveVelocitySupply(preferredVelocitySupply, holderData.holdersTotalSupply);
 
   return {
-    assetDefinitionId: assetDefinitionId ?? definition,
+    assetDefinitionId,
     assetDefinitionAlias,
     ...holderData,
     definitionTotalSupply,
@@ -1133,7 +1036,7 @@ async function loadHolderDistribution(definition: string, nowMs: number, localNo
     definitionCirculatingSupply,
     velocitySupply,
     supplyCoverage: definitionTotalSupply ? safeRatio(holderData.holdersTotalSupply, definitionTotalSupply) : null,
-    holderChurn: computeHolderChurn(definition, {
+    holderChurn: computeHolderChurn(assetDefinitionId, {
       nowMs,
       holders: holderData.holders,
       holdersTotalCount: holderData.holdersTotalCount,
@@ -1283,7 +1186,7 @@ async function computeEconometrics(definition: string) {
     if (!holderBundle || localNonce !== runNonce) return;
 
     const activityBundle = await loadActivityBundle({
-      definition,
+      definition: holderBundle.assetDefinitionId,
       nowMs,
       localNonce,
       velocitySupply: holderBundle.velocitySupply,

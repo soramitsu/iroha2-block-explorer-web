@@ -64,7 +64,7 @@ const setupState = {
   data: {
     status: SUCCESSFUL_FETCHING,
     data: {
-      pagination: { page: 1, per_page: 10, total_pages: 1, total_items: mockBlocks.length },
+      pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       items: mockBlocks,
     },
   },

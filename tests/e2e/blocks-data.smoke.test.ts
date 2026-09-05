@@ -58,7 +58,7 @@ const BaseTableStub = defineComponent({
   props: {
     items: { type: Array, default: () => [] },
   },
-  emits: ['update:page', 'update:pageSize'],
+  emits: ['update:cursor', 'update:pageSize'],
   template: `
     <div data-test="base-table">
       <slot name="header" />
@@ -141,7 +141,7 @@ describe('Blocks data smoke', () => {
     fetchBlocksMock.mockResolvedValue({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: mockBlocks.length },
+        pagination: { limit: 10, snapshot_height: 321, snapshot_hash: 'ab'.repeat(32), next_cursor: null, has_more: false },
         items: mockBlocks,
       },
     });
@@ -161,8 +161,7 @@ describe('Blocks data smoke', () => {
     await flushPromises();
 
     const fetchArgs = fetchBlocksMock.mock.calls.at(-1)?.[0];
-    expect(fetchArgs?.page).toBe(1);
-    expect(fetchArgs?.per_page).toBe(10);
+    expect(fetchArgs).toEqual({ cursor: null, limit: 10 });
 
     const rowsText = wrapper.find('[data-test="base-table-rows"]').text();
     expect(rowsText).toContain(String(mockBlocks[0].height));

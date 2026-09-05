@@ -20,12 +20,12 @@ import {
   type ConnectSessionResponse,
 } from './connect';
 
-const NETWORK_ID_LITERAL = '11'.repeat(32);
+const NETWORK_ID_LITERAL = `hash:${'AB'.repeat(32)}#B99E`;
 
 function candidateSdkFixture() {
   const networkId: ConnectNetworkId = {
     literal: NETWORK_ID_LITERAL,
-    toBytes: () => new Uint8Array(32).fill(0x11),
+    toBytes: () => new Uint8Array(32).fill(0xab),
     toString: () => NETWORK_ID_LITERAL,
   };
   const preview: ConnectSessionPreview = {
@@ -78,6 +78,16 @@ function candidateSdkFixture() {
 describe('connect helpers', () => {
   beforeEach(() => {
     runtimeConfigState.value = {};
+  });
+
+  it('uses the installed SDK for canonical NetworkId preview identity', () => {
+    const networkId = parseConnectNetworkId(NETWORK_ID_LITERAL);
+    expect(networkId.toString()).toBe(NETWORK_ID_LITERAL);
+    expect(Array.from(networkId.toBytes())).toEqual(Array(32).fill(0xab));
+    expect(() => parseConnectNetworkId('ab'.repeat(32))).toThrow();
+    const preview = createConnectSessionPreview({ networkId, node: 'https://taira.sora.org' });
+    expect(preview.networkId.toString()).toBe(NETWORK_ID_LITERAL);
+    expect(preview.sidBytes).toHaveLength(32);
   });
 
   it('parses the exact configured literal through the candidate NetworkId API', () => {

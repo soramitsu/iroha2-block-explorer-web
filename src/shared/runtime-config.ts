@@ -1,9 +1,12 @@
 import { z } from 'zod';
+import { isCanonicalIrohaHashLiteral32 } from '@/shared/lib/iroha-hash';
+
+const CheckedNetworkIdSchema = z.string().refine(isCanonicalIrohaHashLiteral32);
 
 const RuntimeConfigSchema = z
   .object({
     toriiBaseUrl: z.string().trim().min(1).optional(),
-    networkId: z.string().regex(/^[0-9a-f]{63}[13579bdf]$/u).optional(),
+    networkId: CheckedNetworkIdSchema.optional(),
     kotodamaCompilerUrl: z.string().trim().min(1).optional(),
     sorafsPublicBaseUrl: z.string().trim().min(1).optional(),
     toriiForceBaseUrl: z.boolean().optional(),
@@ -21,8 +24,17 @@ const RuntimeConfigSchema = z
   })
   .strict();
 
+const BpngRuntimeConfigSchema = z
+  .object({
+    toriiBaseUrl: z.literal('https://taira.sora.org'),
+    toriiForceBaseUrl: z.literal(true),
+    networkId: CheckedNetworkIdSchema,
+  })
+  .strict();
+
 export type RuntimeConfig = z.infer<typeof RuntimeConfigSchema>;
 
+const CONFIGURATION_ERROR_MESSAGE = 'Explorer runtime configuration is unavailable or invalid.';
 let runtimeConfig: RuntimeConfig = {};
 let loadPromise: Promise<RuntimeConfig> | null = null;
 
@@ -40,6 +52,8 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
     const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     const primaryUrl = `${normalizedBaseUrl}config.json`;
     const candidates = primaryUrl === '/config.json' ? [primaryUrl] : [primaryUrl, '/config.json'];
+    const requiresBpngProfile = window.location.hostname === 'explorer-bpng.soramitsu.io';
+    const schema = requiresBpngProfile ? BpngRuntimeConfigSchema : RuntimeConfigSchema;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 1500);
@@ -52,11 +66,14 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
           signal: controller.signal,
         });
 
-        if (!res.ok) continue;
+        if (!res.ok) {
+          if (res.status === 404 && !requiresBpngProfile) continue;
+          throw new Error(CONFIGURATION_ERROR_MESSAGE);
+        }
 
         const json = await res.json();
-        const parsed = RuntimeConfigSchema.safeParse(json);
-        if (!parsed.success) return runtimeConfig;
+        const parsed = schema.safeParse(json);
+        if (!parsed.success) throw new Error(CONFIGURATION_ERROR_MESSAGE);
 
         runtimeConfig = parsed.data;
         return runtimeConfig;
@@ -64,11 +81,19 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
 
       return runtimeConfig;
     } catch {
-      return runtimeConfig;
+      // Never expose response bodies, schema inputs, or transport error details.
+      throw new Error(CONFIGURATION_ERROR_MESSAGE);
     } finally {
       window.clearTimeout(timeout);
     }
   })();
 
-  return loadPromise;
+  try {
+    return await loadPromise;
+  } catch (error) {
+    // Failed loads are not a cached success: explicit retries fetch the same
+    // configured location again without selecting another blockchain endpoint.
+    loadPromise = null;
+    throw error;
+  }
 }

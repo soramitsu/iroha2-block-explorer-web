@@ -13,6 +13,8 @@ import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import type { HashType } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
+import { getRuntimeConfig } from '@/shared/runtime-config';
+import { historyCacheKey } from '@/shared/lib/history-cache';
 import { useI18n } from 'vue-i18n';
 import { useThrottleFn, useWindowScroll, watchDebounced } from '@vueuse/core';
 import { Transaction as TransactionSchema } from '@/shared/api/schemas';
@@ -20,7 +22,7 @@ import type { Transaction as TransactionDto } from '@/shared/api/schemas';
 import { useExplorerTransactionsEvents } from '@/shared/ui/composables/useExplorerTransactionsEvents';
 import { normalizeAccountSelectorLiteral } from '@/shared/lib/account-literal';
 import { firstRouteQueryValue } from '@/shared/lib/route-query';
-import { useListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
+import { useCursorListRouteQuery } from '@/shared/ui/composables/useListRouteQuery';
 
 interface TransactionsTableCachePayload {
   version: number
@@ -28,7 +30,7 @@ interface TransactionsTableCachePayload {
   items: unknown
 }
 
-const TRANSACTIONS_TABLE_CACHE_KEY = 'transactions_table_cache_v2';
+
 const TRANSACTIONS_TABLE_CACHE_VERSION = 1;
 const TRANSACTIONS_TABLE_CACHE_LIMIT = 100;
 
@@ -90,12 +92,12 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const queryPrefix = props.queryPrefix ?? (props.filterBy ? 'tx_' : '');
-const pageKey = `${queryPrefix}page`;
-const pageSizeKey = `${queryPrefix}per_page`;
+const cursorKey = `${queryPrefix}cursor`;
+const limitKey = `${queryPrefix}limit`;
 const statusKey = `${queryPrefix}status`;
 const authorityKey = `${queryPrefix}authority`;
 const blockKey = `${queryPrefix}block`;
-const { route, page, pageSize, updateListQuery } = useListRouteQuery({ pageKey, pageSizeKey });
+const { route, cursor, limit, updateListQuery } = useCursorListRouteQuery({ cursorKey, limitKey });
 
 const status = computed<TransactionStatusType | null>({
   get: () => {
@@ -131,20 +133,24 @@ const authorityFilterError = ref<string | null>(null);
 const blockFilterError = ref<string | null>(null);
 const streamedTransactions = ref<TransactionDto[]>([]);
 
+const cacheKey = historyCacheKey('transactions', getRuntimeConfig().networkId, http.getToriiBaseUrl());
+
 function readTransactionsTableCache(): TransactionDto[] {
-  if (typeof window === 'undefined') return [];
+  const key = cacheKey;
+  if (typeof window === 'undefined' || !key) return [];
   try {
-    return parseTransactionsTableCache(window.localStorage.getItem(TRANSACTIONS_TABLE_CACHE_KEY));
+    return parseTransactionsTableCache(window.localStorage.getItem(key));
   } catch {
     return [];
   }
 }
 
 function writeTransactionsTableCache(items: readonly TransactionDto[]) {
-  if (typeof window === 'undefined') return;
+  const key = cacheKey;
+  if (typeof window === 'undefined' || !key) return;
   try {
     window.localStorage.setItem(
-      TRANSACTIONS_TABLE_CACHE_KEY,
+      key,
       JSON.stringify({
         version: TRANSACTIONS_TABLE_CACHE_VERSION,
         updated_at_ms: Date.now(),
@@ -191,8 +197,8 @@ watch(
 
 const searchParams = computed<TransactionSearchParams>(() => {
   return {
-    page: page.value,
-    per_page: pageSize.value,
+    cursor: cursor.value,
+    limit: limit.value,
     status: status.value ?? undefined,
     authority: authority.value,
     block: typeof block.value === 'number' && Number.isFinite(block.value) ? block.value : undefined,
@@ -244,6 +250,10 @@ const scope = useParamScope(
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading);
+const availability = http.useToriiAvailability();
+const showCachedNotice = computed(() => shouldRenderLiveDefaultFeed.value && cachedTransactions.value.length > 0 && (
+  availability.state.value !== 'healthy' || (!fetchedTransactions.value.length && !streamedTransactions.value.length)
+));
 const fetchedTransactions = computed(() =>
   scope.value?.expose.data?.status === SUCCESSFUL_FETCHING ? scope.value.expose.data.data.items : []
 );
@@ -254,12 +264,12 @@ const payloadPagination = computed(() =>
 const hasAuthorityFilter = computed(() => Boolean(authority.value?.trim()));
 const hasBlockFilter = computed(() => typeof block.value === 'number' && Number.isFinite(block.value));
 const isDefaultFeed = computed(() => !status.value && !hasAuthorityFilter.value && !hasBlockFilter.value);
-const isLatestPage = computed(() => page.value === 1);
+const isLatestPage = computed(() => !cursor.value);
 const shouldRenderLiveDefaultFeed = computed(() => isDefaultFeed.value && isLatestPage.value);
 
 const transactions = computed(() =>
   shouldRenderLiveDefaultFeed.value
-    ? mergeTransactions([streamedTransactions.value, fetchedTransactions.value, cachedTransactions.value], pageSize.value)
+    ? mergeTransactions([streamedTransactions.value, fetchedTransactions.value, cachedTransactions.value], limit.value)
     : fetchedTransactions.value
 );
 const visibleTransactionHashes = computed(() => new Set(transactions.value.map((item) => item.hash)));
@@ -309,8 +319,8 @@ watch(
 watch(
   () => fetchedTransactions.value,
   (items) => {
-    if (shouldRenderLiveDefaultFeed.value && items.length) {
-      cachedTransactions.value = mergeTransactions([items, cachedTransactions.value], TRANSACTIONS_TABLE_CACHE_LIMIT);
+    if (shouldRenderLiveDefaultFeed.value && scope.value?.expose.data?.status === SUCCESSFUL_FETCHING) {
+      cachedTransactions.value = mergeTransactions([items], TRANSACTIONS_TABLE_CACHE_LIMIT);
       writeTransactionsTableCache(cachedTransactions.value);
     }
 
@@ -333,7 +343,7 @@ watch(
   () => isLoading.value,
   (loading) => {
     if (loading || !pendingAutoRefresh.value) return;
-    if (page.value !== 1) {
+    if (cursor.value) {
       pendingAutoRefresh.value = false;
       return;
     }
@@ -362,7 +372,7 @@ watch(
 
     // Avoid shifting paginated views under the user's cursor.
     // Only auto-refresh when the table is on the "latest" page.
-    if (page.value !== 1) return;
+    if (cursor.value) return;
 
     // Avoid shifting the page while the user is scrolled down.
     if (windowScrollY.value > 80) {
@@ -371,7 +381,7 @@ watch(
     }
 
     if (isDefaultFeed.value) {
-      streamedTransactions.value = mergeTransactions([[transaction], streamedTransactions.value], pageSize.value);
+      streamedTransactions.value = mergeTransactions([[transaction], streamedTransactions.value], limit.value);
     }
 
     scheduleTransactionsReload();
@@ -428,14 +438,21 @@ watch(
       </BaseButton>
     </div>
 
+    <p
+      v-if="showCachedNotice"
+      role="status"
+      data-test="history-cache-stale"
+    >
+      {{ $t('telemetry.dataStale') }}
+    </p>
     <BaseTable
-      v-model:page="page"
-      v-model:page-size="pageSize"
+      v-model:cursor="cursor"
+      v-model:page-size="limit"
       :loading="isLoading"
       :items="transactions"
       :row-key="transactionRowKey"
-      :total="payloadPagination?.total_items"
-      :payload-pagination
+      pagination-mode="cursor"
+      :cursor-pagination="payloadPagination"
       container-class="transactions-table__container"
       :pagination-breakpoint="1700"
     >

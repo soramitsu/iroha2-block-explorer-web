@@ -88,6 +88,23 @@ export interface CursorPaginationParams {
   limit?: number;
 }
 
+export const HistoryCursorPagination = CursorPagination.safeExtend({
+  snapshot_height: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  snapshot_hash: z.string().regex(/^[0-9a-f]{64}$/u).nullable(),
+}).superRefine((value, ctx) => {
+  if ((value.snapshot_height === 0) !== (value.snapshot_hash === null)) {
+    ctx.addIssue({ code: 'custom', message: 'snapshot hash must be null exactly at height zero' });
+  }
+});
+
+export const HistoryCursorPaginated = <T extends z.ZodType>(item: T) =>
+  CursorPaginated(item).safeExtend({ pagination: HistoryCursorPagination });
+
+export interface HistoryCursorPaginated<T> {
+  pagination: z.infer<typeof HistoryCursorPagination>;
+  items: T[];
+}
+
 const Metadata = z.record(z.string(), z.json());
 const BigIntCoerce = z.union([z.string(), z.number(), z.bigint()]).transform((value) => BigInt(value));
 const U16 = z.number().int().min(0).max(0xffff);
@@ -129,7 +146,7 @@ function canonicalNumericValue(nonnegative: boolean) {
 }
 
 /** Exact canonical Norito JSON representation of `Quantity`. */
-const QuantityValue = canonicalNumericValue(true);
+export const QuantityValue = canonicalNumericValue(true);
 /** Exact canonical Norito JSON representation of signed `Numeric`. */
 const SignedNumericValue = canonicalNumericValue(false);
 const TransactionStatus = z.enum(['Committed', 'Rejected']);
@@ -625,9 +642,6 @@ export const ExplorerAssetDefinition = z
   .object({
     id: AssetDefinitionIdSchema,
     owning_domain: CanonicalDomainId.nullable(),
-    name: AssetHumanName,
-    description: AssetDescription,
-    alias: ExactAssetDefinitionAlias.nullable(),
     mintable: AssetDefinitionMintable,
     logo: z.string().nullable(),
     metadata: Metadata,
@@ -638,17 +652,13 @@ export const ExplorerAssetDefinition = z
     circulating_quantity: QuantityValue.nullable(),
   })
   .strict()
-  .superRefine((value, ctx) => {
-    if (!aliasMatchesAssetName(value.alias, value.name)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'asset alias name segment must match asset name',
-        path: ['alias'],
-      });
-    }
-  })
   .transform((value) => ({
     ...value,
+    // The Explorer list DTO does not publish these detail-only fields.
+    // Keep their absence explicit in the shared presentation model.
+    name: null,
+    description: null,
+    alias: null,
     alias_binding: null,
   }));
 
@@ -846,7 +856,7 @@ export const Domain = z
 
 export type Domain = z.infer<typeof Domain>;
 
-export interface TransactionSearchParams extends Partial<PaginationParams> {
+export interface TransactionSearchParams extends CursorPaginationParams {
   authority?: string;
   block?: number;
   status?: TransactionStatus;
@@ -870,6 +880,7 @@ export const ExplorerHealth = z.object({
 
 export const LatestTransactionsResponse = z.object({
   sampled_at: z.coerce.date(),
+  pagination: HistoryCursorPagination,
   items: Transaction.array(),
 });
 
@@ -883,6 +894,7 @@ const RejectionReason = z
 
 export const DetailedTransaction = Transaction.extend({
   rejection_reason: RejectionReason.nullable(),
+  executable_payload: z.json(),
   metadata: Metadata,
   nonce: z.number().nullable(),
   signature: z.string(),
@@ -1412,7 +1424,7 @@ export const SumeragiTelemetry = z.object({
 });
 export type SumeragiTelemetry = z.infer<typeof SumeragiTelemetry>;
 
-export interface InstructionsSearchParams extends PaginationParams {
+export interface InstructionsSearchParams extends CursorPaginationParams {
   account?: string;
   authority?: string;
   kind?: string;
@@ -1469,6 +1481,7 @@ export type Instruction = z.infer<typeof Instruction>;
 
 export const LatestInstructionsResponse = z.object({
   sampled_at: z.coerce.date(),
+  pagination: HistoryCursorPagination,
   items: Instruction.array(),
 });
 export type LatestInstructionsResponse = z.infer<typeof LatestInstructionsResponse>;

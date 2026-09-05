@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { checkIrohaPinFiles } from './check-iroha-pin.mjs';
+import { DEVELOPMENT_IROHA_SPECIFIER, verifyDevelopmentIrohaSdk } from './verify-development-iroha-sdk.mjs';
 
 const IROHA_PACKAGE = '@iroha/iroha-js';
 const IROHA_PACKAGE_PATH = path.join('@iroha', 'iroha-js');
@@ -287,6 +288,12 @@ function isInside(parent, child) {
 
 async function main() {
   const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const packageJson = JSON.parse(await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  if (packageJson.dependencies?.[IROHA_PACKAGE] === DEVELOPMENT_IROHA_SPECIFIER) {
+    const checked = await verifyDevelopmentIrohaSdk(repositoryRoot);
+    console.log(`IROHA JS DIST: unsigned development-only 339a SDK; ${checked.files} archive files verified; accepted-release gate remains closed`);
+    return;
+  }
   const result = await checkIrohaPinFiles({
     packagePath: path.join(repositoryRoot, 'package.json'),
     profilePath: path.join(repositoryRoot, 'tests', 'mochi', 'explorer-profile.json'),

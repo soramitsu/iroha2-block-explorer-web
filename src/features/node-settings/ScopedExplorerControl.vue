@@ -34,6 +34,7 @@
             v-for="node in nodes"
             :key="node.url"
             type="button"
+            :disabled="forcedNode"
             class="scoped-explorer-control__node"
             :data-active="node.url === currentScope?.torii || null"
             @click="switchNode(node)"
@@ -69,6 +70,7 @@ import { onClickOutside } from '@vueuse/core';
 import { useNodeSettingsDropdown } from '@/shared/ui/composables/header-portal';
 import { PORTAL_ID } from '@/shared/ui/consts';
 import BaseButton from '@/shared/ui/components/BaseButton.vue';
+import { getRuntimeConfig } from '@/shared/runtime-config';
 import {
   getConfiguredToriiBaseUrl,
   setRouteScopedToriiBaseUrl,
@@ -85,6 +87,7 @@ import {
 } from '@/shared/lib/explorer-scope';
 
 const dropdown = useNodeSettingsDropdown();
+const forcedNode = getRuntimeConfig().toriiForceBaseUrl === true;
 const dropdownTarget = ref<HTMLElement | null>(null);
 
 const { scope, pushGlobal, router } = useScopedExplorerNavigation();
@@ -149,6 +152,7 @@ onClickOutside(
 );
 
 const activeNodeLabel = computed(() => {
+  if (forcedNode) return deriveNodeLabel(getConfiguredToriiBaseUrl());
   const scopedValue = currentScope.value;
   if (!scopedValue) return '-';
   const matched = nodes.value.find((item) => item.url === scopedValue.torii);

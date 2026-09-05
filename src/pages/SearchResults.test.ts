@@ -50,6 +50,7 @@ function transaction(hash = HASH_A, blockHeight = 12) {
     executable: 'Instructions',
     status: 'Committed',
     rejection_reason: null,
+    executable_payload: { instruction_count: 1 },
     metadata: {},
     nonce: null,
     signature: 'signature',
@@ -72,7 +73,8 @@ const BaseContentBlockStub = {
 
 const DataFieldStub = {
   props: ['title', 'value', 'hash'],
-  template: '<div class="data-field-stub" :data-title="title" :data-value="value">{{ title }} {{ value }} {{ hash }}</div>',
+  template:
+    '<div class="data-field-stub" :data-title="title" :data-value="value">{{ title }} {{ value }} {{ hash }}</div>',
 };
 
 const BaseLinkStub = {
@@ -197,8 +199,10 @@ describe('SearchResults', () => {
     const transactionA = deferred<unknown>();
     const blockB = deferred<unknown>();
     const transactionB = deferred<unknown>();
-    fetchBlock.mockImplementation((hash: string) => hash === HASH_A ? blockA.promise : blockB.promise);
-    fetchTransaction.mockImplementation((hash: string) => hash === HASH_A ? transactionA.promise : transactionB.promise);
+    fetchBlock.mockImplementation((hash: string) => (hash === HASH_A ? blockA.promise : blockB.promise));
+    fetchTransaction.mockImplementation((hash: string) =>
+      hash === HASH_A ? transactionA.promise : transactionB.promise
+    );
 
     const wrapper = mountPage();
     routeState.query.q = HASH_B;

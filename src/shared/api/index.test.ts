@@ -1,3 +1,4 @@
+import { jsonResponse, testResponse } from '../../../tests/fixtures/http-response';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { nextTick, ref } from 'vue';
 import type { Ref } from 'vue';
@@ -19,7 +20,7 @@ const SAMPLE_FRAMED_INSTRUCTION_SHA256 = '0xc7e4bbea488a546f542484289d335695684a
 const TORII_API_VERSION_HEADER = 'x-iroha-api-version';
 
 const eventSourceStore = vi.hoisted(() => ({
-  instances: [] as Array<{ source: unknown; data: Ref<string | null>; status: Ref<string> }>,
+  instances: [] as Array<{ source: unknown, data: Ref<string | null>, status: Ref<string> }>,
 }));
 
 const runtimeConfigState = vi.hoisted((): { value: Record<string, unknown> } => ({
@@ -40,189 +41,7 @@ vi.mock('@/shared/runtime-config', () => ({
   getRuntimeConfig: () => runtimeConfigState.value,
 }));
 
-const payloads = vi.hoisted(() => ({
-  sumeragiStatus: {
-    leader_index: 2,
-    view_change_index: 7,
-    highest_qc: { height: 10, view: 4, subject_block_hash: '0xaaa' },
-    locked_qc: { height: 9, view: 3, subject_block_hash: null },
-    tx_queue: { depth: 3, capacity: 10, saturated: false },
-    epoch: { length_blocks: 0, commit_deadline_offset: 0, reveal_deadline_offset: 0 },
-    membership: { height: 10, view: 3, epoch: 0, view_hash: '0xbb' },
-    prf: { height: 10, view: 3, epoch_seed: 'feed' },
-    gossip_fallback_total: 1,
-    bg_post_inline_post_total: 5,
-    bg_post_inline_broadcast_total: 6,
-    block_created_dropped_by_lock_total: 0,
-    block_created_hint_mismatch_total: 0,
-    block_created_proposal_mismatch_total: 0,
-    settlement: {
-      dvp: {
-        success_total: 1,
-        failure_total: 0,
-        final_state_totals: { both: 1 },
-        failure_reasons: {},
-        last_event: {
-          observed_at_ms: 171000,
-          settlement_id: 'dvp-1',
-          plan: { order: 'process_delivery_first', atomicity: 'commit_first_leg' },
-          outcome: 'Success',
-          failure_reason: null,
-          final_state: 'delivery_and_payment',
-          legs: { delivery_committed: true, payment_committed: false },
-        },
-      },
-      pvp: {
-        success_total: 2,
-        failure_total: 1,
-        final_state_totals: { both: 2 },
-        failure_reasons: { timeout: 1 },
-        last_event: {
-          observed_at_ms: 181000,
-          settlement_id: 'pvp-1',
-          plan: { order: 'process_payment_first', atomicity: 'commit_second_leg' },
-          outcome: 'Failure',
-          failure_reason: 'timeout',
-          final_state: 'primary_only',
-          legs: { primary_committed: true, counter_committed: false },
-          fx_window_ms: 1200,
-        },
-      },
-    },
-    pacemaker_backpressure_deferrals_total: 0,
-    rbc_retry_attempts_total: 0,
-    rbc_retry_abort_total: 0,
-    rbc_store: {
-      sessions: 2,
-      bytes: 1024,
-      pressure_level: 1,
-      backpressure_deferrals_total: 1,
-      evictions_total: 1,
-      recent_evictions: [{ block_hash: '0xabc', height: 9, view: 3 }],
-    },
-    da_reschedule_total: 0,
-    view_change_proof_accepted_total: 0,
-    view_change_proof_stale_total: 0,
-    view_change_proof_rejected_total: 0,
-    view_change_suggest_total: 0,
-    view_change_install_total: 0,
-    collectors_targeted_current: 4,
-    collectors_targeted_last_per_block: 6,
-    redundant_sends_total: 1,
-    vrf_penalty_epoch: 1,
-    vrf_committed_no_reveal_total: 1,
-    vrf_no_participation_total: 0,
-    vrf_late_reveals_total: 0,
-    consensus_penalties_applied_total: 1,
-    consensus_penalties_pending: 2,
-    vrf_penalties_applied_total: 3,
-    vrf_penalties_pending: 4,
-    lane_governance_sealed_total: 1,
-    lane_governance_sealed_aliases: ['sealed-lane'],
-    lane_governance: [
-      {
-        lane_id: 0,
-        alias: 'default',
-        governance: 'manual',
-        manifest_required: true,
-        manifest_ready: false,
-        manifest_path: '/tmp/manifest',
-        validator_ids: ['val-1'],
-        quorum: 4,
-        protected_namespaces: ['ns1'],
-        runtime_upgrade: {
-          allow: true,
-          require_metadata: false,
-          metadata_key: null,
-          allowed_ids: [],
-        },
-        privacy_commitments: [
-          {
-            id: 1,
-            scheme: 'merkle',
-            merkle: { root: '0x1234', max_depth: 4 },
-            snark: null,
-          },
-        ],
-      },
-    ],
-    nexus_fee: {
-      charged_total: 3,
-      charged_via_payer_total: 2,
-      charged_via_sponsor_total: 1,
-      sponsor_disabled_total: 0,
-      sponsor_cap_exceeded_total: 0,
-      config_errors_total: 0,
-      transfer_failures_total: 1,
-      last_amount: '10.5',
-      last_asset_id: '66owaQmAQMuHxPzxUN3bqZ6FJfDa#sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE',
-      last_payer: 'payer',
-      last_payer_id: 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE',
-      last_error: null,
-    },
-    nexus_staking: {
-      lanes: [
-        {
-          lane_id: 0,
-          bonded: '10',
-          pending_unbond: '2',
-          slash_total: 1,
-        },
-      ],
-    },
-    npos_election: {
-      epoch: 9,
-      snapshot_height: 10,
-      seed: 'deadbeef',
-      candidates_total: 5,
-      validator_set_hash: '0xhash',
-      validator_set: ['ed0120...'],
-      params: {
-        max_validators: 7,
-        min_self_bond: 1,
-        min_nomination_bond: 1,
-        max_nominator_concentration_pct: 30,
-        seat_band_pct: 5,
-        max_entity_correlation_pct: 10,
-        finality_margin_blocks: 8,
-      },
-      rejection_reason: null,
-      tie_break: [{ peer_id: 'ed0120...', score: '00ff' }],
-    },
-  },
-  sumeragiTelemetry: {
-    availability: {
-      total_votes_ingested: 12,
-      collectors: [
-        { collector_idx: 0, peer_id: 'ed0120...', votes_ingested: 5 },
-        { collector_idx: 1, peer_id: 'ed0999...', votes_ingested: 7 },
-      ],
-    },
-    qc_latency_ms: [
-      { kind: 'availability', last_ms: 120 },
-      { kind: 'commit', last_ms: 95 },
-    ],
-    rbc_backlog: { pending_sessions: 1, total_missing_chunks: 3, max_missing_chunks: 2 },
-    vrf: {
-      found: true,
-      epoch: 42,
-      finalized: true,
-      seed_hex: 'cafebabe',
-      epoch_length: 3600,
-      commit_deadline_offset: 120,
-      reveal_deadline_offset: 160,
-      roster_len: 7,
-      updated_at_height: 999,
-      participants_total: 7,
-      commitments_total: 7,
-      reveals_total: 7,
-      late_reveals_total: 0,
-      committed_no_reveal: [],
-      no_participation: [],
-      late_reveals: [],
-    },
-  },
-}));
+
 
 type ApiEnv = Partial<
   Record<'VITE_API_URL' | 'VITE_SUMERAGI_STATUS_STREAM_ENABLED' | 'VITE_ZK_PROVER_REPORTS_ENABLED', string>
@@ -286,6 +105,59 @@ describe('appendSearchParams', () => {
 });
 
 describe('API url builders', () => {
+  it('keeps actual requests on forced Taira after manual, scoped and reset attempts', async () => {
+    runtimeConfigState.value = { toriiBaseUrl: 'https://taira.sora.org', toriiForceBaseUrl: true };
+    const requests: string[] = [];
+    global.fetch = vi.fn(async (input: unknown) => {
+      requests.push(String(input));
+      return testResponse(
+        JSON.stringify({
+          items: [],
+          pagination: { limit: 10, snapshot_height: 0, snapshot_hash: null, next_cursor: null, has_more: false },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      );
+    }) as typeof fetch;
+    const api = await importApiModule({ VITE_API_URL: 'https://build-default.example/v1/explorer' });
+    for (const override of [
+      () => api.setToriiBaseUrl('https://manual.example'),
+      () => api.setRouteScopedToriiBaseUrl('https://scoped.example'),
+      () => api.setToriiBaseUrlFromConfig('https://substituted.example', { force: true }),
+      () => api.resetToriiBaseUrl(),
+    ]) {
+      override();
+      await api.fetchBlocks({ limit: 10 });
+    }
+    expect(requests).toHaveLength(4);
+    expect(requests.every((url) => url.startsWith('https://taira.sora.org/v1/explorer/blocks?'))).toBe(true);
+    expect(api.buildToriiWsUrl('/telemetry/metrics')).toBe('wss://taira.sora.org/v1/telemetry/metrics');
+  });
+
+  it('never discovers or contacts failover peers when forced Taira requests fail', async () => {
+    runtimeConfigState.value = {
+      toriiBaseUrl: 'https://taira.sora.org',
+      toriiForceBaseUrl: true,
+      toriiFailoverEnabled: true,
+      toriiFailoverNodes: ['https://backup.example'],
+      toriiFailoverFailureThreshold: 1,
+      toriiRequestRetryCount: 0,
+    };
+    const requests: string[] = [];
+    global.fetch = vi.fn(async (input: unknown) => {
+      requests.push(String(input));
+      return testResponse('unavailable', { status: 503 });
+    }) as typeof fetch;
+    const api = await importApiModule();
+    for (let attempt = 0; attempt < 6; attempt += 1) await api.fetchBlocks({ limit: 1 });
+    expect(await api.retryToriiFailover()).toBe(false);
+    await nextTick();
+    expect(requests).toHaveLength(6);
+    expect(requests.every((url) => url.startsWith('https://taira.sora.org/v1/explorer/blocks?'))).toBe(true);
+  });
+
   it('buildToriiUrl normalizes Torii app paths to the current /v1 API', async () => {
     const { buildToriiUrl } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
     expect(buildToriiUrl('/telemetry/metrics')).toBe('https://torii.example/v1/telemetry/metrics');
@@ -413,15 +285,14 @@ describe('API url builders', () => {
     module.setToriiBaseUrl('https://configured-node.example:8080');
     module.setRouteScopedToriiBaseUrl('https://public-node.example:18080');
 
-    const fetchSpy = vi.fn(
-      async (input: unknown) =>
-        new Response(
-          JSON.stringify({
-            pagination: { limit: 1, next_cursor: null, has_more: false },
-            items: [],
-          }),
-          { status: 200, headers: { 'content-type': 'application/json' } }
-        )
+    const fetchSpy = vi.fn(async (input: unknown) =>
+      testResponse(
+        JSON.stringify({
+          pagination: { limit: 1, next_cursor: null, has_more: false },
+          items: [],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
     );
     global.fetch = fetchSpy as any;
 
@@ -444,11 +315,11 @@ describe('API url builders', () => {
     global.fetch = vi.fn(async (input: unknown) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (!url.startsWith('https://torii.example/v1/explorer/accounts')) {
-        return new Response('not found', { status: 404 });
+        return testResponse('not found', { status: 404 });
       }
       attempts += 1;
-      if (attempts === 1) return new Response('bad gateway', { status: 502 });
-      return new Response(
+      if (attempts === 1) return testResponse('bad gateway', { status: 502 });
+      return testResponse(
         JSON.stringify({
           pagination: { limit: 1, next_cursor: null, has_more: false },
           items: [
@@ -487,11 +358,11 @@ describe('API url builders', () => {
     global.fetch = vi.fn(async (input: unknown) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (!url.startsWith('https://torii.example/v1/explorer/accounts')) {
-        return new Response('not found', { status: 404 });
+        return testResponse('not found', { status: 404 });
       }
       attempts += 1;
       if (attempts === 1) throw new Error('simulated network error');
-      return new Response(
+      return testResponse(
         JSON.stringify({
           pagination: { limit: 1, next_cursor: null, has_more: false },
           items: [
@@ -532,18 +403,18 @@ describe('API url builders', () => {
     const fetchSpy = vi.fn(async (input: unknown) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (url.startsWith('https://torii.example/v1/explorer/transactions')) {
-        return new Response('bad gateway', { status: 502 });
+        return testResponse('bad gateway', { status: 502 });
       }
       if (url === 'https://torii.example/peers') {
-        return new Response(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
+        return testResponse(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       if (url === 'https://backup.example/v1/explorer/health') {
-        return new Response(JSON.stringify({ ok: true }), {
+        return testResponse(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
       }
-      return new Response('not found', { status: 404 });
+      return testResponse('not found', { status: 404 });
     });
     global.fetch = fetchSpy as any;
 
@@ -551,7 +422,7 @@ describe('API url builders', () => {
     const availability = module.useToriiAvailability();
 
     for (let idx = 0; idx < 5; idx += 1) {
-      await module.fetchTransactions({ page: 1, per_page: 1 });
+      await module.fetchTransactions({ limit: 1 });
     }
     for (let idx = 0; idx < 10 && module.getToriiBaseUrl() !== 'https://backup.example'; idx += 1) {
       await nextTick();
@@ -576,10 +447,10 @@ describe('API url builders', () => {
     const fetchSpy = vi.fn(async (input: unknown, _init?: RequestInit) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (url === 'https://torii.example/peers') {
-        return new Response(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
+        return testResponse(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       if (url === 'https://lagging.example/v1/explorer/health') {
-        return new Response(
+        return testResponse(
           JSON.stringify({
             head_height: 10,
             head_created_at: '2026-03-05T00:00:00Z',
@@ -589,7 +460,7 @@ describe('API url builders', () => {
         );
       }
       if (url === 'https://fresh.example/v1/explorer/health') {
-        return new Response(
+        return testResponse(
           JSON.stringify({
             head_height: 120,
             head_created_at: '2026-03-05T06:00:00Z',
@@ -598,7 +469,7 @@ describe('API url builders', () => {
           { status: 200, headers: { 'content-type': 'application/json' } }
         );
       }
-      return new Response('not found', { status: 404 });
+      return testResponse('not found', { status: 404 });
     });
     global.fetch = fetchSpy as any;
 
@@ -637,9 +508,9 @@ describe('API url builders', () => {
     const fetchSpy = vi.fn(async (input: unknown, _init?: RequestInit) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (url === 'https://torii.example/peers') {
-        return new Response(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
+        return testResponse(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
       }
-      return new Response('not found', { status: 404 });
+      return testResponse('not found', { status: 404 });
     });
     global.fetch = fetchSpy as any;
 
@@ -664,12 +535,12 @@ describe('API url builders', () => {
     global.fetch = vi.fn(async (input: unknown) => {
       const url = input instanceof URL ? input.toString() : String(input);
       if (url === 'https://torii.example/peers') {
-        return new Response(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
+        return testResponse(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       if (url === 'https://unhealthy.example/v1/explorer/health') {
-        return new Response('bad gateway', { status: 502 });
+        return testResponse('bad gateway', { status: 502 });
       }
-      return new Response('not found', { status: 404 });
+      return testResponse('not found', { status: 404 });
     }) as any;
 
     const module = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -694,9 +565,8 @@ describe('API url builders', () => {
 describe('Explorer accounts API helpers', () => {
   it('fetchAccounts keeps filtered requests on /v1/explorer/accounts', async () => {
     const validAccountId = SAMPLE_I105;
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
@@ -708,8 +578,8 @@ describe('Explorer accounts API helpers', () => {
             owned_domains: 0,
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -736,13 +606,12 @@ describe('Explorer accounts API helpers', () => {
 
   it('does not revive the retired Torii API version header from legacy runtime config', async () => {
     runtimeConfigState.value = { toriiApiVersionHeaderEnabled: true };
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -761,9 +630,8 @@ describe('Explorer accounts API helpers', () => {
 
   it('fetchAccounts accepts the exact required account fields from Torii listings', async () => {
     const validAccountId = SAMPLE_I105;
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
@@ -775,8 +643,8 @@ describe('Explorer accounts API helpers', () => {
             owned_domains: 0,
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -792,17 +660,14 @@ describe('Explorer accounts API helpers', () => {
   it('adapts every world-backed collection to cursor and limit without retired page parameters', async () => {
     const fetchSpy = vi.fn(async (input: unknown) => {
       const url = input as URL;
-      return {
-        ok: true,
-        json: async () => ({
-          pagination: {
-            limit: Number(url.searchParams.get('limit')),
-            next_cursor: null,
-            has_more: false,
-          },
-          items: [],
-        }),
-      };
+      return jsonResponse({
+        pagination: {
+          limit: Number(url.searchParams.get('limit')),
+          next_cursor: null,
+          has_more: false,
+        },
+        items: [],
+      });
     });
     global.fetch = fetchSpy as any;
 
@@ -843,20 +708,18 @@ describe('Explorer accounts API helpers', () => {
     });
     const fetchSpy = vi
       .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
+      .mockImplementationOnce(() =>
+        jsonResponse({
           pagination: { limit: 2, next_cursor: 'cursor-1', has_more: true },
           items: [account(SAMPLE_I105), account(SAMPLE_I105_ALT)],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
+        })
+      )
+      .mockImplementationOnce(() =>
+        jsonResponse({
           pagination: { limit: 2, next_cursor: null, has_more: false },
           items: [account(SAMPLE_I105_ALT), account(SAMPLE_I105)],
-        }),
-      });
+        })
+      );
     global.fetch = fetchSpy as any;
 
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -882,13 +745,12 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('rejects a cursor response that repeats the request cursor', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    global.fetch = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 2, next_cursor: 'cursor-1', has_more: true },
         items: [],
-      }),
-    }) as any;
+      })
+    ) as any;
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
 
     await expect(fetchAccounts({ cursor: 'cursor-1', limit: 2 })).rejects.toThrow('cursor did not advance');
@@ -898,10 +760,9 @@ describe('Explorer accounts API helpers', () => {
     { next_cursor: null, has_more: true },
     { next_cursor: 'cursor-1', has_more: false },
   ])('rejects inconsistent continuation metadata: %o', async (pagination) => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ pagination: { limit: 2, ...pagination }, items: [] }),
-    }) as any;
+    global.fetch = vi
+      .fn()
+      .mockImplementation(() => jsonResponse({ pagination: { limit: 2, ...pagination }, items: [] })) as any;
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
 
     await expect(fetchAccounts({ limit: 2 })).rejects.toThrow('has_more must match next_cursor availability');
@@ -920,7 +781,7 @@ describe('Explorer accounts API helpers', () => {
   );
 
   it('returns an upstream cursor-page error without fabricating an empty page', async () => {
-    global.fetch = vi.fn().mockResolvedValue(new Response('cursor backend unavailable', { status: 503 })) as any;
+    global.fetch = vi.fn().mockImplementation(() => testResponse('cursor backend unavailable', { status: 503 })) as any;
     const { fetchAccounts } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
 
     const result = await fetchAccounts({ limit: 2 });
@@ -931,17 +792,16 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('fetchAccount URL-encodes account selectors and returns canonical i105 data', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         id: SAMPLE_I105,
         network_prefix: 753,
         metadata: {},
         owned_assets: 0,
         owned_nfts: 0,
         owned_domains: 0,
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAccount } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -959,17 +819,16 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('fetchAccount preserves incoming i105 route params without rewriting the prefix', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         id: SAMPLE_I105_TEST_MODERN,
         network_prefix: 369,
         metadata: {},
         owned_assets: 1,
         owned_nfts: 0,
         owned_domains: 0,
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAccount } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -986,17 +845,16 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('fetchAccount also preserves sora-prefixed ids on Taira Torii bases', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         id: SAMPLE_I105_MODERN,
         network_prefix: 753,
         metadata: {},
         owned_assets: 1,
         owned_nfts: 0,
         owned_domains: 0,
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAccount } = await importApiModule({ VITE_API_URL: 'https://taira.sora.org/v1/explorer' });
@@ -1013,9 +871,8 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('preserves testnet account filters before calling explorer list endpoints', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
@@ -1027,8 +884,8 @@ describe('Explorer accounts API helpers', () => {
             value: '25000',
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -1046,9 +903,8 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('also preserves sora-prefixed account filters for Taira Torii bases', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 10, next_cursor: null, has_more: false },
         items: [
           {
@@ -1060,8 +916,8 @@ describe('Explorer accounts API helpers', () => {
             value: '25000',
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://taira.sora.org/v1/explorer' });
@@ -1079,9 +935,8 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('keeps definition filters on the cursor-native Explorer assets route', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 5, next_cursor: null, has_more: false },
         items: [
           {
@@ -1093,8 +948,8 @@ describe('Explorer accounts API helpers', () => {
             value: '77',
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -1115,9 +970,8 @@ describe('Explorer accounts API helpers', () => {
 
   it('forwards a canonical scoped asset_id and parses the current Explorer asset DTO', async () => {
     const scopedAssetId = `${SAMPLE_ASSET_ID}#dataspace:7`;
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 1, next_cursor: null, has_more: false },
         items: [
           {
@@ -1129,8 +983,8 @@ describe('Explorer accounts API helpers', () => {
             value: '91',
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAssets } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -1179,17 +1033,16 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('fetchAsset consumes the authoritative Explorer detail value and alias fields', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         id: SAMPLE_ASSET_ID,
         definition_id: SAMPLE_ASSET_DEFINITION_ID,
         account_id: SAMPLE_I105,
         asset_name: 'usd',
         asset_alias: SAMPLE_ASSET_ALIAS,
         value: '123.5',
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAsset } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -1206,17 +1059,13 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('fetchAssetDefinitions uses the cursor-native Explorer route', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 5, next_cursor: null, has_more: false },
         items: [
           {
             id: SAMPLE_ASSET_DEFINITION_ID,
             owning_domain: 'issuer.main',
-            name: 'usd',
-            description: null,
-            alias: SAMPLE_ASSET_ALIAS,
             mintable: 'Infinitely',
             logo: null,
             metadata: {},
@@ -1227,8 +1076,8 @@ describe('Explorer accounts API helpers', () => {
             circulating_quantity: null,
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAssetDefinitions } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -1243,14 +1092,13 @@ describe('Explorer accounts API helpers', () => {
       expect(result.data.pagination).toEqual({ limit: 5, next_cursor: null, has_more: false });
       expect(result.data.items[0]?.owning_domain).toBe('issuer.main');
       expect(result.data.items[0]?.total_quantity.toString()).toBe('11');
-      expect(result.data.items[0]?.alias).toBe(SAMPLE_ASSET_ALIAS);
+      expect(result.data.items[0]?.alias).toBeNull();
     }
   });
 
   it('rejects incomplete Explorer asset-definition items instead of applying full-route defaults', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    global.fetch = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 1, next_cursor: null, has_more: false },
         items: [
           {
@@ -1268,18 +1116,17 @@ describe('Explorer accounts API helpers', () => {
             circulating_quantity: null,
           },
         ],
-      }),
-    }) as any;
+      })
+    ) as any;
 
     const { fetchAssetDefinitions } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
 
-    await expect(fetchAssetDefinitions({ limit: 1 })).rejects.toThrow(/total_quantity/u);
+    await expect(fetchAssetDefinitions({ limit: 1 })).rejects.toThrow(/missing or unsupported fields/u);
   });
 
   it('fetchAssetDefinition prefers the v1 asset-definition detail route', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         id: SAMPLE_ASSET_DEFINITION_ID,
         owning_domain: null,
         alias: SAMPLE_ASSET_ALIAS,
@@ -1295,8 +1142,8 @@ describe('Explorer accounts API helpers', () => {
         metadata: {},
         owned_by: SAMPLE_I105,
         total_quantity: '11',
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchAssetDefinition } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
@@ -1315,8 +1162,8 @@ describe('Explorer accounts API helpers', () => {
   });
 
   it('fetchAccount surfaces detail rejections without adding unsupported format queries or retrying', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('invalid explorer account request', {
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse('invalid explorer account request', {
         status: 400,
         headers: { 'content-type': 'text/plain' },
       })
@@ -1337,8 +1184,8 @@ describe('Account read-only surface API helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
   it('requests exact effective permissions with limit/offset and preserves JSON payload values', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse(
         JSON.stringify({
           items: [{ name: 'CanTransfer', payload: { maximum: '100000000000000000001' } }],
           total: 1,
@@ -1365,7 +1212,9 @@ describe('Account read-only surface API helpers', () => {
   });
 
   it.each([401, 403])('returns an explicit permission-denied result for HTTP %s', async (status) => {
-    global.fetch = vi.fn().mockResolvedValue(new Response('private dataspace permission denied', { status })) as any;
+    global.fetch = vi
+      .fn()
+      .mockImplementation(() => testResponse('private dataspace permission denied', { status })) as any;
 
     const { fetchAccountPermissions } = await importApiModule(toriiEnv);
     const result = await fetchAccountPermissions(SAMPLE_I105, { page: 1, per_page: 10 });
@@ -1377,8 +1226,8 @@ describe('Account read-only surface API helpers', () => {
   });
 
   it('requests indexed account history with an exact asset selector and preserves amount strings', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse(
         JSON.stringify({
           items: [
             {
@@ -1430,8 +1279,8 @@ describe('Account read-only surface API helpers', () => {
   });
 
   it('accepts a multi-route account-history fanout envelope without index metadata', async () => {
-    global.fetch = vi.fn().mockResolvedValue(
-      new Response(
+    global.fetch = vi.fn().mockImplementation(() =>
+      testResponse(
         JSON.stringify({
           items: [],
           total: 0,
@@ -1458,10 +1307,11 @@ describe('Account read-only surface API helpers', () => {
   });
 
   it('uses canonical signed multisig selectors for IDs and aliases without mutation controls', async () => {
+    runtimeConfigState.value = { networkId: `hash:${'AB'.repeat(32)}#B99E` };
     const fetchSpy = vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = input instanceof URL ? input : new URL(String(input));
       if (url.pathname === '/v1/multisig/spec') {
-        return new Response(
+        return testResponse(
           JSON.stringify({
             resolved_multisig_account_id: SAMPLE_I105,
             spec: {
@@ -1474,7 +1324,7 @@ describe('Account read-only surface API helpers', () => {
         );
       }
       expect(url.pathname).toBe('/v1/multisig/proposals/query');
-      return new Response(
+      return testResponse(
         JSON.stringify({
           resolved_multisig_account_id: SAMPLE_I105,
           proposals: [],
@@ -1517,9 +1367,8 @@ describe('Explorer domain and NFT API helpers', () => {
   const nftId = 'cool-cat$gallery.main';
 
   it('fetchDomains parses exact cursor items', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 1, next_cursor: null, has_more: false },
         items: [
           {
@@ -1532,8 +1381,8 @@ describe('Explorer domain and NFT API helpers', () => {
             nfts: 3,
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchDomains } = await importApiModule(toriiEnv);
@@ -1549,9 +1398,8 @@ describe('Explorer domain and NFT API helpers', () => {
   });
 
   it('fetchDomain parses the same exact DTO on the detail route', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         id: 'gallery.main',
         logo: null,
         metadata: {},
@@ -1559,8 +1407,8 @@ describe('Explorer domain and NFT API helpers', () => {
         accounts: 1,
         assets: 2,
         nfts: 3,
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchDomain } = await importApiModule(toriiEnv);
@@ -1572,13 +1420,12 @@ describe('Explorer domain and NFT API helpers', () => {
   });
 
   it('fetchNFTs parses canonical fully-qualified NFT cursor items', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 1, next_cursor: null, has_more: false },
         items: [{ id: nftId, owned_by: SAMPLE_I105, metadata: { rarity: 'legendary' } }],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchNFTs } = await importApiModule(toriiEnv);
@@ -1593,10 +1440,7 @@ describe('Explorer domain and NFT API helpers', () => {
   });
 
   it('fetchNFTById parses the same exact DTO on the detail route', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ id: nftId, owned_by: SAMPLE_I105, metadata: {} }),
-    });
+    const fetchSpy = vi.fn().mockImplementation(() => jsonResponse({ id: nftId, owned_by: SAMPLE_I105, metadata: {} }));
     global.fetch = fetchSpy as any;
 
     const { fetchNFTById } = await importApiModule(toriiEnv);
@@ -1612,9 +1456,8 @@ describe('Explorer RWA API helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
   it('fetchRwas keeps owner/domain filters on /v1/explorer/rwas', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         pagination: { limit: 5, next_cursor: null, has_more: false },
         items: [
           {
@@ -1634,8 +1477,8 @@ describe('Explorer RWA API helpers', () => {
             ],
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchRwas } = await importApiModule(toriiEnv);
@@ -1658,9 +1501,8 @@ describe('Explorer RWA API helpers', () => {
   });
 
   it('fetchRwaById URL-encodes canonical identifiers and preserves required nullable status', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         id: SAMPLE_RWA_ID,
         owned_by: SAMPLE_I105,
         quantity: '2',
@@ -1675,8 +1517,8 @@ describe('Explorer RWA API helpers', () => {
             quantity: '2',
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchRwaById } = await importApiModule(toriiEnv);
@@ -1700,14 +1542,13 @@ describe('Explorer latest/health API helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
   it('fetchExplorerHealth parses head probe payload', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    global.fetch = vi.fn().mockImplementation(() =>
+      jsonResponse({
         head_height: 42,
         head_created_at: '2026-03-05T06:00:00Z',
         sampled_at: '2026-03-05T06:00:02Z',
-      }),
-    }) as any;
+      })
+    ) as any;
 
     const { fetchExplorerHealth } = await importApiModule(toriiEnv);
     const result = await fetchExplorerHealth();
@@ -1722,10 +1563,16 @@ describe('Explorer latest/health API helpers', () => {
   });
 
   it('fetchLatestTransactions uses the lightweight latest endpoint', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    global.fetch = vi.fn().mockImplementation(() =>
+      jsonResponse({
         sampled_at: '2026-03-05T06:00:02Z',
+        pagination: {
+          limit: 5,
+          snapshot_height: 11,
+          snapshot_hash: 'a'.repeat(64),
+          next_cursor: null,
+          has_more: false,
+        },
         items: [
           {
             authority: SAMPLE_I105,
@@ -1736,15 +1583,15 @@ describe('Explorer latest/health API helpers', () => {
             status: 'Committed',
           },
         ],
-      }),
-    }) as any;
+      })
+    ) as any;
 
     const { fetchLatestTransactions } = await importApiModule(toriiEnv);
-    const result = await fetchLatestTransactions({ per_page: 5 });
+    const result = await fetchLatestTransactions({ limit: 5 });
 
     const firstCall = (global.fetch as any).mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe('/v1/explorer/transactions/latest');
-    expect(firstCall.searchParams.get('per_page')).toBe('5');
+    expect(firstCall.searchParams.get('limit')).toBe('5');
     expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
@@ -1754,10 +1601,16 @@ describe('Explorer latest/health API helpers', () => {
   });
 
   it('fetchLatestTransactions preserves halfwidth authorities from Torii', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    global.fetch = vi.fn().mockImplementation(() =>
+      jsonResponse({
         sampled_at: '2026-03-05T06:00:02Z',
+        pagination: {
+          limit: 5,
+          snapshot_height: 11,
+          snapshot_hash: 'a'.repeat(64),
+          next_cursor: null,
+          has_more: false,
+        },
         items: [
           {
             authority: 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE',
@@ -1768,11 +1621,11 @@ describe('Explorer latest/health API helpers', () => {
             status: 'Committed',
           },
         ],
-      }),
-    }) as any;
+      })
+    ) as any;
 
     const { fetchLatestTransactions } = await importApiModule(toriiEnv);
-    const result = await fetchLatestTransactions({ per_page: 5 });
+    const result = await fetchLatestTransactions({ limit: 5 });
 
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
@@ -1781,10 +1634,16 @@ describe('Explorer latest/health API helpers', () => {
   });
 
   it('fetchLatestInstructions uses the lightweight latest endpoint', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    global.fetch = vi.fn().mockImplementation(() =>
+      jsonResponse({
         sampled_at: '2026-03-05T06:00:02Z',
+        pagination: {
+          limit: 5,
+          snapshot_height: 11,
+          snapshot_hash: 'a'.repeat(64),
+          next_cursor: null,
+          has_more: false,
+        },
         items: [
           {
             authority: SAMPLE_I105,
@@ -1808,15 +1667,15 @@ describe('Explorer latest/health API helpers', () => {
             },
           },
         ],
-      }),
-    }) as any;
+      })
+    ) as any;
 
     const { fetchLatestInstructions } = await importApiModule(toriiEnv);
-    const result = await fetchLatestInstructions({ per_page: 5 });
+    const result = await fetchLatestInstructions({ limit: 5 });
 
     const firstCall = (global.fetch as any).mock.calls[0]?.[0] as URL;
     expect(firstCall.pathname).toBe('/v1/explorer/instructions/latest');
-    expect(firstCall.searchParams.get('per_page')).toBe('5');
+    expect(firstCall.searchParams.get('limit')).toBe('5');
     expect(firstCall.searchParams.has('address_format')).toBe(false);
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
@@ -1870,11 +1729,9 @@ describe('operator-only Kaigi API helpers', () => {
   it('fail closed without dispatching unsigned public-browser requests', async () => {
     const fetchSpy = vi.fn();
     global.fetch = fetchSpy as any;
-    const {
-      fetchKaigiRelays,
-      fetchKaigiRelayDetail,
-      fetchKaigiRelayHealthSnapshot,
-    } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });
+    const { fetchKaigiRelays, fetchKaigiRelayDetail, fetchKaigiRelayHealthSnapshot } = await importApiModule({
+      VITE_API_URL: 'https://torii.example/v1/explorer',
+    });
 
     const results = await Promise.all([
       fetchKaigiRelays(),
@@ -1895,10 +1752,7 @@ describe('Telemetry API helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
   it('fetchOnlinePeers returns online peer IDs from the Torii root endpoint', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ['ed0120A@10.0.0.1:1337', 'ed0120B@10.0.0.2:1337'],
-    });
+    const fetchSpy = vi.fn().mockImplementation(() => jsonResponse(['ed0120A@10.0.0.1:1337', 'ed0120B@10.0.0.2:1337']));
     global.fetch = fetchSpy as any;
 
     const { fetchOnlinePeers } = await importApiModule(toriiEnv);
@@ -1922,9 +1776,8 @@ describe('Telemetry API helpers', () => {
   });
 
   it('fetchTelemetryPropagation returns parsed propagation samples', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse([
         {
           block: 101,
           first_seen_at_ms: 1000,
@@ -1932,8 +1785,8 @@ describe('Telemetry API helpers', () => {
           spread_ms: 40,
           peers_reported: 3,
         },
-      ],
-    });
+      ])
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchTelemetryPropagation } = await importApiModule(toriiEnv);
@@ -1951,9 +1804,8 @@ describe('Telemetry API helpers', () => {
 
 describe('Nexus dataspaces API helpers', () => {
   it('fetchNexusDataspacesAccountSummary requests Torii nexus endpoint and parses response', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         account: SAMPLE_ACCOUNT_ALIAS,
         account_id: SAMPLE_I105,
         uaid: 'uaid:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
@@ -2013,8 +1865,8 @@ describe('Nexus dataspaces API helpers', () => {
             },
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchNexusDataspacesAccountSummary } = await importApiModule({
@@ -2034,9 +1886,8 @@ describe('Nexus dataspaces API helpers', () => {
   });
 
   it('fetchNexusPublicStatus parses root /status payloads', async () => {
-    const fetchSpy = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementationOnce(() =>
+      jsonResponse({
         blocks: 43,
         txs_approved: 52,
         txs_rejected: 0,
@@ -2054,8 +1905,8 @@ describe('Nexus dataspaces API helpers', () => {
             description: 'Single-lane data space',
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchNexusPublicStatus } = await importApiModule({
@@ -2100,8 +1951,8 @@ describe('Ministry agenda submission helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
   it('draftMinistryAgendaProposal posts the Ministry draft request and parses the signable response', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse(
         JSON.stringify({
           ok: true,
           agenda_proposal_id: 'AC-2026-001',
@@ -2142,8 +1993,8 @@ describe('Ministry agenda submission helpers', () => {
   });
 
   it('draftMinistryAgendaProposal surfaces duplicate proposal conflicts with the existing record', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse(
         JSON.stringify({
           found: true,
           record: {
@@ -2175,8 +2026,8 @@ describe('Ministry agenda submission helpers', () => {
   });
 
   it('getMinistryAgendaProposal returns a found=false payload when the record endpoint returns 404', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('', {
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse('', {
         status: 404,
         headers: { 'content-type': 'text/plain' },
       })
@@ -2200,8 +2051,8 @@ describe('Ministry agenda submission helpers', () => {
 
   it('submitSignedTransaction posts Norito bytes to the pipeline endpoint and parses the receipt', async () => {
     const signedTransaction = new Uint8Array([1, 2, 3, 4]);
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse(
         JSON.stringify({
           payload: {
             tx_hash: `0x${'cd'.repeat(32)}`,
@@ -2240,14 +2091,14 @@ describe('Ministry agenda submission helpers', () => {
   it('fetchPipelineTransactionStatus returns null on 404 and parses terminal payloads when present', async () => {
     const fetchSpy = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response('', {
+      .mockImplementationOnce(() =>
+        testResponse('', {
           status: 404,
           headers: { 'content-type': 'text/plain' },
         })
       )
-      .mockResolvedValueOnce(
-        new Response(
+      .mockImplementationOnce(() =>
+        testResponse(
           JSON.stringify({
             hash: `hash:${'ef'.repeat(32)}#0123`,
             status: {
@@ -2288,9 +2139,8 @@ describe('SoraFS API helpers', () => {
   const toriiEnv = { VITE_API_URL: 'https://torii.example/v1/explorer' };
 
   it('fetchSorafsCidLookup requests the Torii CID lookup endpoint and parses moderation details', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         content_cid: 'bafyr6iatqagnbizi6jys7slqjntshcc3yybfq32ujcb6crvtvi2bw647fi',
         manifest_digest_hex: '19'.repeat(32),
         manifest_id_hex: 'aa'.repeat(32),
@@ -2326,8 +2176,8 @@ describe('SoraFS API helpers', () => {
             },
           ],
         },
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchSorafsCidLookup } = await importApiModule(toriiEnv);
@@ -2346,9 +2196,8 @@ describe('SoraFS API helpers', () => {
 
 describe('Soracloud API helpers', () => {
   it('fetchSoracloudStatus requests Torii soracloud status and parses the response', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         schema_version: 1,
         service_health: {
           mode: 'embedded_runtime_manager',
@@ -2412,8 +2261,8 @@ describe('Soracloud API helpers', () => {
           services: [],
           recent_audit_events: [],
         },
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchSoracloudStatus } = await importApiModule({
@@ -2434,226 +2283,190 @@ describe('Soracloud API helpers', () => {
       const pathname = input.pathname;
 
       if (pathname.endsWith('/service/config/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            service_name: 'web_portal',
-            current_version: '2.0.0',
-            config_generation: 3,
-            config_entry_count: 1,
-            configs: [],
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          service_name: 'web_portal',
+          current_version: '2.0.0',
+          config_generation: 3,
+          config_entry_count: 1,
+          configs: [],
+        });
       }
 
       if (pathname.endsWith('/service/secret/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            service_name: 'web_portal',
-            current_version: '2.0.0',
-            secret_generation: 1,
-            secret_entry_count: 0,
-            secrets: [],
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          service_name: 'web_portal',
+          current_version: '2.0.0',
+          secret_generation: 1,
+          secret_entry_count: 0,
+          secrets: [],
+        });
       }
 
       if (pathname.endsWith('/training/job/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            job: {
-              service_name: 'trainer',
-              model_name: 'llm-demo',
-              job_id: 'job-1',
-              status: 'Running',
-              worker_group_size: 1,
-              target_steps: 10,
-              completed_steps: 2,
-              checkpoint_interval_steps: 5,
-              last_checkpoint_step: null,
-              checkpoint_count: 0,
-              retry_count: 0,
-              max_retries: 3,
-              step_compute_units: 1,
-              compute_budget_units: 10,
-              compute_consumed_units: 2,
-              compute_remaining_units: 8,
-              storage_budget_bytes: 100,
-              storage_consumed_bytes: 20,
-              storage_remaining_bytes: 80,
-              latest_metrics_hash: null,
-              last_failure_reason: null,
-              created_sequence: 1,
-              updated_sequence: 2,
-            },
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          job: {
+            service_name: 'trainer',
+            model_name: 'llm-demo',
+            job_id: 'job-1',
+            status: 'Running',
+            worker_group_size: 1,
+            target_steps: 10,
+            completed_steps: 2,
+            checkpoint_interval_steps: 5,
+            last_checkpoint_step: null,
+            checkpoint_count: 0,
+            retry_count: 0,
+            max_retries: 3,
+            step_compute_units: 1,
+            compute_budget_units: 10,
+            compute_consumed_units: 2,
+            compute_remaining_units: 8,
+            storage_budget_bytes: 100,
+            storage_consumed_bytes: 20,
+            storage_remaining_bytes: 80,
+            latest_metrics_hash: null,
+            last_failure_reason: null,
+            created_sequence: 1,
+            updated_sequence: 2,
+          },
+        });
       }
 
       if (pathname.endsWith('/model/weight/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            model: {
-              service_name: 'trainer',
-              model_name: 'llm-demo',
-              current_version: 'v1',
-              version_count: 1,
-              versions: [],
-            },
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          model: {
+            service_name: 'trainer',
+            model_name: 'llm-demo',
+            current_version: 'v1',
+            version_count: 1,
+            versions: [],
+          },
+        });
       }
 
       if (pathname.endsWith('/model/artifact/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
+        return jsonResponse({
+          schema_version: 1,
+          service_name: 'trainer',
+          model_name: 'llm-demo',
+          artifact_count: 1,
+          artifact: {
             service_name: 'trainer',
             model_name: 'llm-demo',
-            artifact_count: 1,
-            artifact: {
-              service_name: 'trainer',
-              model_name: 'llm-demo',
-              artifact_id: 'artifact-1',
-              training_job_id: 'job-1',
-              weight_version: null,
-              weight_artifact_hash: '0xartifact',
-              dataset_ref: 'dataset://demo',
-              training_config_hash: '0xconfig',
-              reproducibility_hash: '0xrepro',
-              provenance_attestation_hash: '0xprov',
-              registered_sequence: 10,
-              consumed_by_version: null,
-              private_bundle_root: null,
-              compile_profile_hash: null,
-              chunk_manifest_root: null,
-              privacy_mode: null,
-            },
-            artifacts: [],
-          }),
-        };
+            artifact_id: 'artifact-1',
+            training_job_id: 'job-1',
+            weight_version: null,
+            weight_artifact_hash: '0xartifact',
+            dataset_ref: 'dataset://demo',
+            training_config_hash: '0xconfig',
+            reproducibility_hash: '0xrepro',
+            provenance_attestation_hash: '0xprov',
+            registered_sequence: 10,
+            consumed_by_version: null,
+            private_bundle_root: null,
+            compile_profile_hash: null,
+            chunk_manifest_root: null,
+            privacy_mode: null,
+          },
+          artifacts: [],
+        });
       }
 
       if (pathname.endsWith('/model/upload/status') || pathname.endsWith('/model/compile/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            bundle: { model_id: 'model-1' },
-            uploaded_chunk_count: 1,
-            chunk_ordinals: [0],
-            compile_profile: pathname.endsWith('/model/compile/status') ? { backend: 'cuda' } : null,
-            artifact: null,
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          bundle: { model_id: 'model-1' },
+          uploaded_chunk_count: 1,
+          chunk_ordinals: [0],
+          compile_profile: pathname.endsWith('/model/compile/status') ? { backend: 'cuda' } : null,
+          artifact: null,
+        });
       }
 
       if (pathname.endsWith('/model/run-status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            session: { session_id: 'session-1' },
-            checkpoint_count: 0,
-            checkpoints: [],
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          session: { session_id: 'session-1' },
+          checkpoint_count: 0,
+          checkpoints: [],
+        });
       }
 
       if (pathname.endsWith('/hf/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            source: { repo_id: 'org/model' },
-            runtime_projection: null,
-            pool: null,
-            member: null,
-            placement: null,
-            latest_audit_event: null,
-            audit_event_count: 0,
-            storage_base_fee_nanos: '1',
-            compute_reservation_fee_nanos: '2',
-            eligible_host_count: 1,
-            warm_host_count: 0,
-            importer_pending: false,
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          source: { repo_id: 'org/model' },
+          runtime_projection: null,
+          pool: null,
+          member: null,
+          placement: null,
+          latest_audit_event: null,
+          audit_event_count: 0,
+          storage_base_fee_nanos: '1',
+          compute_reservation_fee_nanos: '2',
+          eligible_host_count: 1,
+          warm_host_count: 0,
+          importer_pending: false,
+        });
       }
 
       if (pathname.endsWith('/model-host/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            validator_account_id: null,
-            active_host_count: 1,
-            hosts: [],
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          validator_account_id: null,
+          active_host_count: 1,
+          hosts: [],
+        });
       }
 
       if (pathname.endsWith('/agent/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            apartment_count: 1,
-            event_count: 2,
-            apartments: [],
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          apartment_count: 1,
+          event_count: 2,
+          apartments: [],
+        });
       }
 
       if (pathname.endsWith('/agent/mailbox/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            schema_version: 1,
-            apartment_name: 'tenant-a',
-            status: 'Running',
-            pending_message_count: 0,
-            event_count: 0,
-            messages: [],
-          }),
-        };
+        return jsonResponse({
+          schema_version: 1,
+          apartment_name: 'tenant-a',
+          status: 'Running',
+          pending_message_count: 0,
+          event_count: 0,
+          messages: [],
+        });
       }
 
       if (pathname.endsWith('/agent/autonomy/status')) {
-        return {
-          ok: true,
-          json: async () => ({
-            apartment_name: 'tenant-a',
-            sequence: 1,
-            status: 'Running',
-            lease_expires_sequence: 2,
-            lease_remaining_ticks: 3,
-            manifest_hash: '0xmanifest',
-            revoked_policy_capability_count: 0,
-            budget_ceiling_units: 10,
-            budget_remaining_units: 5,
-            allowlist_count: 0,
-            run_count: 0,
-            process_generation: 1,
-            process_started_sequence: 1,
-            last_active_sequence: 1,
-            last_checkpoint_sequence: null,
-            checkpoint_count: 0,
-            persistent_state_total_bytes: 0,
-            persistent_state_key_count: 0,
-            allowlist: [],
-            recent_runs: [],
-            runtime_recent_runs: [],
-          }),
-        };
+        return jsonResponse({
+          apartment_name: 'tenant-a',
+          sequence: 1,
+          status: 'Running',
+          lease_expires_sequence: 2,
+          lease_remaining_ticks: 3,
+          manifest_hash: '0xmanifest',
+          revoked_policy_capability_count: 0,
+          budget_ceiling_units: 10,
+          budget_remaining_units: 5,
+          allowlist_count: 0,
+          run_count: 0,
+          process_generation: 1,
+          process_started_sequence: 1,
+          last_active_sequence: 1,
+          last_checkpoint_sequence: null,
+          checkpoint_count: 0,
+          persistent_state_total_bytes: 0,
+          persistent_state_key_count: 0,
+          allowlist: [],
+          recent_runs: [],
+          runtime_recent_runs: [],
+        });
       }
 
       throw new Error(`Unexpected Soracloud URL: ${input.toString()}`);
@@ -2732,15 +2545,14 @@ describe('Soracloud API helpers', () => {
   });
 
   it('fetchSoracloud host and agent helpers allow empty filters', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         schema_version: 1,
         validator_account_id: null,
         active_host_count: 0,
         hosts: [],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const module = await importApiModule({
@@ -2753,15 +2565,14 @@ describe('Soracloud API helpers', () => {
       'https://torii.example/v1/soracloud/model-host/status'
     );
 
-    fetchSpy.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
+    fetchSpy.mockImplementationOnce(() =>
+      jsonResponse({
         schema_version: 1,
         apartment_count: 0,
         event_count: 0,
         apartments: [],
-      }),
-    });
+      })
+    );
     const agentResult = await module.fetchSoracloudAgentStatus();
     expect(agentResult.status).toBe(SUCCESSFUL_FETCHING);
     expect((fetchSpy.mock.calls[1]?.[0] as URL).toString()).toBe('https://torii.example/v1/soracloud/agent/status');
@@ -2774,19 +2585,17 @@ describe('Instruction API helpers', () => {
   const sampleAssetId = SAMPLE_ASSET_ID;
 
   it('fetchInstructions forwards account and asset filters', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        pagination: { page: 1, per_page: 10, total_pages: 0, total_items: 0 },
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
+        pagination: { limit: 10, snapshot_height: 0, snapshot_hash: null, next_cursor: null, has_more: false },
         items: [],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchInstructions } = await importApiModule(toriiEnv);
     await fetchInstructions({
-      page: 1,
-      per_page: 10,
+      limit: 10,
       account: sampleAccountId,
       asset_id: sampleAssetId,
       kind: 'Transfer',
@@ -2798,15 +2607,20 @@ describe('Instruction API helpers', () => {
     expect(firstCall.searchParams.get('account')).toBe(sampleAccountId);
     expect(firstCall.searchParams.get('asset_id')).toBe(sampleAssetId);
     expect(firstCall.searchParams.get('kind')).toBe('Transfer');
-    expect(firstCall.searchParams.get('transaction_status')).toBe('Committed');
+    expect(firstCall.searchParams.get('transaction_status')).toBe('committed');
     expect(firstCall.searchParams.has('address_format')).toBe(false);
   });
 
   it('fetchInstructions parses payloads using the box field name', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
+        pagination: {
+          limit: 10,
+          snapshot_height: 1,
+          snapshot_hash: 'a'.repeat(64),
+          next_cursor: null,
+          has_more: false,
+        },
         items: [
           {
             authority: SAMPLE_I105,
@@ -2830,12 +2644,12 @@ describe('Instruction API helpers', () => {
             index: 0,
           },
         ],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchInstructions } = await importApiModule(toriiEnv);
-    const result = await fetchInstructions({ page: 1, per_page: 10, transaction_hash: '0xabc' });
+    const result = await fetchInstructions({ limit: 10, transaction_hash: '0xabc' });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.toString()).toContain('/v1/explorer/instructions');
@@ -2856,29 +2670,22 @@ describe('Transaction API helpers', () => {
   const sampleAssetId = SAMPLE_ASSET_ID;
 
   it('fetchTransactions forwards asset filters', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        pagination: { page: 1, per_page: 10, total_pages: 0, total_items: 0 },
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
+        pagination: { limit: 10, snapshot_height: 0, snapshot_hash: null, next_cursor: null, has_more: false },
         items: [],
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchTransactions } = await importApiModule(toriiEnv);
-    await fetchTransactions({
-      page: 1,
-      per_page: 10,
-      authority: sampleAuthority,
-      status: 'Committed',
-      asset_id: sampleAssetId,
-    });
+    await fetchTransactions({ limit: 10, authority: sampleAuthority, status: 'Committed', asset_id: sampleAssetId });
 
     const firstCall = fetchSpy.mock.calls[0]?.[0] as URL;
     expect(firstCall.toString()).toContain('/v1/explorer/transactions?');
     expect(firstCall.searchParams.get('asset_id')).toBe(sampleAssetId);
     expect(firstCall.searchParams.get('authority')).toBe(sampleAuthority);
-    expect(firstCall.searchParams.get('status')).toBe('Committed');
+    expect(firstCall.searchParams.get('status')).toBe('committed');
     expect(firstCall.searchParams.has('address_format')).toBe(false);
   });
 
@@ -2886,31 +2693,32 @@ describe('Transaction API helpers', () => {
     const fetchSpy = vi.fn(async (input: unknown) => {
       const url = input instanceof URL ? input : new URL(String(input));
       if (url.pathname.endsWith('/instructions')) {
-        return {
-          ok: true,
-          json: async () => ({
-            pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 0 },
-            items: [],
-          }),
-        };
+        return jsonResponse({
+          pagination: {
+            limit: 10,
+            snapshot_height: 42,
+            snapshot_hash: 'a'.repeat(64),
+            next_cursor: null,
+            has_more: false,
+          },
+          items: [],
+        });
       }
 
-      return {
-        ok: true,
-        json: async () => ({
-          authority: sampleAuthority,
-          hash: '0xdeadbeef',
-          block: 42,
-          created_at: '2026-03-10T12:00:00Z',
-          executable: 'Instructions',
-          status: 'Committed',
-          rejection_reason: null,
-          metadata: {},
-          nonce: null,
-          signature: '0xsig',
-          time_to_live: null,
-        }),
-      };
+      return jsonResponse({
+        authority: sampleAuthority,
+        hash: '0xdeadbeef',
+        block: 42,
+        created_at: '2026-03-10T12:00:00Z',
+        executable: 'Instructions',
+        status: 'Committed',
+        rejection_reason: null,
+        executable_payload: { instruction_count: 0 },
+        metadata: {},
+        nonce: null,
+        signature: '0xsig',
+        time_to_live: null,
+      });
     });
     global.fetch = fetchSpy as any;
 
@@ -2941,7 +2749,7 @@ describe('Transaction API helpers', () => {
     const fetchSpy = vi.fn(async (input: unknown, _init?: RequestInit) => {
       const url = input instanceof URL ? input : new URL(String(input));
       const common = { height: 42, block_hash: 'hash:block', state_root: 'hash:state' };
-      return new Response(
+      return testResponse(
         JSON.stringify(
           url.pathname.includes('state-proof')
             ? { ...common, commit_qc: commitQc }
@@ -2968,19 +2776,24 @@ describe('Transaction API helpers', () => {
     ).toBe(true);
   });
 
-  it('reports the canonical SDK path verification separately from request binding', async () => {
+  it('does not self-anchor a canonical SDK block proof in the browser', async () => {
     const module = await importApiModule(toriiEnv);
     const { ToriiBrowserClient } = await import('@iroha/iroha-js/torii-browser');
     const decoded = {
       block_height: '42',
+      block_hash: 'b'.repeat(64),
+      executed_block_wire_hash: 'c'.repeat(64),
       entry_hash: 'not-a-valid-hash',
-      entry_root: 'not-a-valid-root',
+      entry_commitment: { root: 'not-a-valid-root', leaf_count: '1' },
       entry_proof: {
         leaf: 'not-a-valid-hash',
         proof: { leaf_index: 0, audit_path: [] },
       },
-      result_root: null,
-      result_proof: null,
+      result_commitment: { root: 'd'.repeat(64), leaf_count: '1' },
+      result_proof: {
+        leaf: 'e'.repeat(64),
+        proof: { leaf_index: 0, audit_path: [] },
+      },
       fastpq_transcripts: {},
     };
     const proofSpy = vi.spyOn(ToriiBrowserClient.prototype, 'getLedgerBlockProof').mockResolvedValue(decoded as any);
@@ -2991,8 +2804,7 @@ describe('Transaction API helpers', () => {
     expect(result.status).toBe(SUCCESSFUL_FETCHING);
     if (result.status === SUCCESSFUL_FETCHING) {
       expect(result.data.proof).toBe(decoded);
-      expect(result.data.pathVerification.valid).toBe(false);
-      expect(result.data.pathVerification.entry_proof_valid).toBe(false);
+      expect(result.data.pathVerification).toBeNull();
     }
     proofSpy.mockRestore();
   });
@@ -3000,7 +2812,9 @@ describe('Transaction API helpers', () => {
   it('keeps a missing canonical block proof explicitly not-found', async () => {
     global.fetch = vi
       .fn()
-      .mockResolvedValue(new Response('missing', { status: 404, headers: { 'content-type': 'text/plain' } })) as any;
+      .mockImplementation(() =>
+        testResponse('missing', { status: 404, headers: { 'content-type': 'text/plain' } })
+      ) as any;
     const { fetchLedgerBlockProof } = await importApiModule(toriiEnv);
 
     const result = await fetchLedgerBlockProof(42, 'a'.repeat(64));
@@ -3009,9 +2823,8 @@ describe('Transaction API helpers', () => {
   });
 
   it('fetchInstructionDetail relies on the canonical response without a retired address-format query', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         authority: sampleAuthority,
         created_at: '2026-03-10T12:00:00Z',
         kind: 'Log',
@@ -3030,8 +2843,8 @@ describe('Transaction API helpers', () => {
         transaction_status: 'Committed',
         block: 42,
         index: 0,
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchInstructionDetail } = await importApiModule(toriiEnv);
@@ -3043,9 +2856,8 @@ describe('Transaction API helpers', () => {
   });
 
   it('fetchInstructionContractView keeps the request on the explorer API without address-format params', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      jsonResponse({
         code_hash: 'aa'.repeat(32),
         declared_code_hash: null,
         abi_hash: null,
@@ -3059,8 +2871,8 @@ describe('Transaction API helpers', () => {
         rendered_source_kind: 'pseudo_source',
         rendered_source_text: 'contract Demo {}',
         verified_source_ref: null,
-      }),
-    });
+      })
+    );
     global.fetch = fetchSpy as any;
 
     const { fetchInstructionContractView } = await importApiModule(toriiEnv);
@@ -3072,8 +2884,8 @@ describe('Transaction API helpers', () => {
   });
 
   it('submitVerifiedContractSource sends JSON to the Torii contracts endpoint and parses mismatch responses', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse(
         JSON.stringify({
           job_id: 'job-1',
           code_hash: 'aa'.repeat(32),
@@ -3111,8 +2923,8 @@ describe('Transaction API helpers', () => {
   });
 
   it('fetchTransaction returns request rejections without retrying or adding retired query parameters', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('invalid explorer transaction request', {
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse('invalid explorer transaction request', {
         status: 400,
         headers: { 'content-type': 'text/plain' },
       })
@@ -3129,8 +2941,8 @@ describe('Transaction API helpers', () => {
   });
 
   it('fetchTransaction returns unrelated 400 responses without retrying', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('invalid hash', {
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse('invalid hash', {
         status: 400,
         headers: { 'content-type': 'text/plain' },
       })
@@ -3145,8 +2957,8 @@ describe('Transaction API helpers', () => {
   });
 
   it('fetchTransaction returns a missing response without retrying', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('missing', {
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse('missing', {
         status: 404,
         headers: { 'content-type': 'text/plain' },
       })
@@ -3163,8 +2975,8 @@ describe('Transaction API helpers', () => {
 
 describe('Torii metrics helpers', () => {
   it('fetchToriiMetricsText requests raw /metrics text from the selected node base', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('soranet_vpn_sessions_total 4\n', {
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse('soranet_vpn_sessions_total 4\n', {
         status: 200,
         headers: { 'content-type': 'text/plain' },
       })
@@ -3191,8 +3003,8 @@ describe('Torii metrics helpers', () => {
   it('fetchToriiMetricsText transforms non-OK raw metrics responses into an error result', async () => {
     runtimeConfigState.value = { toriiRequestRetryCount: 0, toriiRequestRetryBaseDelayMs: 0 };
 
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response('node unavailable', {
+    const fetchSpy = vi.fn().mockImplementation(() =>
+      testResponse('node unavailable', {
         status: 503,
         headers: { 'content-type': 'text/plain' },
       })
@@ -3248,14 +3060,8 @@ describe('ZK prover report helpers', () => {
   it('calls prover report endpoints when explicitly enabled', async () => {
     const fetchSpy = vi
       .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ count: 3 }),
-      });
+      .mockImplementationOnce(() => jsonResponse([]))
+      .mockImplementationOnce(() => jsonResponse({ count: 3 }));
     global.fetch = fetchSpy as any;
 
     const { fetchZkProverReports, fetchZkProverReportCount } = await importApiModule({

@@ -1,17 +1,17 @@
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
-import type { Instruction, InstructionsSearchParams, Paginated } from '@/shared/api/schemas';
+import type { Instruction, InstructionsSearchParams, HistoryCursorPaginated } from '@/shared/api/schemas';
 
 export interface FetchAllTransactionInstructionsOptions {
   transactionHash: string
   fetchInstructions: (params?: InstructionsSearchParams) => Promise<{
     status: string
-    data?: Paginated<Instruction>
+    data?: HistoryCursorPaginated<Instruction>
   }>
-  perPage?: number
+  limit?: number
   maxPages?: number
 }
 
-const DEFAULT_PER_PAGE = 128;
+const DEFAULT_LIMIT = 100;
 const DEFAULT_MAX_PAGES = 128;
 
 function normalizePositiveInteger(value: number | undefined, fallback: number): number {
@@ -30,28 +30,27 @@ function uniqueSortedByIndex(instructions: Instruction[]): Instruction[] {
 export async function fetchAllTransactionInstructions(
   options: FetchAllTransactionInstructionsOptions
 ): Promise<Instruction[]> {
-  const perPage = normalizePositiveInteger(options.perPage, DEFAULT_PER_PAGE);
+  const limit = Math.min(100, normalizePositiveInteger(options.limit, DEFAULT_LIMIT));
   const maxPages = normalizePositiveInteger(options.maxPages, DEFAULT_MAX_PAGES);
   const collected: Instruction[] = [];
 
+  let cursor: string | null = null;
+  let snapshot: string | null = null;
+  const seen = new Set<string>();
   for (let page = 1; page <= maxPages; page += 1) {
-    const response = await options.fetchInstructions({
-      page,
-      per_page: perPage,
-      transaction_hash: options.transactionHash,
-    });
-
+    const response = await options.fetchInstructions({ cursor, limit, transaction_hash: options.transactionHash });
     if (response.status !== SUCCESSFUL_FETCHING || !response.data) {
       throw new Error(`Failed to fetch transaction instructions page ${page}`);
     }
-
-    collected.push(...response.data.items);
-
-    const totalPages = Math.max(0, response.data.pagination.total_pages);
-    if (response.data.items.length === 0 || totalPages <= page) {
-      break;
-    }
+    const { pagination, items } = response.data;
+    const currentSnapshot = `${pagination.snapshot_height}:${pagination.snapshot_hash}`;
+    if (snapshot !== null && currentSnapshot !== snapshot) throw new Error('Instruction history snapshot changed');
+    snapshot = currentSnapshot;
+    collected.push(...items);
+    if (!pagination.has_more) return uniqueSortedByIndex(collected);
+    if (!pagination.next_cursor || seen.has(pagination.next_cursor)) throw new Error('Instruction history cursor did not advance');
+    seen.add(pagination.next_cursor);
+    cursor = pagination.next_cursor;
   }
-
-  return uniqueSortedByIndex(collected);
+  throw new Error('Instruction history exceeded the bounded page limit');
 }

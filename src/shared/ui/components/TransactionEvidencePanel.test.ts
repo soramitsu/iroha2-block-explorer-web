@@ -18,20 +18,16 @@ const ENTRY_ROOT = '33'.repeat(32);
 const proof = {
   proof: {
     block_height: '42',
+    block_hash: '44'.repeat(32),
+    executed_block_wire_hash: '55'.repeat(32),
     entry_hash: TRANSACTION_HASH,
-    entry_root: ENTRY_ROOT,
+    entry_commitment: { root: ENTRY_ROOT, leaf_count: '1' },
     entry_proof: { leaf: TRANSACTION_HASH, proof: { leaf_index: 0, audit_path: [] } },
-    result_root: null,
-    result_proof: null,
+    result_commitment: { root: '66'.repeat(32), leaf_count: '1' },
+    result_proof: { leaf: '77'.repeat(32), proof: { leaf_index: 0, audit_path: [] } },
     fastpq_transcripts: {},
   },
-  pathVerification: {
-    valid: true,
-    entry_hash_matches: true,
-    entry_proof_valid: true,
-    result_pair_consistent: true,
-    result_proof_valid: null,
-  },
+  pathVerification: null,
 };
 
 const qc = {
@@ -111,21 +107,15 @@ describe('TransactionEvidencePanel', () => {
     });
   });
 
-  it('distinguishes locally verified Merkle evidence from node-provided state and QC claims', async () => {
+  it('keeps browser proof authentication unavailable while exposing decoded evidence', async () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain(
-      'Internally valid against proof entry root'
-    );
-    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe(
-      'Transaction entry locally verified'
-    );
-    expect(wrapper.text()).toContain('result root supplied in the same proof');
-    expect(wrapper.text()).toContain('that root is not independently anchored here');
-    expect(wrapper.get('[data-test="reference-block-available"]').text()).toContain(
-      'Reference transactions root'
-    );
+    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain('Not authenticated in this browser');
+    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe('Local verification incomplete');
+    expect(wrapper.text()).toContain('requires a caller-authenticated anchor');
+    expect(wrapper.text()).toContain('no digest-pinned browser finality-verifier WASM is shipped');
+    expect(wrapper.get('[data-test="reference-block-available"]').text()).toContain('Reference transactions root');
     expect(wrapper.text()).toContain('Node-provided · not cryptographically verified here');
     expect(wrapper.text()).toContain('Node-provided · BLS not verified here');
     expect(wrapper.text()).toContain('identify the requested block');
@@ -145,9 +135,7 @@ describe('TransactionEvidencePanel', () => {
     await flushPromises();
 
     expect(wrapper.get('[data-test="block-proof-unavailable"]').text()).toContain('no block proof');
-    expect(wrapper.get('[data-test="reference-block-error"]').text()).toContain(
-      'reference route failed'
-    );
+    expect(wrapper.get('[data-test="reference-block-error"]').text()).toContain('reference route failed');
     expect(wrapper.get('[data-test="state-proof-unavailable"]').text()).toContain('No persisted');
     expect(wrapper.text()).toContain('state route failed');
     expect(api.fetchLedgerBlockProof).toHaveBeenCalledTimes(1);
@@ -169,12 +157,8 @@ describe('TransactionEvidencePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe(
-      'Local verification failed'
-    );
-    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain(
-      'Does not match proof entry'
-    );
+    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe('Local verification failed');
+    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain('Does not match proof entry');
   });
 
   it('keeps a proof visible but marks verification incomplete without a reference block', async () => {
@@ -183,15 +167,9 @@ describe('TransactionEvidencePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain(
-      'Could not be checked'
-    );
-    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe(
-      'Local verification incomplete'
-    );
-    expect(wrapper.get('[data-test="reference-block-unavailable"]').text()).toContain(
-      'cannot be bound'
-    );
+    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain('Could not be checked');
+    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe('Local verification incomplete');
+    expect(wrapper.get('[data-test="reference-block-unavailable"]').text()).toContain('cannot be bound');
   });
 
   it('reports a conclusive transaction mismatch as failed even without a reference block', async () => {
@@ -207,12 +185,8 @@ describe('TransactionEvidencePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe(
-      'Local verification failed'
-    );
-    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain(
-      'Does not match proof entry'
-    );
+    expect(wrapper.get('[data-test="block-proof-claim"]').text()).toBe('Local verification failed');
+    expect(wrapper.get('[data-test="block-proof-available"]').text()).toContain('Does not match proof entry');
   });
 
   it('warns when state responses share a root but identify different blocks', async () => {

@@ -31,13 +31,14 @@ import {
   type TraceSeed,
 } from '@/shared/lib/tracing';
 import { useScopedExplorerNavigation } from '@/shared/ui/composables/useExplorerScopeNavigation';
+import { advanceHistoryScanCursor, createHistoryScanCursor } from '@/shared/lib/history-scan';
 
 const route = useRoute();
 const navigation = useScopedExplorerNavigation();
 const { t } = useI18n();
 const notifications = useNotifications();
 
-const SCAN_PAGE_SIZE = 200;
+const SCAN_PAGE_SIZE = 100;
 const SCAN_REQUEST_PACING_MS = 125;
 const SCAN_CAPACITY_MAX_RETRIES = 3;
 const SCAN_CAPACITY_RETRY_BASE_MS = 500;
@@ -674,8 +675,7 @@ function enqueueAccount(accountId: string, depth: number) {
   cursors.value.push({
     accountId: normalized,
     depth,
-    block: Math.max(1, state.latestBlock),
-    page: 1,
+    ...createHistoryScanCursor(),
     exhausted: false,
   });
   queuedAccountIds.add(normalized);
@@ -721,7 +721,7 @@ function ingestTraceEvent(event: TraceEvent, depthHint: number, _scannedAccountI
 }
 
 async function fetchLatestBlockHeight() {
-  const blocks = await http.fetchBlocks({ page: 1, per_page: 1 });
+  const blocks = await http.fetchBlocks({ limit: 1 });
   if (blocks.status !== SUCCESSFUL_FETCHING) return 0;
   const latest = blocks.data.items[0];
   return latest?.height ?? 0;
@@ -799,17 +799,16 @@ async function ingestTransactionSeed(seedHash: string) {
     enqueueAccount(txResponse.data.authority, 0);
   }
 
-  let page = 1;
-  let totalPages = 1;
+  let cursor = createHistoryScanCursor();
   do {
     const response = await fetchTraceInstructions({
-      page,
-      per_page: SCAN_PAGE_SIZE,
+      cursor: cursor.nextCursor,
+      limit: SCAN_PAGE_SIZE,
       transaction_hash: seedHash,
       kind: 'Transfer',
     });
-    if (response.status !== SUCCESSFUL_FETCHING) break;
-    totalPages = response.data.pagination.total_pages;
+    if (response.status !== SUCCESSFUL_FETCHING) throw new Error(t('tracing.fetchError'));
+    cursor = advanceHistoryScanCursor(cursor, response.data.pagination);
     for (const instruction of response.data.items) {
       const traceEvents = instructionToTraceEvents(instruction);
       upsertTransactionStateFromInstruction(instruction, traceEvents);
@@ -817,9 +816,8 @@ async function ingestTransactionSeed(seedHash: string) {
     }
     await hydrateRejectedReasons();
     refreshGraphSnapshots();
-    page += 1;
-    if (page <= totalPages) await waitForScanDelay(SCAN_REQUEST_PACING_MS);
-  } while (page <= totalPages);
+    if (cursor.nextCursor !== null) await waitForScanDelay(SCAN_REQUEST_PACING_MS);
+  } while (cursor.nextCursor !== null);
 }
 
 async function bootstrapFromSeed(seed: TraceSeed) {
@@ -860,16 +858,15 @@ async function bootstrapFromSeed(seed: TraceSeed) {
 }
 
 async function scanCursor(cursor: TraceCursor): Promise<void> {
-  if (cursor.exhausted || cursor.block < 1) {
+  if (cursor.exhausted) {
     markCursorCompleted(cursor);
     return;
   }
 
   const response = await fetchTraceInstructions({
-    page: cursor.page,
-    per_page: SCAN_PAGE_SIZE,
+    cursor: cursor.nextCursor,
+    limit: SCAN_PAGE_SIZE,
     account: cursor.accountId,
-    block: cursor.block,
     kind: 'Transfer',
   });
   if (response.status !== SUCCESSFUL_FETCHING) {
@@ -877,6 +874,8 @@ async function scanCursor(cursor: TraceCursor): Promise<void> {
     state.paused = true;
     return;
   }
+  // Validate continuity before ingesting this page or advancing its checkpoint.
+  const continuation = advanceHistoryScanCursor(cursor, response.data.pagination);
   state.error = '';
 
   for (const instruction of response.data.items) {
@@ -890,16 +889,8 @@ async function scanCursor(cursor: TraceCursor): Promise<void> {
   await hydrateRejectedReasons();
   refreshGraphSnapshots();
 
-  if (cursor.page < response.data.pagination.total_pages) {
-    cursor.page += 1;
-  } else {
-    cursor.page = 1;
-    cursor.block -= 1;
-  }
-
-  if (cursor.block < 1) {
-    markCursorCompleted(cursor);
-  }
+  Object.assign(cursor, continuation);
+  if (cursor.nextCursor === null) markCursorCompleted(cursor);
 }
 
 async function runScanLoop() {
@@ -1090,7 +1081,7 @@ function applyBundle(bundle: TraceBundle) {
   cursors.value = bundle.cursors.map((cursor) => ({ ...cursor }));
   syncCursorSetsFromState();
   refreshGraphSnapshots();
-  state.latestBlock = Math.max(1, ...cursors.value.map((cursor) => cursor.block), state.latestBlock);
+  state.latestBlock = Math.max(1, ...cursors.value.map((cursor) => cursor.snapshot?.height ?? 0), state.latestBlock);
   state.discoveredEvents = bundle.graph.events.length;
 
   seedDraft.type = bundle.seed.type;

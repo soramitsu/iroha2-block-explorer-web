@@ -16,42 +16,35 @@ import {
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 
 const props = defineProps<{
-  blockHeight: number
-  transactionHash: string
+  blockHeight: number;
+  transactionHash: string;
 }>();
 
-type EvidenceBundle = TransactionEvidenceBundle<
-  TransactionBlockEvidence,
-  Block,
-  LedgerStateRoot,
-  LedgerStateProof
->;
+type EvidenceBundle = TransactionEvidenceBundle<TransactionBlockEvidence, Block, LedgerStateRoot, LedgerStateProof>;
 
-const evidenceResource = setupAsyncData<EvidenceBundle>(() => loadTransactionEvidence({
-  fetchBlockProof: () => http.fetchLedgerBlockProof(props.blockHeight, props.transactionHash),
-  fetchReferenceBlock: () => http.fetchBlock(props.blockHeight),
-  fetchStateRoot: () => http.fetchLedgerStateRoot(props.blockHeight),
-  fetchStateProof: () => http.fetchLedgerStateProof(props.blockHeight),
-}));
+const evidenceResource = setupAsyncData<EvidenceBundle>(() =>
+  loadTransactionEvidence({
+    fetchBlockProof: () => http.fetchLedgerBlockProof(props.blockHeight, props.transactionHash),
+    fetchReferenceBlock: () => http.fetchBlock(props.blockHeight),
+    fetchStateRoot: () => http.fetchLedgerStateRoot(props.blockHeight),
+    fetchStateProof: () => http.fetchLedgerStateProof(props.blockHeight),
+  })
+);
 
-const stateAgreement = computed(() => (
+const stateAgreement = computed(() =>
+  evidenceResource.data ? stateEvidenceAgreement(evidenceResource.data, props.blockHeight) : null
+);
+
+const blockVerification = computed(() =>
   evidenceResource.data
-    ? stateEvidenceAgreement(evidenceResource.data, props.blockHeight)
+    ? verifyTransactionBlockEvidence({
+        blockProof: evidenceResource.data.blockProof,
+        referenceBlock: evidenceResource.data.referenceBlock,
+        requestedTransactionHash: props.transactionHash,
+        requestedBlockHeight: props.blockHeight,
+      })
     : null
-));
-
-const blockVerification = computed(() => (
-  evidenceResource.data
-    ? verifyTransactionBlockEvidence(
-        {
-          blockProof: evidenceResource.data.blockProof,
-          referenceBlock: evidenceResource.data.referenceBlock,
-          requestedTransactionHash: props.transactionHash,
-          requestedBlockHeight: props.blockHeight,
-        }
-      )
-    : null
-));
+);
 
 type BlockVerificationClaim = 'verified' | 'failed' | 'incomplete';
 
@@ -60,14 +53,10 @@ const blockVerificationClaim = computed<BlockVerificationClaim | null>(() => {
   const evidence = evidenceResource.data;
   if (!verification || evidence?.blockProof.status !== 'available') return null;
 
-  if (
-    !verification.pathVerificationValid
-    || !verification.transactionHashMatches
-    || !verification.proofHeightMatches
-  ) {
+  if (!verification.transactionHashMatches || !verification.proofHeightMatches) {
     return 'failed';
   }
-  if (evidence.referenceBlock.status !== 'available') return 'incomplete';
+  if (!verification.pathVerificationAvailable || evidence.referenceBlock.status !== 'available') return 'incomplete';
   return verification.valid ? 'verified' : 'failed';
 });
 
@@ -86,10 +75,7 @@ watch(
 </script>
 
 <template>
-  <BaseContentBlock
-    class="transaction-evidence"
-    title="Transaction evidence"
-  >
+  <BaseContentBlock class="transaction-evidence" title="Transaction evidence">
     <template #header-action>
       <BaseButton
         bordered
@@ -108,41 +94,36 @@ watch(
       retry-label="Retry evidence"
       @retry="evidenceResource.refetch()"
     >
-      <div
-        v-if="evidenceResource.data"
-        class="transaction-evidence__body"
-      >
+      <div v-if="evidenceResource.data" class="transaction-evidence__body">
         <p class="transaction-evidence__scope row-text">
-          Transaction-entry inclusion and its identity against the requested transaction and
-          reference block are checked locally. An execution-result path is checked only against the
-          result root supplied in the same proof; that root is not independently anchored here.
-          State roots and quorum certificates are displayed exactly as this node supplied them;
-          this browser does not verify their BLS aggregate signature.
+          The decoded proof identity is compared with the requested transaction and reference-block metadata. This
+          browser does not claim Merkle or finality verification: the current SDK requires a caller-authenticated
+          anchor, and no digest-pinned browser finality-verifier WASM is shipped. State roots and quorum certificates
+          are displayed exactly as this node supplied them; this browser does not verify their BLS aggregate signature.
         </p>
 
-        <section
-          class="transaction-evidence__section"
-          aria-labelledby="transaction-evidence-merkle"
-        >
+        <section class="transaction-evidence__section" aria-labelledby="transaction-evidence-merkle">
           <div class="transaction-evidence__heading">
-            <h3 id="transaction-evidence-merkle">
-              Block Merkle proof
-            </h3>
+            <h3 id="transaction-evidence-merkle">Block Merkle proof</h3>
             <span
               v-if="evidenceResource.data.blockProof.status === 'available'"
               class="transaction-evidence__claim"
               data-test="block-proof-claim"
-              :class="blockVerificationClaim === 'verified'
-                ? 'transaction-evidence__claim--verified'
-                : blockVerificationClaim === 'failed'
-                  ? 'transaction-evidence__claim--failed'
-                  : 'transaction-evidence__claim--provided'"
+              :class="
+                blockVerificationClaim === 'verified'
+                  ? 'transaction-evidence__claim--verified'
+                  : blockVerificationClaim === 'failed'
+                    ? 'transaction-evidence__claim--failed'
+                    : 'transaction-evidence__claim--provided'
+              "
             >
-              {{ blockVerificationClaim === 'verified'
-                ? 'Transaction entry locally verified'
-                : blockVerificationClaim === 'failed'
-                  ? 'Local verification failed'
-                  : 'Local verification incomplete' }}
+              {{
+                blockVerificationClaim === 'verified'
+                  ? 'Transaction entry locally verified'
+                  : blockVerificationClaim === 'failed'
+                    ? 'Local verification failed'
+                    : 'Local verification incomplete'
+              }}
             </span>
           </div>
 
@@ -153,56 +134,63 @@ watch(
           >
             <DataField
               title="Entrypoint path"
-              :value="evidenceResource.data.blockProof.data.pathVerification.entry_hash_matches
-                && evidenceResource.data.blockProof.data.pathVerification.entry_proof_valid
-                ? 'Internally valid against proof entry root'
-                : 'Verification failed'"
+              :value="
+                evidenceResource.data.blockProof.data.pathVerification === null
+                  ? 'Not authenticated in this browser'
+                  : evidenceResource.data.blockProof.data.pathVerification.entry_hash_matches &&
+                      evidenceResource.data.blockProof.data.pathVerification.entry_proof_valid
+                    ? 'Verified against the authenticated anchor'
+                    : 'Verification failed'
+              "
             />
             <DataField
               title="Execution-result path"
-              :value="evidenceResource.data.blockProof.data.pathVerification.result_proof_valid === null
-                ? 'Not present in this proof'
-                : evidenceResource.data.blockProof.data.pathVerification.result_proof_valid
-                  ? 'Internally valid against node-provided result root'
-                  : 'Verification failed'"
+              :value="
+                evidenceResource.data.blockProof.data.pathVerification === null
+                  ? 'Not authenticated in this browser'
+                  : evidenceResource.data.blockProof.data.pathVerification.result_proof_valid
+                    ? 'Verified against the authenticated anchor'
+                    : 'Verification failed'
+              "
             />
             <DataField
               title="Requested transaction"
-              :value="blockVerification?.transactionHashMatches
-                ? 'Matches proof entry'
-                : 'Does not match proof entry'"
+              :value="blockVerification?.transactionHashMatches ? 'Matches proof entry' : 'Does not match proof entry'"
             />
             <DataField
               title="Proof block height"
-              :value="blockVerification?.proofHeightMatches
-                ? 'Matches requested height'
-                : 'Does not match requested height'"
+              :value="
+                blockVerification?.proofHeightMatches ? 'Matches requested height' : 'Does not match requested height'
+              "
             />
             <DataField
               title="Reference block height"
-              :value="evidenceResource.data.referenceBlock.status !== 'available'
-                ? 'Could not be checked'
-                : blockVerification?.referenceBlockHeightMatches
-                  ? 'Matches requested height'
-                  : 'Does not match requested height'"
+              :value="
+                evidenceResource.data.referenceBlock.status !== 'available'
+                  ? 'Could not be checked'
+                  : blockVerification?.referenceBlockHeightMatches
+                    ? 'Matches requested height'
+                    : 'Does not match requested height'
+              "
             />
             <DataField
               title="Transactions root binding"
-              :value="evidenceResource.data.referenceBlock.status !== 'available'
-                ? 'Could not be checked'
-                : blockVerification?.entryRootMatches
-                  ? 'Matches reference block'
-                  : 'Does not match reference block'"
+              :value="
+                evidenceResource.data.referenceBlock.status !== 'available'
+                  ? 'Could not be checked'
+                  : blockVerification?.entryRootMatches
+                    ? 'Matches reference block'
+                    : 'Does not match reference block'
+              "
             />
             <DataField
-              title="Entrypoint root"
-              :hash="evidenceResource.data.blockProof.data.proof.entry_root"
+              title="Entrypoint commitment root"
+              :hash="evidenceResource.data.blockProof.data.proof.entry_commitment.root"
               copy
             />
             <DataField
-              title="Result root"
-              :hash="evidenceResource.data.blockProof.data.proof.result_root ?? undefined"
-              :value="evidenceResource.data.blockProof.data.proof.result_root ? undefined : 'Not present'"
+              title="Result commitment root"
+              :hash="evidenceResource.data.blockProof.data.proof.result_commitment.root"
               copy
             />
           </div>
@@ -213,11 +201,7 @@ watch(
           >
             This node has no block proof for the transaction entrypoint.
           </p>
-          <p
-            v-else
-            class="transaction-evidence__message transaction-evidence__message--error row-text"
-            role="alert"
-          >
+          <p v-else class="transaction-evidence__message transaction-evidence__message--error row-text" role="alert">
             Block proof request failed: {{ evidenceResource.data.blockProof.problem.message }}
           </p>
 
@@ -226,21 +210,12 @@ watch(
             class="transaction-evidence__grid transaction-evidence__reference"
             data-test="reference-block-available"
           >
-            <DataField
-              title="Reference block height"
-              :value="evidenceResource.data.referenceBlock.data.height"
-            />
-            <DataField
-              title="Reference block hash"
-              :hash="evidenceResource.data.referenceBlock.data.hash"
-              copy
-            />
+            <DataField title="Reference block height" :value="evidenceResource.data.referenceBlock.data.height" />
+            <DataField title="Reference block hash" :hash="evidenceResource.data.referenceBlock.data.hash" copy />
             <DataField
               title="Reference transactions root"
               :hash="evidenceResource.data.referenceBlock.data.transactions_hash ?? undefined"
-              :value="evidenceResource.data.referenceBlock.data.transactions_hash
-                ? undefined
-                : 'No transactions root'"
+              :value="evidenceResource.data.referenceBlock.data.transactions_hash ? undefined : 'No transactions root'"
               copy
             />
           </div>
@@ -266,36 +241,17 @@ watch(
           </details>
         </section>
 
-        <section
-          class="transaction-evidence__section"
-          aria-labelledby="transaction-evidence-state"
-        >
+        <section class="transaction-evidence__section" aria-labelledby="transaction-evidence-state">
           <div class="transaction-evidence__heading">
-            <h3 id="transaction-evidence-state">
-              State root
-            </h3>
+            <h3 id="transaction-evidence-state">State root</h3>
             <span class="transaction-evidence__claim transaction-evidence__claim--provided">
               Node-provided · not cryptographically verified here
             </span>
           </div>
-          <div
-            v-if="evidenceResource.data.stateRoot.status === 'available'"
-            class="transaction-evidence__grid"
-          >
-            <DataField
-              title="State root"
-              :hash="evidenceResource.data.stateRoot.data.state_root"
-              copy
-            />
-            <DataField
-              title="Source"
-              :value="evidenceResource.data.stateRoot.data.source"
-            />
-            <DataField
-              title="Block hash"
-              :hash="evidenceResource.data.stateRoot.data.block_hash"
-              copy
-            />
+          <div v-if="evidenceResource.data.stateRoot.status === 'available'" class="transaction-evidence__grid">
+            <DataField title="State root" :hash="evidenceResource.data.stateRoot.data.state_root" copy />
+            <DataField title="Source" :value="evidenceResource.data.stateRoot.data.source" />
+            <DataField title="Block hash" :hash="evidenceResource.data.stateRoot.data.block_hash" copy />
           </div>
           <p
             v-else-if="evidenceResource.data.stateRoot.status === 'unavailable'"
@@ -303,23 +259,14 @@ watch(
           >
             This node has no state root at the transaction's block height.
           </p>
-          <p
-            v-else
-            class="transaction-evidence__message transaction-evidence__message--error row-text"
-            role="alert"
-          >
+          <p v-else class="transaction-evidence__message transaction-evidence__message--error row-text" role="alert">
             State-root request failed: {{ evidenceResource.data.stateRoot.problem.message }}
           </p>
         </section>
 
-        <section
-          class="transaction-evidence__section"
-          aria-labelledby="transaction-evidence-qc"
-        >
+        <section class="transaction-evidence__section" aria-labelledby="transaction-evidence-qc">
           <div class="transaction-evidence__heading">
-            <h3 id="transaction-evidence-qc">
-              Commit quorum certificate
-            </h3>
+            <h3 id="transaction-evidence-qc">Commit quorum certificate</h3>
             <span class="transaction-evidence__claim transaction-evidence__claim--provided">
               Node-provided · BLS not verified here
             </span>
@@ -329,10 +276,7 @@ watch(
             class="transaction-evidence__grid"
             data-test="state-proof-available"
           >
-            <DataField
-              title="Phase"
-              :value="evidenceResource.data.stateProof.data.commit_qc.phase"
-            />
+            <DataField title="Phase" :value="evidenceResource.data.stateProof.data.commit_qc.phase" />
             <DataField
               title="View / epoch"
               :value="`${evidenceResource.data.stateProof.data.commit_qc.view} / ${evidenceResource.data.stateProof.data.commit_qc.epoch}`"
@@ -364,25 +308,23 @@ watch(
           >
             No persisted commit quorum certificate is available from this node.
           </p>
-          <p
-            v-else
-            class="transaction-evidence__message transaction-evidence__message--error row-text"
-            role="alert"
-          >
+          <p v-else class="transaction-evidence__message transaction-evidence__message--error row-text" role="alert">
             Quorum-certificate request failed: {{ evidenceResource.data.stateProof.problem.message }}
           </p>
 
           <p
             v-if="stateAgreement !== null"
             class="transaction-evidence__agreement row-text"
-            :class="stateAgreement
-              ? 'transaction-evidence__agreement--matching'
-              : 'transaction-evidence__agreement--mismatch'"
+            :class="
+              stateAgreement ? 'transaction-evidence__agreement--matching' : 'transaction-evidence__agreement--mismatch'
+            "
             role="status"
           >
-            {{ stateAgreement
-              ? 'The node-provided state-root and state-proof envelopes identify the requested block and have identical block hashes and state roots.'
-              : 'Warning: the node-provided state-root and state-proof envelopes do not identify the same requested block and state root.' }}
+            {{
+              stateAgreement
+                ? 'The node-provided state-root and state-proof envelopes identify the requested block and have identical block hashes and state roots.'
+                : 'Warning: the node-provided state-root and state-proof envelopes do not identify the same requested block and state root.'
+            }}
           </p>
         </section>
       </div>

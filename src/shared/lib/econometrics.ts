@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
-import {
-  extractAssetDefinitionIdFromAssetIdLiteral,
-  normalizeAssetDefinitionSelectorLiteral,
-} from './asset-definition-literal';
+import { parseAssetIdLiteral } from './asset-definition-literal';
+import { normalizeAccountIdLiteral } from './account-literal';
+import { QuantityValue, type TransactionStatus } from '@/shared/api/schemas';
 
 export function sum(values: readonly BigNumber[]): BigNumber {
   return values.reduce((acc, value) => acc.plus(value), new BigNumber(0));
@@ -173,93 +172,55 @@ export function parseBigNumber(value: unknown): BigNumber | null {
   return null;
 }
 
-export function extractIsiObject(payload: unknown): unknown {
-  if (!payload || typeof payload !== 'object') return null;
-  const record = payload as Record<string, unknown>;
-  if (!('object' in record)) return null;
-  return record.object;
+export interface AssetActivity {
+  definitionId: string
+  amount: BigNumber
+  source: string | null
+  destination: string
 }
 
-export function extractTransferObject(payload: unknown): unknown {
-  return extractIsiObject(payload);
-}
-
-export function extractAssetDefinitionIdFromIsiObject(objectValue: unknown): string | null {
-  if (!objectValue) return null;
-
-  if (typeof objectValue === 'string') {
-    const trimmed = objectValue.trim();
-    if (!trimmed) return null;
-    const assetIdDefinition = extractAssetDefinitionIdFromAssetIdLiteral(trimmed);
-    if (assetIdDefinition) return assetIdDefinition;
-    return normalizeAssetDefinitionSelectorLiteral(trimmed);
+function activityRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new TypeError('Invalid native asset activity payload');
   }
+  return value as Record<string, unknown>;
+}
 
-  if (typeof objectValue === 'object') {
-    const record = objectValue as Record<string, unknown>;
-
-    if (typeof record.definition_id === 'string') return extractAssetDefinitionIdFromIsiObject(record.definition_id);
-    if (typeof record.definition === 'string') return extractAssetDefinitionIdFromIsiObject(record.definition);
-    if (record.definition && typeof record.definition === 'object') {
-      const def = record.definition as Record<string, unknown>;
-      if (typeof def.id === 'string') return extractAssetDefinitionIdFromIsiObject(def.id);
-      if (typeof def.definition_id === 'string') return extractAssetDefinitionIdFromIsiObject(def.definition_id);
-      if (typeof def.alias === 'string') return extractAssetDefinitionIdFromIsiObject(def.alias);
-      if (typeof def.name === 'string' && typeof def.domain === 'string') return `${def.name}#${def.domain}`;
-    }
-    if (typeof record.id === 'string') {
-      return extractAssetDefinitionIdFromIsiObject(record.id);
-    }
-    if (typeof record.alias === 'string') {
-      return extractAssetDefinitionIdFromIsiObject(record.alias);
-    }
-    if (typeof record.name === 'string' && typeof record.domain === 'string') {
-      return `${record.name}#${record.domain}`;
-    }
+/** Decode the current Torii Asset variants; submitted batch legs are not settlement evidence. */
+export function decodeCommittedAssetActivity(
+  kind: 'Transfer' | 'Mint' | 'Burn',
+  payload: unknown,
+  status: TransactionStatus
+): AssetActivity | null {
+  if (status === 'Rejected') return null;
+  if (status !== 'Committed') throw new TypeError('Invalid asset activity transaction status');
+  const envelope = activityRecord(payload);
+  if (Object.keys(envelope).length !== 2 || !('variant' in envelope) || !('value' in envelope)) {
+    throw new TypeError('Invalid native asset activity envelope');
   }
-
-  return null;
-}
-
-export function extractAssetDefinitionIdFromIsiPayload(payload: unknown): string | null {
-  const objectValue = extractIsiObject(payload);
-  return extractAssetDefinitionIdFromIsiObject(objectValue);
-}
-
-/**
- * Best-effort extraction of the asset definition id referenced by a Transfer payload.
- * Returns the selector/id string (for example a canonical Base58 id or asset alias) when detected.
- */
-export function extractAssetDefinitionIdFromTransferPayload(payload: unknown): string | null {
-  return extractAssetDefinitionIdFromIsiPayload(payload);
-}
-
-export function extractAmountFromIsiPayload(payload: unknown): BigNumber | null {
-  if (!payload || typeof payload !== 'object') return null;
-  const record = payload as Record<string, unknown>;
-
-  const direct = parseBigNumber(record.value ?? record.amount ?? record.quantity);
-  if (direct) return direct;
-
-  const nested = record.value;
-  if (nested && typeof nested === 'object') {
-    const nestedRecord = nested as Record<string, unknown>;
-    const numeric = parseBigNumber(nestedRecord.numeric ?? nestedRecord.value);
-    if (numeric) return numeric;
+  if (kind === 'Transfer' && envelope.variant === 'AssetBatch') {
+    throw new Error('Batch transfer statistics are unavailable because individual settlement results are missing.');
   }
-
-  return null;
+  const otherVariants = kind === 'Transfer' ? ['Domain', 'AssetDefinition', 'Nft'] : ['TriggerRepetitions'];
+  if (typeof envelope.variant === 'string' && otherVariants.includes(envelope.variant)) return null;
+  if (envelope.variant !== 'Asset') throw new TypeError('Invalid native asset activity variant');
+  const value = activityRecord(envelope.value);
+  const fields = kind === 'Transfer' ? ['source', 'object', 'destination'] : ['object', 'destination'];
+  if (Object.keys(value).length !== fields.length || fields.some((field) => !(field in value))) {
+    throw new TypeError('Invalid native Asset instruction fields');
+  }
+  const assetLiteral = kind === 'Transfer' ? value.source : value.destination;
+  const asset = typeof assetLiteral === 'string' ? parseAssetIdLiteral(assetLiteral) : null;
+  if (!asset || asset.literal !== assetLiteral) throw new TypeError('Invalid native asset holding identifier');
+  const amount = QuantityValue.parse(value.object);
+  if (kind !== 'Transfer') {
+    return { definitionId: asset.definitionId, amount, source: null, destination: asset.accountId };
+  }
+  const destination = typeof value.destination === 'string' ? normalizeAccountIdLiteral(value.destination) : null;
+  if (!destination || destination !== value.destination) throw new TypeError('Invalid native transfer destination');
+  return { definitionId: asset.definitionId, amount, source: asset.accountId, destination };
 }
 
-export function extractTransferAmountFromPayload(payload: unknown): BigNumber | null {
-  return extractAmountFromIsiPayload(payload);
-}
-
-/**
- * Theil T index for a non-negative distribution.
- *
- * Computed as sum(p_i * ln(p_i * n)), where p_i is the share and n is sample size.
- */
 export function theilIndexT(rawValues: readonly BigNumber[]): number {
   const values = rawValues.filter((value) => value.isFinite() && value.gte(0));
   const n = values.length;

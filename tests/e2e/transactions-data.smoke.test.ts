@@ -48,13 +48,12 @@ const BaseTableStub = defineComponent({
   name: 'BaseTableStub',
   props: {
     items: { type: Array, default: () => [] },
-    page: { type: Number, default: 0 },
+    cursor: { type: String, default: null },
     pageSize: { type: Number, default: 10 },
-    total: { type: Number, default: 0 },
     loading: { type: Boolean, default: false },
     containerClass: { type: String, default: '' },
   },
-  emits: ['update:page', 'update:pageSize', 'click:row'],
+  emits: ['update:cursor', 'update:pageSize', 'click:row'],
   template: `
     <div data-test="base-table">
       <slot name="header" />
@@ -142,7 +141,7 @@ describe('Transactions data smoke', () => {
     fetchTransactionsMock.mockResolvedValue({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+        pagination: { limit: 10, snapshot_height: 37, snapshot_hash: 'ab'.repeat(32), next_cursor: null, has_more: false },
         items: [
           {
             authority: liveStyleAuthority,
@@ -170,8 +169,10 @@ describe('Transactions data smoke', () => {
 
     expect(fetchTransactionsMock).toHaveBeenCalled();
     const fetchArgs = fetchTransactionsMock.mock.calls.at(-1)?.[0];
-    expect(fetchArgs?.page).toBe(1);
-    expect(fetchArgs?.per_page).toBe(10);
+    expect(fetchArgs?.cursor).toBeNull();
+    expect(fetchArgs?.limit).toBe(10);
+    expect(fetchArgs).not.toHaveProperty('page');
+    expect(fetchArgs).not.toHaveProperty('per_page');
 
     const row = wrapper.find('[data-test="base-table-row"]');
     expect(row.exists()).toBe(true);

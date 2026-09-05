@@ -31,13 +31,10 @@ function compilerFailureResponse() {
 }
 
 describe('current Iroha Kotodama compiler package boundary', () => {
-  it('installs the package boundary selected by the exact commit/subdirectory pin', () => {
+  it('installs the compiler boundary from the reviewed unsigned development archive', () => {
     const explorerPackage = JSON.parse(
       readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')
     ) as { dependencies: Record<string, string> };
-    const profile = JSON.parse(
-      readFileSync(path.resolve(process.cwd(), 'tests/mochi/explorer-profile.json'), 'utf8')
-    ) as { iroha_revision: string };
     const installedPackage = JSON.parse(
       readFileSync(path.join(INSTALLED_IROHA_JS_ROOT, 'package.json'), 'utf8')
     ) as { name: string, dependencies: Record<string, string> };
@@ -47,9 +44,7 @@ describe('current Iroha Kotodama compiler package boundary', () => {
     );
 
     expect(explorerPackage.dependencies['@iroha/iroha-js'])
-      .toBe(
-        `github:hyperledger-iroha/iroha#${profile.iroha_revision}&path:javascript/iroha_js`
-      );
+      .toBe('file:vendor/iroha-iroha-js-0.0.3.tgz');
     expect(installedPackage.name).toBe('@iroha/iroha-js');
     expect(installedPackage.dependencies['@scure/bip39']).toBe('^2.2.0');
     expect(installedDeclaration).toContain('compileKotodamaProgram');

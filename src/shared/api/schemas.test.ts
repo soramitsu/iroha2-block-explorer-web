@@ -28,7 +28,7 @@ import {
   MultisigSpecResponse,
   NetworkMetrics,
   NFT,
-  Paginated,
+  HistoryCursorPaginated,
   PeerMetrics,
   PipelineTransactionStatusResponse,
   RWA,
@@ -781,6 +781,7 @@ describe('Explorer payload schemas', () => {
 
   it('parses latest transaction snapshots', () => {
     const parsed = LatestTransactionsResponse.parse({
+      pagination: { limit: 10, snapshot_height: 101, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       sampled_at: '2026-03-05T06:00:02Z',
       items: [
         {
@@ -799,6 +800,7 @@ describe('Explorer payload schemas', () => {
 
   it('preserves halfwidth latest transaction authorities from Torii', () => {
     const parsed = LatestTransactionsResponse.parse({
+      pagination: { limit: 10, snapshot_height: 101, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       sampled_at: '2026-03-05T06:00:02Z',
       items: [
         {
@@ -818,6 +820,7 @@ describe('Explorer payload schemas', () => {
   it('rejects noncanonical fullwidth latest transaction authorities', () => {
     expect(() =>
       LatestTransactionsResponse.parse({
+      pagination: { limit: 10, snapshot_height: 101, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         sampled_at: '2026-03-05T06:00:02Z',
         items: [
           {
@@ -833,13 +836,14 @@ describe('Explorer payload schemas', () => {
     ).toThrow();
   });
 
-  it('parses paginated transaction payloads with live mixed Base58 + kana authority ids', () => {
-    const parsed = Paginated(Transaction).parse({
+  it('parses snapshot-bound transaction history with live mixed Base58 + kana authority ids', () => {
+    const parsed = HistoryCursorPaginated(Transaction).parse({
       pagination: {
-        page: 1,
-        per_page: 10,
-        total_pages: 1,
-        total_items: 1,
+        limit: 10,
+        snapshot_height: 37,
+        snapshot_hash: 'a'.repeat(64),
+        next_cursor: null,
+        has_more: false,
       },
       items: [
         {
@@ -857,8 +861,21 @@ describe('Explorer payload schemas', () => {
     expect(parsed.items[0]?.hash).toBe('0xmixed-authority');
   });
 
+  it.each([
+    { snapshot_height: 0, snapshot_hash: 'a'.repeat(64) },
+    { snapshot_height: 37, snapshot_hash: null },
+    { snapshot_height: 37, snapshot_hash: 'A'.repeat(64) },
+    { snapshot_height: Number.MAX_SAFE_INTEGER + 1, snapshot_hash: 'a'.repeat(64) },
+  ])('rejects an inconsistent or imprecise history snapshot %j', (snapshot) => {
+    expect(HistoryCursorPaginated(Transaction).safeParse({
+      items: [],
+      pagination: { limit: 10, next_cursor: null, has_more: false, ...snapshot },
+    }).success).toBe(false);
+  });
+
   it('parses latest instruction snapshots', () => {
     const parsed = LatestInstructionsResponse.parse({
+      pagination: { limit: 10, snapshot_height: 101, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       sampled_at: '2026-03-05T06:00:02Z',
       items: [
         {
@@ -1664,9 +1681,6 @@ describe('Explorer payload schemas', () => {
     const parsed = ExplorerAssetDefinition.parse({
       id: validAssetDefinitionId,
       owning_domain: 'issuer.main',
-      name: 'usd',
-      description: 'United States dollar',
-      alias: validAssetDefinitionAlias,
       mintable: 'Infinitely',
       logo: null,
       metadata: {},
@@ -1682,8 +1696,9 @@ describe('Explorer payload schemas', () => {
     expect(parsed.total_quantity.toString()).toBe('12');
     expect(parsed.locked_quantity).toBeNull();
     expect(parsed.circulating_quantity?.toString()).toBe('9');
-    expect(parsed.alias).toBe(validAssetDefinitionAlias);
-    expect(parsed.name).toBe('usd');
+    expect(parsed.alias).toBeNull();
+    expect(parsed.name).toBeNull();
+    expect(parsed.description).toBeNull();
   });
 
   it('preserves valid on-chain alias spelling and enforces asset text/domain bounds', () => {
@@ -1697,20 +1712,17 @@ describe('Explorer payload schemas', () => {
       logo: null,
       metadata: {},
       owned_by: validAccountId,
-      assets: 0,
       total_quantity: '0',
-      locked_quantity: null,
-      circulating_quantity: null,
     };
 
-    expect(ExplorerAssetDefinition.parse(payload).alias).toBe('USD#Issuer.Main');
-    expect(ExplorerAssetDefinition.safeParse({ ...payload, owning_domain: 'Issuer.main' }).success).toBe(false);
-    expect(ExplorerAssetDefinition.safeParse({ ...payload, name: ' '.repeat(4) }).success).toBe(false);
-    expect(ExplorerAssetDefinition.safeParse({ ...payload, name: 'a'.repeat(129) }).success).toBe(false);
-    expect(ExplorerAssetDefinition.safeParse({ ...payload, description: '  ' }).success).toBe(false);
-    expect(ExplorerAssetDefinition.safeParse({ ...payload, alias: 'EUR#Issuer.Main' }).success).toBe(false);
+    expect(AssetDefinition.parse(payload).alias).toBe('USD#Issuer.Main');
+    expect(AssetDefinition.safeParse({ ...payload, owning_domain: 'Issuer.main' }).success).toBe(false);
+    expect(AssetDefinition.safeParse({ ...payload, name: ' '.repeat(4) }).success).toBe(false);
+    expect(AssetDefinition.safeParse({ ...payload, name: 'a'.repeat(129) }).success).toBe(false);
+    expect(AssetDefinition.safeParse({ ...payload, description: '  ' }).success).toBe(false);
+    expect(AssetDefinition.safeParse({ ...payload, alias: 'EUR#Issuer.Main' }).success).toBe(false);
     expect(
-      ExplorerAssetDefinition.safeParse({
+      AssetDefinition.safeParse({
         ...payload,
         id: `${validAssetDefinitionId.slice(0, -1)}b`,
       }).success
@@ -1720,9 +1732,6 @@ describe('Explorer payload schemas', () => {
   it.each([
     'id',
     'owning_domain',
-    'name',
-    'description',
-    'alias',
     'mintable',
     'logo',
     'metadata',
@@ -1735,10 +1744,7 @@ describe('Explorer payload schemas', () => {
     const payload: Record<string, unknown> = {
       id: validAssetDefinitionId,
       owning_domain: null,
-      name: 'usd',
-      description: null,
-      alias: null,
-      mintable: 'Infinitely',
+            mintable: 'Infinitely',
       logo: null,
       metadata: {},
       owned_by: validAccountId,
@@ -1757,10 +1763,7 @@ describe('Explorer payload schemas', () => {
       ExplorerAssetDefinition.safeParse({
         id: validAssetDefinitionId,
         owning_domain: null,
-        name: 'usd',
-        description: null,
-        alias: null,
-        mintable,
+                    mintable,
         logo: null,
         metadata: {},
         owned_by: validAccountId,
@@ -1788,10 +1791,7 @@ describe('Explorer payload schemas', () => {
       ExplorerAssetDefinition.safeParse({
         id: validAssetDefinitionId,
         owning_domain: null,
-        name: 'usd',
-        description: null,
-        alias: null,
-        mintable,
+                    mintable,
         logo: null,
         metadata: {},
         owned_by: validAccountId,
@@ -1801,6 +1801,22 @@ describe('Explorer payload schemas', () => {
         circulating_quantity: null,
       }).success
     ).toBe(false);
+  });
+
+  it.each(['name', 'description', 'alias'])('rejects detail-only field %s in an Explorer list DTO', (field) => {
+    expect(ExplorerAssetDefinition.safeParse({
+      id: validAssetDefinitionId,
+      owning_domain: null,
+      mintable: 'Infinitely',
+      logo: null,
+      metadata: {},
+      owned_by: validAccountId,
+      assets: 0,
+      total_quantity: '0',
+      locked_quantity: null,
+      circulating_quantity: null,
+      [field]: 'usd',
+    }).success).toBe(false);
   });
 
   it('parses asset-definition econometrics payloads', () => {
@@ -2218,6 +2234,26 @@ describe('Explorer payload schemas', () => {
     expect(parsed.dataspaces).toHaveLength(0);
   });
 
+  it('parses the signed ABI23 transaction detail without a fabricated fee field', () => {
+    const parsed = DetailedTransaction.parse({
+      authority: validAccountId,
+      hash: '0xabc',
+      block: 1,
+      created_at: '2024-01-01T00:00:00Z',
+      executable: 'Instructions',
+      status: 'Committed',
+      rejection_reason: null,
+      executable_payload: { instruction_count: 2 },
+      metadata: {},
+      nonce: null,
+      signature: 'ed0120deadbeef',
+      time_to_live: null,
+    });
+
+    expect(parsed.executable_payload).toEqual({ instruction_count: 2 });
+    expect(parsed).not.toHaveProperty('fee_payment');
+  });
+
   it('accepts transaction rejection reasons with plain-string json payloads', () => {
     const parsed = DetailedTransaction.parse({
       authority: validAccountId,
@@ -2231,6 +2267,7 @@ describe('Explorer payload schemas', () => {
         json: 'Account permission denied',
         message: 'Validation failed: Account permission denied',
       },
+      executable_payload: { instruction_count: 1 },
       metadata: {},
       nonce: null,
       signature: 'ed0120deadbeef',
@@ -2254,6 +2291,7 @@ describe('Explorer payload schemas', () => {
           scale: '0x01',
           json: 'Account permission denied',
         },
+        executable_payload: { instruction_count: 1 },
         metadata: {},
         nonce: null,
         signature: 'ed0120deadbeef',
@@ -2277,6 +2315,7 @@ describe('Explorer payload schemas', () => {
           details: { instruction: 0, reason: 'bad signature' },
         },
       },
+      executable_payload: { instruction_count: 1 },
       metadata: {},
       nonce: 1,
       signature: 'ed0120cafebabe',

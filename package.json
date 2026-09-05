@@ -10,7 +10,7 @@
     "postinstall": "node ./scripts/materialize-iroha-js-dist.mjs",
     "dev": "vite",
     "dev:serve-mock-metrics": "deno run -N -E=DEBUG ./serve-mock-metrics.ts",
-    "build": "run-s typecheck build:vite",
+    "build": "node ./scripts/materialize-iroha-js-dist.mjs && run-s typecheck build:vite",
     "build:vite": "vite build",
     "check:bundle": "node ./scripts/check-bundle-budget.mjs",
     "check:iroha-pin": "node ./scripts/check-iroha-pin.mjs",
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@iroha/core": "npm:@jsr/iroha__core@0.5.0-alpha",
-    "@iroha/iroha-js": "github:hyperledger-iroha/iroha#234e4a9c7090efd206dbdec6fcf851b72b577cf3&path:javascript/iroha_js",
+    "@iroha/iroha-js": "file:vendor/iroha-iroha-js-0.0.3.tgz",
     "@ngneat/falso": "^8.0.2",
     "@noble/ciphers": "^1.3.0",
     "@noble/hashes": "^2.0.1",
@@ -62,7 +62,8 @@
     "vue-i18n": "^11.1.12",
     "vue-json-pretty": "^2.6.0",
     "vue-router": "^4.6.3",
-    "zod": "^4.1.12"
+    "zod": "^4.1.12",
+    "tr46": "6.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.5",
@@ -90,6 +91,7 @@
     "vite-svg-loader": "^5.1.0",
     "vitest": "^4.0.8",
     "vue-eslint-parser": "^10.2.0",
-    "vue-tsc": "^3.1.3"
+    "vue-tsc": "^3.1.3",
+    "@types/tr46": "5.0.1"
   }
 }

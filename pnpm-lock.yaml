@@ -12,8 +12,8 @@ importers:
         specifier: npm:@jsr/iroha__core@0.5.0-alpha
         version: '@jsr/iroha__core@0.5.0-alpha'
       '@iroha/iroha-js':
-        specifier: github:hyperledger-iroha/iroha#234e4a9c7090efd206dbdec6fcf851b72b577cf3&path:javascript/iroha_js
-        version: https://codeload.github.com/hyperledger-iroha/iroha/tar.gz/234e4a9c7090efd206dbdec6fcf851b72b577cf3#path:javascript/iroha_js
+        specifier: file:vendor/iroha-iroha-js-0.0.3.tgz
+        version: file:vendor/iroha-iroha-js-0.0.3.tgz
       '@ngneat/falso':
         specifier: ^8.0.2
         version: 8.0.2
@@ -68,6 +68,9 @@ importers:
       tiny-invariant:
         specifier: ^1.3.3
         version: 1.3.3
+      tr46:
+        specifier: 6.0.0
+        version: 6.0.0
       ts-pattern:
         specifier: ^5.9.0
         version: 5.9.0
@@ -108,6 +111,9 @@ importers:
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
+      '@types/tr46':
+        specifier: 5.0.1
+        version: 5.0.1
       '@typescript-eslint/eslint-plugin':
         specifier: 8.46.3
         version: 8.46.3(@typescript-eslint/parser@8.46.3(eslint@9.39.1)(typescript@5.9.3))(eslint@9.39.1)(typescript@5.9.3)
@@ -531,8 +537,8 @@ packages:
     resolution: {integrity: sha512-Om86EjuQtA69hdNj3GQec9ZC0L0vPSAnXzB3gP/gyJ7+mA7t06d9aOAiqMZ+xEOsumGP4eEBlfl8zF2LOTzf2A==}
     engines: {node: '>= 16'}
 
-  '@iroha/iroha-js@https://codeload.github.com/hyperledger-iroha/iroha/tar.gz/234e4a9c7090efd206dbdec6fcf851b72b577cf3#path:javascript/iroha_js':
-    resolution: {path: javascript/iroha_js, tarball: https://codeload.github.com/hyperledger-iroha/iroha/tar.gz/234e4a9c7090efd206dbdec6fcf851b72b577cf3}
+  '@iroha/iroha-js@file:vendor/iroha-iroha-js-0.0.3.tgz':
+    resolution: {integrity: sha512-DMLBtBlre1ygr9TIBXzYlwTiXHMuM4Badf4hcblPsiq5D2cwe0OwRteZzXHGIZkF5I+LnIGarL3MIEpiDCQiiw==, tarball: file:vendor/iroha-iroha-js-0.0.3.tgz}
     version: 0.0.3
     engines: {node: '>=18'}
 
@@ -884,6 +890,9 @@ packages:
 
   '@types/qrcode@1.5.6':
     resolution: {integrity: sha512-te7NQcV2BOvdj2b1hCAHzAoMNuj65kNBMz0KBaxM6c3VGBOhU0dURQKOtH8CFNI/dsKkwlv32p26qYQTWoB5bw==}
+
+  '@types/tr46@5.0.1':
+    resolution: {integrity: sha512-/nNLTzy884WMMjksAFsrazXpwKcipQn1FltlXu4PycQFD8t6a4aq/z+F7mw05UI7p5O8MUvXLTPbISOoQtaugg==}
 
   '@types/web-bluetooth@0.0.14':
     resolution: {integrity: sha512-5d2RhCard1nQUC3aHcq/gHzWYO6K0WJmAbjO7mQJgCQKtZpgXxv1rOM6O/dBDhDYYVutk1sciOgNSe+5YyfM8A==}
@@ -3552,7 +3561,7 @@ snapshots:
 
   '@intlify/shared@11.1.12': {}
 
-  '@iroha/iroha-js@https://codeload.github.com/hyperledger-iroha/iroha/tar.gz/234e4a9c7090efd206dbdec6fcf851b72b577cf3#path:javascript/iroha_js':
+  '@iroha/iroha-js@file:vendor/iroha-iroha-js-0.0.3.tgz':
     dependencies:
       '@noble/ciphers': 1.3.0
       '@noble/curves': 1.9.7
@@ -3851,6 +3860,8 @@ snapshots:
   '@types/qrcode@1.5.6':
     dependencies:
       '@types/node': 24.10.0
+
+  '@types/tr46@5.0.1': {}
 
   '@types/web-bluetooth@0.0.14': {}
 

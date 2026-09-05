@@ -104,12 +104,13 @@ import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
 import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
+import { getRuntimeConfig } from '@/shared/runtime-config';
+import { historyCacheKey } from '@/shared/lib/history-cache';
 import { useIntervalFn, useThrottleFn } from '@vueuse/core';
 import { Transaction as TransactionSchema } from '@/shared/api/schemas';
 import type { Transaction as TransactionDto, TransactionStatus as TransactionStatusType } from '@/shared/api/schemas';
 import {
   buildLatestTransactionsCachePayload,
-  LATEST_TRANSACTIONS_CACHE_KEY,
   mergeLatestTransactions,
   parseLatestTransactionsCache,
 } from '@/widgets/latest-transactions/model';
@@ -117,42 +118,23 @@ import { classifySampleFreshness } from '@/shared/lib/freshness';
 import { useExplorerTransactionsEvents } from '@/shared/ui/composables/useExplorerTransactionsEvents';
 
 const listState = reactive({
-  per_page: 5,
+  limit: 5,
   status: null as TransactionStatusType | null,
 });
 
 async function fetchTransactions(params: typeof listState) {
-  const latest = await http.fetchLatestTransactions({
-    ...params,
-    status: params.status ?? undefined,
-  });
-  if (latest.status === SUCCESSFUL_FETCHING) {
-    return {
-      status: SUCCESSFUL_FETCHING,
-      data: {
-        pagination: {
-          page: 1,
-          per_page: params.per_page,
-          total_pages: latest.data.items.length > 0 ? 1 : 0,
-          total_items: latest.data.items.length,
-        },
-        items: latest.data.items,
-      },
-    } as const;
-  }
-
-  return await http.fetchTransactions({
-    ...params,
-    status: params.status ?? undefined,
-  });
+  return await http.fetchLatestTransactions({ ...params, status: params.status ?? undefined });
 }
 
+const cacheKey = historyCacheKey('latest-transactions', getRuntimeConfig().networkId, http.getToriiBaseUrl());
+
 function readTransactionsCache(status: TransactionStatusType | null): TransactionDto[] {
-  if (typeof window === 'undefined') return [];
+  const key = cacheKey;
+  if (typeof window === 'undefined' || !key) return [];
   try {
-    return parseLatestTransactionsCache(window.localStorage.getItem(LATEST_TRANSACTIONS_CACHE_KEY), {
+    return parseLatestTransactionsCache(window.localStorage.getItem(key), {
       status,
-      limit: listState.per_page,
+      limit: listState.limit,
     });
   } catch {
     return [];
@@ -160,9 +142,10 @@ function readTransactionsCache(status: TransactionStatusType | null): Transactio
 }
 
 function writeTransactionsCache(items: readonly TransactionDto[]) {
-  if (typeof window === 'undefined') return;
+  const key = cacheKey;
+  if (typeof window === 'undefined' || !key) return;
   try {
-    window.localStorage.setItem(LATEST_TRANSACTIONS_CACHE_KEY, buildLatestTransactionsCachePayload(items));
+    window.localStorage.setItem(key, buildLatestTransactionsCachePayload(items));
   } catch {
     // ignore storage quota/privacy mode failures
   }
@@ -193,7 +176,7 @@ const fetchedTransactions = computed(() =>
 const streamedTransactions = ref<TransactionDto[]>([]);
 const cachedTransactions = ref<TransactionDto[]>(readTransactionsCache(listState.status));
 const transactions = computed(() =>
-  mergeLatestTransactions([streamedTransactions.value, fetchedTransactions.value, cachedTransactions.value], listState.per_page)
+  mergeLatestTransactions([streamedTransactions.value, fetchedTransactions.value, cachedTransactions.value], listState.limit)
 );
 const isInitialLoading = computed(() => isLoading.value && transactions.value.length === 0);
 const availability = http.useToriiAvailability();
@@ -218,7 +201,11 @@ const latestSampleDate = computed<Date | null>(() => {
     transactions.value[0].created_at
   );
 });
-const latestSampleTone = computed(() => classifySampleFreshness(latestSampleDate.value?.getTime() ?? null, nowMs.value));
+const latestSampleTone = computed(() =>
+  cachedTransactions.value.length > 0 && (availability.state.value !== 'healthy' || (!fetchedTransactions.value.length && !streamedTransactions.value.length))
+    ? 'stale'
+    : classifySampleFreshness(latestSampleDate.value?.getTime() ?? null, nowMs.value)
+);
 const latestSampleToneKeyMap = {
   fresh: 'telemetry.dataFresh',
   delayed: 'telemetry.dataDelayed',
@@ -247,9 +234,9 @@ watch(
 watch(
   () => fetchedTransactions.value,
   (items) => {
-    if (!items.length) return;
+    if (scope.value?.expose.data?.status !== SUCCESSFUL_FETCHING) return;
 
-    cachedTransactions.value = mergeLatestTransactions([items], listState.per_page);
+    cachedTransactions.value = mergeLatestTransactions([items], listState.limit);
 
     if (!listState.status) {
       writeTransactionsCache(items);
@@ -267,7 +254,7 @@ watch(
   (transaction) => {
     if (!transaction) return;
     if (listState.status && transaction.status !== listState.status) return;
-    streamedTransactions.value = mergeLatestTransactions([[transaction], streamedTransactions.value], listState.per_page);
+    streamedTransactions.value = mergeLatestTransactions([[transaction], streamedTransactions.value], listState.limit);
     scheduleTransactionsReload();
   }
 );

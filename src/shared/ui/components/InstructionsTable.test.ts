@@ -27,7 +27,7 @@ const BaseTableStub = defineComponent({
     items: { type: Array, default: () => [] },
     rowKey: { type: Function, required: false, default: undefined },
   },
-  emits: ['update:page', 'update:pageSize', 'click:row'],
+  emits: ['update:cursor', 'update:pageSize', 'click:row'],
   template: `
     <div data-test="base-table">
       <slot name="header" />
@@ -239,12 +239,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [baseInstruction],
       },
     });
@@ -307,6 +302,18 @@ describe('InstructionsTable', () => {
       mountedWrappers.push(wrapper);
       return wrapper;
     })();
+
+  it('does not pass a blank authority selector for a transaction-scoped list', async () => {
+    factory();
+    await flushPromises();
+
+    expect(api.fetchInstructions).toHaveBeenCalledWith(
+      expect.objectContaining({ transaction_hash: '0xabc' })
+    );
+    expect((api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]).not.toHaveProperty(
+      'authority'
+    );
+  });
 
   it('exposes each dynamic instruction field as a cell and keeps the action button interactive', async () => {
     const fullWrapper = factory();
@@ -396,25 +403,15 @@ describe('InstructionsTable', () => {
         },
       },
     };
-    (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockImplementation(async ({ page = 1 }) => ({
+    (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockImplementation(async ({ cursor }) => ({
       status: SUCCESSFUL_FETCHING,
-      data: page === 1
+      data: cursor === null
         ? {
-            pagination: {
-              page: 1,
-              per_page: 10,
-              total_pages: 2,
-              total_items: 2,
-            },
+            pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: 'next', has_more: true },
             items: [contractInstruction],
           }
         : {
-            pagination: {
-              page: 2,
-              per_page: 10,
-              total_pages: 2,
-              total_items: 2,
-            },
+            pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
             items: [manifestInstruction],
           },
     }));
@@ -441,12 +438,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [multisigInstruction],
       },
     });
@@ -476,12 +468,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [multisigInstruction],
       },
     });
@@ -513,12 +500,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [customInstruction],
       },
     });
@@ -534,12 +516,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [wireIdInstruction],
       },
     });
@@ -564,12 +541,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [variantInstruction],
       },
     });
@@ -585,7 +557,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [resolvedInstruction],
       },
     });
@@ -672,7 +644,7 @@ describe('InstructionsTable', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     // Move away from the latest page.
-    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:page', 2);
+    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:cursor', 'next');
     await flushPromises();
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
@@ -685,7 +657,7 @@ describe('InstructionsTable', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     // Back on page 1, stream updates should refetch.
-    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:page', 1);
+    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:cursor', null);
     await flushPromises();
     expect(fetchMock).toHaveBeenCalledTimes(3);
     eventSourceData.value = JSON.stringify({
@@ -744,12 +716,7 @@ describe('InstructionsTable', () => {
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 0,
-          total_items: 0,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [],
       },
     });

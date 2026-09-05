@@ -58,7 +58,7 @@ const BaseTabsStub = {
 
 const BaseTableStub = {
   props: ['items'],
-  emits: ['click:row', 'update:page', 'update:pageSize'],
+  emits: ['click:row', 'update:cursor', 'update:pageSize'],
   template: `
     <div class="table-stub">
       <slot name="header" />
@@ -173,7 +173,7 @@ beforeEach(() => {
   apiState.instructions = {
     status: 'ok',
     data: {
-      pagination: { page: 1, per_page: 10, total_pages: 1, total_items: 1 },
+      pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       items: [deploymentInstruction()],
     },
   };
@@ -246,8 +246,7 @@ describe('SmartContractsPage route-backed views', () => {
       result_ok: 'false',
     });
     expect(apiMocks.fetchContractActivity).toHaveBeenLastCalledWith(expect.objectContaining({
-      page: 1,
-      per_page: 10,
+      page: 1, per_page: 10,
       authority: accountAlias,
       contract_entrypoint: 'swap',
       result_ok: false,

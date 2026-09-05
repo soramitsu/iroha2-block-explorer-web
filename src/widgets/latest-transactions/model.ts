@@ -10,8 +10,6 @@ interface LatestTransactionsCachePayload {
   items: unknown
 }
 
-export const LATEST_TRANSACTIONS_CACHE_KEY = 'latest_transactions_cache_v2';
-
 function toTimestamp(value: unknown): number {
   if (value instanceof Date) return value.getTime();
   const parsed = new Date(value as string).getTime();

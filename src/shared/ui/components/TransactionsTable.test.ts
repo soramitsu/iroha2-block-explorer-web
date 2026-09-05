@@ -7,22 +7,32 @@ import * as api from '@/shared/api';
 import type * as SharedApiModule from '@/shared/api';
 import type * as VueUse from '@vueuse/core';
 import { defineComponent, reactive, ref } from 'vue';
+import { historyCacheKey } from '@/shared/lib/history-cache';
+
+const cacheScope = vi.hoisted(() => ({
+  networkId: `hash:${'AB'.repeat(32)}#B99E`,
+  toriiUrl: 'https://taira.sora.org',
+}));
+vi.mock('@/shared/runtime-config', () => ({
+  getRuntimeConfig: () => ({ networkId: cacheScope.networkId, toriiBaseUrl: cacheScope.toriiUrl, toriiForceBaseUrl: true }),
+}));
+const boundCacheKey = () => historyCacheKey('transactions', cacheScope.networkId, cacheScope.toriiUrl)!;
 
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 
 const eventSourceData = ref<string | null>(null);
 const windowScrollY = ref(0);
 const routeQuery = reactive<Record<string, string | undefined>>({});
-const routePage = ref(1);
-const routePageSize = ref(10);
+const routeCursor = ref<string | null>(null);
+const routeLimit = ref(10);
 
 vi.mock('@/shared/ui/composables/useListRouteQuery', () => ({
-  useListRouteQuery: () => ({
+  useCursorListRouteQuery: () => ({
     route: reactive({ query: routeQuery }),
-    page: routePage,
-    pageSize: routePageSize,
+    cursor: routeCursor,
+    limit: routeLimit,
     updateListQuery: vi.fn(async (patch: Record<string, string | number | null | undefined>) => {
-      routePage.value = 1;
+      routeCursor.value = null;
       for (const [key, value] of Object.entries(patch)) {
         if (value === null || value === undefined || value === '') delete routeQuery[key];
         else routeQuery[key] = String(value);
@@ -38,7 +48,7 @@ const BaseTableStub = defineComponent({
     rowKey: { type: Function, required: false, default: undefined },
     reversed: { type: Boolean, required: false, default: false },
   },
-  emits: ['update:page', 'update:pageSize', 'click:row'],
+  emits: ['update:cursor', 'update:pageSize', 'click:row'],
   template: `
     <div data-test="base-table">
       <slot name="header" />
@@ -152,8 +162,8 @@ describe('TransactionsTable', () => {
     fetchTransactionsMock.mockReset();
     eventSourceData.value = null;
     windowScrollY.value = 0;
-    routePage.value = 1;
-    routePageSize.value = 10;
+    routeCursor.value = null;
+    routeLimit.value = 10;
     for (const key of Object.keys(routeQuery)) delete routeQuery[key];
     // Ensure stream code-path is exercised.
     (window as any).EventSource = class EventSource {};
@@ -161,12 +171,7 @@ describe('TransactionsTable', () => {
     fetchTransactionsMock.mockResolvedValue({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [baseTransaction],
       },
     });
@@ -231,7 +236,7 @@ describe('TransactionsTable', () => {
     expect(fetchTransactionsMock).toHaveBeenCalledTimes(1);
 
     // Move away from the latest page.
-    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:page', 2);
+    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:cursor', 'next');
     await flushPromises();
     expect(fetchTransactionsMock).toHaveBeenCalledTimes(2);
 
@@ -245,7 +250,7 @@ describe('TransactionsTable', () => {
     expect(fetchTransactionsMock).toHaveBeenCalledTimes(2);
 
     // Back on the latest page, stream updates should refetch.
-    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:page', 1);
+    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:cursor', null);
     await flushPromises();
     expect(fetchTransactionsMock).toHaveBeenCalledTimes(3);
 
@@ -270,8 +275,7 @@ describe('TransactionsTable', () => {
     expect(fetchTransactionsMock).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
-        page: 1,
-        per_page: 10,
+        cursor: null, limit: 10,
       })
     );
   });
@@ -298,11 +302,11 @@ describe('TransactionsTable', () => {
     expect(fetchTransactionsMock).toHaveBeenCalledTimes(2);
   });
 
-  it('hydrates rows from default-list cache while the first fetch is pending', async () => {
+  it.each([false, true])('labels pending cache stale and replaces it on current response (empty: %s)', async (empty) => {
     const first = deferred<{
       status: string
       data: {
-        pagination: { page: number, per_page: number, total_pages: number, total_items: number }
+        pagination: { limit: number, snapshot_height: number, snapshot_hash: string | null, next_cursor: string | null, has_more: boolean }
         items: Array<typeof baseTransaction>
       }
     }>();
@@ -310,7 +314,7 @@ describe('TransactionsTable', () => {
     fetchTransactionsMock.mockImplementationOnce(() => first.promise);
 
     window.localStorage.setItem(
-      'transactions_table_cache_v2',
+      boundCacheKey(),
       JSON.stringify({
         version: 1,
         updated_at_ms: Date.now(),
@@ -329,20 +333,36 @@ describe('TransactionsTable', () => {
 
     expect(fetchTransactionsMock).toHaveBeenCalledTimes(1);
     expect(wrapper.text()).toContain('0xcached');
+    expect(wrapper.get('[data-test="history-cache-stale"]').text()).toContain(i18n.global.t('telemetry.dataStale'));
 
     first.resolve({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
-        items: [baseTransaction],
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
+        items: empty ? [] : [baseTransaction],
       },
     });
     await flushPromises();
+    expect(wrapper.find('[data-test="history-cache-stale"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toContain('0xcached');
+    expect(JSON.parse(window.localStorage.getItem(boundCacheKey())!).items).toHaveLength(empty ? 0 : 1);
+  });
+
+  it.each([
+    'transactions_table_cache_v2',
+    historyCacheKey('transactions', cacheScope.networkId, 'https://another.example')!,
+    historyCacheKey('transactions', `hash:${'11'.repeat(32)}#4667`, cacheScope.toriiUrl)!,
+  ])('does not render cache from a different ledger identity or retired key: %s', async (key) => {
+    fetchTransactionsMock.mockImplementationOnce(() => new Promise(() => {}));
+    window.localStorage.setItem(key, JSON.stringify({
+      version: 1,
+      updated_at_ms: Date.now(),
+      items: [{ ...baseTransaction, hash: '0xforeign-cache' }],
+    }));
+    const wrapper = factory();
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('0xforeign-cache');
+    expect(wrapper.find('[data-test="history-cache-stale"]').exists()).toBe(false);
   });
 
   it('renders fetched paginated rows after leaving the latest page even when cache is warm', async () => {
@@ -350,24 +370,14 @@ describe('TransactionsTable', () => {
       .mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
         data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 2,
-          total_items: 20,
-          },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: 'next', has_more: true },
           items: [baseTransaction],
         },
       })
       .mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
         data: {
-        pagination: {
-          page: 2,
-          per_page: 10,
-          total_pages: 2,
-          total_items: 20,
-          },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
           items: [
             {
               ...baseTransaction,
@@ -380,7 +390,7 @@ describe('TransactionsTable', () => {
       });
 
     window.localStorage.setItem(
-      'transactions_table_cache_v2',
+      boundCacheKey(),
       JSON.stringify({
         version: 1,
         updated_at_ms: Date.now(),
@@ -399,7 +409,7 @@ describe('TransactionsTable', () => {
 
     expect(wrapper.text()).toContain('0xtx');
 
-    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:page', 2);
+    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:cursor', 'next');
     await flushPromises();
 
     expect(fetchTransactionsMock).toHaveBeenCalledTimes(2);
@@ -412,24 +422,14 @@ describe('TransactionsTable', () => {
       .mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
         data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 2,
-          total_items: 20,
-          },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: 'next', has_more: true },
           items: [baseTransaction],
         },
       })
       .mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
         data: {
-        pagination: {
-          page: 2,
-          per_page: 10,
-          total_pages: 2,
-          total_items: 20,
-          },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
           items: [
             {
               ...baseTransaction,
@@ -444,10 +444,10 @@ describe('TransactionsTable', () => {
     const wrapper = factory();
     await flushPromises();
 
-    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:page', 2);
+    wrapper.getComponent({ name: 'BaseTable' }).vm.$emit('update:cursor', 'next');
     await flushPromises();
 
-    const rawCache = window.localStorage.getItem('transactions_table_cache_v2');
+    const rawCache = window.localStorage.getItem(boundCacheKey());
     expect(rawCache).not.toBeNull();
 
     const parsedCache = JSON.parse(rawCache!);
@@ -460,7 +460,7 @@ describe('TransactionsTable', () => {
     const first = deferred<{
       status: string
       data: {
-        pagination: { page: number, per_page: number, total_pages: number, total_items: number }
+        pagination: { limit: number, snapshot_height: number, snapshot_hash: string | null, next_cursor: string | null, has_more: boolean }
         items: Array<typeof baseTransaction>
       }
     }>();
@@ -470,12 +470,7 @@ describe('TransactionsTable', () => {
       .mockResolvedValue({
         status: SUCCESSFUL_FETCHING,
         data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 2,
-          },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
           items: [
             baseTransaction,
             {
@@ -507,12 +502,7 @@ describe('TransactionsTable', () => {
     first.resolve({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_pages: 1,
-          total_items: 1,
-        },
+        pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
         items: [baseTransaction],
       },
     });

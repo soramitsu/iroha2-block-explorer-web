@@ -104,6 +104,29 @@ const BaseTableStub = {
   `,
 };
 
+function mountHistoryScan(assetSelector = SAMPLE_ASSET_DEFINITION_ID) {
+  routerMocks.currentRoute.value = {
+    name: 'econometrics', query: { asset: assetSelector }, params: {},
+  } as any;
+  return mount(Econometrics, {
+    global: {
+      plugins: [i18n],
+      stubs: {
+        BaseContentBlock: BaseContentBlockStub, BaseInnerBlock: BaseInnerBlockStub,
+        BaseTable: BaseTableStub, BaseButton: true, BaseHash: true,
+        BaseLoading: true, DataField: DataFieldStub,
+      },
+    },
+  });
+}
+
+function historyPage(nextCursor: string | null) {
+  return {
+    limit: 100, snapshot_height: 2, snapshot_hash: 'ab'.repeat(32),
+    next_cursor: nextCursor, has_more: nextCursor !== null,
+  };
+}
+
 describe('Econometrics', () => {
   beforeEach(() => {
     routerMocks.replace.mockReset();
@@ -142,7 +165,7 @@ describe('Econometrics', () => {
     apiMocks.fetchInstructions.mockResolvedValue({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: { page: 1, per_page: 200, total_pages: 1, total_items: 0 },
+        pagination: { limit: 100, snapshot_height: 2, snapshot_hash: 'ab'.repeat(32), next_cursor: null, has_more: false },
         items: [],
       },
     });
@@ -188,6 +211,138 @@ describe('Econometrics', () => {
 
     expect(routerMocks.replace).toHaveBeenCalledWith({ query: { asset: SAMPLE_ASSET_DEFINITION_ID } });
     expect(apiMocks.fetchAssetDefinition).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows history cursors past old transaction timestamps before declaring a window complete', async () => {
+    apiMocks.fetchInstructions.mockImplementation(({ kind, cursor }: { kind: string, cursor: string | null }) => ({
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        pagination: historyPage(kind === 'Transfer' && cursor === null ? 'opaque-next' : null),
+        items: kind === 'Transfer' ? [{
+          created_at: cursor === null ? new Date(0) : new Date(),
+          kind: 'Transfer', transaction_status: 'Committed',
+          box: { json: { kind: 'Transfer', payload: { variant: 'AssetDefinition', value: {} } } },
+        }] : [],
+      },
+    }));
+    const wrapper = mountHistoryScan();
+    await flushPromises();
+    const transfers = apiMocks.fetchInstructions.mock.calls.map(([params]) => params).filter((params) => params.kind === 'Transfer');
+    expect(transfers).toEqual([
+      { kind: 'Transfer', cursor: null, limit: 100, transaction_status: 'Committed' },
+      { kind: 'Transfer', cursor: 'opaque-next', limit: 100, transaction_status: 'Committed' },
+    ]);
+    const windows = wrapper.findAllComponents(BaseTableStub).map((table) => table.props('items')).find((items) => items[0]?.key === '1h');
+    expect(windows.map((window: { complete: boolean }) => window.complete)).toEqual([true, true, true]);
+    wrapper.unmount();
+  });
+
+  it('keeps bounded history scans incomplete while the server still has more rows', async () => {
+    let transferPages = 0;
+    const oldItems = Array.from({ length: 100 }, () => ({ created_at: new Date(0) }));
+    apiMocks.fetchInstructions.mockImplementation(({ kind }: { kind: string }) => ({
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        pagination: historyPage(kind === 'Transfer' ? `opaque-${++transferPages}` : null),
+        items: kind === 'Transfer' ? oldItems : [],
+      },
+    }));
+    const wrapper = mountHistoryScan();
+    await flushPromises();
+    expect(transferPages).toBe(20);
+    const windows = wrapper.findAllComponents(BaseTableStub).map((table) => table.props('items')).find((items) => items[0]?.key === '1h');
+    expect(windows.map((window: { complete: boolean }) => window.complete)).toEqual([false, false, false]);
+    wrapper.unmount();
+  });
+
+  it('rejects a changed history snapshot before displaying a combined result', async () => {
+    apiMocks.fetchInstructions
+      .mockResolvedValueOnce({ status: SUCCESSFUL_FETCHING, data: { items: [], pagination: historyPage('opaque-next') } })
+      .mockResolvedValueOnce({
+        status: SUCCESSFUL_FETCHING,
+        data: { items: [], pagination: { ...historyPage(null), snapshot_hash: 'cd'.repeat(32) } },
+      });
+    const wrapper = mountHistoryScan();
+    await flushPromises();
+    expect(wrapper.text()).toContain('Explorer history snapshot changed');
+    expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
+  });
+
+  it.each([SAMPLE_ASSET_DEFINITION_ID, SAMPLE_ASSET_ALIAS])('computes canonical Asset activity for selector %s and excludes rejected transfers', async (selector) => {
+    const asset = `${SAMPLE_ASSET_DEFINITION_ID}#${SAMPLE_ACCOUNT_ID}`;
+    apiMocks.fetchInstructions.mockImplementation(({ kind }: { kind: string }) => {
+      const value = kind === 'Transfer'
+        ? { source: asset, object: '12.5', destination: SAMPLE_ACCOUNT_ID }
+        : { object: kind === 'Mint' ? '4.5' : '1.25', destination: asset };
+      const instruction = {
+        kind, created_at: new Date(), transaction_status: 'Committed',
+        box: { json: { kind, payload: { variant: 'Asset', value } } },
+      };
+      return {
+        status: SUCCESSFUL_FETCHING,
+        data: {
+          pagination: historyPage(null),
+          items: kind === 'Transfer' ? [instruction, { ...instruction, transaction_status: 'Rejected' }] : [instruction],
+        },
+      };
+    });
+    const wrapper = mountHistoryScan(selector);
+    await flushPromises();
+    const tables = wrapper.findAllComponents(BaseTableStub).map((table) => table.props('items'));
+    const velocity = tables.find((items) => items[0]?.transfers !== undefined);
+    const issuance = tables.find((items) => items[0]?.mintCount !== undefined);
+    expect(velocity[0]).toMatchObject({ transfers: 1, uniqueSenders: 1, uniqueReceivers: 1, complete: true });
+    expect(velocity[0].amount.toString()).toBe('12.5');
+    expect(issuance[0]).toMatchObject({ mintCount: 1, burnCount: 1, complete: true });
+    expect(issuance[0].minted.toString()).toBe('4.5');
+    expect(issuance[0].burned.toString()).toBe('1.25');
+    expect(issuance[0].net.toString()).toBe('3.25');
+    expect(apiMocks.fetchInstructions.mock.calls.every(([params]) => params.transaction_status === 'Committed')).toBe(true);
+    expect(apiMocks.fetchAssetDefinition).toHaveBeenCalledWith(selector);
+    expect(apiMocks.fetchAssets).toHaveBeenCalledWith(expect.objectContaining({ definition: SAMPLE_ASSET_DEFINITION_ID }));
+    wrapper.unmount();
+  });
+
+  it('rejects combined net issuance when independent filters return different ledger snapshots', async () => {
+    apiMocks.fetchInstructions.mockImplementation(({ kind }: { kind: string }) => ({
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        pagination: kind === 'Burn'
+          ? { ...historyPage(null), snapshot_height: 3, snapshot_hash: 'cd'.repeat(32) }
+          : historyPage(null),
+        items: [],
+      },
+    }));
+    const wrapper = mountHistoryScan();
+    await flushPromises();
+    expect(wrapper.get('.econometrics-page__error').text()).toContain('Issuance statistics span different ledger snapshots');
+    expect(wrapper.findAllComponents(BaseTableStub).some((table) => table.props('items')[0]?.net !== undefined)).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('shows batch statistics as unavailable without inventing settled amounts', async () => {
+    apiMocks.fetchInstructions.mockResolvedValueOnce({
+      status: SUCCESSFUL_FETCHING,
+      data: {
+        pagination: historyPage(null),
+        items: [{
+          kind: 'Transfer', created_at: new Date(), transaction_status: 'Committed',
+          box: { json: { kind: 'Transfer', payload: { variant: 'AssetBatch', value: {
+            mode: 'Independent', entries: [{
+              leg_id: 'leg-1', from: SAMPLE_ACCOUNT_ID, to: SAMPLE_ACCOUNT_ID,
+              asset_definition: SAMPLE_ASSET_DEFINITION_ID, amount: '999999',
+            }],
+          } } } },
+        }],
+      },
+    });
+    const wrapper = mountHistoryScan();
+    await flushPromises();
+    expect(wrapper.get('.econometrics-page__error').text()).toContain('Batch transfer statistics are unavailable');
+    expect(wrapper.text()).not.toContain('999999');
+    expect(wrapper.findAllComponents(BaseTableStub).some((table) => table.props('items')[0]?.transfers !== undefined)).toBe(false);
+    wrapper.unmount();
   });
 
   it('advances authoritative cursors in the explicitly configured client-scan mode', async () => {

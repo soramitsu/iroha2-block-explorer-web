@@ -34,7 +34,7 @@ const mainState = {
   data: {
     status: SUCCESSFUL_FETCHING,
     data: {
-      pagination: { page: 1, per_page: 10, total_pages: 1, total_items: mockBlocks.length },
+      pagination: { limit: 10, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       items: mockBlocks,
     },
   },
@@ -46,7 +46,7 @@ const probeState = {
   data: {
     status: SUCCESSFUL_FETCHING,
     data: {
-      pagination: { page: 1, per_page: 1, total_pages: 1, total_items: 1 },
+      pagination: { limit: 1, snapshot_height: 1, snapshot_hash: 'a'.repeat(64), next_cursor: null, has_more: false },
       items: [{ ...mockBlocks[0], height: mockBlocks[0].height }],
     },
   },
@@ -60,7 +60,7 @@ vi.mock('@/shared/utils/setup-async-data', () => ({
 vi.mock('@/shared/ui/composables/useListRouteQuery', async () => {
   const { ref } = await vi.importActual<typeof import('vue')>('vue');
   return {
-    useListRouteQuery: () => ({ page: ref(1), pageSize: ref(10), updateListQuery: vi.fn() }),
+    useCursorListRouteQuery: () => ({ cursor: ref(null), limit: ref(10), updateListQuery: vi.fn() }),
   };
 });
 
@@ -71,7 +71,7 @@ const BaseContentBlockStub = {
 const BaseTableStub = {
   name: 'BaseTable',
   props: ['items', 'reversed', 'rowKey'],
-  emits: ['update:page', 'update:pageSize'],
+  emits: ['update:cursor', 'update:pageSize'],
   template: '<div><slot name="row" v-for="item in items" :item="item" /></div>',
 };
 

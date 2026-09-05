@@ -1,6 +1,7 @@
 import { z } from 'zod/v4';
 import type { Instruction, TransactionStatus } from '@/shared/api/schemas';
 import { isEncodedAssetLiteral, normalizeLooseAccountLiteral } from './account-literal';
+import { HistoryScanCursorSchema, type HistoryScanCursor } from './history-scan';
 
 export type TraceSeedType = 'account' | 'transaction';
 
@@ -56,11 +57,9 @@ export interface TraceEvent {
   createdAtMs: number
 }
 
-export interface TraceCursor {
+export interface TraceCursor extends HistoryScanCursor {
   accountId: string
   depth: number
-  block: number
-  page: number
   exhausted: boolean
 }
 
@@ -506,11 +505,9 @@ const TraceEventSchema: z.ZodType<TraceEvent> = z.object({
   createdAtMs: z.number(),
 });
 
-const TraceCursorSchema: z.ZodType<TraceCursor> = z.object({
+const TraceCursorSchema: z.ZodType<TraceCursor> = HistoryScanCursorSchema.extend({
   accountId: z.string(),
   depth: z.number(),
-  block: z.number(),
-  page: z.number(),
   exhausted: z.boolean(),
 });
 

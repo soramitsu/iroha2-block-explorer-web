@@ -1,5 +1,6 @@
 const HASH_HEX_PATTERN = /^[0-9a-fA-F]{64}$/u;
 const HASH_LITERAL_PATTERN = /^hash:([0-9a-fA-F]{64})#([0-9a-fA-F]{4})$/u;
+const CANONICAL_HASH_LITERAL_PATTERN = /^hash:([0-9A-F]{64})#([0-9A-F]{4})$/u;
 
 function hashLiteralChecksum(body: string): string {
   let crc = 0xffff;
@@ -12,6 +13,22 @@ function hashLiteralChecksum(body: string): string {
     }
   }
   return crc.toString(16).toUpperCase().padStart(4, '0');
+}
+
+/**
+ * Check one exact canonical Iroha 32-byte hash literal without normalizing it.
+ *
+ * Canonical literals retain their uppercase body and CRC-16/CCITT-FALSE
+ * checksum exactly, and the underlying hash must carry Iroha's marker bit.
+ */
+export function isCanonicalIrohaHashLiteral32(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const literal = CANONICAL_HASH_LITERAL_PATTERN.exec(value);
+  const body = literal?.[1];
+  const checksum = literal?.[2];
+  if (!body || !checksum) return false;
+  if (hashLiteralChecksum(body) !== checksum) return false;
+  return (Number.parseInt(body.slice(-2), 16) & 1) === 1;
 }
 
 /**
