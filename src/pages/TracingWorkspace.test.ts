@@ -4,6 +4,9 @@ import { defineComponent } from 'vue';
 import { i18n } from '@/shared/lib/localization';
 import { SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
 import TracingWorkspace from './TracingWorkspace.vue';
+import tairaHistory from '../../tests/fixtures/taira-history.json';
+
+const HISTORY_CURSOR = tairaHistory.latestTransactions.pagination.next_cursor;
 
 const ACCOUNT_ALICE =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
@@ -293,7 +296,7 @@ describe('TracingWorkspace', () => {
 
       apiMocks.fetchInstructions.mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
-        data: { items: [], pagination: historyPage('opaque-next') },
+        data: { items: [], pagination: historyPage(HISTORY_CURSOR) },
       });
       wrapper = factory();
       await flushPromises();
@@ -311,7 +314,7 @@ describe('TracingWorkspace', () => {
       await flushPromises();
       expect(apiMocks.fetchInstructions).toHaveBeenCalledTimes(2);
       expect(apiMocks.fetchInstructions).toHaveBeenLastCalledWith(
-        expect.objectContaining({ cursor: 'opaque-next', limit: 100 })
+        expect.objectContaining({ cursor: HISTORY_CURSOR, limit: 100 })
       );
     } finally {
       wrapper?.unmount();
@@ -371,7 +374,7 @@ describe('TracingWorkspace', () => {
       apiMocks.fetchInstructions
         .mockResolvedValueOnce({
           status: SUCCESSFUL_FETCHING,
-          data: { items: [], pagination: historyPage('checkpoint-a') },
+          data: { items: [], pagination: historyPage(HISTORY_CURSOR) },
         })
         .mockResolvedValueOnce({
           status: SUCCESSFUL_FETCHING,
@@ -379,7 +382,7 @@ describe('TracingWorkspace', () => {
             items: [buildInstruction({ transaction_hash: '0xwrong-snapshot' })],
             pagination: failure === 'snapshot'
               ? { ...historyPage(null), snapshot_hash: 'cd'.repeat(32) }
-              : historyPage('checkpoint-a'),
+              : historyPage(HISTORY_CURSOR),
           },
         });
       wrapper = factory();
@@ -393,7 +396,7 @@ describe('TracingWorkspace', () => {
       const resume = wrapper.findAll('.base-button-stub').find((button) => button.text().includes('Resume'));
       await resume!.trigger('click');
       await flushPromises();
-      expect(apiMocks.fetchInstructions).toHaveBeenLastCalledWith(expect.objectContaining({ cursor: 'checkpoint-a' }));
+      expect(apiMocks.fetchInstructions).toHaveBeenLastCalledWith(expect.objectContaining({ cursor: HISTORY_CURSOR }));
       expect(wrapper.find('.tracing-page__error').exists()).toBe(false);
     } finally {
       wrapper?.unmount();
@@ -410,7 +413,7 @@ describe('TracingWorkspace', () => {
       apiMocks.fetchTransaction.mockResolvedValue({ status: SUCCESSFUL_FETCHING, data: { authority: ACCOUNT_ALICE } });
       apiMocks.fetchInstructions.mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
-        data: { items: [], pagination: historyPage('seed-next') },
+        data: { items: [], pagination: historyPage(HISTORY_CURSOR) },
       });
       wrapper = factory();
       await flushPromises();
@@ -418,7 +421,7 @@ describe('TracingWorkspace', () => {
       await flushPromises();
       expect(apiMocks.fetchInstructions.mock.calls.slice(0, 2).map(([params]) => params)).toEqual([
         { cursor: null, limit: 100, transaction_hash: '0xseed', kind: 'Transfer' },
-        { cursor: 'seed-next', limit: 100, transaction_hash: '0xseed', kind: 'Transfer' },
+        { cursor: HISTORY_CURSOR, limit: 100, transaction_hash: '0xseed', kind: 'Transfer' },
       ]);
     } finally {
       wrapper?.unmount();

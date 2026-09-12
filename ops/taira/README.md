@@ -1,5 +1,11 @@
 # Taira Explorer release runbook
 
+The [2026-09-12 canonical SDK publication](../../docs/roadmap/taira-sdk-integration-2026-09-12.md)
+records the currently served frontend artifact and its explicit qualification
+limits. That operator release uses an atomically exchanged real `dist` directory. The
+signed release procedure below requires its own manifest and symlink layout;
+the operator receipt does not satisfy those admission requirements.
+
 The Taira nginx vhost must serve this symlink:
 
 ```text
@@ -35,6 +41,13 @@ cannot run `nginx -T` directly. That capture must be a deployment-account-owned 
 file and must not be group- or world-writable; symlinks and mutable/foreign-owned captures are
 rejected.
 
+The public edge must compress the packaged browser codec. The signed SDK bounds
+its download to 30 seconds; serving the 36.9 MB Wasm uncompressed can prevent
+startup. The maintained [Explorer nginx block](../nginx/explorer.taira.conf) enables
+gzip at level 6 for `application/wasm`, `application/javascript` and `text/css`,
+with `Vary: Accept-Encoding`. Verify a real gzip GET, its decompressed artifact
+hash and a fresh browser startup after a coordinated shared nginx reload.
+
 ## Required release inputs
 
 - Run the release tool with exactly Node `24.19.0` and pnpm `10.11.0`. Both the Node process and the
@@ -59,12 +72,13 @@ rejected.
   deployment records this source closure in the manifest.
 - Set `TAIRA_RUNTIME_CONFIG` to a deployment-account-owned, non-symlink JSON file outside every
   Explorer checkout, isolated build, and release-store parent. It must not be group- or
-  world-writable. Only the frontend's reviewed public config keys are accepted; unknown fields are
-  rejected so secrets cannot silently become public. Its
-  `toriiBaseUrl` must be exactly `https://taira.sora.org`, `toriiForceBaseUrl` must be `true`, and
-  every configured service/failover origin must use non-loopback HTTPS. An optional `networkId` must be the exact
-  canonical lowercase 32-byte identity supplied from authenticated deployment metadata; it is never inferred or
-  defaulted, and Connect remains disabled while it is absent. The file is validated and
+  world-writable. The exact four-field frontend profile is required: `toriiBaseUrl` must be
+  `https://taira.sora.org`, `toriiForceBaseUrl` must be `true`, `networkPrefix` must be `369`, and `networkId` must be the
+  canonical `hash:<64 uppercase hex>#<4 uppercase CRC16>` identity supplied from authenticated
+  deployment metadata. The checksum and Iroha marker bit are checked. Missing identities or prefixes, any different prefix,
+  proxy origins, failover settings, and all extra fields are rejected. Start from
+  [`config.json.example`](config.json.example) and replace its identity placeholder with the
+  deployment value; never infer or default it. The file is validated and
   installed into the build before its digest is recorded.
 - Deploy only after `https://taira.sora.org/status` reports the same full revision pinned by
   `package.json`, `pnpm-lock.yaml`, and `tests/mochi/explorer-profile.json`. The status request

@@ -1,4 +1,5 @@
 import { createServer, type Server } from 'node:http';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
@@ -95,6 +96,31 @@ const releaseA = `${explorerA.slice(0, 12)}-${runtimeRevision.slice(0, 12)}`;
 const releaseB = `${explorerB.slice(0, 12)}-${runtimeRevision.slice(0, 12)}`;
 const packageLockSha256 = 'f0bcde463fa201480015b9caa7db2017d3c1b6ca9c7e133df955038c54333d48';
 const explorerOrigin = 'https://taira-explorer.sora.org';
+const checkedNetworkId = `hash:${'AB'.repeat(32)}#B99E`;
+const tairaRuntimeConfig = {
+  toriiBaseUrl: 'https://taira.sora.org',
+  toriiForceBaseUrl: true,
+  networkId: checkedNetworkId,
+  networkPrefix: 369,
+};
+// Synthetic release content exercises the real budget gate without using the
+// admitted production SDK owner or relaxing its separate artifact policy.
+const fixtureSdkWasmPath = '_assets/fixture-sdk-codec.wasm';
+const fixtureSdkWasmBytes = Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]);
+const fixtureBundleBudgets = {
+  schema_version: 2,
+  default_chunk_gzip_bytes: 1_000_000,
+  chunk_gzip_bytes: {},
+  entry_gzip_bytes: { 'index.html': 1_000_000 },
+  entry_startup_gzip_bytes: { 'index.html': 1_000_000 },
+  sdk_wasm: {
+    sha256: createHash('sha256').update(fixtureSdkWasmBytes).digest('hex'),
+    raw_bytes: fixtureSdkWasmBytes.byteLength,
+    max_raw_bytes: 1024,
+    max_gzip_bytes: 1024,
+  },
+  route_gzip_bytes: {},
+};
 const temporaryDirectories: string[] = [];
 const servers: Server[] = [];
 let suiteGitVerifierRoot: string;
@@ -177,9 +203,10 @@ function writeDist(directory: string, marker: string) {
   writeFileSync(path.join(directory, 'index.html'), `<main>${marker}</main>\n`);
   writeFileSync(
     path.join(directory, 'config.json'),
-    '{"toriiBaseUrl":"https://taira.sora.org","toriiForceBaseUrl":true}\n'
+    `${JSON.stringify(tairaRuntimeConfig)}\n`
   );
   writeFileSync(path.join(directory, '_assets/app.js'), `globalThis.release = ${JSON.stringify(marker)};\n`);
+  writeFileSync(path.join(directory, fixtureSdkWasmPath), fixtureSdkWasmBytes);
   writeFileSync(path.join(directory, '.vite/build.json'), `${JSON.stringify({ marker })}\n`);
   writeFileSync(
     path.join(directory, '.vite/manifest.json'),
@@ -188,6 +215,7 @@ function writeDist(directory: string, marker: string) {
         file: '_assets/app.js',
         isEntry: true,
         src: 'index.html',
+        assets: [fixtureSdkWasmPath],
       },
     })}\n`
   );
@@ -206,13 +234,7 @@ function fixture() {
   writeFileSync(
     path.join(root, 'bundle-budgets.json'),
     `${JSON.stringify(
-      {
-        schema_version: 1,
-        default_chunk_gzip_bytes: 1_000_000,
-        chunk_gzip_bytes: {},
-        entry_gzip_bytes: {},
-        route_gzip_bytes: {},
-      },
+      fixtureBundleBudgets,
       null,
       2
     )}\n`
@@ -391,6 +413,7 @@ describe('release manifest', () => {
     expect(first.release_id).toBe(releaseA);
     expect(first.files.map((file: { path: string }) => file.path)).toEqual([
       '_assets/app.js',
+      fixtureSdkWasmPath,
       '.vite/build.json',
       '.vite/manifest.json',
       'config.json',
@@ -743,76 +766,86 @@ describe('operator safety gates', () => {
     expect(normalizeExplorerRemote('https://token@github.com/soramitsu/iroha-block-explorer-web.git')).toBeNull();
   });
 
-  it('requires and installs the exact non-loopback Taira operator config', async () => {
+  it('requires and installs the exact direct Taira operator config', async () => {
     const testFixture = fixture();
-    expect(
-      validateTairaRuntimeConfig({
-        toriiBaseUrl: 'https://taira.sora.org',
-        toriiForceBaseUrl: true,
-        networkId: '11'.repeat(32),
-        sorafsPublicBaseUrl: 'https://taira.sora.org',
-        toriiFailoverNodes: [],
-      })
-    ).toBeTruthy();
-    expect(() =>
-      validateTairaRuntimeConfig({
-        toriiBaseUrl: 'http://127.0.0.1:5175',
-        toriiForceBaseUrl: true,
-      })
-    ).toThrow('HTTPS origin');
-    expect(() =>
-      validateTairaRuntimeConfig({
-        toriiBaseUrl: 'https://nexus.example.org',
-        toriiForceBaseUrl: true,
-      })
-    ).toThrow('must be exactly https://taira.sora.org');
-    expect(() =>
-      validateTairaRuntimeConfig({
-        toriiBaseUrl: 'https://taira.sora.org',
-        toriiForceBaseUrl: false,
-      })
-    ).toThrow('toriiForceBaseUrl must be true');
-    for (const networkId of ['AA'.repeat(32), '11'.repeat(31), `${'11'.repeat(31)}10`]) {
-      expect(() =>
-        validateTairaRuntimeConfig({
-          toriiBaseUrl: 'https://taira.sora.org',
-          toriiForceBaseUrl: true,
-          networkId,
-        })
-      ).toThrow('exact canonical lowercase 32-byte Iroha NetworkId');
-    }
-    for (const loopback of ['https://localhost.', 'https://[::ffff:7f00:1]']) {
-      expect(() =>
-        validateTairaRuntimeConfig({
-          toriiBaseUrl: 'https://taira.sora.org',
-          toriiForceBaseUrl: true,
-          sorafsPublicBaseUrl: loopback,
-        })
-      ).toThrow('must not use a loopback host');
-    }
+    expect(validateTairaRuntimeConfig(tairaRuntimeConfig)).toEqual(tairaRuntimeConfig);
 
     const operatorConfig = path.join(testFixture.root, 'operator-config.json');
-    writeFileSync(
-      operatorConfig,
-      JSON.stringify({
-        toriiBaseUrl: 'https://taira.sora.org',
-        toriiForceBaseUrl: true,
-        networkId: '11'.repeat(32),
-        sorafsPublicBaseUrl: 'https://taira.sora.org',
-      })
-    );
+    writeFileSync(operatorConfig, JSON.stringify(tairaRuntimeConfig));
     await installTairaRuntimeConfig({ configPath: operatorConfig, distDir: testFixture.nextDist });
     expect(JSON.parse(readFileSync(path.join(testFixture.nextDist, 'config.json'), 'utf8'))).toEqual(
-      JSON.parse(readFileSync(operatorConfig, 'utf8'))
+      tairaRuntimeConfig
     );
+  });
+
+  it.each([
+    ['missing config', undefined],
+    ['null config', null],
+    ['array config', []],
+    ['string config', 'https://taira.sora.org'],
+  ])('rejects %s', (_label, config) => {
+    expect(() => validateTairaRuntimeConfig(config)).toThrow('must be a JSON object');
+  });
+
+  it.each([
+    undefined,
+    '',
+    '/v1/explorer',
+    'http://127.0.0.1:5175',
+    'https://nexus.example.org',
+    'https://taira-explorer.sora.org',
+    'https://taira.sora.org/',
+    'https://taira.sora.org/v1/explorer',
+    'https://taira.sora.org:443',
+    ' https://taira.sora.org',
+  ])('rejects a noncanonical Torii endpoint %s', (toriiBaseUrl) => {
+    expect(() => validateTairaRuntimeConfig({ ...tairaRuntimeConfig, toriiBaseUrl }))
+      .toThrow('must be exactly https://taira.sora.org');
+  });
+
+  it.each([undefined, false, 'true'])('rejects an unforced Taira endpoint %s', (toriiForceBaseUrl) => {
+    expect(() => validateTairaRuntimeConfig({ ...tairaRuntimeConfig, toriiForceBaseUrl }))
+      .toThrow('toriiForceBaseUrl must be true');
+  });
+
+  it.each([
+    undefined,
+    '11'.repeat(32),
+    'AA'.repeat(32),
+    '11'.repeat(31),
+    `${'11'.repeat(31)}10`,
+    `hash:${'ab'.repeat(32)}#B99E`,
+    `hash:${'AB'.repeat(32)}#b99E`,
+    `hash:${'AB'.repeat(32)}#0000`,
+    `hash:${'AB'.repeat(32)}`,
+    `hash:${'10'.repeat(32)}#2B24`,
+    ` ${checkedNetworkId}`,
+  ])('rejects a missing or noncanonical checked NetworkId %s', (networkId) => {
+    expect(() => validateTairaRuntimeConfig({ ...tairaRuntimeConfig, networkId }))
+      .toThrow('exact canonical checked 32-byte Iroha NetworkId');
+  });
+
+  it.each([
+    { toriiFailoverEnabled: true },
+    { toriiFailoverEnabled: false },
+    { toriiFailoverNodes: [] },
+    { sorafsPublicBaseUrl: 'https://taira.sora.org' },
+    { kotodamaCompilerUrl: 'https://compiler.example' },
+    { toriiRequestTimeoutMs: 5000 },
+  ])('rejects optional config outside the exact deployment profile: %j', (extraConfig) => {
+    expect(() => validateTairaRuntimeConfig({ ...tairaRuntimeConfig, ...extraConfig }))
+      .toThrow('unknown public fields');
+  });
+
+  it('requires authenticated network metadata to complete the tracked Taira example', () => {
+    const example = JSON.parse(readFileSync(path.resolve('ops/taira/config.json.example'), 'utf8'));
+    expect(() => validateTairaRuntimeConfig(example)).toThrow('exact canonical checked 32-byte Iroha NetworkId');
+    expect(validateTairaRuntimeConfig({ ...example, networkId: checkedNetworkId })).toEqual(tairaRuntimeConfig);
   });
 
   it('rejects secret-shaped unknown config, unsafe permissions, in-tree files, and symlinks', async () => {
     const testFixture = fixture();
-    const validConfig = {
-      toriiBaseUrl: 'https://taira.sora.org',
-      toriiForceBaseUrl: true,
-    };
+    const validConfig = tairaRuntimeConfig;
     expect(() =>
       validateTairaRuntimeConfig({
         ...validConfig,
@@ -1812,7 +1845,7 @@ describe('durability and transaction recovery', () => {
     const manifest = await baselineManifest(testFixture);
     writeFileSync(testFixture.baselineManifestPath, serializeReleaseManifest(manifest));
     const operatorConfigPath = path.join(testFixture.root, 'operator-config.json');
-    writeFileSync(operatorConfigPath, '{"toriiBaseUrl":"https://taira.sora.org","toriiForceBaseUrl":true}\n', {
+    writeFileSync(operatorConfigPath, `${JSON.stringify(tairaRuntimeConfig)}\n`, {
       mode: 0o600,
     });
     const displaced = path.join(testFixture.root, 'displaced-dist');
@@ -2138,7 +2171,8 @@ describe('durability and transaction recovery', () => {
         {
           toriiBaseUrl: 'https://taira.sora.org',
           toriiForceBaseUrl: true,
-          sorafsPublicBaseUrl: 'https://taira.sora.org',
+          networkId: checkedNetworkId,
+          networkPrefix: 369,
         },
         null,
         2
@@ -2229,7 +2263,8 @@ describe('durability and transaction recovery', () => {
         {
           toriiBaseUrl: 'https://taira.sora.org',
           toriiForceBaseUrl: true,
-          sorafsPublicBaseUrl: 'https://taira.sora.org',
+          networkId: checkedNetworkId,
+          networkPrefix: 369,
         },
         null,
         2
@@ -2738,11 +2773,8 @@ describe('durability and transaction recovery', () => {
     writeFileSync(
       path.join(testFixture.root, 'bundle-budgets.json'),
       `${JSON.stringify({
-        schema_version: 1,
+        ...fixtureBundleBudgets,
         default_chunk_gzip_bytes: 1,
-        chunk_gzip_bytes: {},
-        entry_gzip_bytes: {},
-        route_gzip_bytes: {},
       })}\n`
     );
     await expect(
@@ -2760,7 +2792,7 @@ describe('durability and transaction recovery', () => {
         sdkProvenance: sdkProvenance(),
         verification: { attempts: 1, delayMs: 0 },
       })
-    ).rejects.toThrow('Bundle budget check failed');
+    ).rejects.toThrow(/FAIL chunk\s+index\.html: \d+ \/ 1 gzip bytes[\s\S]*Bundle budget check failed/u);
     expect(path.basename(readlinkSync(testFixture.servedPath))).toBe(releaseA);
     expect(existsSync(path.join(testFixture.releasesDir, releaseB))).toBe(false);
     expect(readdirSync(testFixture.releasesDir).some((entry) => entry.startsWith('.staging-'))).toBe(false);

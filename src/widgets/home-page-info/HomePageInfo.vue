@@ -13,8 +13,24 @@
       class="home-page-info_loading"
     />
 
+    <p
+      v-if="isUnavailable"
+      class="home-page-info__status"
+      role="status"
+    >
+      {{ $t('telemetry.telemetryUnavailable') }}
+    </p>
+
+    <span
+      v-if="isStale"
+      class="home-page-info__status"
+      role="status"
+    >
+      {{ $t('telemetry.dataStale') }}
+    </span>
+
     <div
-      v-if="!isMetricsLoading"
+      v-if="metrics"
       class="home-page-info__grid"
     >
       <div
@@ -33,7 +49,7 @@
     </div>
 
     <div
-      v-if="!isMetricsLoading"
+      v-if="metrics"
       class="home-page-info__grid"
     >
       <div
@@ -60,25 +76,27 @@ import BaseLoading from '@/shared/ui/components/BaseLoading.vue';
 import { useTelemetryMetrics } from '@/shared/ui/composables/useTelemetryMetrics';
 
 const firstSection = computed(() => {
+  if (!metrics.value) return [];
   return [
-    { value: metrics.value?.accounts ?? 0, i18nKey: 'homePage.totalAccounts' },
-    { value: metrics.value?.assets ?? 0, i18nKey: 'homePage.totalAssets' },
-    { value: metrics.value?.domains ?? 0, i18nKey: 'homePage.totalDomains' },
+    { value: metrics.value.accounts, i18nKey: 'homePage.totalAccounts' },
+    { value: metrics.value.assets, i18nKey: 'homePage.totalAssets' },
+    { value: metrics.value.domains, i18nKey: 'homePage.totalDomains' },
   ];
 });
 
 const secondSection = computed(() => {
+  if (!metrics.value) return [];
   return [
-    { value: metrics.value?.block ?? 0, i18nKey: 'homePage.totalBlocks' },
+    { value: metrics.value.block, i18nKey: 'homePage.totalBlocks' },
     {
-      value: metrics.value ? metrics.value.transactions_accepted + metrics.value.transactions_rejected : 0,
+      value: metrics.value.transactions_accepted + metrics.value.transactions_rejected,
       i18nKey: 'homePage.totalTransactions',
     },
-    { value: metrics.value ? metrics.value.peers : 1, i18nKey: 'homePage.totalNodes' },
+    { value: metrics.value.peers, i18nKey: 'homePage.totalNodes' },
   ];
 });
 
-const { metrics, isLoading: isMetricsLoading } = useTelemetryMetrics();
+const { metrics, isLoading: isMetricsLoading, isUnavailable, isStale } = useTelemetryMetrics();
 </script>
 
 <style lang="scss">
@@ -115,6 +133,12 @@ const { metrics, isLoading: isMetricsLoading } = useTelemetryMetrics();
     @include sm {
       margin-top: 85px;
     }
+  }
+
+  &__status {
+    align-self: center;
+    color: theme-color('content-on-surface-variant');
+    margin: 0;
   }
 
   &__search {

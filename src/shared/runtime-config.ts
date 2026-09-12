@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NetworkPrefixSchema, requireNetworkPrefix } from '@/shared/lib/network-prefix';
 import { isCanonicalIrohaHashLiteral32 } from '@/shared/lib/iroha-hash';
 
 const CheckedNetworkIdSchema = z.string().refine(isCanonicalIrohaHashLiteral32);
@@ -7,6 +8,7 @@ const RuntimeConfigSchema = z
   .object({
     toriiBaseUrl: z.string().trim().min(1).optional(),
     networkId: CheckedNetworkIdSchema.optional(),
+    networkPrefix: NetworkPrefixSchema,
     kotodamaCompilerUrl: z.string().trim().min(1).optional(),
     sorafsPublicBaseUrl: z.string().trim().min(1).optional(),
     toriiForceBaseUrl: z.boolean().optional(),
@@ -24,62 +26,61 @@ const RuntimeConfigSchema = z
   })
   .strict();
 
-const BpngRuntimeConfigSchema = z
+// Both public explorers bind to the same authoritative Taira API. Keeping the
+// deployment profile exact also rules out stored-node and failover overrides.
+const TairaRuntimeConfigSchema = z
   .object({
     toriiBaseUrl: z.literal('https://taira.sora.org'),
     toriiForceBaseUrl: z.literal(true),
     networkId: CheckedNetworkIdSchema,
+    networkPrefix: z.literal(369),
   })
   .strict();
 
 export type RuntimeConfig = z.infer<typeof RuntimeConfigSchema>;
 
 const CONFIGURATION_ERROR_MESSAGE = 'Explorer runtime configuration is unavailable or invalid.';
-let runtimeConfig: RuntimeConfig = {};
+let runtimeConfig: Partial<RuntimeConfig> = {};
 let loadPromise: Promise<RuntimeConfig> | null = null;
 
-export function getRuntimeConfig(): RuntimeConfig {
+export function getRuntimeConfig(): Partial<RuntimeConfig> {
   return runtimeConfig;
+}
+
+export function getRuntimeNetworkPrefix(): number {
+  return requireNetworkPrefix(runtimeConfig.networkPrefix);
 }
 
 export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
-    if (typeof window === 'undefined') return runtimeConfig;
+    if (typeof window === 'undefined') throw new Error(CONFIGURATION_ERROR_MESSAGE);
 
     const baseUrl = String(import.meta.env.BASE_URL ?? '/');
     const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     const primaryUrl = `${normalizedBaseUrl}config.json`;
-    const candidates = primaryUrl === '/config.json' ? [primaryUrl] : [primaryUrl, '/config.json'];
-    const requiresBpngProfile = window.location.hostname === 'explorer-bpng.soramitsu.io';
-    const schema = requiresBpngProfile ? BpngRuntimeConfigSchema : RuntimeConfigSchema;
+    const requiresTairaProfile = ['taira-explorer.sora.org', 'explorer-bpng.soramitsu.io']
+      .includes(window.location.hostname);
+    const schema = requiresTairaProfile ? TairaRuntimeConfigSchema : RuntimeConfigSchema;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 1500);
 
     try {
-      for (const url of candidates) {
-        const res = await fetch(url, {
-          headers: { Accept: 'application/json' },
-          cache: 'no-store',
-          signal: controller.signal,
-        });
+      const res = await fetch(primaryUrl, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(CONFIGURATION_ERROR_MESSAGE);
 
-        if (!res.ok) {
-          if (res.status === 404 && !requiresBpngProfile) continue;
-          throw new Error(CONFIGURATION_ERROR_MESSAGE);
-        }
+      const json = await res.json();
+      const parsed = schema.safeParse(json);
+      if (!parsed.success) throw new Error(CONFIGURATION_ERROR_MESSAGE);
 
-        const json = await res.json();
-        const parsed = schema.safeParse(json);
-        if (!parsed.success) throw new Error(CONFIGURATION_ERROR_MESSAGE);
-
-        runtimeConfig = parsed.data;
-        return runtimeConfig;
-      }
-
-      return runtimeConfig;
+      runtimeConfig = parsed.data;
+      return parsed.data;
     } catch {
       // Never expose response bodies, schema inputs, or transport error details.
       throw new Error(CONFIGURATION_ERROR_MESSAGE);

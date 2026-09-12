@@ -11,8 +11,8 @@ import { defineComponent, ref } from 'vue';
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_I105_ALT = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 const LIVE_MULTISIG_ACCOUNT = 'soraﾁｷVMXKﾏtKAoQﾅﾛ3qｾヱ8aﾄdNuｷﾀｱｽh9ｻtWﾐBﾒ9AﾏHｼQﾅvﾛﾌｹYﾑﾐﾛCﾎjtQQヰYCbﾎｵPfb6vXcﾖ1176ﾃﾈcﾐｲUEtﾎヱﾅｻﾀiuｦ2MPﾍﾏiﾌhﾓJｶｶgboCｻBpｷ35ｸ15ｼmGｲFK9NﾑoVﾜWvQMKﾃﾎB7ヰdM99EU4V';
-const LIVE_TRANSFER_SOURCE = `66owaQmAQMuHxPzxUN3bqZ6FJfDa#${LIVE_MULTISIG_ACCOUNT}`;
-const LIVE_TRANSFER_DESTINATION = 'sorauﾛ1QEﾄiBzndﾆDwﾉｴxSﾔﾋ6KXﾆ2xﾗﾆrﾐﾚﾄoNqｳZﾘqtHﾛDBCRJ5';
+const TAIRA_TRANSFER_SOURCE = '66owaQmAQMuHxPzxUN3bqZ6FJfDa#testﾁｷVMXKﾏtKAoQﾅﾛ3qｾヱ8aﾄdNuｷﾀｱｽh9ｻtWﾐBﾒ9AﾏHｼQﾅvﾛﾌｹYﾑﾐﾛCﾎjtQQヰYCbﾎｵPfb6vXcﾖ1176ﾃﾈcﾐｲUEtﾎヱﾅｻﾀiuｦ2MPﾍﾏiﾌhﾓJｶｶgboCｻBpｷ35ｸ15ｼmGｲFK9NﾑoVﾜWvQMKﾃﾎB7ヰdM99EU4V';
+const TAIRA_TRANSFER_DESTINATION = 'testuﾛ1QEﾄiBzndﾆDwﾉｴxSﾔﾋ6KXﾆ2xﾗﾆrﾐﾚﾄoNqｳZﾘqtHﾛDBCRJ5';
 const LIVE_TRANSFER_INSTRUCTION =
   'TlJUMAAAhip9dwddTSP/bBJh2wJ4EQDSAQAAAAAAABQKMDTp3Yu+Ag8OaXJvaGEudHJhbnNmZXLAA7gBAAAAAAAATlJUMAAApBdMeNY0H4+Y/Cra6O1nuQCQAQAAAAAAAOy4mMbcuTFWAgIAAACKA6oCggIBAAAA/AEBAQICAPUBAwAAAAAAAABOSiEAAAAAAAAAAQABhAExAb0BZQH/ASQBcwHNAacBpwEHAcEBgAH3AcEB5AH2AcQBzAGVASABPQFuAXoBJwFLAYUBswHtAW8BbAE1AgEATkohAAAAAAAAAAEAAbQBJgHPAXIBUQE3Af8B5gEzAbkB7gFJAXQBIAGoAYIB2gGYAW0BNgGxAfMBgQGPASEBkQFsAdUBtQH9AUoB/QIBAE5KIQAAAAAAAAABAAHHAeIB8QH8AZMBSQHvAZ8BkgG6AYEBeAFSAa4BbQGBAV0B2wGyAWABgQHUAWsBrQHiATMBSwERATwBHwF/AWUCAQAgAW4BFQFrAVABEAHmAUUB+AGDAesBgwEZAUYBuAGNAbgEAAAAAA0HAwAAAKCGAQQAAAAATwAAAABKIQAAAAAAAAABAAH9AVUB7wEWAZIB1QGPAYcBkwEvAVkBgAEhAbEB1gEWATkBRwGAAQgBIwHlAb4BuQF0AcoBiAEEAZoByAGaAfc=';
 const FRAMED_SHA256 = `0x${'00'.repeat(32)}`;
@@ -76,6 +76,11 @@ vi.mock('@vueuse/core', async () => {
     useWindowScroll: () => ({ x: ref(0), y: windowScrollY }),
   };
 });
+
+vi.mock('@/shared/runtime-config', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/runtime-config')>(),
+  getRuntimeNetworkPrefix: () => 369,
+}));
 
 vi.mock('@/shared/api', async () => {
   const actual = await vi.importActual<typeof SharedApiModule>('@/shared/api');
@@ -463,7 +468,7 @@ describe('InstructionsTable', () => {
     expect(kindField?.find('.data-field__value-text').text()).toBe('Multisig');
   });
 
-  it('renders canonically decoded nested multisig instructions as semantic cards and preserves raw JSON', async () => {
+  it('renders nested multisig accounts with Taira prefix 369 and preserves raw JSON', async () => {
     const multisigInstruction = makeNestedTransferMultisigInstruction();
     (api.fetchInstructions as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       status: SUCCESSFUL_FETCHING,
@@ -488,8 +493,8 @@ describe('InstructionsTable', () => {
     expect(wrapper.text()).toContain('Multisig proposal');
     expect(wrapper.text()).toContain('Asset transfer');
     expect(wrapper.text()).toContain('100000');
-    expect(wrapper.text()).toContain(LIVE_TRANSFER_SOURCE);
-    expect(wrapper.text()).toContain(LIVE_TRANSFER_DESTINATION);
+    expect(wrapper.text()).toContain(TAIRA_TRANSFER_SOURCE);
+    expect(wrapper.text()).toContain(TAIRA_TRANSFER_DESTINATION);
     expect(rowJson?.props('value')).toEqual(multisigInstruction.box.json);
     expect(detailJson?.props('value')).toEqual(multisigInstruction.box.json);
     expect(multisigInstruction.box.json.payload.value.Propose.instructions).toEqual([LIVE_TRANSFER_INSTRUCTION]);

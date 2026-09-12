@@ -61,6 +61,7 @@ export default [
       'node_modules',
       'dist',
       'dist-ts',
+      'output/**',
       '.mochi',
       '.mochi/**',
       '.venv',

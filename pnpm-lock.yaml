@@ -538,7 +538,7 @@ packages:
     engines: {node: '>= 16'}
 
   '@iroha/iroha-js@file:vendor/iroha-iroha-js-0.0.3.tgz':
-    resolution: {integrity: sha512-DMLBtBlre1ygr9TIBXzYlwTiXHMuM4Badf4hcblPsiq5D2cwe0OwRteZzXHGIZkF5I+LnIGarL3MIEpiDCQiiw==, tarball: file:vendor/iroha-iroha-js-0.0.3.tgz}
+    resolution: {integrity: sha512-c7jX2C7nDcEQL6fbumiSyj8XBMQ+P/f93ZPTm+uW51yJ7alq7Via8O3iOiZ9wub8bxaqTm8IwwWk5eCfK+pR+w==, tarball: file:vendor/iroha-iroha-js-0.0.3.tgz}
     version: 0.0.3
     engines: {node: '>=18'}
 

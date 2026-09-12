@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "default_chunk_gzip_bytes": 180000,
   "chunk_gzip_bytes": {
     "index": 65000,
@@ -19,6 +19,15 @@
   },
   "entry_gzip_bytes": {
     "index.html": 540000
+  },
+  "sdk_wasm": {
+    "sha256": "fbc434ef49154351478b49524e44e0f2f08b71ce38be4912ec4e73ff546863eb",
+    "raw_bytes": 36931654,
+    "max_raw_bytes": 39845888,
+    "max_gzip_bytes": 6815744
+  },
+  "entry_startup_gzip_bytes": {
+    "index.html": 7340032
   },
   "route_gzip_bytes": {
     "src/pages/SearchResults.vue": 30000,

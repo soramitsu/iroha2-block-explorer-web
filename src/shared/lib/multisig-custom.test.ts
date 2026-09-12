@@ -6,9 +6,9 @@ import {
 
 const SAMPLE_I105 = 'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
 const SAMPLE_I105_ALT = 'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
-const LIVE_TRANSFER_SOURCE =
-  '66owaQmAQMuHxPzxUN3bqZ6FJfDa#soraﾁｷVMXKﾏtKAoQﾅﾛ3qｾヱ8aﾄdNuｷﾀｱｽh9ｻtWﾐBﾒ9AﾏHｼQﾅvﾛﾌｹYﾑﾐﾛCﾎjtQQヰYCbﾎｵPfb6vXcﾖ1176ﾃﾈcﾐｲUEtﾎヱﾅｻﾀiuｦ2MPﾍﾏiﾌhﾓJｶｶgboCｻBpｷ35ｸ15ｼmGｲFK9NﾑoVﾜWvQMKﾃﾎB7ヰdM99EU4V';
-const LIVE_TRANSFER_DESTINATION = 'sorauﾛ1QEﾄiBzndﾆDwﾉｴxSﾔﾋ6KXﾆ2xﾗﾆrﾐﾚﾄoNqｳZﾘqtHﾛDBCRJ5';
+const TAIRA_TRANSFER_SOURCE =
+  '66owaQmAQMuHxPzxUN3bqZ6FJfDa#testﾁｷVMXKﾏtKAoQﾅﾛ3qｾヱ8aﾄdNuｷﾀｱｽh9ｻtWﾐBﾒ9AﾏHｼQﾅvﾛﾌｹYﾑﾐﾛCﾎjtQQヰYCbﾎｵPfb6vXcﾖ1176ﾃﾈcﾐｲUEtﾎヱﾅｻﾀiuｦ2MPﾍﾏiﾌhﾓJｶｶgboCｻBpｷ35ｸ15ｼmGｲFK9NﾑoVﾜWvQMKﾃﾎB7ヰdM99EU4V';
+const TAIRA_TRANSFER_DESTINATION = 'testuﾛ1QEﾄiBzndﾆDwﾉｴxSﾔﾋ6KXﾆ2xﾗﾆrﾐﾚﾄoNqｳZﾘqtHﾛDBCRJ5';
 const LIVE_TRANSFER_INSTRUCTION_B64 =
   'TlJUMAAAhip9dwddTSP/bBJh2wJ4EQDSAQAAAAAAABQKMDTp3Yu+Ag8OaXJvaGEudHJhbnNmZXLAA7gBAAAAAAAATlJUMAAApBdMeNY0H4+Y/Cra6O1nuQCQAQAAAAAAAOy4mMbcuTFWAgIAAACKA6oCggIBAAAA/AEBAQICAPUBAwAAAAAAAABOSiEAAAAAAAAAAQABhAExAb0BZQH/ASQBcwHNAacBpwEHAcEBgAH3AcEB5AH2AcQBzAGVASABPQFuAXoBJwFLAYUBswHtAW8BbAE1AgEATkohAAAAAAAAAAEAAbQBJgHPAXIBUQE3Af8B5gEzAbkB7gFJAXQBIAGoAYIB2gGYAW0BNgGxAfMBgQGPASEBkQFsAdUBtQH9AUoB/QIBAE5KIQAAAAAAAAABAAHHAeIB8QH8AZMBSQHvAZ8BkgG6AYEBeAFSAa4BbQGBAV0B2wGyAWABgQHUAWsBrQHiATMBSwERATwBHwF/AWUCAQAgAW4BFQFrAVABEAHmAUUB+AGDAesBgwEZAUYBuAGNAbgEAAAAAA0HAwAAAKCGAQQAAAAATwAAAABKIQAAAAAAAAABAAH9AVUB7wEWAZIB1QGPAYcBkwEvAVkBgAEhAbEB1gEWATkBRwGAAQgBIwHlAb4BuQF0AcoBiAEEAZoByAGaAfc=';
 
@@ -79,7 +79,7 @@ describe('readMultisigCustomEnvelope', () => {
 });
 
 describe('buildMultisigCustomDisplayPayload', () => {
-  it('builds readable summary including decoded nested instruction metadata', () => {
+  it('renders decoded nested instruction accounts with the explicit Taira prefix 369', () => {
     const payload = {
       value: {
         Propose: {
@@ -91,7 +91,7 @@ describe('buildMultisigCustomDisplayPayload', () => {
       variant: 'Custom',
     };
 
-    const result = buildMultisigCustomDisplayPayload(payload);
+    const result = buildMultisigCustomDisplayPayload(payload, 369);
 
     expect(result).not.toBeNull();
     expect(result?.multisig.variant).toBe('Propose');
@@ -102,9 +102,9 @@ describe('buildMultisigCustomDisplayPayload', () => {
       instruction: {
         Transfer: {
           Asset: {
-            source: LIVE_TRANSFER_SOURCE,
+            source: TAIRA_TRANSFER_SOURCE,
             object: '100000',
-            destination: LIVE_TRANSFER_DESTINATION,
+            destination: TAIRA_TRANSFER_DESTINATION,
           },
         },
       },
@@ -120,7 +120,7 @@ describe('buildMultisigCustomDisplayPayload', () => {
       },
     };
 
-    const result = buildMultisigCustomDisplayPayload(payload);
+    const result = buildMultisigCustomDisplayPayload(payload, 369);
 
     expect(result?.multisig.decoded_instructions[0]).toEqual({
       index: 0,
@@ -137,7 +137,7 @@ describe('buildMultisigCustomDisplayPayload', () => {
       },
     };
 
-    const result = buildMultisigCustomDisplayPayload(payload);
+    const result = buildMultisigCustomDisplayPayload(payload, 369);
 
     expect(result?.multisig.decoded_instructions[0]).toEqual({
       index: 0,
@@ -154,7 +154,7 @@ describe('buildMultisigCustomDisplayPayload', () => {
       },
     };
 
-    const result = buildMultisigCustomDisplayPayload(payload);
+    const result = buildMultisigCustomDisplayPayload(payload, 369);
 
     expect(result?.multisig.decoded_instructions.map(({ index, kind, instruction }) => ({
       index,

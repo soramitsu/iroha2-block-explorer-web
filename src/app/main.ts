@@ -5,41 +5,68 @@ import { createApp } from 'vue';
 
 import { loadRuntimeConfig } from '@/shared/runtime-config';
 
+let bootstrapPending = false;
+let codecReady = false;
+let mounted = false;
+
 async function bootstrap() {
-  const config = await loadRuntimeConfig();
-  // Do not evaluate API consumers (including their saved-node state) until the
-  // runtime profile is valid. Apply its forced endpoint before loading the app.
-  const { setToriiBaseUrlFromConfig } = await import('@/shared/api');
-  if (config.toriiBaseUrl) {
-    setToriiBaseUrlFromConfig(config.toriiBaseUrl, {
-      force: config.toriiForceBaseUrl === true,
-    });
-  }
-
-  const [{ default: App }, { default: router }, { ensureLocaleLoaded, i18n }] = await Promise.all([
-    import('./App.vue'),
-    import('./router'),
-    import('@/shared/lib/localization'),
-  ]);
-
-  if (typeof window !== 'undefined') {
-    try {
-      const storedLanguage = window.localStorage.getItem('app-language')?.trim();
-      if (storedLanguage) {
-        const resolved = await ensureLocaleLoaded(storedLanguage);
-        i18n.global.locale.value = resolved;
-      }
-    } catch {
-      // ignore localStorage access failures (privacy mode, blocked storage)
+  if (bootstrapPending || mounted) return;
+  bootstrapPending = true;
+  try {
+    const root = document.querySelector('#app');
+    if (root) {
+      const loading = document.createElement('p');
+      loading.setAttribute('role', 'status');
+      loading.setAttribute('data-testid', 'browser-codec-loading');
+      loading.textContent = 'Loading Explorer…';
+      root.replaceChildren(loading);
     }
+    const config = await loadRuntimeConfig();
+    // The SDK owns its Rust/Wasm source and loading path. Import inside the
+    // guarded bootstrap so loading failures produce the same safe retry UI.
+    // No API or account-dependent consumer may run before codec readiness.
+    if (!codecReady) {
+      const { initializeBrowserCodec } = await import('@iroha/iroha-js/browser-codec');
+      await initializeBrowserCodec();
+      codecReady = true;
+    }
+    // Do not evaluate API consumers (including their saved-node state) until the
+    // runtime profile is valid. Apply its forced endpoint before loading the app.
+    const { setToriiBaseUrlFromConfig } = await import('@/shared/api');
+    if (config.toriiBaseUrl) {
+      setToriiBaseUrlFromConfig(config.toriiBaseUrl, {
+        force: config.toriiForceBaseUrl === true,
+      });
+    }
+
+    const [{ default: App }, { default: router }, { ensureLocaleLoaded, i18n }] = await Promise.all([
+      import('./App.vue'),
+      import('./router'),
+      import('@/shared/lib/localization'),
+    ]);
+
+    if (typeof window !== 'undefined') {
+      try {
+        const storedLanguage = window.localStorage.getItem('app-language')?.trim();
+        if (storedLanguage) {
+          const resolved = await ensureLocaleLoaded(storedLanguage);
+          i18n.global.locale.value = resolved;
+        }
+      } catch {
+        // ignore localStorage access failures (privacy mode, blocked storage)
+      }
+    }
+
+    const app = createApp(App);
+
+    app.use(router);
+    app.use(i18n);
+
+    app.mount('#app');
+    mounted = true;
+  } finally {
+    bootstrapPending = false;
   }
-
-  const app = createApp(App);
-
-  app.use(router);
-  app.use(i18n);
-
-  app.mount('#app');
 }
 
 function showBootstrapError() {

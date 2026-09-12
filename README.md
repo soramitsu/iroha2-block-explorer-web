@@ -66,13 +66,14 @@ sh scripts/bootstrap-exact-toolchain.sh pnpm playwright:install
 
 Build artifacts will be located at `dist` dir.
 
-The current SDK dependency is an **unsigned development candidate** built twice from committed
-Iroha `339a8961b443909ccef163c74d8754435599bcf2`, with archive SHA-256
-`02f8957b16810e94a034065bce2c80e54912f202d17b7f4dbf78d183f7397054`. Its provenance is recorded in
-`vendor/iroha-iroha-js-0.0.3.development-provenance.json`. Install and normal build verify the archive
-and all 163 installed regular files against the checked inventory. A successful development build
-does not admit a release: `pnpm check:iroha-pin` continues to reject this file dependency, and the
-accepted Mochi/runtime profile remains unchanged pending a coherent accepted SDK and ledger release.
+The SDK dependency is the admitted consumer archive with SHA-256
+`02600597032e3c0074b915c06b6125aea3a98c549f60e0ccee7d75dfdbdbb79f`.
+Install, `pnpm check:sdk`, and normal build verify the archive and all 200 installed
+files against `vendor/iroha-iroha-js-0.0.3.files.json`, including the existing SDK
+JavaScript and Wasm. The checker is read-only: missing distribution files fail
+verification. CI checks the archive before dependency installation; postinstall
+checks the installed package. Package integrity does not grant release admission:
+deployment still requires the original signed SDK and application build evidence.
 
 ### Docker
 
@@ -93,19 +94,24 @@ endpoints.
 
 ## Runtime config (`config.json`)
 
-The explorer loads an optional runtime config JSON before mounting the app. This is useful for subpath deployments and
-for overriding the default Torii base URL without rebuilding the frontend.
+The Explorer requires runtime configuration before mounting the app. The file is fetched only from
+`${BASE_URL}config.json` (for example `/explorer-iroha2/config.json`). Missing files, invalid profiles, transport
+errors, and missing network prefixes reject startup with an explicit retry; no other config location or default
+network is selected.
 
-The file is fetched from:
-
-- `${BASE_URL}config.json` (for example `/explorer-iroha2/config.json`)
-- Fallback: `/config.json`
+On `taira-explorer.sora.org` and `explorer-bpng.soramitsu.io`, configuration contains exactly
+`toriiBaseUrl: "https://taira.sora.org"`, `toriiForceBaseUrl: true`, the authenticated deployment's canonical checked
+`networkId`, and `networkPrefix: 369`. These production hosts reject proxy endpoints, absent or different prefixes,
+and extra settings. Other hosts must explicitly configure their selected network's integer prefix from 0 through
+65535; all instruction decoding receives that same value without inferring it from addresses or payloads.
 
 Supported keys:
 
 - `toriiBaseUrl` (string): default Torii base URL used by the node selector when no user override is stored.
 - `toriiForceBaseUrl` (boolean): binds every request to the configured endpoint and disables manual, scoped-route, and peer failover overrides.
-- `networkId` (string): exact Iroha NetworkId for Connect session identity binding. The production BPNG host requires
+- `networkPrefix` (integer, required): selected network prefix supplied from authenticated deployment metadata. Taira and
+  BPNG require `369`; other profiles accept integers from `0` through `65535`. No string coercion or default is applied.
+- `networkId` (string): exact Iroha NetworkId for Connect session identity binding. The production Taira and BPNG hosts require
   the checksum-valid Norito JSON spelling `hash:<64 uppercase hex>#<4 uppercase CRC16>` and preserves it losslessly.
   Raw hexadecimal NetworkIds are rejected. Connect remains disabled when
   this value is absent or invalid; the Explorer never infers it from a Torii URL or substitutes a generic/test
@@ -144,8 +150,8 @@ pnpm dev --host 0.0.0.0 --port 5173
 ### Deterministic Mochi integration chain
 
 The Explorer pins its accepted local integration network in `tests/mochi/explorer-profile.json`.
-Release admission requires that revision to govern both the sibling Torii/Mochi runtime and the
-`@iroha/iroha-js` browser SDK; the unsigned development archive described above is not admitted.
+This local runtime profile is separate from signed Taira release admission. Its integration
+evidence must be refreshed for the admitted SDK before supporting new release claims.
 The wrapper uses the literal sibling unless `IROHA_REPO_ROOT` names an explicit checkout. At the
 Mochi consumer boundary it requires that path to be absolute, normalized, existing, and a canonical
 real directory (not a symlink). It also refuses to execute a different revision or a checkout with

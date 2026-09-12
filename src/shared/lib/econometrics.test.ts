@@ -153,6 +153,18 @@ describe('econometrics', () => {
     expect(decodeCommittedAssetActivity('Mint', { variant: 'TriggerRepetitions', value: {} }, 'Committed')).toBeNull();
   });
 
+  it.each([null, 42, {}, ` ${SAMPLE_ASSET_ID}`, `${SAMPLE_ASSET_ID} `])(
+    'rejects an invalid or non-exact asset holding identifier %#',
+    (holding) => {
+      expect(() => decodeCommittedAssetActivity('Transfer', {
+        variant: 'Asset', value: { source: holding, object: '1', destination: SAMPLE_I105 },
+      }, 'Committed')).toThrow('Invalid native asset holding identifier');
+      expect(() => decodeCommittedAssetActivity('Mint', {
+        variant: 'Asset', value: { object: '1', destination: holding },
+      }, 'Committed')).toThrow('Invalid native asset holding identifier');
+    }
+  );
+
   it.each([
     { object: SAMPLE_ASSET_ID, value: '10' },
     { variant: 'Asset', value: { object: SAMPLE_ASSET_ID, source: SAMPLE_I105, destination: SAMPLE_I105 } },

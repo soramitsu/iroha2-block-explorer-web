@@ -61,23 +61,27 @@
 
           <BaseHash
             :hash="transaction.hash"
-            :type="hashType"
+            type="medium"
             :link="`/transactions/${transaction.hash}`"
+            class="latest-transactions__hash"
             copy
           />
 
           <div class="latest-transactions__info">
-            <div class="latest-transactions__time">
-              <TimeIcon />
-              <TimeStamp :value="transaction.created_at" />
-            </div>
-
             <BaseHash
               :hash="transaction.authority"
-              :type="hashType"
+              type="medium"
               :link="`/accounts/${transaction.authority}`"
               class="latest-transactions__account"
             />
+
+            <div class="latest-transactions__time">
+              <TimeIcon
+                class="latest-transactions__clock"
+                aria-hidden="true"
+              />
+              <TimeStamp :value="transaction.created_at" />
+            </div>
           </div>
         </div>
       </div>
@@ -102,7 +106,6 @@ import * as http from '@/shared/api';
 import TimeStamp from '@/shared/ui/components/TimeStamp.vue';
 import { useParamScope } from '@vue-kakuyaku/core';
 import { setupAsyncData } from '@/shared/utils/setup-async-data';
-import { useAdaptiveHash } from '@/shared/ui/composables/useAdaptiveHash';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 import { getRuntimeConfig } from '@/shared/runtime-config';
 import { historyCacheKey } from '@/shared/lib/history-cache';
@@ -151,9 +154,14 @@ function writeTransactionsCache(items: readonly TransactionDto[]) {
   }
 }
 
-const hashType = useAdaptiveHash({ lg: 'short', xxs: 'short' }, 'medium');
-
 const transactionsStream = useExplorerTransactionsEvents();
+const streamRevision = ref(0);
+
+watch(
+  () => transactionsStream.status.value,
+  () => { streamRevision.value += 1; },
+  { flush: 'sync' }
+);
 
 const scope = useParamScope(
   () => {
@@ -162,11 +170,22 @@ const scope = useParamScope(
       payload: listState,
     };
   },
-  ({ payload }) =>
-    setupAsyncData(() => fetchTransactions(payload), {
+  ({ payload }) => {
+    const params = { ...payload };
+    let snapshotStreamRevision = -1;
+    return setupAsyncData(async () => {
+      const revision = streamRevision.value;
+      snapshotStreamRevision = -1;
+      const result = await fetchTransactions(params);
+      if (result.status === SUCCESSFUL_FETCHING) snapshotStreamRevision = revision;
+      return result;
+    }, {
       interval: 5000,
-      pollWhen: () => transactionsStream.status.value !== 'OPEN',
-    })
+      // An open delta stream cannot replace a successful history snapshot.
+      // Reconcile each connection and filter, including after refresh errors.
+      pollWhen: () => transactionsStream.status.value !== 'OPEN' || snapshotStreamRevision !== streamRevision.value,
+    });
+  }
 );
 
 const isLoading = computed(() => scope.value?.expose.isLoading ?? false);
@@ -275,41 +294,63 @@ async function retryAvailabilityFailover() {
   }
 
   &__row {
-    border-bottom: 1px solid theme-color('border-primary');
     display: grid;
-    grid-gap: size(1);
-    grid-template-columns: 32px 1fr;
-    grid-template-rows: auto auto;
-    justify-content: start;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-areas: 'status hash' 'status info';
+    column-gap: 12px;
     align-items: center;
-    min-height: 64px;
-    overflow-wrap: anywhere;
+    padding: 12px 16px;
+    border-bottom: 1px solid theme-color('border-primary');
+    transition: background-color 120ms ease;
+
+    &:last-child {
+      border-bottom: 0;
+    }
 
     &:hover {
-      box-shadow: theme-shadow('row');
-      border-color: transparent;
-    }
-
-    & > * {
-      width: fit-content;
-    }
-
-    @include xxs {
-      padding: size(3) size(4);
-      grid-gap: size(1) size(2);
-    }
-
-    @include lg {
-      grid-gap: size(1.5) size(2);
+      background: theme-color('background-hover');
     }
   }
 
-  &__info {
-    display: grid;
-    grid-gap: size(0.5) size(4);
+  &__hash {
+    grid-area: hash;
+    min-width: 0;
+    min-height: 44px;
+    gap: 4px;
+  }
 
-    @include md {
-      grid-template-columns: auto auto;
+  &__info {
+    grid-area: info;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 16px;
+    min-width: 0;
+  }
+
+  &__hash .base-link,
+  &__account .base-link {
+    font-size: 12px;
+    line-height: 1.5;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__account {
+    min-width: 0;
+    min-height: 32px;
+    align-items: center;
+
+    .base-link {
+      color: theme-color('content-secondary');
+
+      &:hover {
+        color: theme-color('primary');
+      }
     }
   }
 
@@ -327,27 +368,32 @@ async function retryAvailabilityFailover() {
   }
 
   &__time {
-    user-select: none;
-    cursor: default;
     position: relative;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    flex: 0 0 auto;
+    min-height: 32px;
+    gap: 6px;
+    color: theme-color('content-secondary');
+    white-space: nowrap;
 
-    svg {
-      fill: theme-color('content-quaternary');
-      width: 10px;
-      height: 10px;
-      margin-right: 6px;
-    }
-
-    &:hover .context-tooltip {
-      display: flex;
-      left: size(15);
+    .time-ago {
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.5;
     }
   }
 
+  &__clock {
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+    fill: currentColor;
+  }
+
   &__status {
-    grid-row: 1 / -1;
+    grid-area: status;
+    align-self: start;
   }
 
   &__availability {

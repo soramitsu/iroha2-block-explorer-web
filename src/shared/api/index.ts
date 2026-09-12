@@ -1,3 +1,4 @@
+import { fetchToriiWithDeadline } from './transport';
 import { appendSearchParams } from './query';
 import type {
   PaginationParams,
@@ -140,7 +141,7 @@ const DEFAULT_FAILOVER_THRESHOLD = 5;
 const DEFAULT_FAILOVER_WINDOW_MS = 60_000;
 const DEFAULT_FAILOVER_PROBE_TIMEOUT_MS = 1_500;
 const DEFAULT_FAILOVER_MAX_PEER_CANDIDATES = 16;
-const DEFAULT_REQUEST_TIMEOUT_MS = 5_000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
 const DEFAULT_REQUEST_RETRY_COUNT = 1;
 const DEFAULT_REQUEST_RETRY_BASE_DELAY_MS = 200;
 const FAILOVER_HEALTH_PATH = '/v1/explorer/health';
@@ -685,71 +686,8 @@ export function resolveApiUrl(path: string): string {
   return `${getExplorerApiBase()}${normalizedPath}`;
 }
 
-class RequestTimeoutError extends Error {
-  constructor(timeoutMs: number) {
-    super(`Request timed out after ${timeoutMs}ms`);
-    this.name = 'RequestTimeoutError';
-  }
-}
-
-function retryDelayMs(attemptIndex: number, baseDelayMs: number): number {
-  const multiplier = Math.max(0, attemptIndex);
-  return baseDelayMs * (multiplier + 1);
-}
-
-async function sleep(ms: number): Promise<void> {
-  if (ms <= 0) return;
-  await new Promise<void>((resolve) => {
-    globalThis.setTimeout(resolve, ms);
-  });
-}
-
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = globalThis.setTimeout(() => controller.abort('timeout'), timeoutMs);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } catch (error) {
-    if (controller.signal.aborted) throw new RequestTimeoutError(timeoutMs);
-    throw error;
-  } finally {
-    globalThis.clearTimeout(timeout);
-  }
-}
-
-function shouldRetryResponse(response: Response): boolean {
-  return FAILOVER_STATUSES.has(response.status);
-}
-
-function shouldRetryError(error: unknown): boolean {
-  if (error instanceof RequestTimeoutError) return true;
-  if (error instanceof DOMException) return error.name === 'AbortError';
-  return error instanceof Error;
-}
-
 async function fetchWithTimeoutRetry(input: RequestInfo | URL, init: RequestInit): Promise<Response> {
-  const runtime = requestRuntimeConfig();
-  const retryCount = Math.max(0, runtime.retryCount);
-  let attempt = 0;
-
-  while (true) {
-    try {
-      const response = await fetchWithTimeout(input, init, runtime.timeoutMs);
-      if (attempt < retryCount && shouldRetryResponse(response)) {
-        await sleep(retryDelayMs(attempt, runtime.retryBaseDelayMs));
-        attempt += 1;
-        continue;
-      }
-      return response;
-    } catch (error) {
-      if (attempt < retryCount && shouldRetryError(error)) {
-        await sleep(retryDelayMs(attempt, runtime.retryBaseDelayMs));
-        attempt += 1;
-        continue;
-      }
-      throw error;
-    }
-  }
+  return await fetchToriiWithDeadline(input, init, requestRuntimeConfig());
 }
 
 async function get<T>(path: string, params?: Record<string, any>): Promise<GetResult<T>> {
@@ -980,8 +918,13 @@ async function toriiSdkFetch(input: RequestInfo | URL, init?: RequestInit): Prom
 
     return response;
   } catch (error) {
-    trackToriiFailure(error instanceof Error ? error.message : String(error));
-    maybeTriggerToriiFailoverOnFailure('network_error');
+    // A caller cancelling a read is not evidence that Torii is unhealthy.
+    const requestSignal = init?.signal === undefined && typeof Request !== 'undefined' && input instanceof Request
+      ? input.signal : init?.signal;
+    if (!requestSignal?.aborted) {
+      trackToriiFailure(error instanceof Error ? error.message : String(error));
+      maybeTriggerToriiFailoverOnFailure('network_error');
+    }
     throw error;
   }
 }

@@ -1,4 +1,5 @@
 import { noritoDecodeInstruction } from '@iroha/iroha-js/browser';
+import { requireNetworkPrefix } from '@/shared/lib/network-prefix';
 
 const MULTISIG_VARIANTS = ['Register', 'Propose', 'Approve', 'Cancel'] as const;
 
@@ -96,7 +97,7 @@ function readDecodedInstructionKind(instruction: unknown): string | null {
   return variants.length === 1 ? variants[0] ?? null : null;
 }
 
-function decodeNestedInstruction(encoded: string, index: number): DecodedMultisigInstruction {
+function decodeNestedInstruction(encoded: string, index: number, networkPrefix: number): DecodedMultisigInstruction {
   const bytes = decodeBase64ToBytes(encoded);
   if (!bytes) {
     return {
@@ -107,7 +108,7 @@ function decodeNestedInstruction(encoded: string, index: number): DecodedMultisi
   }
 
   try {
-    const instruction = noritoDecodeInstruction(bytes);
+    const instruction = noritoDecodeInstruction(bytes, networkPrefix);
     return {
       index,
       kind: readDecodedInstructionKind(instruction),
@@ -138,7 +139,8 @@ export function readMultisigCustomEnvelope(payload: unknown): MultisigCustomEnve
   return extractEnvelope(nestedEntry);
 }
 
-export function buildMultisigCustomDisplayPayload(payload: unknown): MultisigCustomDisplayPayload | null {
+export function buildMultisigCustomDisplayPayload(payload: unknown, networkPrefix: number): MultisigCustomDisplayPayload | null {
+  requireNetworkPrefix(networkPrefix);
   const envelope = readMultisigCustomEnvelope(payload);
   if (!envelope) return null;
 
@@ -148,7 +150,7 @@ export function buildMultisigCustomDisplayPayload(payload: unknown): MultisigCus
       account: envelope.account,
       transaction_ttl_ms: envelope.transaction_ttl_ms,
       instructions_count: envelope.instructions.length,
-      decoded_instructions: envelope.instructions.map((encoded, index) => decodeNestedInstruction(encoded, index)),
+      decoded_instructions: envelope.instructions.map((encoded, index) => decodeNestedInstruction(encoded, index, networkPrefix)),
     },
     raw_payload: payload,
   };

@@ -186,6 +186,12 @@ function activityRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function activityAsset(value: unknown): NonNullable<ReturnType<typeof parseAssetIdLiteral>> {
+  const asset = typeof value === 'string' ? parseAssetIdLiteral(value) : null;
+  if (!asset || asset.literal !== value) throw new TypeError('Invalid native asset holding identifier');
+  return asset;
+}
+
 /** Decode the current Torii Asset variants; submitted batch legs are not settlement evidence. */
 export function decodeCommittedAssetActivity(
   kind: 'Transfer' | 'Mint' | 'Burn',
@@ -210,8 +216,7 @@ export function decodeCommittedAssetActivity(
     throw new TypeError('Invalid native Asset instruction fields');
   }
   const assetLiteral = kind === 'Transfer' ? value.source : value.destination;
-  const asset = typeof assetLiteral === 'string' ? parseAssetIdLiteral(assetLiteral) : null;
-  if (!asset || asset.literal !== assetLiteral) throw new TypeError('Invalid native asset holding identifier');
+  const asset = activityAsset(assetLiteral);
   const amount = QuantityValue.parse(value.object);
   if (kind !== 'Transfer') {
     return { definitionId: asset.definitionId, amount, source: null, destination: asset.accountId };

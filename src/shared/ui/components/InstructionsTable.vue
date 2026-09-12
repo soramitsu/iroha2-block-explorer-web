@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getRuntimeNetworkPrefix } from '@/shared/runtime-config';
 import { defaultFormat } from '@/shared/lib/time';
 import BaseHash from '@/shared/ui/components/BaseHash.vue';
 import TransactionStatus from '@/entities/transaction/TransactionStatus.vue';
@@ -40,6 +41,7 @@ import {
 } from '@/shared/lib/instruction-presentation';
 
 const { t } = useI18n();
+const networkPrefix = getRuntimeNetworkPrefix();
 const props = defineProps<{
   showValue?: boolean
   hashType: HashType
@@ -57,7 +59,7 @@ const presentationCache = new WeakMap<Instruction, InstructionPresentation | nul
 
 function getInstructionPresentation(item: Instruction): InstructionPresentation | null {
   if (presentationCache.has(item)) return presentationCache.get(item) ?? null;
-  const result = buildInstructionPresentation(item);
+  const result = buildInstructionPresentation(item, networkPrefix);
   presentationCache.set(item, result);
   return result;
 }

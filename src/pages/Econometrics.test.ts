@@ -4,6 +4,9 @@ import BigNumber from 'bignumber.js';
 import Econometrics from './Econometrics.vue';
 import { i18n } from '@/shared/lib/localization';
 import { NOT_FOUND, SUCCESSFUL_FETCHING, UNKNOWN_ERROR } from '@/shared/api/consts';
+import tairaHistory from '../../tests/fixtures/taira-history.json';
+
+const HISTORY_CURSOR = tairaHistory.latestTransactions.pagination.next_cursor;
 
 const SAMPLE_ACCOUNT_ID =
   'sorauﾛ1NﾗhBUd2BﾂｦﾄiﾔﾆﾂﾇKSﾃaﾘﾒﾓQﾗrﾒoﾘﾅnｳﾘbQｳQJﾆLJ5HSE';
@@ -217,7 +220,7 @@ describe('Econometrics', () => {
     apiMocks.fetchInstructions.mockImplementation(({ kind, cursor }: { kind: string, cursor: string | null }) => ({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: historyPage(kind === 'Transfer' && cursor === null ? 'opaque-next' : null),
+        pagination: historyPage(kind === 'Transfer' && cursor === null ? HISTORY_CURSOR : null),
         items: kind === 'Transfer' ? [{
           created_at: cursor === null ? new Date(0) : new Date(),
           kind: 'Transfer', transaction_status: 'Committed',
@@ -230,7 +233,7 @@ describe('Econometrics', () => {
     const transfers = apiMocks.fetchInstructions.mock.calls.map(([params]) => params).filter((params) => params.kind === 'Transfer');
     expect(transfers).toEqual([
       { kind: 'Transfer', cursor: null, limit: 100, transaction_status: 'Committed' },
-      { kind: 'Transfer', cursor: 'opaque-next', limit: 100, transaction_status: 'Committed' },
+      { kind: 'Transfer', cursor: HISTORY_CURSOR, limit: 100, transaction_status: 'Committed' },
     ]);
     const windows = wrapper.findAllComponents(BaseTableStub).map((table) => table.props('items')).find((items) => items[0]?.key === '1h');
     expect(windows.map((window: { complete: boolean }) => window.complete)).toEqual([true, true, true]);
@@ -243,7 +246,7 @@ describe('Econometrics', () => {
     apiMocks.fetchInstructions.mockImplementation(({ kind }: { kind: string }) => ({
       status: SUCCESSFUL_FETCHING,
       data: {
-        pagination: historyPage(kind === 'Transfer' ? `opaque-${++transferPages}` : null),
+        pagination: historyPage(kind === 'Transfer' ? `${HISTORY_CURSOR.slice(0, -8)}${(++transferPages).toString(16).padStart(8, '0')}` : null),
         items: kind === 'Transfer' ? oldItems : [],
       },
     }));
@@ -257,7 +260,7 @@ describe('Econometrics', () => {
 
   it('rejects a changed history snapshot before displaying a combined result', async () => {
     apiMocks.fetchInstructions
-      .mockResolvedValueOnce({ status: SUCCESSFUL_FETCHING, data: { items: [], pagination: historyPage('opaque-next') } })
+      .mockResolvedValueOnce({ status: SUCCESSFUL_FETCHING, data: { items: [], pagination: historyPage(HISTORY_CURSOR) } })
       .mockResolvedValueOnce({
         status: SUCCESSFUL_FETCHING,
         data: { items: [], pagination: { ...historyPage(null), snapshot_hash: 'cd'.repeat(32) } },

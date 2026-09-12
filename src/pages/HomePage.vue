@@ -33,6 +33,7 @@
             :key="sample.key"
             type="button"
             class="home-page__search-tag"
+            :title="sample.label"
             @click="navigateToSample(sample.route)"
           >
             {{ sample.label }}
@@ -247,6 +248,7 @@ function navigateToSample(route: RouteLocationRaw) {
   }
 
   &__search-help {
+    inline-size: 100%;
     display: flex;
     flex-direction: column;
     gap: size(1);
@@ -260,6 +262,7 @@ function navigateToSample(route: RouteLocationRaw) {
   }
 
   &__search-tags {
+    inline-size: 100%;
     display: flex;
     flex-wrap: wrap;
     gap: size(1);
@@ -267,6 +270,8 @@ function navigateToSample(route: RouteLocationRaw) {
   }
 
   &__search-tag {
+    min-inline-size: 0;
+    max-inline-size: 100%;
     appearance: none;
     padding: size(1) size(1.5);
     border-radius: size(1.5);
@@ -279,6 +284,8 @@ function navigateToSample(route: RouteLocationRaw) {
     color: theme-color('content-primary');
     @include tpg-s4;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     box-shadow: 0 10px 20px color-mix(in srgb, theme-color('primary') 7%, transparent);
     cursor: pointer;
     transition:

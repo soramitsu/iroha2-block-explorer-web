@@ -117,7 +117,7 @@ import { watchDebounced } from '@vueuse/core';
 
 const { t } = useI18n();
 
-const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xs: 'two-line', xxs: 'two-line' }, 'medium');
+const hashType = useAdaptiveHash({ xxl: 'full', xl: 'full', xs: 'short', xxs: 'short' }, 'medium');
 
 const { route, cursor, limit, updateListQuery } = useCursorListRouteQuery();
 const domainFilter = ref(firstRouteQueryValue(route.query.domain) ?? '');
@@ -252,6 +252,7 @@ const accountRowKey = (item: Account) => accountDisplayId(item);
     align-items: center;
 
     &-label {
+      flex-shrink: 0;
       text-align: left;
       width: size(12);
       padding: size(1);
@@ -259,11 +260,14 @@ const accountRowKey = (item: Account) => accountDisplayId(item);
     }
 
     &-id {
-      @include xxs {
-        width: 53vw;
-      }
-      @include xs {
-        width: auto;
+      flex: 1;
+      min-inline-size: 0;
+      white-space: nowrap;
+      word-break: normal;
+
+      .base-link,
+      .base-hash__copy {
+        flex-shrink: 0;
       }
     }
   }

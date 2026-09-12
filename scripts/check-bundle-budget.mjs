@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,13 +30,29 @@ export function validateBundleBudgets(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Bundle budgets must be an object');
   }
-  if (value.schema_version !== 1) throw new Error('Unsupported bundle budget schema');
+  if (value.schema_version !== 2) throw new Error('Unsupported bundle budget schema');
   assertPositiveInteger(value.default_chunk_gzip_bytes, 'default_chunk_gzip_bytes');
+  const entries = validateBudgetMap(value.entry_gzip_bytes, 'entry_gzip_bytes');
+  const startup = validateBudgetMap(value.entry_startup_gzip_bytes, 'entry_startup_gzip_bytes');
+  if (Object.keys(entries).length === 0
+    || JSON.stringify(Object.keys(entries).sort()) !== JSON.stringify(Object.keys(startup).sort())) {
+    throw new Error('Every entry must have both a non-Wasm and total startup budget');
+  }
+  const wasm = value.sdk_wasm;
+  if (!wasm || typeof wasm !== 'object' || Array.isArray(wasm)
+    || !/^[a-f0-9]{64}$/u.test(wasm.sha256)) {
+    throw new Error('sdk_wasm must pin the admitted SDK Wasm SHA-256');
+  }
+  for (const field of ['raw_bytes', 'max_raw_bytes', 'max_gzip_bytes']) {
+    assertPositiveInteger(wasm[field], `sdk_wasm.${field}`);
+  }
   return {
-    schema_version: 1,
+    schema_version: 2,
     default_chunk_gzip_bytes: value.default_chunk_gzip_bytes,
     chunk_gzip_bytes: validateBudgetMap(value.chunk_gzip_bytes, 'chunk_gzip_bytes'),
-    entry_gzip_bytes: validateBudgetMap(value.entry_gzip_bytes, 'entry_gzip_bytes'),
+    entry_gzip_bytes: entries,
+    entry_startup_gzip_bytes: startup,
+    sdk_wasm: { ...wasm },
     route_gzip_bytes: validateBudgetMap(value.route_gzip_bytes, 'route_gzip_bytes'),
   };
 }
@@ -68,13 +85,26 @@ export function collectEntryBootManifestKeys(manifest, entryKey) {
   return bootKeys;
 }
 
+function assertAssetPath(file) {
+  if (typeof file !== 'string' || file.includes('\\')
+    || file.split('/').some((part) => part === '' || part === '.' || part === '..')) {
+    throw new Error(`Manifest asset path must be a canonical relative path: ${String(file)}`);
+  }
+  return file;
+}
+
 function assetFilesForKeys(manifest, keys) {
   const files = new Set();
   for (const key of keys) {
     const item = manifestItem(manifest, key);
-    if (typeof item.file === 'string') files.add(item.file);
-    for (const cssFile of item.css ?? []) files.add(cssFile);
-    for (const assetFile of item.assets ?? []) files.add(assetFile);
+    if (typeof item.file === 'string') files.add(assertAssetPath(item.file));
+    for (const cssFile of item.css ?? []) {
+      if (typeof cssFile !== 'string' || !cssFile.endsWith('.css')) {
+        throw new Error(`Manifest CSS asset is not CSS: ${String(cssFile)}`);
+      }
+      files.add(assertAssetPath(cssFile));
+    }
+    for (const assetFile of item.assets ?? []) files.add(assertAssetPath(assetFile));
   }
   return files;
 }
@@ -102,13 +132,15 @@ function chunkBudgetKey(item, manifestKey) {
   return manifestKey;
 }
 
-function emittedJavaScriptFiles(distDir, currentDirectory = distDir) {
+function emittedFiles(distDir, currentDirectory = distDir) {
   const files = [];
   for (const entry of readdirSync(currentDirectory, { withFileTypes: true })) {
     const absolutePath = join(currentDirectory, entry.name);
-    if (entry.isDirectory()) files.push(...emittedJavaScriptFiles(distDir, absolutePath));
-    else if (entry.isFile() && entry.name.endsWith('.js')) {
+    if (entry.isDirectory()) files.push(...emittedFiles(distDir, absolutePath));
+    else if (entry.isFile()) {
       files.push(relative(distDir, absolutePath).split(sep).join('/'));
+    } else {
+      throw new Error(`Emitted asset must be a regular file: ${absolutePath}`);
     }
   }
   return files;
@@ -119,26 +151,83 @@ function emittedChunkName(file) {
   return stem.replace(/-[A-Za-z0-9_-]{8,}$/u, '');
 }
 
+function measureEntryStartup({ manifest, source, wasmFile, distDir }) {
+  const entryKey = findEntryKey(manifest, source);
+  if (!entryKey) throw new Error(`Configured entry is missing from the manifest: ${source}`);
+  const keys = collectEntryBootManifestKeys(manifest, entryKey);
+  const files = assetFilesForKeys(manifest, keys);
+  if (!files.has(wasmFile)) {
+    throw new Error(`Required SDK Wasm is missing from the entry startup closure: ${source}`);
+  }
+  // The HTML document is transferred before its manifest entry module.
+  files.add(assertAssetPath(source));
+  const categoryFiles = { js_css: [], other_assets: [], sdk_wasm: [] };
+  for (const file of files) {
+    const category = file === wasmFile ? 'sdk_wasm'
+      : /\.(?:js|css)$/u.test(file) ? 'js_css' : 'other_assets';
+    categoryFiles[category].push(file);
+  }
+  const categories = Object.fromEntries(Object.entries(categoryFiles).map(([category, assets]) => [
+    category,
+    {
+      files: assets.sort(),
+      raw_bytes: assets.reduce((sum, file) => sum + readFileSync(join(distDir, file)).byteLength, 0),
+      gzip_bytes: sumGzipBytes(distDir, assets),
+    },
+  ]));
+  const total = {
+    raw_bytes: Object.values(categories).reduce((sum, category) => sum + category.raw_bytes, 0),
+    gzip_bytes: Object.values(categories).reduce((sum, category) => sum + category.gzip_bytes, 0),
+  };
+  return { source, categories, total };
+}
+
 export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
   const checkedBudgets = validateBundleBudgets(budgets);
   const measurements = [];
-  const entryClosures = new Map();
+  const entries = [];
+  const outputFiles = emittedFiles(distDir);
+  const wasmFiles = outputFiles.filter((file) => file.endsWith('.wasm'));
+  if (wasmFiles.length !== 1) {
+    throw new Error(`Expected exactly one emitted SDK Wasm asset; found ${wasmFiles.length}`);
+  }
+  const wasmFile = wasmFiles[0];
+  const wasmBytes = readFileSync(join(distDir, wasmFile));
+  if (createHash('sha256').update(wasmBytes).digest('hex') !== checkedBudgets.sdk_wasm.sha256
+    || wasmBytes.byteLength !== checkedBudgets.sdk_wasm.raw_bytes) {
+    throw new Error('Emitted SDK Wasm does not match the admitted SHA-256 and raw size');
+  }
+  const wasmGzipBytes = gzipSync(wasmBytes, { level: 9 }).byteLength;
+  measurements.push({
+    kind: 'sdk-wasm', name: wasmFile, actual: wasmBytes.byteLength,
+    limit: checkedBudgets.sdk_wasm.max_raw_bytes, unit: 'raw',
+  }, {
+    kind: 'sdk-wasm', name: wasmFile, actual: wasmGzipBytes,
+    limit: checkedBudgets.sdk_wasm.max_gzip_bytes,
+  });
 
   for (const [source, limit] of Object.entries(checkedBudgets.entry_gzip_bytes)) {
-    const entryKey = findEntryKey(manifest, source);
-    if (!entryKey) throw new Error(`Configured entry is missing from the manifest: ${source}`);
-    const keys = collectEntryBootManifestKeys(manifest, entryKey);
-    entryClosures.set(entryKey, keys);
-    const actual = sumGzipBytes(distDir, assetFilesForKeys(manifest, keys));
+    const entry = measureEntryStartup({ manifest, source, wasmFile, distDir });
+    entries.push(entry);
+    // Preserve the original, stricter entry cap for ALL non-Wasm assets,
+    // including fonts; the independently pinned Wasm has its own two bounds.
+    const actual = entry.categories.js_css.gzip_bytes + entry.categories.other_assets.gzip_bytes;
     measurements.push({ kind: 'entry', name: source, actual, limit });
+    measurements.push({
+      kind: 'startup', name: source, actual: entry.total.gzip_bytes,
+      limit: checkedBudgets.entry_startup_gzip_bytes[source],
+    });
   }
 
-  const initialKeys = new Set([...entryClosures.values()].flatMap((keys) => [...keys]));
+  const initialFiles = new Set(entries.flatMap(({ categories }) => (
+    Object.values(categories).flatMap(({ files }) => files)
+  )));
   for (const [source, limit] of Object.entries(checkedBudgets.route_gzip_bytes)) {
     if (!manifest[source]) throw new Error(`Configured route is missing from the manifest: ${source}`);
     const routeKeys = collectStaticManifestKeys(manifest, source);
-    const incrementalKeys = new Set([...routeKeys].filter((key) => !initialKeys.has(key)));
-    const actual = sumGzipBytes(distDir, assetFilesForKeys(manifest, incrementalKeys));
+    const incrementalFiles = [...assetFilesForKeys(manifest, routeKeys)]
+      .filter((file) => !initialFiles.has(file));
+    const actual = sumGzipBytes(distDir, incrementalFiles);
     measurements.push({ kind: 'route', name: source, actual, limit });
   }
 
@@ -156,7 +245,7 @@ export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
   }
 
 
-  for (const file of emittedJavaScriptFiles(distDir)) {
+  for (const file of outputFiles.filter((file) => file.endsWith('.js'))) {
     if (manifestJavaScriptFiles.has(file)) continue;
     const name = emittedChunkName(file);
     const configuredLimit = checkedBudgets.chunk_gzip_bytes[name];
@@ -175,16 +264,22 @@ export function evaluateBundleBudgets({ manifest, budgets, distDir }) {
   const failures = measurements
     .filter(({ actual, limit }) => actual > limit)
     .map((measurement) => ({ ...measurement }));
-  return { measurements, failures };
+  return { measurements, failures, entries };
 }
 
 export function formatBundleBudgetReport(result) {
-  const lines = result.measurements
+  const lines = result.entries.flatMap(({ source, categories, total }) => [
+    ...Object.entries(categories).map(([category, size]) => (
+      `INFO startup ${source} ${category}: ${size.raw_bytes} raw bytes; ${size.gzip_bytes} gzip bytes`
+    )),
+    `INFO startup ${source} total: ${total.raw_bytes} raw bytes; ${total.gzip_bytes} gzip bytes`,
+  ]);
+  lines.push(...[...result.measurements]
     .sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
-    .map(({ kind, name, actual, limit }) => {
+    .map(({ kind, name, actual, limit, unit = 'gzip' }) => {
       const state = actual > limit ? 'FAIL' : 'PASS';
-      return `${state} ${kind.padEnd(5)} ${name}: ${actual} / ${limit} gzip bytes`;
-    });
+      return `${state} ${kind.padEnd(8)} ${name}: ${actual} / ${limit} ${unit} bytes`;
+    }));
   lines.push(result.failures.length === 0
     ? 'Bundle budget check passed.'
     : `Bundle budget check failed with ${result.failures.length} over-budget artifact(s).`);

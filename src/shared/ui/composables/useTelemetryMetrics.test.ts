@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { ref, nextTick, reactive, computed, effectScope, onScopeDispose } from 'vue';
+import { ref, nextTick, computed, effectScope, onScopeDispose } from 'vue';
 import type { NetworkMetrics } from '@/shared/api/schemas';
-import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
 
 const hoisted = vi.hoisted(() => ({
+  fetchNetworkMetrics: vi.fn(),
   sampleMetrics: {
     peers: 5,
     domains: 3,
@@ -33,12 +33,9 @@ const sampleMetrics = hoisted.sampleMetrics;
 
 vi.mock('@/shared/api', () => {
   return {
-    fetchNetworkMetrics: vi.fn().mockResolvedValue({
-      status: SUCCESSFUL_FETCHING,
-      data: hoisted.sampleMetrics,
-    }),
+    fetchNetworkMetrics: hoisted.fetchNetworkMetrics,
     streamTelemetryMetrics: vi.fn(() => {
-      const status = ref<'CONNECTING' | 'OPEN' | 'CLOSED'>('CLOSED');
+      const status = ref<'CONNECTING' | 'OPEN' | 'CLOSED'>('CONNECTING');
       const payload = ref<any>(null);
       const listener = { status, payload };
       hoisted.listeners.push(listener);
@@ -56,57 +53,66 @@ vi.mock('@/shared/api', () => {
   };
 });
 
-vi.mock('@/shared/utils/setup-async-data', () => {
-  return {
-    setupAsyncData: (fn: () => Promise<any>) => {
-      const isLoading = ref(true);
-      const raw = ref();
-      const data = computed(() => raw.value);
-      fn().then((result) => {
-        raw.value = result;
-        isLoading.value = false;
-      });
-      return reactive({ isLoading, data });
-    },
-  };
-});
-
 import { useTelemetryMetrics, __resetTelemetryMetricsForTests } from './useTelemetryMetrics';
 
 describe('useTelemetryMetrics', () => {
   beforeEach(() => {
     __resetTelemetryMetricsForTests();
     hoisted.listeners.splice(0, hoisted.listeners.length);
+    hoisted.fetchNetworkMetrics.mockClear();
+    vi.stubGlobal('EventSource', class {} as any);
   });
 
   afterEach(() => {
+    __resetTelemetryMetricsForTests();
+    expect(hoisted.fetchNetworkMetrics).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
-  it('hydrates metrics from the initial HTTP response', async () => {
-    const { metrics, isLoading } = useTelemetryMetrics();
+  it('loads metrics from the public stream bootstrap without a privileged HTTP request', async () => {
+    const { metrics, isLoading, isUnavailable, isStale } = useTelemetryMetrics();
+    expect(metrics.value).toBeNull();
+    expect(isLoading.value).toBe(true);
 
-    await flushAll();
+    hoisted.emit({ kind: 'first', network_status: sampleMetrics, peers_info: [], peers_status: [], propagation: [] });
+    await nextTick();
+
     expect(metrics.value).toEqual(sampleMetrics);
     expect(isLoading.value).toBe(false);
+    expect(isUnavailable.value).toBe(false);
+    expect(isStale.value).toBe(false);
   });
 
-  it('exposes a closed stream state when telemetry live stream is unavailable', async () => {
-    const { metrics, streamStatus, streamedMetrics } = useTelemetryMetrics();
-    await flushAll();
-    expect(metrics.value).toEqual(sampleMetrics);
+  it('reports unavailable data when the browser has no EventSource', () => {
+    vi.stubGlobal('EventSource', undefined);
+    const { metrics, streamStatus, streamedMetrics, isLoading, isUnavailable } = useTelemetryMetrics();
+    expect(metrics.value).toBeNull();
     expect(streamStatus.value).toBe('CLOSED');
     expect(streamedMetrics.value).toBeNull();
+    expect(isLoading.value).toBe(false);
+    expect(isUnavailable.value).toBe(true);
+    expect(hoisted.listeners).toHaveLength(0);
+  });
+
+  it('reports an unavailable stream before any snapshot and stays empty while reconnecting', async () => {
+    const { metrics, isLoading, isUnavailable } = useTelemetryMetrics();
+    hoisted.listeners[0].status.value = 'CLOSED';
+    await nextTick();
+    expect(metrics.value).toBeNull();
+    expect(isUnavailable.value).toBe(true);
+    expect(isLoading.value).toBe(false);
+
+    hoisted.listeners[0].status.value = 'CONNECTING';
+    await nextTick();
+    expect(metrics.value).toBeNull();
+    expect(isUnavailable.value).toBe(false);
+    expect(isLoading.value).toBe(true);
   });
 
   it('updates metrics from the live stream when EventSource is available', async () => {
-    vi.stubGlobal('EventSource', class {} as any);
-
     const { metrics, streamStatus, streamedMetrics } = useTelemetryMetrics();
-    await flushAll();
-
-    expect(metrics.value).toEqual(sampleMetrics);
-    expect(streamStatus.value).toBe('CLOSED');
+    expect(metrics.value).toBeNull();
+    expect(streamStatus.value).toBe('CONNECTING');
     expect(streamedMetrics.value).toBeNull();
 
     hoisted.emit({
@@ -119,7 +125,45 @@ describe('useTelemetryMetrics', () => {
 
     expect(streamStatus.value).toBe('OPEN');
     expect(metrics.value?.block).toBe(1234);
+    expect(metrics.value).not.toHaveProperty('kind');
     expect(streamedMetrics.value?.kind).toBe('network_status');
+  });
+
+  it('keeps the last real metrics visibly stale until a reconnect snapshot arrives', async () => {
+    const { metrics, isLoading, isUnavailable, isStale } = useTelemetryMetrics();
+    hoisted.emit({ kind: 'network_status', ...sampleMetrics });
+    await nextTick();
+    hoisted.listeners[0].status.value = 'CLOSED';
+    await nextTick();
+    expect(metrics.value).toEqual(sampleMetrics);
+    expect(isLoading.value).toBe(false);
+    expect(isUnavailable.value).toBe(false);
+    expect(isStale.value).toBe(true);
+
+    hoisted.listeners[0].status.value = 'CONNECTING';
+    await nextTick();
+    expect(isStale.value).toBe(true);
+    hoisted.listeners[0].status.value = 'OPEN';
+    await nextTick();
+    expect(isStale.value).toBe(true);
+    hoisted.emit({ kind: 'peer_removed', url: 'https://peer.example' });
+    await nextTick();
+    expect(isStale.value).toBe(true);
+
+    hoisted.emit({ kind: 'first', network_status: { ...sampleMetrics, block: 100 }, peers_info: [], peers_status: [], propagation: [] });
+    await nextTick();
+    expect(metrics.value?.block).toBe(100);
+    expect(isStale.value).toBe(false);
+  });
+
+  it('keeps network metrics while delivering unrelated peer events to other consumers', async () => {
+    const { metrics, streamedMetrics } = useTelemetryMetrics();
+    hoisted.emit({ kind: 'network_status', ...sampleMetrics });
+    await nextTick();
+    hoisted.emit({ kind: 'peer_removed', url: 'https://peer.example' });
+    await nextTick();
+    expect(metrics.value).toEqual(sampleMetrics);
+    expect(streamedMetrics.value?.kind).toBe('peer_removed');
   });
 
   it('keeps the live stream active when the first consumer scope is disposed', async () => {
@@ -130,7 +174,7 @@ describe('useTelemetryMetrics', () => {
     const secondScope = effectScope();
     const second = secondScope.run(() => useTelemetryMetrics());
 
-    await flushAll();
+    await nextTick();
     expect(first).toBeTruthy();
     expect(second).toBeTruthy();
     expect(hoisted.listeners).toHaveLength(1);
@@ -147,12 +191,6 @@ describe('useTelemetryMetrics', () => {
 
     expect(second?.metrics.value?.block).toBe(7777);
     secondScope.stop();
+    expect(hoisted.listeners).toHaveLength(0);
   });
 });
-
-async function flushAll() {
-  await Promise.resolve();
-  await nextTick();
-  await Promise.resolve();
-  await nextTick();
-}

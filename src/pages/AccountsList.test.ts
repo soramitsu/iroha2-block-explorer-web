@@ -1,8 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import AccountsList from './AccountsList.vue';
 import { i18n } from '@/shared/lib/localization';
 import { SUCCESSFUL_FETCHING } from '@/shared/api/consts';
+
+enableAutoUnmount(afterEach);
+const updateListQuery = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 const setupState = {
   isLoading: false,
@@ -27,7 +30,7 @@ vi.mock('@/shared/ui/composables/useListRouteQuery', async () => {
       route: { query: {} },
       cursor: ref<string | null>(null),
       limit: ref(10),
-      updateListQuery: vi.fn(),
+      updateListQuery,
     }),
   };
 });
@@ -70,8 +73,15 @@ describe('AccountsList', () => {
     'sorauﾛ1PﾉｳﾇmEｴWｵebHﾑ6ﾔﾙｲヰiwuCWErJ7uｽoPGｱﾔnjﾑKﾋTCW2PV';
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    updateListQuery.mockClear();
     setupState.data.data.items = [];
     setupState.data.data.pagination = { limit: 10, next_cursor: null, has_more: false };
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   const factory = () =>
@@ -94,6 +104,8 @@ describe('AccountsList', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain(i18n.global.t('accounts.filters.assetInvalid'));
+    await vi.advanceTimersByTimeAsync(600);
+    expect(updateListQuery).not.toHaveBeenCalled();
   });
 
   it('clears the asset filter error after a valid asset selector is entered', async () => {
@@ -108,6 +120,8 @@ describe('AccountsList', () => {
     await flushPromises();
 
     expect(wrapper.text()).not.toContain(i18n.global.t('accounts.filters.assetInvalid'));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(updateListQuery).toHaveBeenCalledExactlyOnceWith({ domain: null, asset: sampleAssetAlias });
   });
 
   it('renders canonical i105 account ids in the list even when generic ids differ', async () => {

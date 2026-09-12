@@ -1,10 +1,16 @@
 import { z } from 'zod';
+import { requireNetworkPrefix } from '@/shared/lib/network-prefix';
 import type { Instruction } from '@/shared/api/schemas';
 import { AccountSelectorSchema, AssetDefinitionSelectorSchema, AssetIdSchema, NftIdSchema } from '@/shared/api/schemas';
 import { buildMultisigCustomDisplayPayload } from '@/shared/lib/multisig-custom';
 
 type AnyRecord = Record<string, unknown>;
-type PresentationBuilder = (value: unknown, rawPayload: unknown) => InstructionPresentation | null;
+interface PresentationContext {
+  networkPrefix: number
+  depth: number
+}
+type PresentationBuilder = (value: unknown, rawPayload: unknown, context: PresentationContext) => InstructionPresentation | null;
+const MAX_NESTED_INSTRUCTION_DEPTH = 8;
 type EntityRouteKind = 'account' | 'asset' | 'asset-definition' | 'domain' | 'nft';
 
 export interface InstructionPresentationField {
@@ -512,15 +518,19 @@ function multisigRegisterBuilder(value: unknown): InstructionPresentation | null
   });
 }
 
-function multisigProposeBuilder(value: unknown, rawPayload: unknown): InstructionPresentation | null {
+function multisigProposeBuilder(value: unknown, rawPayload: unknown, context: PresentationContext): InstructionPresentation | null {
+  if (context.depth >= MAX_NESTED_INSTRUCTION_DEPTH) return null;
   const parsed = MultisigProposeSchema.safeParse(value);
   if (!parsed.success) return null;
-  const decoded = buildMultisigCustomDisplayPayload(rawPayload);
+  const decoded = buildMultisigCustomDisplayPayload(rawPayload, context.networkPrefix);
   if (!decoded || decoded.multisig.variant !== 'Propose') return null;
   const nestedInstructions = decoded.multisig.decoded_instructions.map((instruction, index) => ({
     index: instruction.index,
     encoded: parsed.data.instructions[index] ?? '',
-    presentation: buildDecodedInstructionPresentation(instruction.instruction),
+    presentation: buildDecodedPresentation(instruction.instruction, {
+      networkPrefix: context.networkPrefix,
+      depth: context.depth + 1,
+    }),
   }));
   const fields = [
     field('account', 'Multisig account', parsed.data.account, 'account'),
@@ -811,19 +821,22 @@ const DECODED_DIRECT_VARIANTS: Readonly<Record<string, { family: string; variant
 };
 
 function buildRegisteredPresentation(
-  ...[family, variant, value, rawPayload]: [
+  ...[family, variant, value, rawPayload, context]: [
     family: string,
     variant: string,
     value: unknown,
     rawPayload: unknown,
+    context: PresentationContext,
   ]
 ): InstructionPresentation | null {
-  return registry[`${family}:${variant}`]?.(value, rawPayload) ?? null;
+  return registry[`${family}:${variant}`]?.(value, rawPayload, context) ?? null;
 }
 
 export function buildInstructionPresentation(
-  instruction: Pick<Instruction, 'kind' | 'box'>
+  instruction: Pick<Instruction, 'kind' | 'box'>,
+  networkPrefix: number
 ): InstructionPresentation | null {
+  const context = { networkPrefix: requireNetworkPrefix(networkPrefix), depth: 0 };
   const payload = ExplorerEnvelopeSchema.safeParse(instruction.box.json.payload);
   if (!payload.success) return null;
   const family = instruction.box.json.kind;
@@ -832,15 +845,30 @@ export function buildInstructionPresentation(
     if (payload.data.variant !== 'Custom') return null;
     const tagged = exactTaggedValue(payload.data.value, CUSTOM_MULTISIG_VARIANTS);
     if (!tagged) return null;
-    return buildRegisteredPresentation('Custom', tagged.variant, tagged.value, payload.data);
+    return buildRegisteredPresentation('Custom', tagged.variant, tagged.value, payload.data, context);
   }
 
-  return buildRegisteredPresentation(family, payload.data.variant, payload.data.value, payload.data);
+  return buildRegisteredPresentation(family, payload.data.variant, payload.data.value, payload.data, context);
 }
 
-export function buildDecodedInstructionPresentation(decoded: unknown): InstructionPresentation | null {
+export function buildDecodedInstructionPresentation(decoded: unknown, networkPrefix: number): InstructionPresentation | null {
+  return buildDecodedPresentation(decoded, { networkPrefix: requireNetworkPrefix(networkPrefix), depth: 0 });
+}
+
+function buildDecodedPresentation(decoded: unknown, context: PresentationContext): InstructionPresentation | null {
   const root = asRecord(decoded);
   if (!root || Object.keys(root).length !== 1) return null;
+
+  if (Object.prototype.hasOwnProperty.call(root, 'Custom')) {
+    const custom = asRecord(root.Custom);
+    if (!custom || Object.keys(custom).length !== 1 || !Object.prototype.hasOwnProperty.call(custom, 'payload')) return null;
+    const tagged = exactTaggedValue(custom.payload, CUSTOM_MULTISIG_VARIANTS);
+    if (!tagged) return null;
+    return buildRegisteredPresentation('Custom', tagged.variant, tagged.value, {
+      variant: 'Custom',
+      value: custom.payload,
+    }, context);
+  }
 
   for (const [family, variants] of Object.entries(DECODED_BOX_VARIANTS)) {
     if (!Object.prototype.hasOwnProperty.call(root, family)) continue;
@@ -849,7 +877,7 @@ export function buildDecodedInstructionPresentation(decoded: unknown): Instructi
     return buildRegisteredPresentation(family, tagged.variant, tagged.value, {
       variant: tagged.variant,
       value: tagged.value,
-    });
+    }, context);
   }
 
   for (const [rootVariant, target] of Object.entries(DECODED_DIRECT_VARIANTS)) {
@@ -857,7 +885,7 @@ export function buildDecodedInstructionPresentation(decoded: unknown): Instructi
     return buildRegisteredPresentation(target.family, target.variant, root[rootVariant], {
       variant: target.variant,
       value: root[rootVariant],
-    });
+    }, context);
   }
 
   return null;

@@ -33,7 +33,7 @@ function explorerInstruction(kind: string, variant: string, value: unknown) {
 }
 
 function present(kind: string, variant: string, value: unknown) {
-  return buildInstructionPresentation(explorerInstruction(kind, variant, value));
+  return buildInstructionPresentation(explorerInstruction(kind, variant, value), 369);
 }
 
 describe('instruction presentation registry', () => {
@@ -218,7 +218,7 @@ describe('instruction presentation registry', () => {
           framed_sha256: FRAMED_SHA256,
           json: { kind: 'Transfer', payload: { source: ASSET_ID, object: '1', destination: ACCOUNT } },
         },
-      })
+      }, 369)
     ).toBeNull();
     expect(
       buildInstructionPresentation({
@@ -231,7 +231,7 @@ describe('instruction presentation registry', () => {
             payload: { variant: 'Asset', value: { source: ASSET_ID, object: '1', destination: ACCOUNT }, extra: true },
           },
         },
-      })
+      }, 369)
     ).toBeNull();
     expect(present('Transfer', 'MadeUpVariant', { object: DOMAIN })).toBeNull();
     expect(
@@ -306,9 +306,9 @@ describe('instruction presentation registry', () => {
           destination: ACCOUNT,
         },
       },
-    });
+    }, 369);
     expect(decoded?.registryKey).toBe('Transfer:Asset');
-    expect(buildDecodedInstructionPresentation({ Transfer: { Asset: {} }, Register: {} })).toBeNull();
-    expect(buildDecodedInstructionPresentation({ GuessMe: { object: DOMAIN } })).toBeNull();
+    expect(buildDecodedInstructionPresentation({ Transfer: { Asset: {} }, Register: {} }, 369)).toBeNull();
+    expect(buildDecodedInstructionPresentation({ GuessMe: { object: DOMAIN } }, 369)).toBeNull();
   });
 });

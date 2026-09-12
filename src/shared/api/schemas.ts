@@ -88,7 +88,13 @@ export interface CursorPaginationParams {
   limit?: number;
 }
 
+// Torii's current IHC2 history frame is exactly 153 bytes, or 204 base64url
+// characters without padding. Keep it distinct from variable-length IXC1
+// collection cursors; Torii remains responsible for interpreting the token.
+const HistoryCursor = z.string().length(204).regex(/^SUhDMg[A-Za-z0-9_-]{198}$/u);
+
 export const HistoryCursorPagination = CursorPagination.safeExtend({
+  next_cursor: HistoryCursor.nullable(),
   snapshot_height: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   snapshot_hash: z.string().regex(/^[0-9a-f]{64}$/u).nullable(),
 }).superRefine((value, ctx) => {

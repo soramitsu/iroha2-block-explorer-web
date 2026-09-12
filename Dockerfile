@@ -17,14 +17,16 @@ RUN test "$(node --version)" = "v24.19.0" \
   && test "$(pnpm --version)" = "10.11.0"
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY scripts/check-iroha-pin.mjs scripts/check-iroha-pin.mjs
-COPY scripts/materialize-iroha-js-dist.mjs scripts/materialize-iroha-js-dist.mjs
-COPY tests/mochi/explorer-profile.json tests/mochi/explorer-profile.json
-RUN node scripts/check-iroha-pin.mjs
+COPY scripts/verify-iroha-sdk.mjs scripts/verify-iroha-sdk.mjs
+COPY vendor vendor
+RUN node scripts/verify-iroha-sdk.mjs --archive-only
 RUN pnpm fetch --frozen-lockfile
 
 COPY src src
 COPY public public
+COPY scripts scripts
+COPY tests tests
+COPY ops ops
 COPY *.json *.ts *.cjs *.mts *.html ./
 RUN pnpm install --offline --frozen-lockfile
 RUN pnpm build

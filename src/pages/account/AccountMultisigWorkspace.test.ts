@@ -19,6 +19,11 @@ const connectMocks = vi.hoisted(() => ({
   createConnectCanonicalRequestAuth: vi.fn(),
 }));
 
+vi.mock('@/shared/runtime-config', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/shared/runtime-config')>(),
+  getRuntimeNetworkPrefix: () => 369,
+}));
+
 vi.mock('@/shared/api', () => ({
   fetchMultisigSpec: apiMocks.fetchMultisigSpec,
   fetchMultisigProposals: apiMocks.fetchMultisigProposals,

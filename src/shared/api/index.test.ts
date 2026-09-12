@@ -1,4 +1,5 @@
 import { jsonResponse, testResponse } from '../../../tests/fixtures/http-response';
+import { initializeTestBrowserCodec } from '../../../tests/helpers/initialize-browser-codec';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { nextTick, ref } from 'vue';
 import type { Ref } from 'vue';
@@ -56,6 +57,7 @@ async function importApiModule(env?: ApiEnv): Promise<ApiModule> {
       if (value !== undefined) vi.stubEnv(key, value);
     });
   }
+  await initializeTestBrowserCodec();
   return await import('./index');
 }
 
@@ -107,6 +109,7 @@ describe('appendSearchParams', () => {
 describe('API url builders', () => {
   it('keeps actual requests on forced Taira after manual, scoped and reset attempts', async () => {
     runtimeConfigState.value = { toriiBaseUrl: 'https://taira.sora.org', toriiForceBaseUrl: true };
+    localStorage.setItem('torii_base_url', 'https://saved-node.example');
     const requests: string[] = [];
     global.fetch = vi.fn(async (input: unknown) => {
       requests.push(String(input));
@@ -122,6 +125,8 @@ describe('API url builders', () => {
       );
     }) as typeof fetch;
     const api = await importApiModule({ VITE_API_URL: 'https://build-default.example/v1/explorer' });
+    expect(api.getToriiBaseUrl()).toBe('https://taira.sora.org');
+    await api.fetchBlocks({ limit: 10 });
     for (const override of [
       () => api.setToriiBaseUrl('https://manual.example'),
       () => api.setRouteScopedToriiBaseUrl('https://scoped.example'),
@@ -131,7 +136,7 @@ describe('API url builders', () => {
       override();
       await api.fetchBlocks({ limit: 10 });
     }
-    expect(requests).toHaveLength(4);
+    expect(requests).toHaveLength(5);
     expect(requests.every((url) => url.startsWith('https://taira.sora.org/v1/explorer/blocks?'))).toBe(true);
     expect(api.buildToriiWsUrl('/telemetry/metrics')).toBe('wss://taira.sora.org/v1/telemetry/metrics');
   });
@@ -361,7 +366,7 @@ describe('API url builders', () => {
         return testResponse('not found', { status: 404 });
       }
       attempts += 1;
-      if (attempts === 1) throw new Error('simulated network error');
+      if (attempts === 1) throw new TypeError('simulated network error');
       return testResponse(
         JSON.stringify({
           pagination: { limit: 1, next_cursor: null, has_more: false },
@@ -3024,7 +3029,7 @@ describe('Torii metrics helpers', () => {
   it('fetchToriiMetricsText retries network failures and then rethrows the final error', async () => {
     runtimeConfigState.value = { toriiRequestRetryCount: 1, toriiRequestRetryBaseDelayMs: 0 };
 
-    const fetchSpy = vi.fn().mockRejectedValue(new Error('offline'));
+    const fetchSpy = vi.fn().mockRejectedValue(new TypeError('offline'));
     global.fetch = fetchSpy as any;
 
     const { fetchToriiMetricsText } = await importApiModule({ VITE_API_URL: 'https://torii.example/v1/explorer' });

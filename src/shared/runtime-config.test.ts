@@ -8,11 +8,13 @@ describe('runtime config', () => {
     toriiBaseUrl: 'https://taira.sora.org',
     toriiForceBaseUrl: true,
     networkId: checkedNetworkId,
+    networkPrefix: 369,
   };
-  const bpngConfig = {
+  const tairaConfig = {
     toriiBaseUrl: 'https://taira.sora.org',
     toriiForceBaseUrl: true,
     networkId: checkedNetworkId,
+    networkPrefix: 369,
   };
 
   function useHost(hostname: string) {
@@ -39,6 +41,7 @@ describe('runtime config', () => {
         toriiEconometricsEndpointsEnabled: true,
         toriiBaseUrl: 'https://torii.example',
         networkId: checkedNetworkId,
+        networkPrefix: 369,
         kotodamaCompilerUrl: 'https://compiler.example',
         sorafsPublicBaseUrl: 'https://cdn.example',
         toriiFailoverEnabled: true,
@@ -71,7 +74,7 @@ describe('runtime config', () => {
     expect(module.getRuntimeConfig().toriiRequestRetryBaseDelayMs).toBe(200);
   });
 
-  it('keeps defaults only for an optional 404 outside the BPNG host', async () => {
+  it('rejects missing configuration outside a pinned Taira host', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 404,
@@ -81,7 +84,7 @@ describe('runtime config', () => {
 
     const module = await import('./runtime-config');
 
-    await expect(module.loadRuntimeConfig()).resolves.toEqual({});
+    await expect(module.loadRuntimeConfig()).rejects.toThrow(configurationError);
     expect(module.getRuntimeConfig()).toEqual({});
   });
 
@@ -105,12 +108,13 @@ describe('runtime config', () => {
     ['uppercase', 'AA'.repeat(32)],
     ['wrong length', '11'.repeat(31)],
     ['unmarked final byte', `${'11'.repeat(31)}10`],
-  ])('rejects an invalid non-BPNG %s NetworkId binding', async (_label, invalidNetworkId) => {
+  ])('rejects an invalid non-pinned %s NetworkId binding', async (_label, invalidNetworkId) => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         toriiBaseUrl: 'https://torii.example',
         networkId: invalidNetworkId,
+        networkPrefix: 369,
       }),
     });
     vi.stubGlobal('fetch', fetchMock as any);
@@ -121,10 +125,10 @@ describe('runtime config', () => {
     expect(module.getRuntimeConfig()).toEqual({});
   });
 
-  it('rejects retired raw lowercase NetworkId outside the BPNG host', async () => {
+  it('rejects retired raw lowercase NetworkId outside a pinned Taira host', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ networkId: legacyNetworkId }),
+      json: async () => ({ networkId: legacyNetworkId, networkPrefix: 369 }),
     }));
     const module = await import('./runtime-config');
 
@@ -132,10 +136,10 @@ describe('runtime config', () => {
     expect(module.getRuntimeConfig()).toEqual({});
   });
 
-  it('accepts and preserves a checked v4 NetworkId outside the BPNG host', async () => {
+  it('accepts and preserves a checked v4 NetworkId outside a pinned Taira host', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ networkId: checkedNetworkId }),
+      json: async () => ({ networkId: checkedNetworkId, networkPrefix: 369 }),
     }));
     const module = await import('./runtime-config');
 
@@ -169,16 +173,15 @@ describe('runtime config', () => {
     expect(module.getRuntimeConfig()).toEqual({});
   });
 
-  it('permits the existing root config lookup only after an optional subpath 404', async () => {
+  it('rejects a missing subpath config without requesting another configuration location', async () => {
     vi.stubEnv('BASE_URL', '/explorer/');
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: false, status: 404 })
-      .mockResolvedValueOnce({ ok: true, json: async () => genericConfig });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404 });
     vi.stubGlobal('fetch', fetchMock);
     const module = await import('./runtime-config');
 
-    await expect(module.loadRuntimeConfig()).resolves.toEqual(genericConfig);
-    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/explorer/config.json', '/config.json']);
+    await expect(module.loadRuntimeConfig()).rejects.toThrow(configurationError);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/explorer/config.json']);
+    expect(module.getRuntimeConfig()).toEqual({});
   });
 
   it('rejects a network error and permits an explicit fresh retry at the same location', async () => {
@@ -220,50 +223,71 @@ describe('runtime config', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('requires config on the BPNG host even when it returns 404', async () => {
-    useHost('explorer-bpng.soramitsu.io');
-    vi.stubEnv('BASE_URL', '/explorer/');
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404 });
-    vi.stubGlobal('fetch', fetchMock);
-    const module = await import('./runtime-config');
+  describe.each(['taira-explorer.sora.org', 'explorer-bpng.soramitsu.io'])('%s profile', (hostname) => {
+    beforeEach(() => useHost(hostname));
 
-    await expect(module.loadRuntimeConfig()).rejects.toThrow(configurationError);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
+    it('requires config even when it returns 404 and never retries another config path', async () => {
+      vi.stubEnv('BASE_URL', '/explorer/');
+      const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+      vi.stubGlobal('fetch', fetchMock);
+      const module = await import('./runtime-config');
 
-  it.each([
-    ['empty profile', {}],
-    ['missing endpoint', { toriiForceBaseUrl: true, networkId: checkedNetworkId }],
-    ['unforced endpoint', { ...bpngConfig, toriiForceBaseUrl: false }],
-    ['missing NetworkId', { toriiBaseUrl: bpngConfig.toriiBaseUrl, toriiForceBaseUrl: true }],
-    ['raw lowercase NetworkId', { ...bpngConfig, networkId: legacyNetworkId }],
-    ['raw uppercase NetworkId', { ...bpngConfig, networkId: 'AB'.repeat(32) }],
-    ['lowercase literal body', { ...bpngConfig, networkId: `hash:${'ab'.repeat(32)}#B99E` }],
-    ['lowercase literal checksum', { ...bpngConfig, networkId: `hash:${'AB'.repeat(32)}#b99E` }],
-    ['invalid checksum', { ...bpngConfig, networkId: checkedNetworkId.replace(/B99E$/u, '0000') }],
-    ['missing checksum', { ...bpngConfig, networkId: `hash:${'AB'.repeat(32)}` }],
-    ['unmarked checked hash', { ...bpngConfig, networkId: `hash:${'10'.repeat(32)}#2B24` }],
-    ['surrounding NetworkId whitespace', { ...bpngConfig, networkId: ` ${checkedNetworkId}` }],
-    ['alternate endpoint', { ...bpngConfig, toriiBaseUrl: 'https://other-torii.example' }],
-    ['endpoint URL suffix', { ...bpngConfig, toriiBaseUrl: 'https://taira.sora.org/' }],
-    ['optional failover settings', { ...bpngConfig, toriiFailoverEnabled: true }],
-    ['optional settings', { ...bpngConfig, toriiRequestTimeoutMs: 5000 }],
-  ])('rejects the BPNG %s', async (_label, config) => {
-    useHost('explorer-bpng.soramitsu.io');
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => config }));
-    const module = await import('./runtime-config');
+      await expect(module.loadRuntimeConfig()).rejects.toThrow(configurationError);
+      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/explorer/config.json']);
+      expect(module.getRuntimeConfig()).toEqual({});
+    });
 
-    await expect(module.loadRuntimeConfig()).rejects.toThrow(configurationError);
-    expect(module.getRuntimeConfig()).toEqual({});
-  });
+    it.each([
+      ['missing prefix', { toriiBaseUrl: tairaConfig.toriiBaseUrl, toriiForceBaseUrl: true, networkId: checkedNetworkId }],
+      ['invalid selected prefix 0', { ...tairaConfig, networkPrefix: 0 }],
+      ['invalid selected prefix 1', { ...tairaConfig, networkPrefix: 1 }],
+      ['invalid selected prefix 65535', { ...tairaConfig, networkPrefix: 65535 }],
+      ['invalid selected prefix -1', { ...tairaConfig, networkPrefix: -1 }],
+      ['invalid selected prefix 65536', { ...tairaConfig, networkPrefix: 65536 }],
+      ['invalid selected prefix 369', { ...tairaConfig, networkPrefix: '369' }],
+      ['invalid selected prefix null', { ...tairaConfig, networkPrefix: null }],
+      ['invalid selected prefix 1.5', { ...tairaConfig, networkPrefix: 1.5 }],
+      ['empty profile', {}],
+      ['missing endpoint', { toriiForceBaseUrl: true, networkId: checkedNetworkId }],
+      ['missing forced binding', { toriiBaseUrl: tairaConfig.toriiBaseUrl, networkId: checkedNetworkId }],
+      ['unforced endpoint', { ...tairaConfig, toriiForceBaseUrl: false }],
+      ['missing NetworkId', { toriiBaseUrl: tairaConfig.toriiBaseUrl, toriiForceBaseUrl: true }],
+      ['raw lowercase NetworkId', { ...tairaConfig, networkId: legacyNetworkId }],
+      ['raw uppercase NetworkId', { ...tairaConfig, networkId: 'AB'.repeat(32) }],
+      ['lowercase literal body', { ...tairaConfig, networkId: `hash:${'ab'.repeat(32)}#B99E` }],
+      ['lowercase literal checksum', { ...tairaConfig, networkId: `hash:${'AB'.repeat(32)}#b99E` }],
+      ['invalid checksum', { ...tairaConfig, networkId: checkedNetworkId.replace(/B99E$/u, '0000') }],
+      ['missing checksum', { ...tairaConfig, networkId: `hash:${'AB'.repeat(32)}` }],
+      ['unmarked checked hash', { ...tairaConfig, networkId: `hash:${'10'.repeat(32)}#2B24` }],
+      ['surrounding NetworkId whitespace', { ...tairaConfig, networkId: ` ${checkedNetworkId}` }],
+      ['alternate endpoint', { ...tairaConfig, toriiBaseUrl: 'https://other-torii.example' }],
+      ['relative endpoint', { ...tairaConfig, toriiBaseUrl: '/v1/explorer' }],
+      ['same-origin proxy', { ...tairaConfig, toriiBaseUrl: `https://${hostname}` }],
+      ['insecure endpoint', { ...tairaConfig, toriiBaseUrl: 'http://taira.sora.org' }],
+      ['endpoint URL suffix', { ...tairaConfig, toriiBaseUrl: 'https://taira.sora.org/' }],
+      ['endpoint API path', { ...tairaConfig, toriiBaseUrl: 'https://taira.sora.org/v1/explorer' }],
+      ['endpoint whitespace', { ...tairaConfig, toriiBaseUrl: ' https://taira.sora.org' }],
+      ['failover enabled', { ...tairaConfig, toriiFailoverEnabled: true }],
+      ['failover disabled setting', { ...tairaConfig, toriiFailoverEnabled: false }],
+      ['failover nodes', { ...tairaConfig, toriiFailoverNodes: [] }],
+      ['optional settings', { ...tairaConfig, toriiRequestTimeoutMs: 5000 }],
+    ])('rejects %s', async (_label, config) => {
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => config });
+      vi.stubGlobal('fetch', fetchMock);
+      const module = await import('./runtime-config');
 
-  it('loads the exact complete BPNG Taira profile', async () => {
-    useHost('explorer-bpng.soramitsu.io');
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => bpngConfig }));
-    const module = await import('./runtime-config');
+      await expect(module.loadRuntimeConfig()).rejects.toThrow(configurationError);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(module.getRuntimeConfig()).toEqual({});
+    });
 
-    await expect(module.loadRuntimeConfig()).resolves.toEqual(bpngConfig);
-    expect(module.getRuntimeConfig()).toEqual(bpngConfig);
-    expect(module.getRuntimeConfig().networkId).toBe(checkedNetworkId);
+    it('loads the exact complete direct Taira profile', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => tairaConfig }));
+      const module = await import('./runtime-config');
+
+      await expect(module.loadRuntimeConfig()).resolves.toEqual(tairaConfig);
+      expect(module.getRuntimeConfig()).toEqual(tairaConfig);
+      expect(module.getRuntimeConfig().networkId).toBe(checkedNetworkId);
+    });
   });
 });
